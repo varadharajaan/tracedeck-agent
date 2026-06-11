@@ -1,0 +1,143 @@
+tenant_id: family-varadha
+device_id: laptop-cousin-001
+profile: ai-btech-student
+
+collection:
+  transparency_mode: visible_indicator_required
+  browser:
+    url_mode: domain_only
+    collect_page_title: false
+    youtube_classification: enabled
+    youtube_video_id_mode: hashed
+  media:
+    collect_file_name: true
+    collect_file_path: true
+    path_mode: full_path
+  sensitive_capabilities:
+    credentials: deny
+    keystrokes: deny
+    cookies: deny
+    tokens: deny
+    private_messages: deny
+    screenshots: deny
+
+retention:
+  local_ttl_days: 90
+  max_local_storage_mb: 2048
+
+archive:
+  enabled: true
+  provider: s3
+  bucket: tracedeck-agent-family-varadha-996335889295-ap-south-1
+  prefix_template: tenants/{tenant_id}/devices/{device_id}/hosts/{host_name}/date={yyyy}-{mm}-{dd}/hour={hh}/
+  upload_interval: 1h
+  retry_when_online: true
+  storage_class_days:
+    standard: 90
+    standard_ia_until: 365
+    archive_after: 365
+
+alerts:
+  enabled: true
+  email:
+    provider: ses
+    to:
+      - varathu09@gmail.com
+    min_severity: high
+    cooldown_minutes: 30
+
+study_apps:
+  - Code.exe
+  - python.exe
+  - java.exe
+  - idea64.exe
+  - pycharm64.exe
+  - jupyter.exe
+  - chrome.exe
+  - msedge.exe
+  - brave.exe
+
+blocked_apps:
+  - vlc.exe
+  - qbittorrent.exe
+  - utorrent.exe
+  - steam.exe
+  - epicgameslauncher.exe
+
+ignored_apps:
+  - System
+  - Registry
+  - svchost.exe
+
+allowed_domains:
+  - udemy.com
+  - coursera.org
+  - github.com
+  - stackoverflow.com
+  - docs.python.org
+  - openai.com
+  - huggingface.co
+  - kaggle.com
+  - tensorflow.org
+  - pytorch.org
+  - microsoft.com
+  - learn.microsoft.com
+
+warn_categories:
+  - video-streaming
+  - social-media
+  - gaming
+  - shopping
+
+critical_categories:
+  - adult-content
+  - torrent
+  - malware
+  - proxy-vpn
+
+thresholds:
+  max_video_minutes_per_day: 60
+  max_social_minutes_per_day: 30
+  max_unknown_app_minutes_per_day: 45
+  late_night_usage_start: "23:30"
+  late_night_usage_end: "05:00"
+
+youtube_study_keywords:
+  - python
+  - system design
+  - math
+  - maths
+  - machine learning
+  - artificial intelligence
+  - coding
+  - java
+  - data structures
+  - algorithms
+
+alert_rules:
+  adult_content:
+    enabled: true
+    severity: critical
+  blocked_app_opened:
+    enabled: true
+    severity: high
+  media_player_used:
+    enabled: true
+    severity: high
+    include_media_file_metadata: true
+  unknown_software_installed:
+    enabled: true
+    severity: high
+  non_study_youtube:
+    enabled: true
+    severity: medium
+    threshold_minutes_per_day: 30
+  excessive_video_usage:
+    enabled: true
+    severity: medium
+  excessive_social_usage:
+    enabled: true
+    severity: medium
+  late_night_usage:
+    enabled: true
+    severity: medium
