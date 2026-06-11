@@ -1,11 +1,13 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/varadharajaan/tracedeck-agent/agent/internal/app"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/config"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/constants"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/schema"
@@ -71,19 +73,36 @@ func newSchemaCommand() *cobra.Command {
 
 func newRunCommand() *cobra.Command {
 	var configPath string
+	var dataDir string
+	var logDir string
+	var logLevel string
+	var once bool
+	var processLimit int
 
 	cmd := &cobra.Command{
 		Use:   constants.CommandRun,
 		Short: "Run TraceDeck agent",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			policy, err := config.LoadFile(configPath)
+			result, err := app.Run(context.Background(), app.RunOptions{
+				ConfigPath:   configPath,
+				DataDir:      dataDir,
+				LogDir:       logDir,
+				LogLevel:     logLevel,
+				Once:         once,
+				ProcessLimit: processLimit,
+			})
 			if err != nil {
 				return err
 			}
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "TraceDeck agent bootstrap ok: tenant=%s device=%s profile=%s\n", policy.TenantID, policy.DeviceID, policy.Profile)
+			_, err = fmt.Fprintln(cmd.OutOrStdout(), app.FormatRunResult(result))
 			return err
 		},
 	}
 	cmd.Flags().StringVar(&configPath, "config", constants.DefaultConfig, "policy YAML path")
+	cmd.Flags().StringVar(&dataDir, "data-dir", constants.DefaultDataDir, "local data directory")
+	cmd.Flags().StringVar(&logDir, "log-dir", constants.DefaultLogDir, "local log directory")
+	cmd.Flags().StringVar(&logLevel, "log-level", constants.DefaultLogLevel, "log level: trace, debug, info, warn, error")
+	cmd.Flags().BoolVar(&once, "once", false, "collect one local snapshot and exit")
+	cmd.Flags().IntVar(&processLimit, "process-limit", constants.DefaultProcessLimit, "maximum processes to persist in one snapshot")
 	return cmd
 }
