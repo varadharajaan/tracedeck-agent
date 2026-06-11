@@ -76,20 +76,30 @@ func newRunCommand() *cobra.Command {
 	var dataDir string
 	var logDir string
 	var logLevel string
+	var outboxDir string
 	var once bool
 	var processLimit int
+	var archiveOnce bool
+	var archiveDryRun bool
+	var alertOnce bool
+	var alertDryRun bool
 
 	cmd := &cobra.Command{
 		Use:   constants.CommandRun,
 		Short: "Run TraceDeck agent",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			result, err := app.Run(context.Background(), app.RunOptions{
-				ConfigPath:   configPath,
-				DataDir:      dataDir,
-				LogDir:       logDir,
-				LogLevel:     logLevel,
-				Once:         once,
-				ProcessLimit: processLimit,
+				ConfigPath:    configPath,
+				DataDir:       dataDir,
+				LogDir:        logDir,
+				LogLevel:      logLevel,
+				OutboxDir:     outboxDir,
+				Once:          once,
+				ProcessLimit:  processLimit,
+				ArchiveOnce:   archiveOnce,
+				ArchiveDryRun: archiveDryRun,
+				AlertOnce:     alertOnce,
+				AlertDryRun:   alertDryRun,
 			})
 			if err != nil {
 				return err
@@ -102,7 +112,12 @@ func newRunCommand() *cobra.Command {
 	cmd.Flags().StringVar(&dataDir, "data-dir", constants.DefaultDataDir, "local data directory")
 	cmd.Flags().StringVar(&logDir, "log-dir", constants.DefaultLogDir, "local log directory")
 	cmd.Flags().StringVar(&logLevel, "log-level", constants.DefaultLogLevel, "log level: trace, debug, info, warn, error")
+	cmd.Flags().StringVar(&outboxDir, "outbox-dir", constants.DefaultOutboxDir, "local archive and alert outbox directory")
 	cmd.Flags().BoolVar(&once, "once", false, "collect one local snapshot and exit")
 	cmd.Flags().IntVar(&processLimit, "process-limit", constants.DefaultProcessLimit, "maximum processes to persist in one snapshot")
+	cmd.Flags().BoolVar(&archiveOnce, "archive-once", false, "stage one archive batch for the collected snapshot")
+	cmd.Flags().BoolVar(&archiveDryRun, "archive-dry-run", true, "skip S3 upload after staging the archive batch")
+	cmd.Flags().BoolVar(&alertOnce, "alert-once", false, "evaluate alerts for the collected snapshot")
+	cmd.Flags().BoolVar(&alertDryRun, "alert-dry-run", true, "write alert notifications to local outbox instead of sending email")
 	return cmd
 }
