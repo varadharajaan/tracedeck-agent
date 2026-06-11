@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/varadharajaan/tracedeck-agent/agent/internal/alert"
+	"github.com/varadharajaan/tracedeck-agent/agent/internal/archive"
 	processcollector "github.com/varadharajaan/tracedeck-agent/agent/internal/collector/process"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/config"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/constants"
@@ -14,17 +16,26 @@ import (
 )
 
 type RunOptions struct {
-	ConfigPath   string
-	DataDir      string
-	LogDir       string
-	LogLevel     string
-	Once         bool
-	ProcessLimit int
+	ConfigPath    string
+	DataDir       string
+	LogDir        string
+	LogLevel      string
+	OutboxDir     string
+	Once          bool
+	ProcessLimit  int
+	ArchiveOnce   bool
+	ArchiveDryRun bool
+	AlertOnce     bool
+	AlertDryRun   bool
 }
 
 type RunResult struct {
 	CollectedEvents int
 	StoredEvents    int
+	ArchiveBatch    string
+	ArchiveUploaded bool
+	AlertsRaised    int
+	AlertOutboxPath string
 }
 
 func Run(ctx context.Context, opts RunOptions) (RunResult, error) {
@@ -79,6 +90,53 @@ func Run(ctx context.Context, opts RunOptions) (RunResult, error) {
 		return RunResult{}, err
 	}
 
+	result := RunResult{CollectedEvents: len(events), StoredEvents: total}
+
+	if opts.ArchiveOnce && policy.Archive.Enabled {
+		batch, err := archive.NewWriter(opts.OutboxDir).WriteBatch(ctx, policy, events)
+		if err != nil {
+			return RunResult{}, err
+		}
+		result.ArchiveBatch = batch.LocalPath
+		logger.Info("archive batch staged",
+			"bucket", policy.Archive.Bucket,
+			"s3_key", batch.S3Key,
+			"local_path", batch.LocalPath,
+			"event_count", batch.Count,
+			"dry_run", opts.ArchiveDryRun,
+		)
+		if !opts.ArchiveDryRun && batch.LocalPath != "" {
+			uploader, err := archive.NewS3Uploader(ctx)
+			if err != nil {
+				return RunResult{}, err
+			}
+			if err := uploader.UploadFile(ctx, policy.Archive.Bucket, batch.S3Key, batch.LocalPath); err != nil {
+				return RunResult{}, err
+			}
+			result.ArchiveUploaded = true
+		}
+	}
+
+	if opts.AlertOnce && policy.Alerts.Enabled {
+		alerts := alert.NewEvaluator().Evaluate(ctx, policy, events)
+		result.AlertsRaised = len(alerts)
+		if len(alerts) > 0 {
+			if !opts.AlertDryRun {
+				return RunResult{}, fmt.Errorf("email provider delivery is not enabled in this phase; rerun with alert dry-run")
+			}
+			outboxPath, err := alert.NewLocalNotifier(opts.OutboxDir).Notify(ctx, policy, alerts)
+			if err != nil {
+				return RunResult{}, err
+			}
+			result.AlertOutboxPath = outboxPath
+			logger.Warn("alert notification staged",
+				"alert_count", len(alerts),
+				"outbox_path", outboxPath,
+				"dry_run", opts.AlertDryRun,
+			)
+		}
+	}
+
 	logger.Info("process snapshot collected",
 		"tenant_id", policy.TenantID,
 		"device_id", policy.DeviceID,
@@ -91,9 +149,17 @@ func Run(ctx context.Context, opts RunOptions) (RunResult, error) {
 		logger.Warn("continuous mode is not enabled in this phase; completed one local snapshot")
 	}
 
-	return RunResult{CollectedEvents: len(events), StoredEvents: total}, nil
+	return result, nil
 }
 
 func FormatRunResult(result RunResult) string {
-	return fmt.Sprintf("TraceDeck run complete: collected_events=%d stored_events=%d", result.CollectedEvents, result.StoredEvents)
+	return fmt.Sprintf(
+		"TraceDeck run complete: collected_events=%d stored_events=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_outbox=%s",
+		result.CollectedEvents,
+		result.StoredEvents,
+		result.ArchiveBatch,
+		result.ArchiveUploaded,
+		result.AlertsRaised,
+		result.AlertOutboxPath,
+	)
 }

@@ -20,6 +20,7 @@ const (
 	DefaultLogLevel     = LogLevelInfo
 	DefaultDataDir      = "data/local"
 	DefaultSQLiteFile   = "tracedeck-agent.sqlite"
+	DefaultOutboxDir    = "data/local/outbox"
 	DefaultProcessLimit = 256
 )
 
@@ -39,4 +40,21 @@ const (
 
 const (
 	SQLiteMigrationGlob = "migrations/*.sql"
+)
+
+const (
+	ArchiveOutboxDirName = "archive"
+	AlertOutboxDirName   = "alerts"
+	JSONLinesGzipExt     = ".jsonl.gz"
+	JSONExt              = ".json"
+)
+
+const (
+	TemplateTenantID = "{tenant_id}"
+	TemplateDeviceID = "{device_id}"
+	TemplateHostName = "{host_name}"
+	TemplateYear     = "{yyyy}"
+	TemplateMonth    = "{mm}"
+	TemplateDay      = "{dd}"
+	TemplateHour     = "{hh}"
 )

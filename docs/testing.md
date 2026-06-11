@@ -9,6 +9,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/setup/install-go-t
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase0.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase1.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase1b.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase2.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.

@@ -11,3 +11,7 @@ tracedeck-agent-family-varadha-996335889295-ap-south-1
 ```
 
 Lifecycle target: Standard for 90 days, Standard-IA until day 365, then archive.
+
+Phase 2 stages compressed JSONL batches under `data/local/outbox/archive/`.
+S3 upload is available through the AWS SDK adapter and is skipped when
+`--archive-dry-run` is enabled.

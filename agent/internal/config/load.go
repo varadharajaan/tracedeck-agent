@@ -12,7 +12,7 @@ import (
 
 func LoadFile(path string) (*Policy, error) {
 	cleanPath := filepath.Clean(path)
-	root, err := os.OpenRoot(".")
+	root, err := os.OpenRoot(filepath.Dir(cleanPath))
 	if err != nil {
 		return nil, fmt.Errorf("open config root: %w", err)
 	}
@@ -20,7 +20,7 @@ func LoadFile(path string) (*Policy, error) {
 		_ = root.Close()
 	}()
 
-	file, err := root.Open(cleanPath)
+	file, err := root.Open(filepath.Base(cleanPath))
 	if err != nil {
 		return nil, fmt.Errorf("read policy config %q: %w", path, err)
 	}
