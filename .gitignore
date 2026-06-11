@@ -13,6 +13,7 @@ data/
 logs/
 
 # Local-only agent coordination and prompt files
+plan.md
 checkpoint.md
 memory.md
 todo.md

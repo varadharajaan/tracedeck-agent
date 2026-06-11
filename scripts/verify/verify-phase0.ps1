@@ -7,6 +7,10 @@ $ErrorActionPreference = "Stop"
 Initialize-TraceDeckScriptLog -Name "verify-phase0" -LogRoot "logs/local/verify" | Out-Null
 
 try {
+    Invoke-TraceDeckLoggedCommand -Label "Root artifact check" -Command {
+        powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/check-root-clean.ps1
+    }
+
     Invoke-TraceDeckLoggedCommand -Label "Go module tidy" -Command {
         go mod tidy
     }
@@ -81,6 +85,10 @@ try {
 
     Invoke-TraceDeckLoggedCommand -Label "Phase 0 smoke" -Command {
         powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase0.ps1
+    }
+
+    Invoke-TraceDeckLoggedCommand -Label "Root artifact re-check" -Command {
+        powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/check-root-clean.ps1
     }
 
     Complete-TraceDeckScriptLog

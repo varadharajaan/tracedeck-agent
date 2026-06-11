@@ -1,4 +1,4 @@
-.PHONY: tools verify test race vet fmt fmt-check validate-config schema smoke
+.PHONY: tools verify verify-phase1 check-root-clean test race vet fmt fmt-check validate-config schema smoke
 
 CONFIG ?= ./examples/policies/ai-btech-student.yaml
 
@@ -7,6 +7,12 @@ tools:
 
 verify:
 	powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase0.ps1
+
+verify-phase1:
+	powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase1.ps1
+
+check-root-clean:
+	powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/check-root-clean.ps1
 
 test:
 	go test ./...
