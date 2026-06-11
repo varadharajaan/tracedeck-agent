@@ -9,6 +9,7 @@ import (
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/config"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/constants"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/logging"
+	"github.com/varadharajaan/tracedeck-agent/agent/internal/platform"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/storage/sqlite"
 )
 
@@ -60,7 +61,8 @@ func Run(ctx context.Context, opts RunOptions) (RunResult, error) {
 		return RunResult{}, err
 	}
 
-	collector := processcollector.New(opts.ProcessLimit)
+	platformAdapter := platform.Current()
+	collector := processcollector.New(opts.ProcessLimit, platformAdapter)
 	events, err := collector.Collect(ctx, policy)
 	if err != nil {
 		return RunResult{}, err
@@ -80,6 +82,7 @@ func Run(ctx context.Context, opts RunOptions) (RunResult, error) {
 	logger.Info("process snapshot collected",
 		"tenant_id", policy.TenantID,
 		"device_id", policy.DeviceID,
+		"operating_system", platformAdapter.Name(),
 		"collected_events", len(events),
 		"stored_events", total,
 	)

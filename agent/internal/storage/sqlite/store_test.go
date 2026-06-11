@@ -32,7 +32,10 @@ func TestStoreSaveAndCountEvent(t *testing.T) {
 		AppName:   constants.AppName,
 		ProcessID: 42,
 		PathHash:  "test-path-hash",
-		Metadata:  map[string]string{constants.EventMetadataProfile: constants.DefaultProfile},
+		Metadata: map[string]string{
+			constants.EventMetadataProfile:         constants.DefaultProfile,
+			constants.EventMetadataOperatingSystem: constants.OperatingSystemWindows,
+		},
 	})
 	if err != nil {
 		t.Fatalf("save event: %v", err)
