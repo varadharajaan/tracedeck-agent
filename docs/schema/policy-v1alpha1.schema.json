@@ -1,0 +1,456 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tracedeck.io/policy/v1alpha1/schema.json",
+  "$ref": "#/$defs/Policy",
+  "$defs": {
+    "AlertPolicy": {
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "email": {
+          "$ref": "#/$defs/EmailPolicy"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "enabled",
+        "email"
+      ]
+    },
+    "ArchivePolicy": {
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "provider": {
+          "type": "string",
+          "enum": [
+            "none",
+            "s3"
+          ]
+        },
+        "bucket": {
+          "type": "string"
+        },
+        "prefix_template": {
+          "type": "string"
+        },
+        "upload_interval": {
+          "type": "string"
+        },
+        "retry_when_online": {
+          "type": "boolean"
+        },
+        "storage_class_days": {
+          "$ref": "#/$defs/StorageClassDays"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "enabled",
+        "provider",
+        "bucket",
+        "prefix_template",
+        "upload_interval",
+        "retry_when_online",
+        "storage_class_days"
+      ]
+    },
+    "BrowserCollection": {
+      "properties": {
+        "url_mode": {
+          "type": "string",
+          "enum": [
+            "domain_only",
+            "full_url"
+          ]
+        },
+        "collect_page_title": {
+          "type": "boolean"
+        },
+        "youtube_classification": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "enabled"
+          ]
+        },
+        "youtube_video_id_mode": {
+          "type": "string",
+          "enum": [
+            "hashed",
+            "none"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "url_mode",
+        "collect_page_title",
+        "youtube_classification",
+        "youtube_video_id_mode"
+      ]
+    },
+    "CollectionPolicy": {
+      "properties": {
+        "transparency_mode": {
+          "type": "string",
+          "enum": [
+            "visible_indicator_required"
+          ]
+        },
+        "browser": {
+          "$ref": "#/$defs/BrowserCollection"
+        },
+        "media": {
+          "$ref": "#/$defs/MediaCollection"
+        },
+        "sensitive_capabilities": {
+          "$ref": "#/$defs/SensitiveCapabilities"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "transparency_mode",
+        "browser",
+        "media",
+        "sensitive_capabilities"
+      ]
+    },
+    "EmailPolicy": {
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": [
+            "none",
+            "ses",
+            "smtp"
+          ]
+        },
+        "to": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "min_severity": {
+          "type": "string",
+          "enum": [
+            "critical",
+            "high",
+            "low",
+            "medium"
+          ]
+        },
+        "cooldown_minutes": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "provider",
+        "to",
+        "min_severity",
+        "cooldown_minutes"
+      ]
+    },
+    "MediaCollection": {
+      "properties": {
+        "collect_file_name": {
+          "type": "boolean"
+        },
+        "collect_file_path": {
+          "type": "boolean"
+        },
+        "path_mode": {
+          "type": "string",
+          "enum": [
+            "full_path",
+            "hash_only",
+            "none"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "collect_file_name",
+        "collect_file_path",
+        "path_mode"
+      ]
+    },
+    "Policy": {
+      "properties": {
+        "tenant_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "device_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "profile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "collection": {
+          "$ref": "#/$defs/CollectionPolicy"
+        },
+        "retention": {
+          "$ref": "#/$defs/RetentionPolicy"
+        },
+        "archive": {
+          "$ref": "#/$defs/ArchivePolicy"
+        },
+        "alerts": {
+          "$ref": "#/$defs/AlertPolicy"
+        },
+        "study_apps": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "blocked_apps": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "ignored_apps": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "allowed_domains": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "blocked_domains": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "allowed_categories": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "warn_categories": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "critical_categories": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "thresholds": {
+          "$ref": "#/$defs/ThresholdPolicy"
+        },
+        "youtube_study_keywords": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "alert_rules": {
+          "additionalProperties": {
+            "$ref": "#/$defs/RuleSpec"
+          },
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "tenant_id",
+        "device_id",
+        "profile",
+        "collection",
+        "retention",
+        "archive",
+        "alerts",
+        "study_apps",
+        "blocked_apps",
+        "ignored_apps",
+        "allowed_domains",
+        "blocked_domains",
+        "allowed_categories",
+        "warn_categories",
+        "critical_categories",
+        "thresholds",
+        "youtube_study_keywords",
+        "alert_rules"
+      ]
+    },
+    "RetentionPolicy": {
+      "properties": {
+        "local_ttl_days": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_local_storage_mb": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "local_ttl_days",
+        "max_local_storage_mb"
+      ]
+    },
+    "RuleSpec": {
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "critical",
+            "high",
+            "low",
+            "medium"
+          ]
+        },
+        "include_media_file_metadata": {
+          "type": "boolean"
+        },
+        "threshold_minutes_per_day": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "enabled",
+        "severity"
+      ]
+    },
+    "SensitiveCapabilities": {
+      "properties": {
+        "credentials": {
+          "type": "string",
+          "enum": [
+            "deny"
+          ]
+        },
+        "keystrokes": {
+          "type": "string",
+          "enum": [
+            "deny"
+          ]
+        },
+        "cookies": {
+          "type": "string",
+          "enum": [
+            "deny"
+          ]
+        },
+        "tokens": {
+          "type": "string",
+          "enum": [
+            "deny"
+          ]
+        },
+        "private_messages": {
+          "type": "string",
+          "enum": [
+            "deny"
+          ]
+        },
+        "screenshots": {
+          "type": "string",
+          "enum": [
+            "deny"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "credentials",
+        "keystrokes",
+        "cookies",
+        "tokens",
+        "private_messages",
+        "screenshots"
+      ]
+    },
+    "StorageClassDays": {
+      "properties": {
+        "standard": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "standard_ia_until": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "archive_after": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "standard",
+        "standard_ia_until",
+        "archive_after"
+      ]
+    },
+    "ThresholdPolicy": {
+      "properties": {
+        "max_video_minutes_per_day": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_social_minutes_per_day": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_unknown_app_minutes_per_day": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "late_night_usage_start": {
+          "type": "string",
+          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+        },
+        "late_night_usage_end": {
+          "type": "string",
+          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "max_video_minutes_per_day",
+        "max_social_minutes_per_day",
+        "max_unknown_app_minutes_per_day",
+        "late_night_usage_start",
+        "late_night_usage_end"
+      ]
+    }
+  },
+  "title": "TraceDeck Policy v1alpha1"
+}

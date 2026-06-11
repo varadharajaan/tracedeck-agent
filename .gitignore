@@ -1,0 +1,40 @@
+# Build outputs
+bin/
+dist/
+*.exe
+*.test
+
+# Go workspace/cache outputs
+coverage.out
+*.prof
+
+# Local runtime data
+data/
+logs/
+
+# Local-only agent coordination and prompt files
+checkpoint.md
+memory.md
+todo.md
+PLAN_MODE_PROMPT.md
+agent-strict-rules-prompts.md
+instructions.md
+tracedeck_agent_project_prompt.md
+tracedeck-agent-system-blueprint.md
+
+# IDE/editor
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+*.secret.*
+aws-credentials*
+
+logs/*
+scripts/*
