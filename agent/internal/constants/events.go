@@ -9,5 +9,6 @@ const (
 )
 
 const (
-	EventMetadataProfile = "profile"
+	EventMetadataProfile         = "profile"
+	EventMetadataOperatingSystem = "operating_system"
 )

@@ -3,7 +3,6 @@ package process
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	gopsprocess "github.com/shirou/gopsutil/v4/process"
@@ -11,17 +10,22 @@ import (
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/constants"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/domain/event"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/domain/redaction"
+	"github.com/varadharajaan/tracedeck-agent/agent/internal/platform"
 )
 
 type Collector struct {
-	limit int
+	limit           int
+	platformAdapter platform.Adapter
 }
 
-func New(limit int) *Collector {
+func New(limit int, platformAdapter platform.Adapter) *Collector {
 	if limit <= 0 {
 		limit = constants.DefaultProcessLimit
 	}
-	return &Collector{limit: limit}
+	if platformAdapter == nil {
+		platformAdapter = platform.Current()
+	}
+	return &Collector{limit: limit, platformAdapter: platformAdapter}
 }
 
 func (c *Collector) Collect(ctx context.Context, policy *config.Policy) ([]event.Event, error) {
@@ -30,7 +34,11 @@ func (c *Collector) Collect(ctx context.Context, policy *config.Policy) ([]event
 		return nil, fmt.Errorf("list processes: %w", err)
 	}
 
-	hostName, _ := os.Hostname()
+	hostName, err := c.platformAdapter.Hostname(ctx)
+	if err != nil || hostName == "" {
+		hostName = constants.UnknownHost
+	}
+	capabilities := c.platformAdapter.Capabilities()
 	now := time.Now().UTC()
 	events := make([]event.Event, 0, min(c.limit, len(processes)))
 
@@ -56,7 +64,8 @@ func (c *Collector) Collect(ctx context.Context, policy *config.Policy) ([]event
 			ProcessID: proc.Pid,
 			PathHash:  redaction.HashPath(exe),
 			Metadata: map[string]string{
-				constants.EventMetadataProfile: policy.Profile,
+				constants.EventMetadataProfile:         policy.Profile,
+				constants.EventMetadataOperatingSystem: capabilities.OperatingSystem,
 			},
 		})
 	}

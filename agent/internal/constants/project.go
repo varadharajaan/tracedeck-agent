@@ -5,6 +5,7 @@ const (
 	AppVersion    = "0.1.0-dev"
 	RepoModule    = "github.com/varadharajaan/tracedeck-agent"
 	DefaultConfig = "./examples/policies/ai-btech-student.yaml"
+	UnknownHost   = "unknown-host"
 )
 
 const (
