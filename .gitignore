@@ -36,5 +36,3 @@ Thumbs.db
 *.secret.*
 aws-credentials*
 
-logs/*
-scripts/*
