@@ -435,6 +435,22 @@ notification routes, and consent/data-rights APIs. Newman runs
 `postman/tracedeck-backend-phase36.postman_collection.json` against the live
 dashboard demo and checks the same revenue-dashboard contract.
 
+Phase 37 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-contract.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase37.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase37.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase37.ps1
+```
+
+The Phase 37 dashboard contract guard parses the embedded dashboard HTML,
+verifies there are no duplicate DOM IDs, extracts JavaScript-rendered ID
+references from `getElementById`, `setText`, metric/bar helpers, and badge
+replacement calls, and fails if any referenced DOM target is missing. The
+smoke and Newman scripts keep live dashboard and monetisation API coverage in
+the same verification path.
+
 Phase 13 adds:
 
 ```powershell

@@ -218,6 +218,12 @@ dashboard inbox proof, weekly report mail/PDF readiness, archive retention,
 consent/audit, and data-rights readiness into revenue and buyer-checklist
 panels backed by existing typed APIs.
 
+Phase 37 adds a dashboard contract guard. The local test parses the embedded
+dashboard, rejects duplicate DOM IDs, and verifies that JavaScript-rendered
+targets referenced by `getElementById`, text/metric/bar helpers, and badge
+replacement calls exist in the HTML. This catches missing panel IDs before a
+live demo.
+
 A future frontend phase can move this surface to a richer application shell with
 authentication, role-specific navigation, no-code alert rule editing, weekly
 report drilldowns, durable event search, and paid customer onboarding.
