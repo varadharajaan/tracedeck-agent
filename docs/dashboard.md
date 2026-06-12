@@ -186,6 +186,14 @@ Current panels:
 - policy audit trail for recent tenant and policy changes
 - data export center for auditable tenant export manifests
 - delete request queue for non-destructive data deletion workflows
+- revenue command center for paid-plan outcome, stage, plan, seats, and buyer
+  readiness
+- monetisation value stack for fleet coverage, anomaly queue, mail delivery,
+  push reach, weekly report, archive plan, trust center, and upgrade lever
+- notification proof rail for anomaly, email, push, dashboard, and weekly
+  report delivery proof
+- buyer demo checklist for anomaly, route, report, archive, consent/data
+  rights, and saved-view readiness
 
 API-provided text is escaped before rendering.
 
@@ -203,6 +211,12 @@ configured `X-TraceDeck-API-Key` and tenant scope headers.
 Phase 34 adds a session-scoped local access panel so an API-key protected
 dashboard can unlock API requests without placing the key in the URL, HTML,
 logs, local backend state, or repo files.
+
+Phase 36 makes the first screen more buyer-ready for monetisation demos. The
+dashboard now groups anomaly notification, mail delivery, push delivery,
+dashboard inbox proof, weekly report mail/PDF readiness, archive retention,
+consent/audit, and data-rights readiness into revenue and buyer-checklist
+panels backed by existing typed APIs.
 
 A future frontend phase can move this surface to a richer application shell with
 authentication, role-specific navigation, no-code alert rule editing, weekly

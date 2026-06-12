@@ -250,6 +250,71 @@
     .launch-action strong, .launch-action span {
       overflow-wrap: anywhere;
     }
+    .revenue-suite {
+      display: grid;
+      grid-template-columns: minmax(300px, 0.95fr) minmax(0, 2.05fr);
+      gap: 16px;
+    }
+    .suite-focus {
+      min-height: 300px;
+      display: grid;
+      align-content: space-between;
+      gap: 16px;
+      border-left: 5px solid var(--green);
+    }
+    .suite-focus strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 30px;
+      line-height: 1.05;
+      overflow-wrap: anywhere;
+    }
+    .suite-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .suite-tile {
+      min-height: 136px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+      display: grid;
+      align-content: space-between;
+      gap: 8px;
+    }
+    .suite-tile small {
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .suite-tile strong {
+      font-size: 19px;
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+    }
+    .suite-tile span {
+      overflow-wrap: anywhere;
+    }
+    .proof-rail {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .proof-lane {
+      min-height: 154px;
+      display: grid;
+      align-content: space-between;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+    }
+    .proof-lane strong, .proof-lane span {
+      overflow-wrap: anywhere;
+    }
     .command-card {
       min-height: 126px;
       display: grid;
@@ -644,6 +709,9 @@
       .ops-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .cockpit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .revenue-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .revenue-suite { grid-template-columns: 1fr; }
+      .suite-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .proof-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .launch-grid, .launch-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
@@ -660,6 +728,7 @@
       .brief-grid { grid-template-columns: 1fr; }
       .ops-strip { grid-template-columns: 1fr; }
       .cockpit-grid { grid-template-columns: 1fr; }
+      .suite-grid, .proof-rail { grid-template-columns: 1fr; }
       .revenue-grid, .assurance-grid { grid-template-columns: 1fr; }
       .summary-line { grid-template-columns: 1fr; }
       .kv div { grid-template-columns: 1fr; }
@@ -796,6 +865,96 @@
             <span id="launch-action-upgrade-sub" class="muted">No paid-plan lever loaded.</span>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section class="revenue-suite" aria-label="revenue command center">
+      <div class="panel suite-focus">
+        <div class="section-head">
+          <div>
+            <h2>Revenue Command Center</h2>
+            <p class="muted">Paid-plan proof for anomaly alerts, mail delivery, push reach, weekly reports, archive, consent, and buyer readiness.</p>
+          </div>
+          <span id="revenue-suite-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Customer Outcome</span>
+          <strong id="revenue-suite-outcome">No tenant loaded</strong>
+          <p id="revenue-suite-outcome-sub" class="muted">Waiting for notification and archive proof.</p>
+        </div>
+        <div class="action-meta">
+          <span id="revenue-suite-plan" class="pill">plan pending</span>
+          <span id="revenue-suite-stage" class="pill">stage pending</span>
+          <span id="revenue-suite-seat" class="pill">seats pending</span>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Monetisation Value Stack</h2>
+            <p class="muted">Information a buyer expects before paying: coverage, risk, notification proof, report readiness, archive trust, and data rights.</p>
+          </div>
+          <span id="value-stack-score" class="pill">0% ready</span>
+        </div>
+        <div class="suite-grid">
+          <div class="suite-tile"><small>Fleet Coverage</small><strong id="value-fleet">-</strong><span id="value-fleet-sub" class="muted">No host coverage</span></div>
+          <div class="suite-tile"><small>Anomaly Queue</small><strong id="value-anomaly">-</strong><span id="value-anomaly-sub" class="muted">No anomaly proof</span></div>
+          <div class="suite-tile"><small>Mail Delivery</small><strong id="value-mail">-</strong><span id="value-mail-sub" class="muted">No mail proof</span></div>
+          <div class="suite-tile"><small>Push Reach</small><strong id="value-push">-</strong><span id="value-push-sub" class="muted">No push proof</span></div>
+          <div class="suite-tile"><small>Weekly Report</small><strong id="value-report">-</strong><span id="value-report-sub" class="muted">No report proof</span></div>
+          <div class="suite-tile"><small>Archive Plan</small><strong id="value-archive">-</strong><span id="value-archive-sub" class="muted">No archive proof</span></div>
+          <div class="suite-tile"><small>Trust Center</small><strong id="value-trust">-</strong><span id="value-trust-sub" class="muted">No consent/audit proof</span></div>
+          <div class="suite-tile"><small>Next Invoice Lever</small><strong id="value-upgrade">-</strong><span id="value-upgrade-sub" class="muted">No upgrade lever</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-grid" aria-label="notification proof and buyer checklist">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Notification Proof Rail</h2>
+            <p class="muted">Anomaly detection, email delivery, push delivery, dashboard inbox, and report mail proof in one paid-product rail.</p>
+          </div>
+          <span id="notification-rail-status" class="badge pending">pending</span>
+        </div>
+        <div class="proof-rail">
+          <div class="proof-lane">
+            <div class="action-meta"><span class="pill">anomaly</span><span id="rail-anomaly-status" class="badge pending">pending</span></div>
+            <strong id="rail-anomaly-title">No anomaly selected</strong>
+            <span id="rail-anomaly-detail" class="muted">Waiting for policy, anomaly, or tamper signal.</span>
+          </div>
+          <div class="proof-lane">
+            <div class="action-meta"><span class="pill">email</span><span id="rail-email-status" class="badge pending">pending</span></div>
+            <strong id="rail-email-title">Email pending</strong>
+            <span id="rail-email-detail" class="muted">No mail delivery proof yet.</span>
+          </div>
+          <div class="proof-lane">
+            <div class="action-meta"><span class="pill">push</span><span id="rail-push-status" class="badge pending">pending</span></div>
+            <strong id="rail-push-title">Push pending</strong>
+            <span id="rail-push-detail" class="muted">No push notification proof yet.</span>
+          </div>
+          <div class="proof-lane">
+            <div class="action-meta"><span class="pill">dashboard</span><span id="rail-dashboard-status" class="badge pending">pending</span></div>
+            <strong id="rail-dashboard-title">Dashboard pending</strong>
+            <span id="rail-dashboard-detail" class="muted">No dashboard delivery proof yet.</span>
+          </div>
+          <div class="proof-lane">
+            <div class="action-meta"><span class="pill">weekly</span><span id="rail-report-status" class="badge pending">pending</span></div>
+            <strong id="rail-report-title">Report pending</strong>
+            <span id="rail-report-detail" class="muted">No weekly report delivery proof yet.</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Buyer Demo Checklist</h2>
+            <p class="muted">What should be true before TraceDeck is shown as a paid product to family, school, coaching, or business buyers.</p>
+          </div>
+          <span id="demo-checklist-status" class="badge pending">pending</span>
+        </div>
+        <div id="demo-checklist-list" class="catalog-list"><div class="empty">No demo checklist yet.</div></div>
       </div>
     </section>
 
@@ -1912,6 +2071,7 @@
       renderMonetizationSummary(context.monetizationSummary);
       renderBuyerMonetizationConsole(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderMonetisationLaunchDeck(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
+      renderRevenueCommandSuite(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderBuyerAssuranceWall(overview, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderTenantSyncHealth(context.syncHealth);
       renderTenantActivityFeed(context.activityFeed);
@@ -2595,6 +2755,145 @@
       setText("launch-action-route-sub", routeProblem ? routeProblem.last_error || routeProblem.summary || "Review retry queue." : "Email, push, and dashboard delivery are visible.");
       setText("launch-action-upgrade", upgradeSignal.title || upgradeSignal.name || monetization.conversion_stage || "Family Pro");
       setText("launch-action-upgrade-sub", upgradeSignal.detail || upgradeSignal.evidence || "Use weekly reports, notification proof, archive, and dashboard trust as the paid-plan story.");
+    }
+
+    function renderRevenueCommandSuite(overview, health, events, deliveries, context) {
+      const monetization = context.monetizationSummary || {};
+      const operations = context.tenantOperations || {};
+      const tenant = context.tenant || {};
+      const weekly = context.weeklyReport || {};
+      const consent = context.consentCenter || {};
+      const sync = context.syncHealth || {};
+      const activityViews = context.activityViews || {};
+      const dataExports = context.dataExports || {};
+      const deleteRequests = context.deleteRequests || {};
+      const plans = (context.plans && context.plans.items) || [];
+      const tiers = (context.retentionTiers && context.retentionTiers.items) || [];
+      const plan = plans.find((item) => item.id === (tenant.plan_id || monetization.plan_id)) || {};
+      const retention = tiers.find((item) => item.id === tenant.retention_tier_id) || {};
+      const email = latestDelivery(deliveryByChannel(deliveries, CHANNEL.email));
+      const push = latestDelivery(deliveryByChannel(deliveries, CHANNEL.push));
+      const dashboard = latestDelivery(deliveryByChannel(deliveries, CHANNEL.dashboard));
+      const delivered = deliveries.filter((item) => item.status === DELIVERY_STATUS.delivered).length;
+      const deliveryScore = deliveries.length > 0 ? Math.round((delivered / deliveries.length) * 100) : Number(monetization.notification_score || operations.notification_score || 0);
+      const readiness = Number(monetization.readiness_score || operations.monetization_readiness || readinessScore(context, deliveries, overview.archive, health));
+      const trust = Number(monetization.trust_score || 0);
+      const topEvent = topRiskEvent(events);
+      const anomalyCount = Number(operations.open_anomalies ?? events.filter((event) => event.type === "anomaly").length);
+      const archiveHealthy = overview.archive.provider === "s3" && Number(overview.archive.pending_batches || 0) === 0;
+      const consentReady = Boolean(consent.monitoring_visible && consent.data_export_ready && consent.delete_request_ready);
+      const paidCapabilities = monetization.paid_capabilities || [];
+      const readyCapabilities = paidCapabilities.filter((item) => ["healthy", "ready", "delivered"].includes(item.status)).length;
+      const conversionAction = ((monetization.conversion_actions || [])[0]) || ((operations.upgrade_signals || [])[0]) || {};
+      const packageName = monetization.plan_name || plan.name || tenant.plan_id || "Package pending";
+      const audience = monetization.audience || plan.audience || tenant.primary_profile || overview.device.profile;
+      const suiteStatus = readiness >= 80 && deliveryScore >= 70 && consentReady ? "healthy" : readiness >= 60 || deliveryScore >= 50 ? "watch" : "attention";
+      const checklist = [
+        {
+          name: "Critical anomaly visible",
+          ready: Boolean(topEvent),
+          detail: topEvent ? `${rowDetail(topEvent)} - ${topEvent.reason}` : "Seed or ingest a policy/anomaly/tamper signal."
+        },
+        {
+          name: "Email delivery proof",
+          ready: Boolean(email && email.status === DELIVERY_STATUS.delivered),
+          detail: email ? `${email.recipient} via ${email.provider}: ${email.status}` : "Configure SMTP/SES route and send proof."
+        },
+        {
+          name: "Push notification proof",
+          ready: Boolean(push),
+          detail: push ? `${push.recipient} via ${push.provider}: ${push.status}` : "Configure push route for anomaly alerts."
+        },
+        {
+          name: "Dashboard inbox proof",
+          ready: Boolean(dashboard),
+          detail: dashboard ? `${dashboard.provider}: ${dashboard.status}` : "Show local dashboard alert delivery."
+        },
+        {
+          name: "Weekly report packaging",
+          ready: Boolean(weekly.email_ready && weekly.pdf_ready),
+          detail: weekly.email_preview || weekly.generated_note || "Generate email preview and PDF."
+        },
+        {
+          name: "S3 archive retention",
+          ready: archiveHealthy,
+          detail: retention.name ? `${retention.name}; ${overview.archive.pending_batches || 0} pending batches` : `${overview.archive.provider || "archive"} retention not proven.`
+        },
+        {
+          name: "Consent and data rights",
+          ready: consentReady,
+          detail: consentReady ? "Visible monitoring, export, and delete request proof are ready." : "Consent, export, or delete request proof needs attention."
+        },
+        {
+          name: "Saved buyer views",
+          ready: Number(activityViews.count || 0) >= 4,
+          detail: `${activityViews.count || 0} saved command views; ${dataExports.count || 0} exports; ${deleteRequests.count || 0} delete requests.`
+        }
+      ];
+      const checklistReady = checklist.filter((item) => item.ready).length;
+
+      document.getElementById("revenue-suite-status").outerHTML =
+        badge(suiteStatus).replace("<span", '<span id="revenue-suite-status"');
+      setText("revenue-suite-outcome", `${packageName} demo: ${readiness}% ready`);
+      setText("revenue-suite-outcome-sub", `${audience} buyer view with ${deliveryScore}% notification proof, ${trust || "pending"}% trust, and ${checklistReady}/${checklist.length} demo checks ready.`);
+      setText("revenue-suite-plan", packageName);
+      setText("revenue-suite-stage", monetization.conversion_stage || operations.customer_health || "pilot");
+      setText("revenue-suite-seat", `${monetization.seats_used || operations.hosts_total || 0}/${monetization.seats_included || plan.device_limit || "custom"} seats`);
+      setText("value-stack-score", `${Math.round((readiness + deliveryScore + (trust || readiness)) / 3)}% ready`);
+
+      setText("value-fleet", `${operations.hosts_total || sync.hosts_total || 1} host${(operations.hosts_total || sync.hosts_total || 1) === 1 ? "" : "s"}`);
+      setText("value-fleet-sub", `${operations.hosts_attention || 0} need attention; ${sync.hosts_reporting || 0} reporting to backend`);
+      setText("value-anomaly", `${anomalyCount} active`);
+      setText("value-anomaly-sub", topEvent ? `${topEvent.severity} ${topEvent.category}: ${rowDetail(topEvent)}` : "No active anomaly selected.");
+      setText("value-mail", email ? email.status : "missing");
+      setText("value-mail-sub", email ? `${email.recipient} via ${email.provider}; ${formatAge(email.last_attempt_at)}` : "Mail delivery proof missing.");
+      setText("value-push", push ? push.status : "missing");
+      setText("value-push-sub", push ? `${push.recipient} via ${push.provider}; ${push.summary || "push proof visible"}` : "Push route makes anomaly alerts monetisable.");
+      setText("value-report", weekly.email_ready ? "email ready" : weekly.generated ? "generated" : "pending");
+      setText("value-report-sub", weekly.pdf_ready ? "PDF ready for report mail" : weekly.email_preview || "Weekly report proof pending.");
+      setText("value-archive", archiveHealthy ? "S3 current" : `${overview.archive.pending_batches || 0} pending`);
+      setText("value-archive-sub", retention.name ? `${retention.name}; archive after ${retention.s3_archive_after_days} days` : `${overview.archive.provider || "provider pending"} archive plan`);
+      setText("value-trust", consentReady ? "audit ready" : `${trust || 0}% trust`);
+      setText("value-trust-sub", consentReady ? `${(consent.alert_recipients || []).join(", ") || "recipient proof"}; export/delete ready` : "Consent, audit, or data rights proof pending.");
+      setText("value-upgrade", conversionAction.title || `${readyCapabilities}/${paidCapabilities.length || 0} capabilities`);
+      setText("value-upgrade-sub", conversionAction.detail || "Package notification proof, reports, archive, and role dashboards for the next paid tier.");
+
+      document.getElementById("notification-rail-status").outerHTML =
+        badge(deliveryScore >= 70 ? "healthy" : deliveryScore > 0 ? "watch" : "pending").replace("<span", '<span id="notification-rail-status"');
+      document.getElementById("rail-anomaly-status").outerHTML =
+        badge(topEvent ? topEvent.severity : "pending").replace("<span", '<span id="rail-anomaly-status"');
+      setText("rail-anomaly-title", topEvent ? rowDetail(topEvent) : "No anomaly selected");
+      setText("rail-anomaly-detail", topEvent ? `${topEvent.category}: ${topEvent.reason}` : "Waiting for policy, anomaly, or tamper signal.");
+      document.getElementById("rail-email-status").outerHTML =
+        badge(email ? email.status : "pending").replace("<span", '<span id="rail-email-status"');
+      setText("rail-email-title", email ? `${capitalize(email.status)} email` : "Email pending");
+      setText("rail-email-detail", email ? `${email.recipient}; ${email.summary || email.provider}` : "No mail delivery proof yet.");
+      document.getElementById("rail-push-status").outerHTML =
+        badge(push ? push.status : "pending").replace("<span", '<span id="rail-push-status"');
+      setText("rail-push-title", push ? `${capitalize(push.status)} push` : "Push pending");
+      setText("rail-push-detail", push ? `${push.recipient}; ${push.summary || push.provider}` : "No push notification proof yet.");
+      document.getElementById("rail-dashboard-status").outerHTML =
+        badge(dashboard ? dashboard.status : "pending").replace("<span", '<span id="rail-dashboard-status"');
+      setText("rail-dashboard-title", dashboard ? `${capitalize(dashboard.status)} dashboard` : "Dashboard pending");
+      setText("rail-dashboard-detail", dashboard ? `${dashboard.provider}; ${dashboard.summary || "dashboard inbox proof"}` : "No dashboard delivery proof yet.");
+      document.getElementById("rail-report-status").outerHTML =
+        badge(weekly.email_ready && weekly.pdf_ready ? "healthy" : weekly.generated ? "watch" : "pending").replace("<span", '<span id="rail-report-status"');
+      setText("rail-report-title", weekly.email_ready ? "Report mail ready" : "Report pending");
+      setText("rail-report-detail", weekly.email_preview || weekly.generated_note || "No weekly report delivery proof yet.");
+
+      document.getElementById("demo-checklist-status").outerHTML =
+        badge(checklistReady === checklist.length ? "healthy" : checklistReady >= 5 ? "watch" : "attention").replace("<span", '<span id="demo-checklist-status"');
+      const target = document.getElementById("demo-checklist-list");
+      target.innerHTML = checklist.map((item) => `
+        <div class="catalog-item">
+          <strong>${escapeHTML(item.name)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.ready ? "ready" : "attention")}
+            <span class="pill">${escapeHTML(item.ready ? "demo proof present" : "complete before sales demo")}</span>
+          </div>
+        </div>
+      `).join("");
     }
 
     function renderMonetizationRoutes(items) {

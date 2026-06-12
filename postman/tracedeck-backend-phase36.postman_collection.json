@@ -1,0 +1,89 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 36",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Contains Revenue Suite",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard has monetisation-grade revenue panels', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Revenue Command Center');",
+        "  pm.expect(html).to.include('Monetisation Value Stack');",
+        "  pm.expect(html).to.include('Notification Proof Rail');",
+        "  pm.expect(html).to.include('Buyer Demo Checklist');",
+        "  pm.expect(html).to.include('rail-push-title');",
+        "  pm.expect(html).to.include('rail-email-title');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Tenant Monetisation Summary",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/monetization-summary" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('monetisation summary supports revenue suite', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.readiness_score).to.be.above(0);",
+        "  pm.expect(body.notification_score).to.be.above(0);",
+        "  pm.expect(body.notification_promise.email).to.be.a('string').and.not.empty;",
+        "  pm.expect(body.notification_promise.push).to.be.a('string').and.not.empty;",
+        "  pm.expect(body.paid_capabilities.length).to.be.above(0);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Tenant Operations Notification Proof",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/operations-summary" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('operations summary includes delivery proof', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.delivery_total).to.be.above(0);",
+        "  pm.expect(body.email_delivered).to.be.above(0);",
+        "  pm.expect(body.last_email.channel).to.eql('email');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Notification Routes Cover Paid Channels",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/notification-routes" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('email push and dashboard routes exist', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  const channels = body.items.map((item) => item.channel);",
+        "  pm.expect(channels).to.include('email');",
+        "  pm.expect(channels).to.include('push');",
+        "  pm.expect(channels).to.include('dashboard');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Consent Center Supports Buyer Checklist",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/consent-center" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('consent and data rights are visible', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.monitoring_visible).to.eql(true);",
+        "  pm.expect(body.data_export_ready).to.eql(true);",
+        "  pm.expect(body.delete_request_ready).to.eql(true);",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}
