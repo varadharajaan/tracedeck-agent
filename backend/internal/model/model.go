@@ -237,6 +237,43 @@ type TelemetryIngestStatus struct {
 	PrivacyBoundary string           `json:"privacy_boundary"`
 }
 
+type DeviceSyncHealth struct {
+	TenantID          string    `json:"tenant_id"`
+	DeviceID          string    `json:"device_id"`
+	HostName          string    `json:"host_name"`
+	Status            string    `json:"status"`
+	StoredEvents      int       `json:"stored_events"`
+	LastLocalEventID  int64     `json:"last_local_event_id"`
+	LastObservedAt    time.Time `json:"last_observed_at"`
+	LastIngestedAt    time.Time `json:"last_ingested_at"`
+	ProcessEvents     int       `json:"process_events"`
+	HealthEvents      int       `json:"health_events"`
+	BrowserEvents     int       `json:"browser_events"`
+	RecentEventIDs    []string  `json:"recent_event_ids"`
+	Recommendation    string    `json:"recommendation"`
+	PrivacyBoundary   string    `json:"privacy_boundary"`
+	BackendVisible    bool      `json:"backend_visible"`
+	OfflineReplayHint string    `json:"offline_replay_hint"`
+}
+
+type TenantSyncHealth struct {
+	TenantID             string             `json:"tenant_id"`
+	TenantName           string             `json:"tenant_name"`
+	Status               string             `json:"status"`
+	HostsTotal           int                `json:"hosts_total"`
+	HostsReporting       int                `json:"hosts_reporting"`
+	HostsPending         int                `json:"hosts_pending"`
+	StoredEvents         int                `json:"stored_events"`
+	LastLocalEventID     int64              `json:"last_local_event_id"`
+	LastIngestedAt       time.Time          `json:"last_ingested_at"`
+	BackendVisible       bool               `json:"backend_visible"`
+	PrivacyBoundary      string             `json:"privacy_boundary"`
+	OfflineReplayReady   bool               `json:"offline_replay_ready"`
+	OfflineReplaySummary string             `json:"offline_replay_summary"`
+	Devices              []DeviceSyncHealth `json:"devices"`
+	GeneratedAt          time.Time          `json:"generated_at"`
+}
+
 type DeviceHealth struct {
 	DeviceID             string    `json:"device_id"`
 	Score                int       `json:"score"`

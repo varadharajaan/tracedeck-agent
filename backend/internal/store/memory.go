@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -463,6 +464,153 @@ func (m *Memory) TenantMonetizationSummary(ctx context.Context, tenantID string)
 		ConversionActions: tenantConversionActions(operations, tenant, plan, trustScore, now),
 		GeneratedAt:       now,
 	}, nil
+}
+
+func (m *Memory) TenantSyncHealth(_ context.Context, tenantID string) (model.TenantSyncHealth, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	tenant, ok := m.tenants[tenantID]
+	if !ok {
+		return model.TenantSyncHealth{}, ErrTenantNotFound
+	}
+
+	devices := make([]model.DeviceSyncHealth, 0)
+	storedEvents := 0
+	hostsReporting := 0
+	var lastLocalEventID int64
+	var lastIngestedAt time.Time
+	for _, device := range m.devices {
+		if device.TenantID != tenantID {
+			continue
+		}
+		events := cloneTelemetryEvents(m.telemetryEvents[device.DeviceID])
+		summary := deviceSyncHealth(device, events)
+		if summary.StoredEvents > 0 {
+			hostsReporting++
+		}
+		storedEvents += summary.StoredEvents
+		if summary.LastLocalEventID > lastLocalEventID {
+			lastLocalEventID = summary.LastLocalEventID
+		}
+		if summary.LastIngestedAt.After(lastIngestedAt) {
+			lastIngestedAt = summary.LastIngestedAt
+		}
+		devices = append(devices, summary)
+	}
+	sort.Slice(devices, func(i, j int) bool {
+		if devices[i].Status != devices[j].Status {
+			return devices[i].Status < devices[j].Status
+		}
+		return devices[i].HostName < devices[j].HostName
+	})
+	hostsTotal := len(devices)
+	hostsPending := hostsTotal - hostsReporting
+	status := constants.StatusHealthy
+	if hostsTotal == 0 || hostsReporting == 0 {
+		status = constants.StatusPending
+	} else if hostsPending > 0 {
+		status = constants.StatusWatch
+	}
+	return model.TenantSyncHealth{
+		TenantID:             tenant.TenantID,
+		TenantName:           tenant.Name,
+		Status:               status,
+		HostsTotal:           hostsTotal,
+		HostsReporting:       hostsReporting,
+		HostsPending:         hostsPending,
+		StoredEvents:         storedEvents,
+		LastLocalEventID:     lastLocalEventID,
+		LastIngestedAt:       lastIngestedAt,
+		BackendVisible:       hostsReporting > 0,
+		PrivacyBoundary:      constants.TelemetryPrivacyBoundary,
+		OfflineReplayReady:   true,
+		OfflineReplaySummary: "Agent stores metadata locally first, then replays unsynced SQLite rows when backend sync is available.",
+		Devices:              devices,
+		GeneratedAt:          now,
+	}, nil
+}
+
+func deviceSyncHealth(device model.Device, events []model.TelemetryEvent) model.DeviceSyncHealth {
+	sort.Slice(events, func(i, j int) bool {
+		return events[i].ObservedAt.After(events[j].ObservedAt)
+	})
+
+	var lastObserved time.Time
+	var lastLocalEventID int64
+	processEvents := 0
+	healthEvents := 0
+	browserEvents := 0
+	recentIDs := make([]string, 0, 5)
+	for _, event := range events {
+		if event.ObservedAt.After(lastObserved) {
+			lastObserved = event.ObservedAt
+		}
+		if localID := stableLocalEventID(event.ID); localID > lastLocalEventID {
+			lastLocalEventID = localID
+		}
+		if eventSourceMatches(event, "process") {
+			processEvents++
+		}
+		if eventSourceMatches(event, "health") {
+			healthEvents++
+		}
+		if eventSourceMatches(event, "browser") {
+			browserEvents++
+		}
+		if len(recentIDs) < 5 && strings.TrimSpace(event.ID) != "" {
+			recentIDs = append(recentIDs, strings.TrimSpace(event.ID))
+		}
+	}
+
+	status := constants.StatusHealthy
+	recommendation := "Backend has replay-safe metadata sync proof for this host."
+	if len(events) == 0 {
+		status = constants.StatusPending
+		recommendation = "Run the agent with backend_sync enabled so this host can report metadata to the dashboard."
+	} else if !device.LastSeenAt.IsZero() && time.Since(device.LastSeenAt.UTC()) > 24*time.Hour {
+		status = constants.StatusWatch
+		recommendation = "Host has stored telemetry but has not checked in recently; confirm the laptop is online and the agent is scheduled."
+	}
+
+	return model.DeviceSyncHealth{
+		TenantID:          device.TenantID,
+		DeviceID:          device.DeviceID,
+		HostName:          device.HostName,
+		Status:            status,
+		StoredEvents:      len(events),
+		LastLocalEventID:  lastLocalEventID,
+		LastObservedAt:    lastObserved,
+		LastIngestedAt:    device.LastSeenAt,
+		ProcessEvents:     processEvents,
+		HealthEvents:      healthEvents,
+		BrowserEvents:     browserEvents,
+		RecentEventIDs:    recentIDs,
+		Recommendation:    recommendation,
+		PrivacyBoundary:   constants.TelemetryPrivacyBoundary,
+		BackendVisible:    len(events) > 0,
+		OfflineReplayHint: "Stable local-event IDs are idempotent, so offline laptop batches can replay without duplicate backend rows.",
+	}
+}
+
+func stableLocalEventID(value string) int64 {
+	clean := strings.TrimSpace(value)
+	clean = strings.TrimPrefix(clean, "local-event-")
+	parsed, err := strconv.ParseInt(clean, 10, 64)
+	if err != nil || parsed < 0 {
+		return 0
+	}
+	return parsed
+}
+
+func eventSourceMatches(event model.TelemetryEvent, token string) bool {
+	token = strings.ToLower(strings.TrimSpace(token))
+	source := strings.ToLower(strings.TrimSpace(event.Source))
+	eventType := strings.ToLower(strings.TrimSpace(event.Type))
+	return strings.Contains(source, token) || strings.Contains(eventType, token)
 }
 
 func (m *Memory) CreateTenantDataExport(_ context.Context, tenantID string, req model.CreateTenantDataExportRequest) (model.TenantDataExport, error) {

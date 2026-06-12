@@ -65,6 +65,7 @@ POST /api/v1/tenants/{tenantId}/notification-routes
 GET  /api/v1/tenants/{tenantId}/consent-center
 GET  /api/v1/tenants/{tenantId}/operations-summary
 GET  /api/v1/tenants/{tenantId}/monetization-summary
+GET  /api/v1/tenants/{tenantId}/sync-health
 GET  /api/v1/tenants/{tenantId}/data-exports
 POST /api/v1/tenants/{tenantId}/data-exports
 GET  /api/v1/tenants/{tenantId}/delete-requests
@@ -205,6 +206,14 @@ Routes are typed records for email, push, and dashboard delivery readiness.
 They store channel, provider, enabled state, status, recipient label, route
 summary, and verification timestamp. They do not store SMTP passwords, API
 keys, push endpoint secrets, auth tokens, or raw message content.
+
+Phase 31 adds `GET /api/v1/tenants/{tenantId}/sync-health` for buyer and admin
+proof that backend-visible telemetry is arriving per host. It returns reporting
+host counts, stored metadata event totals, the highest stable `local-event-*`
+cursor received, last ingest time, source counts for process/browser/health
+metadata, offline replay readiness, per-host recommendations, and the
+metadata-only privacy boundary. It cannot see local rows that have not synced
+yet; it proves what the backend has safely received.
 
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.

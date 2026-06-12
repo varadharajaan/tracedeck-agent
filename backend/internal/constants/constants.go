@@ -41,6 +41,7 @@ const (
 	RouteSegmentConsentCenter   = "consent-center"
 	RouteSegmentOperations      = "operations-summary"
 	RouteSegmentMonetization    = "monetization-summary"
+	RouteSegmentSyncHealth      = "sync-health"
 	RouteSegmentNotifications   = "notification-routes"
 	RouteSegmentDataExports     = "data-exports"
 	RouteSegmentDeleteRequests  = "delete-requests"

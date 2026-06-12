@@ -344,6 +344,22 @@ directory, and verifies the backlog replay reaches
 dashboard demo and verifies duplicate stable telemetry event IDs are
 acknowledged without duplicate backend storage.
 
+Phase 31 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase31.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase31.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase31.ps1
+```
+
+The Phase 31 smoke live-boots the seeded dashboard, ingests stable
+process/browser/health metadata events, verifies
+`/api/v1/tenants/{tenantId}/sync-health`, checks email and push monetisation
+proof, and asserts the dashboard contains the Buyer Assurance Wall and Offline
+Replay Health panels. Newman runs
+`postman/tracedeck-backend-phase31.postman_collection.json` against the live
+dashboard demo and checks the same API/UI contract.
+
 Phase 13 adds:
 
 ```powershell

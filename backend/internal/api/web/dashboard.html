@@ -749,6 +749,46 @@
       <div class="panel">
         <div class="section-head">
           <div>
+            <h2>Buyer Assurance Wall</h2>
+            <p class="muted">One paid-product view for sync proof, anomaly alerting, mail, push, reports, and archive trust</p>
+          </div>
+          <span id="product-assurance-status" class="badge pending">pending</span>
+        </div>
+        <div class="brief-grid">
+          <div class="brief-item"><small>Agent Sync</small><strong id="product-assurance-sync">-</strong><span id="product-assurance-sync-sub" class="muted">No sync proof</span></div>
+          <div class="brief-item"><small>Anomaly Pipeline</small><strong id="product-assurance-anomaly">-</strong><span id="product-assurance-anomaly-sub" class="muted">No anomaly proof</span></div>
+          <div class="brief-item"><small>Mail Delivery</small><strong id="product-assurance-mail">-</strong><span id="product-assurance-mail-sub" class="muted">No email proof</span></div>
+          <div class="brief-item"><small>Push Notification</small><strong id="product-assurance-push">-</strong><span id="product-assurance-push-sub" class="muted">No push proof</span></div>
+          <div class="brief-item"><small>Report Mail</small><strong id="product-assurance-report">-</strong><span id="product-assurance-report-sub" class="muted">No weekly report proof</span></div>
+          <div class="brief-item"><small>Archive Trust</small><strong id="product-assurance-archive">-</strong><span id="product-assurance-archive-sub" class="muted">No archive proof</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Offline Replay Health</h2>
+            <p class="muted">Tenant-level proof that laptop metadata survives offline time and syncs later without duplicates</p>
+          </div>
+          <span id="sync-health-status" class="badge pending">pending</span>
+        </div>
+        <div class="brief-grid">
+          <div class="brief-item"><small>Reporting Hosts</small><strong id="sync-health-hosts">-</strong><span id="sync-health-hosts-sub" class="muted">No reporting hosts</span></div>
+          <div class="brief-item"><small>Stored Events</small><strong id="sync-health-events">-</strong><span id="sync-health-events-sub" class="muted">No backend events</span></div>
+          <div class="brief-item"><small>Replay Cursor</small><strong id="sync-health-cursor">-</strong><span id="sync-health-cursor-sub" class="muted">No stable event cursor</span></div>
+          <div class="brief-item"><small>Last Ingest</small><strong id="sync-health-last">-</strong><span id="sync-health-last-sub" class="muted">No tenant ingest</span></div>
+        </div>
+        <div class="summary-list" style="margin-top: 12px;">
+          <div class="summary-line"><span>Boundary</span><strong id="sync-health-boundary">metadata only</strong></div>
+          <div class="summary-line"><span>Replay</span><strong id="sync-health-replay">waiting</strong></div>
+        </div>
+        <div id="sync-health-device-list" class="catalog-list" style="margin-top: 12px;"><div class="empty">No tenant sync devices yet.</div></div>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <div class="panel">
+        <div class="section-head">
+          <div>
             <h2>Live Agent Telemetry</h2>
             <p class="muted">Metadata-only ingest proof from endpoint agent cycles</p>
           </div>
@@ -1652,6 +1692,8 @@
       renderMonetizationSummary(context.monetizationSummary);
       renderBuyerMonetizationConsole(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderMonetisationLaunchDeck(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
+      renderBuyerAssuranceWall(overview, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
+      renderTenantSyncHealth(context.syncHealth);
       renderTelemetryStatus(context.telemetryStatus);
       renderNotificationRoutes(context.notificationRoutes);
       renderDataExports(context.dataExports);
@@ -2391,6 +2433,78 @@
       `).join("");
     }
 
+    function renderBuyerAssuranceWall(overview, events, deliveries, context) {
+      const sync = context.syncHealth || {};
+      const weekly = context.weeklyReport || {};
+      const operations = context.tenantOperations || {};
+      const email = latestDelivery(deliveryByChannel(deliveries, CHANNEL.email));
+      const push = latestDelivery(deliveryByChannel(deliveries, CHANNEL.push));
+      const topEvent = topRiskEvent(events);
+      const archive = overview.archive || {};
+      const checks = [
+        Boolean(sync.backend_visible),
+        Number(operations.open_anomalies || events.filter((event) => event.type === "anomaly").length || 0) > 0,
+        email && email.status === DELIVERY_STATUS.delivered,
+        Boolean(push),
+        Boolean(weekly.email_ready),
+        archive.provider === "s3"
+      ];
+      const score = Math.round((checks.filter(Boolean).length / checks.length) * 100);
+      document.getElementById("product-assurance-status").outerHTML =
+        badge(score >= 80 ? "healthy" : score >= 50 ? "watch" : "pending").replace("<span", '<span id="product-assurance-status"');
+
+      setText("product-assurance-sync", sync.backend_visible ? `${sync.hosts_reporting}/${sync.hosts_total} hosts` : "pending");
+      setText("product-assurance-sync-sub", sync.offline_replay_ready ? sync.offline_replay_summary : "Waiting for tenant sync health.");
+      setText("product-assurance-anomaly", `${operations.open_anomalies ?? events.filter((event) => event.type === "anomaly").length} open`);
+      setText("product-assurance-anomaly-sub", topEvent ? `${topEvent.category}: ${topEvent.reason}` : "No active anomaly or policy signal.");
+      setText("product-assurance-mail", email ? email.status : "missing");
+      setText("product-assurance-mail-sub", email ? `${email.provider} to ${email.recipient}` : "Configure an email route before paid demos.");
+      setText("product-assurance-push", push ? push.status : "missing");
+      setText("product-assurance-push-sub", push ? `${push.provider} route, ${push.attempts || 0} attempts` : "Push proof makes anomalies feel immediate.");
+      setText("product-assurance-report", weekly.email_ready ? "email ready" : "pending");
+      setText("product-assurance-report-sub", weekly.email_preview || "Weekly report mail preview not generated yet.");
+      setText("product-assurance-archive", archive.provider || "pending");
+      setText("product-assurance-archive-sub", `${archive.pending_batches || 0} pending batches, ${archive.last_uploaded_key || "no uploaded key"}`);
+    }
+
+    function renderTenantSyncHealth(syncHealth) {
+      const model = syncHealth || {};
+      const status = model.status || "pending";
+      document.getElementById("sync-health-status").outerHTML =
+        badge(status).replace("<span", '<span id="sync-health-status"');
+      setText("sync-health-hosts", `${model.hosts_reporting || 0}/${model.hosts_total || 0}`);
+      setText("sync-health-hosts-sub", `${model.hosts_pending || 0} host${model.hosts_pending === 1 ? "" : "s"} pending backend visibility`);
+      setText("sync-health-events", model.stored_events || 0);
+      setText("sync-health-events-sub", model.backend_visible ? "Backend has tenant-level metadata proof" : "No tenant telemetry stored yet");
+      setText("sync-health-cursor", model.last_local_event_id ? `#${model.last_local_event_id}` : "-");
+      setText("sync-health-cursor-sub", model.last_local_event_id ? "Highest stable local-event cursor received" : "Waiting for stable local-event IDs");
+      setText("sync-health-last", model.last_ingested_at ? formatAge(model.last_ingested_at) : "-");
+      setText("sync-health-last-sub", model.generated_at ? `generated ${formatDate(model.generated_at)}` : "No generated timestamp");
+      setText("sync-health-boundary", model.privacy_boundary || "metadata-only backend sync");
+      setText("sync-health-replay", model.offline_replay_ready ? model.offline_replay_summary : "Offline replay proof pending");
+
+      const devices = model.devices || [];
+      const target = document.getElementById("sync-health-device-list");
+      if (devices.length === 0) {
+        target.innerHTML = '<div class="empty">No tenant sync devices yet.</div>';
+        return;
+      }
+      target.innerHTML = devices.map((device) => `
+        <div class="catalog-item">
+          <strong>${escapeHTML(device.host_name || device.device_id)} - ${escapeHTML(device.status || "pending")}</strong>
+          <span class="muted">${escapeHTML(device.recommendation || device.offline_replay_hint || "No recommendation yet.")}</span>
+          <div class="action-meta">
+            <span class="pill">${escapeHTML(device.stored_events || 0)} events</span>
+            <span class="pill">cursor ${escapeHTML(device.last_local_event_id || "-")}</span>
+            <span class="pill">${escapeHTML(device.process_events || 0)} process</span>
+            <span class="pill">${escapeHTML(device.health_events || 0)} health</span>
+            <span class="pill">${escapeHTML(device.browser_events || 0)} browser</span>
+            <span class="pill">${escapeHTML(formatAge(device.last_ingested_at))}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
     function countMatching(counts, token) {
       return Object.entries(counts || {}).reduce((total, entry) => {
         const [key, value] = entry;
@@ -2732,6 +2846,7 @@
       const consentCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/consent-center`) : null;
       const tenantOperations = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/operations-summary`) : null;
       const monetizationSummary = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/monetization-summary`) : null;
+      const syncHealth = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/sync-health`) : null;
       const dataExports = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/data-exports`) : null;
       const deleteRequests = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delete-requests`) : null;
       renderOverview(overview, deviceHealth, policy, anomalies, tamper, deliveries, {
@@ -2749,6 +2864,7 @@
         consentCenter,
         tenantOperations,
         monetizationSummary,
+        syncHealth,
         dataExports,
         deleteRequests,
         auditEvents,
