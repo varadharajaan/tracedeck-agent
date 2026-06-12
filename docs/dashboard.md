@@ -97,6 +97,11 @@ provider-simulation-lab API. It shows metadata-only email, push, and dashboard
 dry-run proof, route SLA state, simulation scenarios, provider action queue,
 privacy proof, and command navigation so paid demos can prove notification
 readiness without provider secrets or alert payloads.
+Phase 57 adds a Customer Control Room backed by the typed customer-control-room
+API. It moves the monetisation story to the first dashboard surface: anomaly
+command, mail delivery, push notification evidence, provider simulation proof,
+report/archive readiness, package billing, customer health, and owner actions
+are visible before the specialised drilldowns.
 
 The dashboard reads the base backend endpoints:
 
@@ -115,9 +120,11 @@ For the selected host it reads:
 - `/api/v1/devices/{deviceId}/reports/weekly`
 - `/api/v1/tenants/{tenantId}/delivery-timeline?device_id={deviceId}&limit=8`
 - `/api/v1/tenants/{tenantId}/role-experiences`
+- `/api/v1/tenants/{tenantId}/customer-control-room`
 - `/api/v1/tenants/{tenantId}/executive-console`
 - `/api/v1/tenants/{tenantId}/notification-revenue-cockpit`
 - `/api/v1/tenants/{tenantId}/provider-simulation-lab`
+- `/api/v1/tenants/{tenantId}/package-billing-readiness`
 - `/api/v1/tenants/{tenantId}`
 - `/api/v1/plans`
 - `/api/v1/roles`
@@ -141,6 +148,10 @@ Current panels:
 
 - local dashboard access panel for API-key protected backends; the key is kept
   in browser session storage and sent as `X-TraceDeck-API-Key`
+- customer control room for customer-ready score, anomaly command, mail
+  delivery, push reach, provider proof, package score, archive/report posture,
+  paid value tiles, alert wall, delivery evidence, and owner monetisation
+  actions
 - executive notification console for sellable readiness, anomaly urgency, mail
   proof, push reach, weekly report readiness, archive posture, role packaging,
   paid value tiles, alert stream, delivery proof, and owner actions
@@ -242,7 +253,7 @@ Current panels:
   report delivery proof
 - buyer demo checklist for anomaly, route, report, archive, consent/data
   rights, and saved-view readiness
-- command navigation for executive, paid ops, revenue, Notify Pro,
+- command navigation for control, executive, paid ops, revenue, Notify Pro,
   notifications, reports, archive, trust, and hosts with KPI summaries backed
   by existing typed APIs
 - buyer operations brief for monetisation demos with anomaly alerting, mail
@@ -363,6 +374,13 @@ provider simulation surfaces. It renders the typed
 feature gate proof, seat usage, plan fit matrix, billing milestones, and
 upgrade action queue. The panel makes paid packaging visible for demos without
 adding payment collection or exposing private content.
+
+Phase 57 adds the Customer Control Room above the executive console. It renders
+the typed `customer-control-room` API as the opening product surface with
+customer-ready score, anomaly command wall, mail and push delivery proof,
+provider simulation state, package billing score, report/archive readiness,
+customer value tiles, and owner monetisation actions. The surface aggregates
+existing metadata-only proof and does not add collectors or provider sends.
 
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and

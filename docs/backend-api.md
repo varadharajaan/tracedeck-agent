@@ -69,10 +69,12 @@ GET  /api/v1/tenants/{tenantId}/operations-summary
 GET  /api/v1/tenants/{tenantId}/monetization-summary
 GET  /api/v1/tenants/{tenantId}/business-dashboard
 GET  /api/v1/tenants/{tenantId}/role-experiences
+GET  /api/v1/tenants/{tenantId}/customer-control-room
 GET  /api/v1/tenants/{tenantId}/executive-console
 GET  /api/v1/tenants/{tenantId}/notification-revenue-cockpit
 GET  /api/v1/tenants/{tenantId}/provider-simulation-lab
 POST /api/v1/tenants/{tenantId}/provider-simulation-lab
+GET  /api/v1/tenants/{tenantId}/package-billing-readiness
 GET  /api/v1/tenants/{tenantId}/notification-command-center
 GET  /api/v1/tenants/{tenantId}/delivery-timeline
 GET  /api/v1/tenants/{tenantId}/sync-health
@@ -342,6 +344,17 @@ plan fit rows, billing milestones, upgrade actions, and a strict metadata-only
 privacy boundary. It does not collect or store payment card data, invoices,
 provider secrets, passwords, screenshots, raw URLs, page titles, alert bodies,
 tokens, cookies, private content, or endpoint payloads.
+
+Phase 57 adds `GET /api/v1/tenants/{tenantId}/customer-control-room`. It
+composes operations, business dashboard, executive console, package billing,
+and provider simulation metadata into a single typed first-screen product
+contract. The response includes customer-ready score, notification score,
+package score, trust score, anomaly/open alert counts, mail/push/dashboard
+delivery proof, route proof gaps, report/archive readiness, billing/provider
+readiness, value tiles, alert rows, delivery rows, owner actions, and a strict
+metadata-only privacy boundary. It does not collect or store passwords,
+screenshots, raw URLs, page titles, alert bodies, provider secrets, endpoint
+payloads, private content, or payment card data.
 
 Phase 31 adds `GET /api/v1/tenants/{tenantId}/sync-health` for buyer and admin
 proof that backend-visible telemetry is arriving per host. It returns reporting

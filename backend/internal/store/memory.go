@@ -592,6 +592,34 @@ func (m *Memory) TenantPackageBillingReadiness(ctx context.Context, tenantID str
 	return buildTenantPackageBillingReadiness(tenant, retentionTierByID(tenant.RetentionTierID), operations, monetization, business, roles, provider, generatedAt), nil
 }
 
+func (m *Memory) TenantCustomerControlRoom(ctx context.Context, tenantID string) (model.TenantCustomerControlRoom, error) {
+	generatedAt := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	operations, err := m.TenantOperationsSummary(ctx, tenantID)
+	if err != nil {
+		return model.TenantCustomerControlRoom{}, err
+	}
+	business, err := m.TenantBusinessDashboard(ctx, tenantID)
+	if err != nil {
+		return model.TenantCustomerControlRoom{}, err
+	}
+	executive, err := m.TenantExecutiveConsole(ctx, tenantID)
+	if err != nil {
+		return model.TenantCustomerControlRoom{}, err
+	}
+	packageBilling, err := m.TenantPackageBillingReadiness(ctx, tenantID)
+	if err != nil {
+		return model.TenantCustomerControlRoom{}, err
+	}
+	provider, err := m.TenantProviderSimulationLab(ctx, tenantID)
+	if err != nil {
+		return model.TenantCustomerControlRoom{}, err
+	}
+
+	return buildTenantCustomerControlRoom(operations, business, executive, packageBilling, provider, generatedAt), nil
+}
+
 func (m *Memory) deliveriesForTenantLocked(tenantID string) []model.AlertDelivery {
 	deliveries := make([]model.AlertDelivery, 0)
 	for _, device := range m.devices {
@@ -5175,6 +5203,346 @@ func executiveConsoleActions(
 			SLA:        "weekly review",
 			PaidTier:   constants.PlanFamilyPro,
 			Source:     "executive console",
+			ObservedAt: generatedAt,
+		})
+	}
+	return actions
+}
+
+func buildTenantCustomerControlRoom(
+	operations model.TenantOperationsSummary,
+	business model.TenantBusinessDashboard,
+	executive model.TenantExecutiveConsole,
+	packageBilling model.TenantPackageBillingReadiness,
+	provider model.TenantProviderSimulationLab,
+	generatedAt time.Time,
+) model.TenantCustomerControlRoom {
+	summary := model.TenantCustomerControlSummary{
+		ProductScore:           averageScore(executive.Summary.ReadinessScore, business.Summary.ProductScore, packageBilling.Summary.PackageScore),
+		NotificationScore:      operations.NotificationScore,
+		PackageScore:           packageBilling.Summary.PackageScore,
+		TrustScore:             business.Summary.TrustScore,
+		CustomerHealth:         operations.CustomerHealth,
+		OpenAlerts:             business.Summary.OpenAlerts,
+		HighPriorityAlerts:     business.Summary.HighPriorityAlerts,
+		HostsTotal:             operations.HostsTotal,
+		HostsAttention:         operations.HostsAttention,
+		MailDelivered:          operations.EmailDelivered,
+		PushDelivered:          operations.PushDelivered,
+		DashboardDelivered:     operations.DashboardDelivered,
+		DeliveryFailed:         operations.DeliveryFailed,
+		DeliveryRetrying:       operations.DeliveryRetrying,
+		RoutesNeedingProof:     business.Summary.RoutesNeedingProof,
+		WeeklyReportReady:      business.Summary.WeeklyReportReady,
+		ArchiveBacklog:         operations.ArchiveBacklog,
+		BillingReady:           packageBilling.Summary.BillingReady,
+		ProviderReady:          packageBilling.Summary.ProviderReady && provider.Summary.ProviderRisks == 0,
+		RecommendedPaidPackage: firstNonEmpty(packageBilling.Summary.RecommendedPackage, executive.Summary.RecommendedPaidPackage, business.Summary.RecommendedPackage, operations.PlanName),
+	}
+	summary.Status = customerControlStatus(summary)
+	summary.Headline = customerControlHeadline(summary)
+	summary.Detail = customerControlDetail(summary)
+	summary.NextBestAction = customerControlNextAction(business.Actions, executive.Actions, packageBilling.Actions, summary)
+
+	return model.TenantCustomerControlRoom{
+		TenantID:        operations.TenantID,
+		TenantName:      operations.TenantName,
+		PlanID:          operations.PlanID,
+		PlanName:        operations.PlanName,
+		Audience:        business.Audience,
+		Summary:         summary,
+		Tiles:           customerControlTiles(summary, business, packageBilling, provider),
+		Alerts:          customerControlAlerts(executive.Alerts),
+		Deliveries:      customerControlDeliveries(executive.Deliveries, provider.Routes),
+		Actions:         customerControlActions(business.Actions, executive.Actions, packageBilling.Actions, generatedAt),
+		PrivacyBoundary: constants.CustomerControlPrivacyNote,
+		GeneratedAt:     generatedAt,
+	}
+}
+
+func customerControlStatus(summary model.TenantCustomerControlSummary) string {
+	switch {
+	case summary.DeliveryFailed > 0 || summary.HighPriorityAlerts > 0:
+		return constants.StatusAttention
+	case summary.DeliveryRetrying > 0 || summary.RoutesNeedingProof > 0 || summary.HostsAttention > 0 || !summary.ProviderReady:
+		return constants.StatusWatch
+	case summary.ProductScore >= 80 && summary.NotificationScore >= 70 && summary.BillingReady:
+		return constants.StatusHealthy
+	default:
+		return constants.StatusPending
+	}
+}
+
+func customerControlHeadline(summary model.TenantCustomerControlSummary) string {
+	if summary.HighPriorityAlerts > 0 {
+		return fmt.Sprintf("%d high-priority anomalies need owner-visible notification proof", summary.HighPriorityAlerts)
+	}
+	if summary.DeliveryFailed+summary.DeliveryRetrying > 0 {
+		return fmt.Sprintf("%d notification deliveries need recovery before a paid demo", summary.DeliveryFailed+summary.DeliveryRetrying)
+	}
+	if !summary.BillingReady {
+		return fmt.Sprintf("%s needs billing and package proof before monetisation", firstNonEmpty(summary.RecommendedPaidPackage, "TraceDeck"))
+	}
+	return fmt.Sprintf("%s is %d%% ready for a customer demo", firstNonEmpty(summary.RecommendedPaidPackage, "TraceDeck"), summary.ProductScore)
+}
+
+func customerControlDetail(summary model.TenantCustomerControlSummary) string {
+	return fmt.Sprintf("%d open alerts, %d mail, %d push, %d dashboard deliveries, %d route proof gaps, report %s, archive backlog %d, package score %d%%.",
+		summary.OpenAlerts,
+		summary.MailDelivered,
+		summary.PushDelivered,
+		summary.DashboardDelivered,
+		summary.RoutesNeedingProof,
+		boolReady(summary.WeeklyReportReady),
+		summary.ArchiveBacklog,
+		summary.PackageScore,
+	)
+}
+
+func customerControlNextAction(
+	businessActions []model.TenantBusinessDashboardAction,
+	executiveActions []model.TenantExecutiveConsoleAction,
+	packageActions []model.TenantPackageBillingAction,
+	summary model.TenantCustomerControlSummary,
+) string {
+	if len(businessActions) > 0 {
+		return firstNonEmpty(businessActions[0].Detail, businessActions[0].Title)
+	}
+	if len(executiveActions) > 0 {
+		return firstNonEmpty(executiveActions[0].Detail, executiveActions[0].Title)
+	}
+	if len(packageActions) > 0 {
+		return firstNonEmpty(packageActions[0].Detail, packageActions[0].Title)
+	}
+	if !summary.ProviderReady {
+		return "Run provider-safe mail and push rehearsal before promising anomaly notification SLA."
+	}
+	return "Use Customer Control Room as the first screen for buyer demos and owner reviews."
+}
+
+func customerControlTiles(
+	summary model.TenantCustomerControlSummary,
+	business model.TenantBusinessDashboard,
+	packageBilling model.TenantPackageBillingReadiness,
+	provider model.TenantProviderSimulationLab,
+) []model.TenantCustomerControlTile {
+	return []model.TenantCustomerControlTile{
+		{
+			ID:       "anomaly-command",
+			Label:    "Anomaly Command",
+			Value:    fmt.Sprintf("%d open", summary.OpenAlerts),
+			Detail:   fmt.Sprintf("%d high-priority, %d hosts need attention", summary.HighPriorityAlerts, summary.HostsAttention),
+			Status:   countStatus(summary.OpenAlerts),
+			Channel:  constants.DeliveryChannelDashboard,
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "mail-delivery",
+			Label:    "Mail Delivery",
+			Value:    fmt.Sprintf("%d delivered", summary.MailDelivered),
+			Detail:   "Email proof for anomaly alerts, weekly reports, and owner trust.",
+			Status:   deliveryValueStatus(summary.MailDelivered),
+			Channel:  constants.DeliveryChannelEmail,
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "push-reach",
+			Label:    "Push Reach",
+			Value:    fmt.Sprintf("%d delivered", summary.PushDelivered),
+			Detail:   "Push proof for urgent non-study, media, tamper, and risky software alerts.",
+			Status:   deliveryValueStatus(summary.PushDelivered),
+			Channel:  constants.DeliveryChannelPush,
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "provider-simulation",
+			Label:    "Provider Simulation",
+			Value:    fmt.Sprintf("%d routes", provider.Summary.SimulatedRoutes),
+			Detail:   fmt.Sprintf("%d provider risks, %d%% readiness", provider.Summary.ProviderRisks, provider.Summary.ReadinessScore),
+			Status:   provider.Summary.Status,
+			Channel:  constants.DeliveryChannelDashboard,
+			PaidTier: constants.PlanBusiness,
+		},
+		{
+			ID:       "weekly-report",
+			Label:    "Weekly Report",
+			Value:    boolReady(summary.WeeklyReportReady),
+			Detail:   "Email/PDF readiness for study, coding, anomaly, app, and archive summary.",
+			Status:   boolStatus(summary.WeeklyReportReady),
+			Channel:  constants.DeliveryChannelEmail,
+			PaidTier: constants.PlanSchool,
+		},
+		{
+			ID:       "archive-retention",
+			Label:    "Archive Retention",
+			Value:    fmt.Sprintf("%d pending", summary.ArchiveBacklog),
+			Detail:   "S3-backed retention proof for Family Pro, school, and business archive plans.",
+			Status:   gapStatus(summary.ArchiveBacklog),
+			PaidTier: constants.PlanSchool,
+		},
+		{
+			ID:       "package-billing",
+			Label:    "Package Billing",
+			Value:    fmt.Sprintf("%d%%", packageBilling.Summary.PackageScore),
+			Detail:   fmt.Sprintf("%d/%d gates ready, billing %s", packageBilling.Summary.FeatureGatesReady, packageBilling.Summary.FeatureGatesTotal, boolReady(packageBilling.Summary.BillingReady)),
+			Status:   packageBilling.Summary.Status,
+			PaidTier: constants.PlanBusiness,
+		},
+		{
+			ID:       "customer-health",
+			Label:    "Customer Health",
+			Value:    titleWord(summary.CustomerHealth),
+			Detail:   business.Summary.Detail,
+			Status:   summary.CustomerHealth,
+			PaidTier: constants.PlanBusiness,
+		},
+	}
+}
+
+func customerControlAlerts(alerts []model.TenantExecutiveConsoleAlert) []model.TenantCustomerControlAlert {
+	items := make([]model.TenantCustomerControlAlert, 0, len(alerts))
+	for _, alert := range alerts {
+		items = append(items, model.TenantCustomerControlAlert{
+			ID:              alert.ID,
+			Title:           alert.Title,
+			Detail:          alert.Detail,
+			Severity:        alert.Severity,
+			Status:          alert.Status,
+			HostName:        alert.HostName,
+			Category:        alert.Category,
+			EmailStatus:     alert.EmailStatus,
+			PushStatus:      alert.PushStatus,
+			DashboardStatus: alert.DashboardStatus,
+			NextAction:      alert.NextAction,
+			PaidTier:        alert.PaidTier,
+			ObservedAt:      alert.ObservedAt,
+		})
+	}
+	if len(items) > 6 {
+		return items[:6]
+	}
+	return items
+}
+
+func customerControlDeliveries(executiveDeliveries []model.TenantExecutiveConsoleDelivery, providerRoutes []model.TenantProviderSimulationRoute) []model.TenantCustomerControlDelivery {
+	items := make([]model.TenantCustomerControlDelivery, 0, len(executiveDeliveries))
+	for _, delivery := range executiveDeliveries {
+		items = append(items, model.TenantCustomerControlDelivery{
+			Channel:        delivery.Channel,
+			Provider:       delivery.Provider,
+			RecipientLabel: delivery.RecipientLabel,
+			Status:         delivery.Status,
+			ProofState:     delivery.ProofState,
+			Attempts:       delivery.Attempts,
+			LastDeliveryAt: delivery.LastDeliveryAt,
+			SLA:            delivery.SLA,
+			Evidence:       delivery.Evidence,
+			NextAction:     delivery.NextAction,
+			PaidTier:       delivery.PaidTier,
+		})
+	}
+	for _, route := range providerRoutes {
+		if customerControlHasDelivery(items, route.Channel) {
+			continue
+		}
+		items = append(items, model.TenantCustomerControlDelivery{
+			Channel:        route.Channel,
+			Provider:       route.Provider,
+			RecipientLabel: route.RecipientLabel,
+			Status:         route.SimulationStatus,
+			ProofState:     route.ProofState,
+			Attempts:       0,
+			LastDeliveryAt: route.LastSimulatedAt,
+			SLA:            route.SLATarget,
+			Evidence:       route.Evidence,
+			NextAction:     route.NextAction,
+			PaidTier:       route.PaidTier,
+		})
+	}
+	if len(items) > 6 {
+		return items[:6]
+	}
+	return items
+}
+
+func customerControlHasDelivery(items []model.TenantCustomerControlDelivery, channel string) bool {
+	for _, item := range items {
+		if item.Channel == channel {
+			return true
+		}
+	}
+	return false
+}
+
+func customerControlActions(
+	businessActions []model.TenantBusinessDashboardAction,
+	executiveActions []model.TenantExecutiveConsoleAction,
+	packageActions []model.TenantPackageBillingAction,
+	generatedAt time.Time,
+) []model.TenantCustomerControlAction {
+	actions := make([]model.TenantCustomerControlAction, 0, 8)
+	for _, action := range businessActions {
+		if len(actions) >= 3 {
+			break
+		}
+		actions = append(actions, model.TenantCustomerControlAction{
+			Title:      action.Title,
+			Detail:     action.Detail,
+			Severity:   action.Severity,
+			Status:     action.Status,
+			Owner:      action.Owner,
+			Channel:    action.Channel,
+			SLA:        action.SLA,
+			PaidTier:   action.PaidTier,
+			Source:     action.Source,
+			ObservedAt: action.ObservedAt,
+		})
+	}
+	for _, action := range executiveActions {
+		if len(actions) >= 5 {
+			break
+		}
+		actions = append(actions, model.TenantCustomerControlAction{
+			Title:      action.Title,
+			Detail:     action.Detail,
+			Severity:   action.Severity,
+			Status:     action.Status,
+			Owner:      action.Owner,
+			Channel:    action.Channel,
+			SLA:        action.SLA,
+			PaidTier:   action.PaidTier,
+			Source:     action.Source,
+			ObservedAt: action.ObservedAt,
+		})
+	}
+	for _, action := range packageActions {
+		if len(actions) >= 8 {
+			break
+		}
+		actions = append(actions, model.TenantCustomerControlAction{
+			Title:      action.Title,
+			Detail:     firstNonEmpty(action.Detail, action.NextAction, action.ConversionLever),
+			Severity:   constants.SeverityInfo,
+			Status:     action.Status,
+			Owner:      action.Owner,
+			Channel:    constants.DeliveryChannelDashboard,
+			SLA:        "before paid review",
+			PaidTier:   action.PaidTier,
+			Source:     "package billing readiness",
+			ObservedAt: generatedAt,
+		})
+	}
+	if len(actions) == 0 {
+		actions = append(actions, model.TenantCustomerControlAction{
+			Title:      "Customer control room ready",
+			Detail:     "Anomaly stream, mail proof, push reach, provider simulation, reports, archive, and package billing are visible.",
+			Severity:   constants.SeverityInfo,
+			Status:     constants.StatusHealthy,
+			Owner:      constants.RoleBusinessManager,
+			Channel:    constants.DeliveryChannelDashboard,
+			SLA:        "weekly review",
+			PaidTier:   constants.PlanFamilyPro,
+			Source:     "customer control room",
 			ObservedAt: generatedAt,
 		})
 	}

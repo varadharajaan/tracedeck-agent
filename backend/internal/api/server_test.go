@@ -1563,6 +1563,92 @@ func TestTenantExecutiveConsoleEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantCustomerControlRoomEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "customer-control-device-001",
+		"host_name": "customer-control-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentCustomerControl, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected customer control room 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var room model.TenantCustomerControlRoom
+	if err := json.Unmarshal(response.Body.Bytes(), &room); err != nil {
+		t.Fatalf("decode customer control room: %v", err)
+	}
+	if room.Summary.ProductScore == 0 || room.Summary.NotificationScore == 0 || room.Summary.PackageScore == 0 || room.Summary.NextBestAction == "" {
+		t.Fatalf("expected scored customer control summary: %+v", room.Summary)
+	}
+	if room.Summary.MailDelivered == 0 || room.Summary.DashboardDelivered == 0 {
+		t.Fatalf("expected mail and dashboard proof: %+v", room.Summary)
+	}
+	if len(room.Tiles) < 8 || len(room.Alerts) == 0 || len(room.Deliveries) < 3 || len(room.Actions) == 0 {
+		t.Fatalf("expected tiles, alerts, deliveries, and actions: %+v", room)
+	}
+	hasPush := false
+	hasPackage := false
+	hasProvider := false
+	for _, tile := range room.Tiles {
+		if tile.ID == "push-reach" && tile.Channel == constants.DeliveryChannelPush && tile.PaidTier != "" {
+			hasPush = true
+		}
+		if tile.ID == "package-billing" && tile.Value != "" && tile.PaidTier != "" {
+			hasPackage = true
+		}
+		if tile.ID == "provider-simulation" && tile.Value != "" && tile.Status != "" {
+			hasProvider = true
+		}
+	}
+	if !hasPush || !hasPackage || !hasProvider {
+		t.Fatalf("expected push, package, and provider tiles: %+v", room.Tiles)
+	}
+	hasPushDelivery := false
+	for _, delivery := range room.Deliveries {
+		if delivery.Channel == constants.DeliveryChannelPush && delivery.Status != "" && delivery.NextAction != "" {
+			hasPushDelivery = true
+		}
+	}
+	if !hasPushDelivery {
+		t.Fatalf("expected push notification delivery evidence: %+v", room.Deliveries)
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "screenshot_bytes", "raw_url", "page_title", "alert_body", "card_number", "cvv", "payment_token"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("customer control room leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+	if !strings.Contains(room.PrivacyBoundary, "metadata-only") || !strings.Contains(room.PrivacyBoundary, "no passwords") || !strings.Contains(room.PrivacyBoundary, "screenshots") {
+		t.Fatalf("expected strict customer control privacy boundary, got %q", room.PrivacyBoundary)
+	}
+}
+
 func TestTenantNotificationRevenueCockpitEndpoint(t *testing.T) {
 	t.Parallel()
 

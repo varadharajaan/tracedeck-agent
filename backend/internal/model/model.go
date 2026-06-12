@@ -573,6 +573,101 @@ type TenantNotificationRevenueCockpit struct {
 	GeneratedAt     time.Time                           `json:"generated_at"`
 }
 
+type TenantCustomerControlSummary struct {
+	Status                 string `json:"status"`
+	Headline               string `json:"headline"`
+	Detail                 string `json:"detail"`
+	ProductScore           int    `json:"product_score"`
+	NotificationScore      int    `json:"notification_score"`
+	PackageScore           int    `json:"package_score"`
+	TrustScore             int    `json:"trust_score"`
+	CustomerHealth         string `json:"customer_health"`
+	OpenAlerts             int    `json:"open_alerts"`
+	HighPriorityAlerts     int    `json:"high_priority_alerts"`
+	HostsTotal             int    `json:"hosts_total"`
+	HostsAttention         int    `json:"hosts_attention"`
+	MailDelivered          int    `json:"mail_delivered"`
+	PushDelivered          int    `json:"push_delivered"`
+	DashboardDelivered     int    `json:"dashboard_delivered"`
+	DeliveryFailed         int    `json:"delivery_failed"`
+	DeliveryRetrying       int    `json:"delivery_retrying"`
+	RoutesNeedingProof     int    `json:"routes_needing_proof"`
+	WeeklyReportReady      bool   `json:"weekly_report_ready"`
+	ArchiveBacklog         int    `json:"archive_backlog"`
+	BillingReady           bool   `json:"billing_ready"`
+	ProviderReady          bool   `json:"provider_ready"`
+	RecommendedPaidPackage string `json:"recommended_paid_package"`
+	NextBestAction         string `json:"next_best_action"`
+}
+
+type TenantCustomerControlTile struct {
+	ID       string `json:"id"`
+	Label    string `json:"label"`
+	Value    string `json:"value"`
+	Detail   string `json:"detail"`
+	Status   string `json:"status"`
+	Channel  string `json:"channel,omitempty"`
+	PaidTier string `json:"paid_tier"`
+}
+
+type TenantCustomerControlAlert struct {
+	ID              string    `json:"id"`
+	Title           string    `json:"title"`
+	Detail          string    `json:"detail"`
+	Severity        string    `json:"severity"`
+	Status          string    `json:"status"`
+	HostName        string    `json:"host_name"`
+	Category        string    `json:"category"`
+	EmailStatus     string    `json:"email_status"`
+	PushStatus      string    `json:"push_status"`
+	DashboardStatus string    `json:"dashboard_status"`
+	NextAction      string    `json:"next_action"`
+	PaidTier        string    `json:"paid_tier"`
+	ObservedAt      time.Time `json:"observed_at"`
+}
+
+type TenantCustomerControlDelivery struct {
+	Channel        string     `json:"channel"`
+	Provider       string     `json:"provider"`
+	RecipientLabel string     `json:"recipient_label"`
+	Status         string     `json:"status"`
+	ProofState     string     `json:"proof_state"`
+	Attempts       int        `json:"attempts"`
+	LastDeliveryAt *time.Time `json:"last_delivery_at,omitempty"`
+	SLA            string     `json:"sla"`
+	Evidence       string     `json:"evidence"`
+	NextAction     string     `json:"next_action"`
+	PaidTier       string     `json:"paid_tier"`
+}
+
+type TenantCustomerControlAction struct {
+	Title      string    `json:"title"`
+	Detail     string    `json:"detail"`
+	Severity   string    `json:"severity"`
+	Status     string    `json:"status"`
+	Owner      string    `json:"owner"`
+	Channel    string    `json:"channel"`
+	SLA        string    `json:"sla"`
+	PaidTier   string    `json:"paid_tier"`
+	Source     string    `json:"source"`
+	ObservedAt time.Time `json:"observed_at"`
+}
+
+type TenantCustomerControlRoom struct {
+	TenantID        string                          `json:"tenant_id"`
+	TenantName      string                          `json:"tenant_name"`
+	PlanID          string                          `json:"plan_id"`
+	PlanName        string                          `json:"plan_name"`
+	Audience        string                          `json:"audience"`
+	Summary         TenantCustomerControlSummary    `json:"summary"`
+	Tiles           []TenantCustomerControlTile     `json:"tiles"`
+	Alerts          []TenantCustomerControlAlert    `json:"alerts"`
+	Deliveries      []TenantCustomerControlDelivery `json:"deliveries"`
+	Actions         []TenantCustomerControlAction   `json:"actions"`
+	PrivacyBoundary string                          `json:"privacy_boundary"`
+	GeneratedAt     time.Time                       `json:"generated_at"`
+}
+
 type TenantActivityView struct {
 	ID          string                   `json:"id"`
 	TenantID    string                   `json:"tenant_id"`

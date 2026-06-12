@@ -102,3 +102,10 @@ archive value, notification proof, provider simulation proof, trust/data-rights
 readiness, and upgrade actions. It does not collect or store payment card data,
 invoices, provider secrets, passwords, screenshots, raw URLs, page titles,
 alert bodies, tokens, cookies, private content, or endpoint payloads.
+
+Phase 57 customer control room is metadata-only. It exposes host labels,
+anomaly categories, notification route status, mail and push proof, provider
+simulation state, report readiness, archive posture, package fit, customer
+health, and owner actions. It does not add collectors and does not store
+passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets,
+endpoint payloads, private content, tokens, cookies, or payment card data.

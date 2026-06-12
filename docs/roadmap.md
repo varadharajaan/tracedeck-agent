@@ -218,3 +218,8 @@
     proof, provider simulation proof, trust/data-rights readiness, upgrade
     actions, Postman/Newman coverage, screenshot-free layout guard, docs, and
     full local verification.
+60. Phase 57: customer control room. Typed tenant customer-control-room API and
+    first-screen dashboard surface for anomaly command, mail delivery, push
+    notification evidence, provider proof, report/archive readiness, package
+    billing, customer health, owner monetisation actions, Postman/Newman
+    coverage, screenshot-free layout guard, docs, and full local verification.
