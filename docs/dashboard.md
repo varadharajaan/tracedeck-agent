@@ -72,6 +72,11 @@ notification-command-center API. It packages anomaly/policy/tamper urgency,
 email delivery proof, push reach, dashboard route proof, remediation SLA state,
 paid-tier labels, and owner actions into a monetisable notification command
 surface.
+Phase 51 adds a Notification Evidence Timeline backed by the typed
+delivery-timeline API. The panel shows selected-host delivery score, email
+proof, push retry evidence, dashboard inbox proof, route proof gaps, next retry
+timing, paid tier, metadata-only privacy boundary, and an audit trail of
+provider-safe delivery rows.
 
 The dashboard reads the base backend endpoints:
 
@@ -88,6 +93,7 @@ For the selected host it reads:
 - `/api/v1/devices/{deviceId}/alert-deliveries`
 - `/api/v1/devices/{deviceId}/telemetry-status`
 - `/api/v1/devices/{deviceId}/reports/weekly`
+- `/api/v1/tenants/{tenantId}/delivery-timeline?device_id={deviceId}&limit=8`
 - `/api/v1/tenants/{tenantId}`
 - `/api/v1/plans`
 - `/api/v1/roles`

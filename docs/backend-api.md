@@ -273,6 +273,15 @@ paid package cards, and customer owner actions. It is metadata-only and does
 not store provider secrets, alert bodies, screenshots, passwords, tokens,
 cookies, raw URLs, page titles, private content, or endpoint payloads.
 
+Phase 51 adds `GET /api/v1/tenants/{tenantId}/delivery-timeline`. Query
+parameters are typed by the backend filter model: `device_id`, `channel`,
+`status`, `provider`, `q`, and `limit`. The response rolls up provider-safe
+email, push, and dashboard delivery evidence into notification score, route
+proof gaps, retry timing, last delivered time, source host count, paid-tier
+recommendation, and timestamped delivery rows. It is metadata-only and does not
+store provider secrets, alert bodies, screenshots, passwords, tokens, cookies,
+raw URLs, page titles, private content, or endpoint payloads.
+
 Phase 31 adds `GET /api/v1/tenants/{tenantId}/sync-health` for buyer and admin
 proof that backend-visible telemetry is arriving per host. It returns reporting
 host counts, stored metadata event totals, the highest stable `local-event-*`

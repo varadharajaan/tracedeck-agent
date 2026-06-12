@@ -190,6 +190,62 @@ type AlertDelivery struct {
 	Summary          string     `json:"summary"`
 }
 
+type TenantDeliveryTimelineFilter struct {
+	DeviceID string `json:"device_id"`
+	Channel  string `json:"channel"`
+	Status   string `json:"status"`
+	Provider string `json:"provider"`
+	Query    string `json:"query"`
+	Limit    int    `json:"limit"`
+}
+
+type TenantDeliveryTimelineSummary struct {
+	Total               int        `json:"total"`
+	Delivered           int        `json:"delivered"`
+	Retrying            int        `json:"retrying"`
+	Failed              int        `json:"failed"`
+	Suppressed          int        `json:"suppressed"`
+	Email               int        `json:"email"`
+	Push                int        `json:"push"`
+	Dashboard           int        `json:"dashboard"`
+	SourceHostCount     int        `json:"source_host_count"`
+	RouteProofGaps      int        `json:"route_proof_gaps"`
+	NotificationScore   int        `json:"notification_score"`
+	NextRetryAt         *time.Time `json:"next_retry_at,omitempty"`
+	LastDeliveredAt     *time.Time `json:"last_delivered_at,omitempty"`
+	RecommendedPaidTier string     `json:"recommended_paid_tier"`
+}
+
+type TenantDeliveryTimelineItem struct {
+	ID               string     `json:"id"`
+	TenantID         string     `json:"tenant_id"`
+	DeviceID         string     `json:"device_id"`
+	HostName         string     `json:"host_name"`
+	EventID          string     `json:"event_id"`
+	Channel          string     `json:"channel"`
+	Provider         string     `json:"provider"`
+	Recipient        string     `json:"recipient"`
+	Status           string     `json:"status"`
+	Attempts         int        `json:"attempts"`
+	Summary          string     `json:"summary"`
+	NextAction       string     `json:"next_action"`
+	PaidTier         string     `json:"paid_tier"`
+	LastAttemptAt    time.Time  `json:"last_attempt_at"`
+	NextRetryAt      *time.Time `json:"next_retry_at,omitempty"`
+	LastError        string     `json:"last_error,omitempty"`
+	SuppressedReason string     `json:"suppressed_reason,omitempty"`
+}
+
+type TenantDeliveryTimeline struct {
+	TenantID        string                        `json:"tenant_id"`
+	TenantName      string                        `json:"tenant_name"`
+	Filters         TenantDeliveryTimelineFilter  `json:"filters"`
+	Summary         TenantDeliveryTimelineSummary `json:"summary"`
+	Items           []TenantDeliveryTimelineItem  `json:"items"`
+	GeneratedAt     time.Time                     `json:"generated_at"`
+	PrivacyBoundary string                        `json:"privacy_boundary"`
+}
+
 type TelemetryEvent struct {
 	ID         string            `json:"id"`
 	Type       string            `json:"type"`

@@ -453,3 +453,59 @@ func TestTenantActivityFeedFiltersRiskDeliveryAndTelemetry(t *testing.T) {
 		t.Fatalf("expected query feed to find selected host events: %+v", queryFeed)
 	}
 }
+
+func TestTenantDeliveryTimelineFiltersDeliveryProof(t *testing.T) {
+	t.Parallel()
+
+	repo := NewMemory()
+	ctx := context.Background()
+	_, err := repo.CreateTenant(ctx, model.CreateTenantRequest{
+		TenantID:        "family-varadha",
+		Name:            "Family Varadha",
+		PlanID:          constants.PlanFamilyPro,
+		RetentionTierID: constants.RetentionFamilyCloud,
+		PrimaryProfile:  "ai-btech-student",
+	})
+	if err != nil {
+		t.Fatalf("create tenant: %v", err)
+	}
+	_, err = repo.EnrollDevice(ctx, model.EnrollDeviceRequest{
+		TenantID: "family-varadha",
+		DeviceID: "timeline-device",
+		HostName: "timeline-host",
+		Profile:  "ai-btech-student",
+		OSName:   "windows",
+	})
+	if err != nil {
+		t.Fatalf("enroll device: %v", err)
+	}
+
+	timeline, err := repo.TenantDeliveryTimeline(ctx, "family-varadha", model.TenantDeliveryTimelineFilter{DeviceID: "timeline-device", Limit: 10})
+	if err != nil {
+		t.Fatalf("tenant delivery timeline: %v", err)
+	}
+	if timeline.Summary.Total < 3 || timeline.Summary.Email == 0 || timeline.Summary.Push == 0 || timeline.Summary.Dashboard == 0 {
+		t.Fatalf("expected email, push, and dashboard timeline proof: %+v", timeline.Summary)
+	}
+	if timeline.Summary.RouteProofGaps == 0 || timeline.Summary.NotificationScore == 0 || timeline.Summary.RecommendedPaidTier == "" {
+		t.Fatalf("expected route proof gaps, score, and paid tier: %+v", timeline.Summary)
+	}
+	if len(timeline.Items) == 0 || timeline.Items[0].PaidTier == "" || timeline.Items[0].NextAction == "" {
+		t.Fatalf("expected typed timeline item action metadata: %+v", timeline.Items)
+	}
+
+	filtered, err := repo.TenantDeliveryTimeline(ctx, "family-varadha", model.TenantDeliveryTimelineFilter{
+		DeviceID: "timeline-device",
+		Channel:  constants.DeliveryChannelPush,
+		Status:   constants.DeliveryStatusRetrying,
+		Provider: constants.DeliveryProviderWebPush,
+		Query:    "youtube",
+		Limit:    1,
+	})
+	if err != nil {
+		t.Fatalf("tenant delivery timeline filter: %v", err)
+	}
+	if len(filtered.Items) != 1 || filtered.Items[0].Channel != constants.DeliveryChannelPush || filtered.Items[0].Status != constants.DeliveryStatusRetrying {
+		t.Fatalf("expected filtered push retry timeline item: %+v", filtered)
+	}
+}

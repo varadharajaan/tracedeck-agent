@@ -230,3 +230,15 @@ Phase 50 adds a Business Dashboard as the top paid-product surface:
 This makes TraceDeck easier to sell because a buyer can see value, proof, and
 next action without digging through host-level tables. It composes existing
 typed metadata-only APIs and does not add sensitive collectors.
+
+Phase 51 adds a Notification Evidence Timeline:
+
+- host-level delivery history for anomaly email, push, and dashboard routes
+- notification score with delivered, retrying, failed, and suppressed counts
+- mail delivery proof and push retry proof in a buyer-friendly audit trail
+- route proof gaps and next retry timing for operational confidence
+- paid-tier recommendation so notification reliability maps to Family Pro,
+  school, and business packaging
+
+This helps monetisation because customers pay for trusted alert delivery, not
+only detection. The feature stays provider-safe and metadata-only.

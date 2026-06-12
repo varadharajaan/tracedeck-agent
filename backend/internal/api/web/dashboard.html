@@ -2090,6 +2090,41 @@
       </div>
     </section>
 
+    <section id="delivery-timeline-section" class="content-grid" aria-label="notification evidence timeline">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Notification Evidence Timeline</h2>
+            <p class="muted">Searchable delivery history for anomaly mail, push notification, dashboard inbox, retry timing, and host-level proof.</p>
+          </div>
+          <span id="delivery-timeline-status" class="badge pending">pending</span>
+        </div>
+        <div class="brief-grid">
+          <div class="brief-item"><small>Delivery Score</small><strong id="delivery-timeline-score">-</strong><span id="delivery-timeline-score-sub" class="muted">No delivery score</span></div>
+          <div class="brief-item"><small>Email Proof</small><strong id="delivery-timeline-email">-</strong><span id="delivery-timeline-email-sub" class="muted">No email evidence</span></div>
+          <div class="brief-item"><small>Push Proof</small><strong id="delivery-timeline-push">-</strong><span id="delivery-timeline-push-sub" class="muted">No push evidence</span></div>
+          <div class="brief-item"><small>Dashboard Proof</small><strong id="delivery-timeline-dashboard">-</strong><span id="delivery-timeline-dashboard-sub" class="muted">No dashboard evidence</span></div>
+          <div class="brief-item"><small>Route Gaps</small><strong id="delivery-timeline-gaps">-</strong><span id="delivery-timeline-gaps-sub" class="muted">No route gaps</span></div>
+          <div class="brief-item"><small>Next Retry</small><strong id="delivery-timeline-retry">-</strong><span id="delivery-timeline-retry-sub" class="muted">No retry due</span></div>
+        </div>
+        <div class="summary-list" style="margin-top: 12px;">
+          <div class="summary-line"><span>Host Filter</span><strong id="delivery-timeline-filter">selected host</strong></div>
+          <div class="summary-line"><span>Paid Tier</span><strong id="delivery-timeline-tier">Family Pro</strong></div>
+          <div class="summary-line"><span>Boundary</span><strong id="delivery-timeline-boundary">metadata-only delivery timeline</strong></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Delivery Audit Trail</h2>
+            <p class="muted">Provider-safe rows for what was routed, which host generated it, current status, retry state, and customer-ready next action.</p>
+          </div>
+          <span id="delivery-timeline-count" class="pill">0 events</span>
+        </div>
+        <div id="delivery-timeline-list" class="action-list"><div class="empty">No delivery timeline evidence yet.</div></div>
+      </div>
+    </section>
+
     <section id="delivery-drilldown-section" class="content-grid" aria-label="provider-safe delivery drilldown">
       <div class="panel">
         <div class="section-head">
@@ -3570,6 +3605,7 @@
       renderCommercialControlRoom(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderBuyerMonetizationConsole(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderDeliveryDrilldown(context.deliveryDrilldown);
+      renderDeliveryTimeline(context.deliveryTimeline);
       renderDeliveryRemediation(context.deliveryRemediation);
       renderMonetisationLaunchDeck(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderRevenueCommandSuite(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
@@ -5936,6 +5972,56 @@
       `).join("");
     }
 
+    function renderDeliveryTimeline(timeline) {
+      const model = timeline || {};
+      const summary = model.summary || {};
+      const items = model.items || [];
+      const score = Number(summary.notification_score || 0);
+      const gaps = Number(summary.route_proof_gaps || 0);
+      const status = items.length === 0 ? "pending" : gaps === 0 && score >= 80 ? "healthy" : score >= 50 ? "watch" : "attention";
+
+      document.getElementById("delivery-timeline-status").outerHTML =
+        badge(status).replace("<span", '<span id="delivery-timeline-status"');
+      setText("delivery-timeline-score", items.length > 0 ? `${score}%` : "-");
+      setText("delivery-timeline-score-sub", `${summary.delivered || 0}/${summary.total || 0} delivered across ${summary.source_host_count || 0} host${summary.source_host_count === 1 ? "" : "s"}`);
+      setText("delivery-timeline-email", summary.email || 0);
+      setText("delivery-timeline-email-sub", `${summary.delivered || 0} delivered events overall`);
+      setText("delivery-timeline-push", summary.push || 0);
+      setText("delivery-timeline-push-sub", `${summary.retrying || 0} retrying push or route events`);
+      setText("delivery-timeline-dashboard", summary.dashboard || 0);
+      setText("delivery-timeline-dashboard-sub", "local dashboard inbox proof");
+      setText("delivery-timeline-gaps", gaps);
+      setText("delivery-timeline-gaps-sub", `${summary.failed || 0} failed, ${summary.suppressed || 0} suppressed`);
+      setText("delivery-timeline-retry", summary.next_retry_at ? formatAge(summary.next_retry_at) : "none");
+      setText("delivery-timeline-retry-sub", summary.next_retry_at ? `next check ${formatDate(summary.next_retry_at)}` : "no retry window pending");
+      const filters = model.filters || {};
+      setText("delivery-timeline-filter", filters.device_id ? `host ${filters.device_id}` : "tenant wide");
+      setText("delivery-timeline-tier", summary.recommended_paid_tier || "family_pro");
+      setText("delivery-timeline-boundary", model.privacy_boundary || "metadata-only delivery timeline");
+      setText("delivery-timeline-count", `${items.length} event${items.length === 1 ? "" : "s"}`);
+
+      const target = document.getElementById("delivery-timeline-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No delivery timeline evidence yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="action-item">
+          <strong>${escapeHTML(capitalize(item.channel || "route"))} ${escapeHTML(item.status || "pending")} - ${escapeHTML(item.host_name || item.device_id || "host pending")}</strong>
+          <span class="muted">${escapeHTML(item.summary || item.next_action || "Delivery route evidence pending.")}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.provider || "provider pending")}</span>
+            <span class="pill">${escapeHTML(item.recipient || "recipient pending")}</span>
+            <span class="pill">${escapeHTML(item.attempts || 0)} attempt${item.attempts === 1 ? "" : "s"}</span>
+            <span class="pill">${escapeHTML(item.paid_tier || "family_pro")}</span>
+            <span class="pill">${escapeHTML(formatAge(item.last_attempt_at))}</span>
+          </div>
+          <span class="muted">${escapeHTML(item.next_action || "Keep notification proof fresh before the customer review.")}</span>
+        </div>
+      `).join("");
+    }
+
     function renderDeliveryDrilldown(drilldown) {
       const model = drilldown || {};
       const summary = model.summary || {};
@@ -6609,6 +6695,7 @@
       const monetizationSummary = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/monetization-summary`) : null;
       const businessDashboard = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/business-dashboard`) : null;
       const notificationCommandCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-command-center`) : null;
+      const deliveryTimeline = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delivery-timeline?device_id=${encodeURIComponent(overview.device.device_id)}&limit=8`) : null;
       const syncHealth = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/sync-health`) : null;
       const activityFeed = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/activity-feed?device_id=${encodeURIComponent(overview.device.device_id)}&limit=10`) : null;
       const activityViews = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/activity-views`) : null;
@@ -6635,6 +6722,7 @@
         monetizationSummary,
         businessDashboard,
         notificationCommandCenter,
+        deliveryTimeline,
         syncHealth,
         activityFeed,
         activityViews,
