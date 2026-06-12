@@ -1,0 +1,58 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 39",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Keeps Service Trust Panels",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard has commercial and service trust markers', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Commercial Control Room');",
+        "  pm.expect(html).to.include('Tamper And Trust');",
+        "  pm.expect(html).to.include('Agent, policy, archive, and service integrity');",
+        "  pm.expect(html).to.include('commercial-room-status');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Tenant Operations Includes Trust Signals",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/operations-summary" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('tenant operations includes host, delivery, and tamper trust proof', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.hosts_total).to.be.above(0);",
+        "  pm.expect(body.delivery_total).to.be.above(0);",
+        "  pm.expect(body.tamper_signals).to.be.above(0);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Notification Routes Remain Covered",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/notification-routes" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('notification routes still cover paid channels', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const channels = pm.response.json().items.map((item) => item.channel);",
+        "  pm.expect(channels).to.include('email');",
+        "  pm.expect(channels).to.include('push');",
+        "  pm.expect(channels).to.include('dashboard');",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

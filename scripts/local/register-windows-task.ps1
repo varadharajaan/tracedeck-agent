@@ -65,7 +65,7 @@ try {
         }
 
         Write-TraceDeckLog -Level "INFO" -Message "Requesting UAC elevation to register scheduled task '$TaskName'."
-        Start-Process -FilePath "powershell.exe" -ArgumentList ($args -join " ") -Verb RunAs -Wait
+        Start-Process -FilePath "powershell.exe" -ArgumentList ($args -join " ") -Verb RunAs -WindowStyle Hidden -Wait
         Complete-TraceDeckScriptLog
         exit 0
     }

@@ -466,6 +466,24 @@ Newman runs `postman/tracedeck-backend-phase38.postman_collection.json` against
 the same live demo so the monetisation-grade first screen remains covered by a
 repeatable API/dashboard contract.
 
+Phase 39 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-autostart-assurance.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase39.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase39.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase39.ps1
+```
+
+The Phase 39 autostart assurance test renders and parses the Windows Task
+Scheduler XML, verifies hidden startup, logon delay, continuous agent mode,
+restart-on-failure, start-when-available, battery settings, typed missing-task
+status JSON, and Windows service-manager dry-run install/status plans. The
+smoke then live-boots the seeded dashboard to keep service trust markers covered
+after lifecycle-script changes. Newman runs
+`postman/tracedeck-backend-phase39.postman_collection.json` against that live
+demo.
+
 Phase 13 adds:
 
 ```powershell

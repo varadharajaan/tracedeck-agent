@@ -45,6 +45,11 @@ That registration path requests UAC elevation when required. The task is hidden
 from console flicker and starts at user logon after reboot, but it remains a
 normal Task Scheduler entry that can be queried, stopped, and removed.
 
+Phase 39 adds `scripts/local/test-autostart-assurance.ps1` for a stronger
+Windows lifecycle check. It verifies the rendered Task Scheduler XML, confirms
+continuous no-flicker startup settings, writes typed missing-task status JSON,
+and dry-runs Windows service install/status plans without mutating the host.
+
 macOS and Linux install actions render launchd/systemd manifests under
 `data/local/service-manifests/phase15/`, then copy them to the native service
 location and enable/start the service when run without `-DryRun`.

@@ -128,3 +128,6 @@
     host coverage, anomaly urgency, email proof, push proof, weekly report
     mail, delivery evidence, customer success actions, Postman/Newman coverage,
     docs, and full local verification.
+42. Phase 39: autostart assurance. Stronger Windows Task Scheduler hidden
+    startup/status JSON checks, service-manager dry-run proof, service trust
+    smoke/Newman coverage, docs, and full local verification.
