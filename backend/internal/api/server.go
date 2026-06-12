@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -310,6 +311,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantMonetizationSummary(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentSyncHealth && r.Method == http.MethodGet:
 		s.handleTenantSyncHealth(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentActivityFeed && r.Method == http.MethodGet:
+		s.handleTenantActivityFeed(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentDataExports:
 		s.handleTenantDataExports(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentDeleteRequests:
@@ -514,6 +517,43 @@ func (s *Server) handleTenantSyncHealth(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 	writeJSON(w, http.StatusOK, summary)
+}
+
+func (s *Server) handleTenantActivityFeed(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	feed, err := s.store.TenantActivityFeed(r.Context(), tenantID, activityFeedFilterFromQuery(r))
+	if err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant activity feed lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, feed)
+}
+
+func activityFeedFilterFromQuery(r *http.Request) model.TenantActivityFeedFilter {
+	query := r.URL.Query()
+	limit := 0
+	if rawLimit := strings.TrimSpace(query.Get("limit")); rawLimit != "" {
+		parsed, err := strconv.Atoi(rawLimit)
+		if err == nil {
+			limit = parsed
+		}
+	}
+	return model.TenantActivityFeedFilter{
+		DeviceID: strings.TrimSpace(query.Get("device_id")),
+		Kind:     strings.TrimSpace(query.Get("kind")),
+		Severity: strings.TrimSpace(query.Get("severity")),
+		Channel:  strings.TrimSpace(query.Get("channel")),
+		Status:   strings.TrimSpace(query.Get("status")),
+		Query:    strings.TrimSpace(query.Get("q")),
+		Limit:    limit,
+	}
 }
 
 func (s *Server) handleTenantDataExports(w http.ResponseWriter, r *http.Request, tenantID string) {

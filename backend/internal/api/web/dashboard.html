@@ -789,6 +789,34 @@
       <div class="panel">
         <div class="section-head">
           <div>
+            <h2>Tenant Activity Feed</h2>
+            <p class="muted">Cross-host risk, delivery, and sync events for fast customer triage</p>
+          </div>
+          <span id="activity-feed-count" class="pill">0 items</span>
+        </div>
+        <div class="brief-grid">
+          <div class="brief-item"><small>Risk</small><strong id="activity-feed-risk">-</strong><span id="activity-feed-risk-sub" class="muted">No risk items</span></div>
+          <div class="brief-item"><small>Delivery</small><strong id="activity-feed-delivery">-</strong><span id="activity-feed-delivery-sub" class="muted">No delivery items</span></div>
+          <div class="brief-item"><small>Sync</small><strong id="activity-feed-sync">-</strong><span id="activity-feed-sync-sub" class="muted">No sync items</span></div>
+          <div class="brief-item"><small>Host Scope</small><strong id="activity-feed-hosts">-</strong><span id="activity-feed-hosts-sub" class="muted">No host scope</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Filtered Command Feed</h2>
+            <p class="muted">Selected-host timeline for anomaly, policy, mail, push, tamper, and metadata sync proof</p>
+          </div>
+          <span id="activity-feed-filter" class="badge pending">pending</span>
+        </div>
+        <div id="activity-feed-list" class="action-list"><div class="empty">No activity feed items yet.</div></div>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <div class="panel">
+        <div class="section-head">
+          <div>
             <h2>Live Agent Telemetry</h2>
             <p class="muted">Metadata-only ingest proof from endpoint agent cycles</p>
           </div>
@@ -1694,6 +1722,7 @@
       renderMonetisationLaunchDeck(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderBuyerAssuranceWall(overview, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderTenantSyncHealth(context.syncHealth);
+      renderTenantActivityFeed(context.activityFeed);
       renderTelemetryStatus(context.telemetryStatus);
       renderNotificationRoutes(context.notificationRoutes);
       renderDataExports(context.dataExports);
@@ -2505,6 +2534,44 @@
       `).join("");
     }
 
+    function renderTenantActivityFeed(feed) {
+      const model = feed || {};
+      const summary = model.summary || {};
+      const filters = model.filters || {};
+      const items = model.items || [];
+      setText("activity-feed-count", `${summary.total || items.length} item${(summary.total || items.length) === 1 ? "" : "s"}`);
+      setText("activity-feed-risk", summary.risk_items || 0);
+      setText("activity-feed-risk-sub", `${summary.high_risk_open || 0} high-risk open`);
+      setText("activity-feed-delivery", summary.delivery_items || 0);
+      setText("activity-feed-delivery-sub", `${summary.email_delivered || 0} email delivered, ${summary.push_needs_retry || 0} push retry`);
+      setText("activity-feed-sync", summary.telemetry_items || 0);
+      setText("activity-feed-sync-sub", `${summary.reporting_hosts || 0} reporting host${summary.reporting_hosts === 1 ? "" : "s"}`);
+      setText("activity-feed-hosts", summary.source_host_count || 0);
+      setText("activity-feed-hosts-sub", filters.device_id ? `selected host ${filters.device_id}` : "tenant-wide feed");
+      document.getElementById("activity-feed-filter").outerHTML =
+        badge(filters.device_id ? "filtered" : "tenant").replace("<span", '<span id="activity-feed-filter"');
+
+      const target = document.getElementById("activity-feed-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No activity feed items yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="action-item">
+          <strong>${escapeHTML(item.title || item.type)} ${item.channel ? `(${escapeHTML(item.channel)})` : ""}</strong>
+          <span class="muted">${escapeHTML(item.detail || item.recommendation || "No detail available.")}</span>
+          <div class="action-meta">
+            ${badge(item.kind || "activity")}
+            ${item.severity ? badge(item.severity) : ""}
+            ${item.status ? badge(item.status) : ""}
+            <span class="pill">${escapeHTML(item.host_name || item.device_id)}</span>
+            <span class="pill">${escapeHTML(item.source || item.provider || "source pending")}</span>
+            <span class="pill">${escapeHTML(formatAge(item.observed_at))}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
     function countMatching(counts, token) {
       return Object.entries(counts || {}).reduce((total, entry) => {
         const [key, value] = entry;
@@ -2847,6 +2914,7 @@
       const tenantOperations = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/operations-summary`) : null;
       const monetizationSummary = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/monetization-summary`) : null;
       const syncHealth = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/sync-health`) : null;
+      const activityFeed = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/activity-feed?device_id=${encodeURIComponent(overview.device.device_id)}&limit=10`) : null;
       const dataExports = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/data-exports`) : null;
       const deleteRequests = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delete-requests`) : null;
       renderOverview(overview, deviceHealth, policy, anomalies, tamper, deliveries, {
@@ -2865,6 +2933,7 @@
         tenantOperations,
         monetizationSummary,
         syncHealth,
+        activityFeed,
         dataExports,
         deleteRequests,
         auditEvents,

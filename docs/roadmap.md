@@ -103,3 +103,7 @@
     Buyer Assurance Wall, Offline Replay Health panel, source-count replay
     proof, email/push monetisation checks, Postman/Newman coverage, live
     dashboard smoke, and local verification.
+35. Phase 32: tenant activity feed. Tenant-level risk/delivery/telemetry feed
+    API with host, kind, channel, status, query, and limit filters; dashboard
+    Tenant Activity Feed and Filtered Command Feed panels; Postman/Newman
+    coverage, live dashboard smoke, and local verification.

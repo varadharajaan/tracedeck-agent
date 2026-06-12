@@ -371,3 +371,85 @@ func TestTenantSyncHealthSummarizesOfflineReplayProof(t *testing.T) {
 		t.Fatalf("expected recent stable event IDs newest first: %+v", device.RecentEventIDs)
 	}
 }
+
+func TestTenantActivityFeedFiltersRiskDeliveryAndTelemetry(t *testing.T) {
+	t.Parallel()
+
+	repo := NewMemory()
+	ctx := context.Background()
+	_, err := repo.CreateTenant(ctx, model.CreateTenantRequest{
+		TenantID:        "family-varadha",
+		Name:            "Family Varadha",
+		PlanID:          constants.PlanFamilyPro,
+		RetentionTierID: constants.RetentionFamilyCloud,
+		PrimaryProfile:  "ai-btech-student",
+	})
+	if err != nil {
+		t.Fatalf("create tenant: %v", err)
+	}
+	_, err = repo.EnrollDevice(ctx, model.EnrollDeviceRequest{
+		TenantID: "family-varadha",
+		DeviceID: "feed-device",
+		HostName: "feed-host",
+		Profile:  "ai-btech-student",
+		OSName:   "windows",
+	})
+	if err != nil {
+		t.Fatalf("enroll device: %v", err)
+	}
+	_, err = repo.IngestTelemetryEvents(ctx, "feed-device", model.IngestTelemetryRequest{
+		TenantID: "family-varadha",
+		DeviceID: "feed-device",
+		HostName: "feed-host",
+		Profile:  "ai-btech-student",
+		OSName:   "windows",
+		Events: []model.TelemetryEvent{{
+			ID:         "local-event-21",
+			Type:       "process.observed",
+			Source:     "collector.process",
+			ObservedAt: time.Date(2026, 6, 12, 8, 0, 0, 0, time.UTC),
+			AppName:    "Code.exe",
+			PathHash:   "hash-only",
+			Metadata:   map[string]string{"category": "coding"},
+		}},
+	})
+	if err != nil {
+		t.Fatalf("ingest telemetry: %v", err)
+	}
+
+	feed, err := repo.TenantActivityFeed(ctx, "family-varadha", model.TenantActivityFeedFilter{DeviceID: "feed-device", Limit: 20})
+	if err != nil {
+		t.Fatalf("tenant activity feed: %v", err)
+	}
+	if feed.Summary.RiskItems == 0 || feed.Summary.DeliveryItems == 0 || feed.Summary.TelemetryItems != 1 {
+		t.Fatalf("expected risk, delivery, and telemetry feed items: %+v", feed.Summary)
+	}
+	if feed.Summary.SourceHostCount != 1 || feed.Summary.ReportingHosts != 1 || feed.PrivacyBoundary == "" {
+		t.Fatalf("expected host and privacy proof: %+v", feed)
+	}
+
+	emailFeed, err := repo.TenantActivityFeed(ctx, "family-varadha", model.TenantActivityFeedFilter{
+		DeviceID: "feed-device",
+		Kind:     constants.ActivityFeedKindDelivery,
+		Channel:  constants.DeliveryChannelEmail,
+		Limit:    5,
+	})
+	if err != nil {
+		t.Fatalf("tenant activity feed email filter: %v", err)
+	}
+	if emailFeed.Summary.Total == 0 || emailFeed.Items[0].Channel != constants.DeliveryChannelEmail {
+		t.Fatalf("expected email delivery feed item: %+v", emailFeed)
+	}
+
+	queryFeed, err := repo.TenantActivityFeed(ctx, "family-varadha", model.TenantActivityFeedFilter{
+		DeviceID: "feed-device",
+		Query:    "youtube",
+		Limit:    5,
+	})
+	if err != nil {
+		t.Fatalf("tenant activity feed query filter: %v", err)
+	}
+	if queryFeed.Summary.Total == 0 || queryFeed.Items[0].DeviceID != "feed-device" {
+		t.Fatalf("expected query feed to find selected host events: %+v", queryFeed)
+	}
+}

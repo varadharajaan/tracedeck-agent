@@ -66,6 +66,7 @@ GET  /api/v1/tenants/{tenantId}/consent-center
 GET  /api/v1/tenants/{tenantId}/operations-summary
 GET  /api/v1/tenants/{tenantId}/monetization-summary
 GET  /api/v1/tenants/{tenantId}/sync-health
+GET  /api/v1/tenants/{tenantId}/activity-feed
 GET  /api/v1/tenants/{tenantId}/data-exports
 POST /api/v1/tenants/{tenantId}/data-exports
 GET  /api/v1/tenants/{tenantId}/delete-requests
@@ -214,6 +215,14 @@ cursor received, last ingest time, source counts for process/browser/health
 metadata, offline replay readiness, per-host recommendations, and the
 metadata-only privacy boundary. It cannot see local rows that have not synced
 yet; it proves what the backend has safely received.
+
+Phase 32 adds `GET /api/v1/tenants/{tenantId}/activity-feed` for cross-host
+command triage. Query parameters are typed by the backend filter model:
+`device_id`, `kind`, `severity`, `channel`, `status`, `q`, and `limit`.
+The feed rolls up policy/anomaly/tamper risk items, alert delivery items, and
+backend-visible telemetry metadata items into one time-ordered response with
+summary counts for risk, delivery, sync, email proof, push retry, reporting
+hosts, and source hosts.
 
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.
