@@ -24,3 +24,8 @@
     host filtering, typed host overview, policy violation, anomaly, tamper,
     alert delivery, archive health panels, Postman/Newman coverage, and local
     verification.
+13. Phase 10: dashboard demo launcher. Local script starts the backend, seeds a
+    demo host, verifies dashboard data, and leaves the UI ready to view.
+14. Phase 11: durable backend storage and auth groundwork. JSON-backed backend
+    state, optional local API-key middleware, tenant-scoped access checks,
+    restart persistence smoke, Postman/Newman coverage, and local verification.

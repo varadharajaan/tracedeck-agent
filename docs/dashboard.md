@@ -57,6 +57,11 @@ add new endpoint collectors and does not collect passwords, credentials,
 keylogs, cookies, tokens, private messages, camera, microphone, raw URLs, page
 titles, or covert screenshots.
 
+Phase 11 persists the same backend dashboard state to
+`data/local/backend/backend-state.json` by default. If the backend is started
+with an API key, the dashboard shell still loads, but API requests require the
+configured `X-TraceDeck-API-Key` and tenant scope headers.
+
 A future frontend phase can move this surface to a richer application shell with
 authentication, role-based views, saved filters, no-code alert rule editing,
 weekly report drilldowns, and durable event search.

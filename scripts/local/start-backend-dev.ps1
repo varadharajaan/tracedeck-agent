@@ -1,6 +1,10 @@
 param(
     [string]$Addr = "127.0.0.1:18080",
-    [string]$PidPath = "data/local/backend/tracedeck-backend.pid"
+    [string]$PidPath = "data/local/backend/tracedeck-backend.pid",
+    [string]$DataPath = "data/local/backend/backend-state.json",
+    [string]$ApiKey = "",
+    [string]$ApiKeyTenantId = "",
+    [string]$ApiKeyActorId = "local_backend"
 )
 
 Set-StrictMode -Version Latest
@@ -23,13 +27,25 @@ try {
         go build -trimpath -o $exePath ./backend/cmd/tracedeck-backend
     }
 
-    $process = Start-Process -FilePath $exePath -ArgumentList @(
+    $arguments = @(
         "--addr", $Addr,
-        "--log-dir", "./logs/local/backend"
-    ) -WorkingDirectory $script:TraceDeckRepoRoot -WindowStyle Hidden -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath -PassThru
+        "--log-dir", "./logs/local/backend",
+        "--data-path", "`"$DataPath`""
+    )
+    if ($ApiKey) {
+        $arguments += @("--api-key", $ApiKey)
+    }
+    if ($ApiKeyTenantId) {
+        $arguments += @("--api-key-tenant-id", $ApiKeyTenantId)
+    }
+    if ($ApiKeyActorId) {
+        $arguments += @("--api-key-actor-id", $ApiKeyActorId)
+    }
+
+    $process = Start-Process -FilePath $exePath -ArgumentList $arguments -WorkingDirectory $script:TraceDeckRepoRoot -WindowStyle Hidden -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath -PassThru
 
     Set-Content -Path $pidFullPath -Value $process.Id
-    Write-TraceDeckLog -Level "INFO" -Message "Started TraceDeck backend dev server pid=$($process.Id) addr=$Addr pid_file=$pidFullPath"
+    Write-TraceDeckLog -Level "INFO" -Message "Started TraceDeck backend dev server pid=$($process.Id) addr=$Addr data_path=$DataPath pid_file=$pidFullPath"
     Write-TraceDeckLog -Level "INFO" -Message "stdout=$stdoutPath stderr=$stderrPath"
     Complete-TraceDeckScriptLog
 }
