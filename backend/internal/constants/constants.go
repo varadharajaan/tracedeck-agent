@@ -42,6 +42,7 @@ const (
 	RouteSegmentAlertInbox      = "alert-inbox"
 	RouteSegmentOperations      = "operations-summary"
 	RouteSegmentMonetization    = "monetization-summary"
+	RouteSegmentNotificationCmd = "notification-command-center"
 	RouteSegmentDeliveryDrill   = "delivery-drilldown"
 	RouteSegmentDeliveryRemedy  = "delivery-remediation"
 	RouteSegmentSyncHealth      = "sync-health"
@@ -271,6 +272,10 @@ const (
 	DeliveryRemediationStatusAcked     = "owner_acknowledged"
 	DeliveryRemediationStatusHealthy   = "healthy"
 	DeliveryRemediationPrivacyNote     = "metadata-only remediation: plans and audit proof are recorded without live provider sends, alert bodies, screenshots, tokens, cookies, passwords, raw URLs, or provider secrets"
+)
+
+const (
+	NotificationCommandPrivacyNote = "metadata-only notification command center: no passwords, credentials, screenshots, raw URLs, page titles, tokens, cookies, private content, alert bodies, or provider secrets are collected or stored"
 )
 
 const (

@@ -41,3 +41,9 @@ plans, owner/SLA state, retry/check timing, and audit events for email, push,
 and dashboard routes. It rejects live-send remediation modes and does not store
 provider secrets, alert bodies, screenshots, passwords, cookies, tokens, raw
 URLs, page titles, or private content.
+
+Phase 47 premium notification command center is an aggregate view only. It
+combines existing alert inbox, delivery proof, remediation, operations, and
+monetisation metadata into a typed response for the dashboard. It does not add
+collectors and does not store provider secrets, alert bodies, screenshots,
+passwords, cookies, tokens, raw URLs, page titles, or private content.

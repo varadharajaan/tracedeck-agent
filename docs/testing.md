@@ -604,6 +604,23 @@ screenshot-free dashboard layout contract. Newman runs
 live demo and covers remediation summary, plan creation, mode rejection, and
 audit evidence.
 
+Phase 47 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase47.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase47.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase47.ps1
+```
+
+The Phase 47 smoke live-boots the seeded dashboard, verifies Premium
+Notification Command Center, Notification Assurance Funnel, Mail And Push
+Delivery Proof, and Customer Action SLAs markers, checks the tenant
+notification-command-center API, verifies strict privacy/forbidden markers, and
+reruns the screenshot-free dashboard layout contract. Newman runs
+`postman/tracedeck-backend-phase47.postman_collection.json` against the same
+live demo and covers dashboard markers, typed alert/delivery/action proof, and
+the compatibility of the existing alert inbox.
+
 Phase 13 adds:
 
 ```powershell

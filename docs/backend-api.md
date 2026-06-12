@@ -65,6 +65,7 @@ POST /api/v1/tenants/{tenantId}/notification-routes
 GET  /api/v1/tenants/{tenantId}/consent-center
 GET  /api/v1/tenants/{tenantId}/operations-summary
 GET  /api/v1/tenants/{tenantId}/monetization-summary
+GET  /api/v1/tenants/{tenantId}/notification-command-center
 GET  /api/v1/tenants/{tenantId}/sync-health
 GET  /api/v1/tenants/{tenantId}/activity-feed
 GET  /api/v1/tenants/{tenantId}/data-exports
@@ -234,6 +235,16 @@ route accepts `mode: "dry_run"` only with typed actions such as `retry_plan`,
 `maintain_proof`. It records a provider-safe plan and audit event. It never
 sends live provider messages and never stores provider secrets, alert bodies,
 tokens, cookies, passwords, screenshots, raw URLs, or endpoint payloads.
+
+Phase 47 adds `GET /api/v1/tenants/{tenantId}/notification-command-center`.
+It aggregates the tenant operations summary, monetisation summary, alert inbox,
+delivery drilldown, and delivery remediation into one typed buyer-facing
+notification command contract. The response includes notification score,
+monetisation readiness, open alert counts, high-priority counts, email/push/
+dashboard delivery proof, route proof state, remediation SLA counts, paid-tier
+labels, and owner action items. It is metadata-only and does not store provider
+secrets, alert bodies, screenshots, passwords, tokens, cookies, raw URLs, page
+titles, or private content.
 
 Phase 31 adds `GET /api/v1/tenants/{tenantId}/sync-health` for buyer and admin
 proof that backend-visible telemetry is arriving per host. It returns reporting

@@ -343,6 +343,96 @@ type TenantAlertInbox struct {
 	PrivacyBoundary string                  `json:"privacy_boundary"`
 }
 
+type TenantNotificationCommandCenterSummary struct {
+	Status                 string `json:"status"`
+	Headline               string `json:"headline"`
+	NotificationScore      int    `json:"notification_score"`
+	MonetizationReadiness  int    `json:"monetization_readiness"`
+	TrustScore             int    `json:"trust_score"`
+	OpenAlerts             int    `json:"open_alerts"`
+	HighPriorityAlerts     int    `json:"high_priority_alerts"`
+	PolicyViolations       int    `json:"policy_violations"`
+	Anomalies              int    `json:"anomalies"`
+	TamperSignals          int    `json:"tamper_signals"`
+	EmailDelivered         int    `json:"email_delivered"`
+	PushDelivered          int    `json:"push_delivered"`
+	DashboardDelivered     int    `json:"dashboard_delivered"`
+	DeliveryFailed         int    `json:"delivery_failed"`
+	DeliveryRetrying       int    `json:"delivery_retrying"`
+	RoutesTotal            int    `json:"routes_total"`
+	RoutesNeedingProof     int    `json:"routes_needing_proof"`
+	RemediationOpen        int    `json:"remediation_open"`
+	RemediationPlanned     int    `json:"remediation_planned"`
+	RemediationSLAWatch    int    `json:"remediation_sla_watch"`
+	WeeklyReportReady      bool   `json:"weekly_report_ready"`
+	ArchiveBacklog         int    `json:"archive_backlog"`
+	RecommendedPaidPackage string `json:"recommended_paid_package"`
+}
+
+type TenantNotificationCommandCenterChannel struct {
+	Channel              string     `json:"channel"`
+	Provider             string     `json:"provider"`
+	Recipient            string     `json:"recipient"`
+	Enabled              bool       `json:"enabled"`
+	RouteStatus          string     `json:"route_status"`
+	ProofState           string     `json:"proof_state"`
+	LatestDeliveryStatus string     `json:"latest_delivery_status"`
+	Attempts             int        `json:"attempts"`
+	LastDeliveryAt       *time.Time `json:"last_delivery_at,omitempty"`
+	NextRetryAt          *time.Time `json:"next_retry_at,omitempty"`
+	SLA                  string     `json:"sla"`
+	Evidence             string     `json:"evidence"`
+	NextAction           string     `json:"next_action"`
+	PaidTier             string     `json:"paid_tier"`
+}
+
+type TenantNotificationCommandCenterAlert struct {
+	ID              string    `json:"id"`
+	EventID         string    `json:"event_id"`
+	DeviceID        string    `json:"device_id"`
+	HostName        string    `json:"host_name"`
+	Type            string    `json:"type"`
+	Severity        string    `json:"severity"`
+	Category        string    `json:"category"`
+	Status          string    `json:"status"`
+	Title           string    `json:"title"`
+	Detail          string    `json:"detail"`
+	Recommendation  string    `json:"recommendation"`
+	DeliveryState   string    `json:"delivery_state"`
+	EmailStatus     string    `json:"email_status"`
+	PushStatus      string    `json:"push_status"`
+	DashboardStatus string    `json:"dashboard_status"`
+	NextAction      string    `json:"next_action"`
+	PaidTier        string    `json:"paid_tier"`
+	ObservedAt      time.Time `json:"observed_at"`
+}
+
+type TenantNotificationCommandCenterAction struct {
+	Title      string    `json:"title"`
+	Detail     string    `json:"detail"`
+	Severity   string    `json:"severity"`
+	Channel    string    `json:"channel"`
+	Status     string    `json:"status"`
+	Owner      string    `json:"owner"`
+	SLA        string    `json:"sla"`
+	PaidTier   string    `json:"paid_tier"`
+	ObservedAt time.Time `json:"observed_at"`
+}
+
+type TenantNotificationCommandCenter struct {
+	TenantID        string                                   `json:"tenant_id"`
+	TenantName      string                                   `json:"tenant_name"`
+	PlanID          string                                   `json:"plan_id"`
+	PlanName        string                                   `json:"plan_name"`
+	Audience        string                                   `json:"audience"`
+	Summary         TenantNotificationCommandCenterSummary   `json:"summary"`
+	Channels        []TenantNotificationCommandCenterChannel `json:"channels"`
+	Alerts          []TenantNotificationCommandCenterAlert   `json:"alerts"`
+	Actions         []TenantNotificationCommandCenterAction  `json:"actions"`
+	PrivacyBoundary string                                   `json:"privacy_boundary"`
+	GeneratedAt     time.Time                                `json:"generated_at"`
+}
+
 type TenantActivityView struct {
 	ID          string                   `json:"id"`
 	TenantID    string                   `json:"tenant_id"`

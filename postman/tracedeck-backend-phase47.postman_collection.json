@@ -1,0 +1,74 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 47",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Has Premium Notification Command Center",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard contains premium notification monetisation markers', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Premium Notification Command Center');",
+        "  pm.expect(html).to.include('Notification Assurance Funnel');",
+        "  pm.expect(html).to.include('Mail And Push Delivery Proof');",
+        "  pm.expect(html).to.include('Customer Action SLAs');",
+        "  pm.expect(html).to.include('premium-alert-funnel-list');",
+        "  pm.expect(html).to.include('premium-delivery-proof-list');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Tenant Notification Command Center",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/notification-command-center" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('notification command center exposes paid alert delivery state safely', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.privacy_boundary).to.include('no passwords');",
+        "  pm.expect(body.privacy_boundary).to.include('screenshots');",
+        "  pm.expect(body.summary.open_alerts).to.be.at.least(1);",
+        "  pm.expect(body.summary.notification_score).to.be.at.least(1);",
+        "  pm.expect(body.channels.length).to.be.at.least(3);",
+        "  pm.expect(body.alerts.length).to.be.at.least(1);",
+        "  pm.expect(body.actions.length).to.be.at.least(1);",
+        "  pm.expect(body.channels.some((item) => item.channel === 'email')).to.eql(true);",
+        "  pm.expect(body.channels.some((item) => item.channel === 'push')).to.eql(true);",
+        "  pm.expect(body.alerts[0].email_status).to.be.a('string');",
+        "  pm.expect(body.alerts[0].push_status).to.be.a('string');",
+        "  const serialized = JSON.stringify(body).toLowerCase();",
+        "  pm.expect(serialized).to.not.include('smtp_password');",
+        "  pm.expect(serialized).to.not.include('provider_secret');",
+        "  pm.expect(serialized).to.not.include('screenshot_bytes');",
+        "  pm.expect(serialized).to.not.include('raw_url');",
+        "  pm.expect(serialized).to.not.include('alert_body');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Tenant Alert Inbox Still Available",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/alert-inbox" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('alert inbox remains compatible', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.summary.with_email).to.be.at.least(1);",
+        "  pm.expect(body.summary.with_push).to.be.at.least(1);",
+        "  pm.expect(body.items.length).to.be.at.least(1);",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

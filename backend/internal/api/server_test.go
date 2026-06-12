@@ -1049,6 +1049,60 @@ func TestTenantAlertInboxEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantNotificationCommandCenterEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "notification-command-device-001",
+		"host_name": "notification-command-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	commandResponse := httptest.NewRecorder()
+	handler.ServeHTTP(commandResponse, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentNotificationCmd, nil))
+	if commandResponse.Code != http.StatusOK {
+		t.Fatalf("expected notification command center 200, got %d: %s", commandResponse.Code, commandResponse.Body.String())
+	}
+	var commandCenter model.TenantNotificationCommandCenter
+	if err := json.Unmarshal(commandResponse.Body.Bytes(), &commandCenter); err != nil {
+		t.Fatalf("decode notification command center: %v", err)
+	}
+	if commandCenter.Summary.OpenAlerts == 0 || commandCenter.Summary.NotificationScore == 0 {
+		t.Fatalf("expected alert and notification summary proof: %+v", commandCenter.Summary)
+	}
+	if len(commandCenter.Channels) < 3 || len(commandCenter.Alerts) == 0 || len(commandCenter.Actions) == 0 {
+		t.Fatalf("expected channels, alerts, and actions: %+v", commandCenter)
+	}
+	if commandCenter.Channels[0].PaidTier == "" || commandCenter.Alerts[0].EmailStatus == "" || commandCenter.Alerts[0].PushStatus == "" {
+		t.Fatalf("expected channel and alert delivery proof: %+v %+v", commandCenter.Channels, commandCenter.Alerts)
+	}
+	if !strings.Contains(commandCenter.PrivacyBoundary, "no passwords") || !strings.Contains(commandCenter.PrivacyBoundary, "screenshots") {
+		t.Fatalf("expected strict privacy boundary, got %q", commandCenter.PrivacyBoundary)
+	}
+}
+
 func TestTenantMonetizationSummaryEndpoint(t *testing.T) {
 	t.Parallel()
 

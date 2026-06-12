@@ -21,6 +21,10 @@ REQUIRED_IDS = (
     "command-center-inbox-list",
     "command-center-delivery-list",
     "command-center-action-list",
+    "premium-notification-section",
+    "premium-alert-funnel-list",
+    "premium-delivery-proof-list",
+    "premium-action-sla-list",
     "buyer-ops-section",
     "buyer-ops-status",
     "buyer-delivery-list",
@@ -137,8 +141,8 @@ def main() -> int:
                             clientHeight: element.clientHeight
                           }));
                           checks.push({
-                            name: "command-navigation-has-seven-jumps",
-                            ok: jumpBoxes.length === 7,
+                            name: "command-navigation-has-eight-jumps",
+                            ok: jumpBoxes.length === 8,
                             detail: `${jumpBoxes.length} command jump buttons`
                           });
                           for (const item of jumpBoxes) {

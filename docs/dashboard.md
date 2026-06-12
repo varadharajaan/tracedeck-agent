@@ -67,6 +67,11 @@ Phase 32 adds a Tenant Activity Feed and Filtered Command Feed backed by the
 tenant activity-feed API. The selected host drives a feed filter so anomaly,
 policy, tamper, mail, push, and telemetry sync proof can be reviewed in one
 timeline.
+Phase 47 adds a Premium Notification Command Center backed by the typed
+notification-command-center API. It packages anomaly/policy/tamper urgency,
+email delivery proof, push reach, dashboard route proof, remediation SLA state,
+paid-tier labels, and owner actions into a monetisable notification command
+surface.
 
 The dashboard reads the base backend endpoints:
 
@@ -94,6 +99,7 @@ For the selected host it reads:
 - `/api/v1/tenants/{tenantId}/consent-center`
 - `/api/v1/tenants/{tenantId}/operations-summary`
 - `/api/v1/tenants/{tenantId}/monetization-summary`
+- `/api/v1/tenants/{tenantId}/notification-command-center`
 - `/api/v1/tenants/{tenantId}/sync-health`
 - `/api/v1/tenants/{tenantId}/activity-feed`
 - `/api/v1/tenants/{tenantId}/data-exports`
@@ -197,8 +203,8 @@ Current panels:
   report delivery proof
 - buyer demo checklist for anomaly, route, report, archive, consent/data
   rights, and saved-view readiness
-- command navigation for paid ops, revenue, notifications, reports, archive,
-  trust, and hosts with KPI summaries backed by existing typed APIs
+- command navigation for paid ops, revenue, Notify Pro, notifications, reports,
+  archive, trust, and hosts with KPI summaries backed by existing typed APIs
 - buyer operations brief for monetisation demos with anomaly alerting, mail
   delivery proof, push notification dispatch, weekly report delivery, archive
   retention, trust/audit, delivery command, packaging snapshot, and next
@@ -209,6 +215,8 @@ Current panels:
 - delivery remediation center for SLA-aware route recovery, owner assignment,
   dry-run retry planning, audit proof, anomaly push recovery, and mail delivery
   assurance without live sends or provider payload storage
+- premium notification command center for alert funnel, email proof, push
+  reach, route assurance, paid-tier packaging, and customer action SLAs
 
 API-provided text is escaped before rendering.
 
@@ -279,6 +287,13 @@ acknowledgement, SLA watch, next retry/check windows, and a remediation action
 ledger. The Monetisation Command Center also includes remediation state in the
 delivery proof list so paid demos answer not only "what failed?" but "who owns
 the recovery and what proof exists?"
+
+Phase 47 adds a Premium Notification Command Center and Notify Pro jump target.
+It renders the tenant notification-command-center API: alert funnel,
+high-priority alert count, email delivery proof, push reach, dashboard route
+proof, remediation SLA state, paid-tier labels, and customer owner actions.
+The view is an aggregate presentation layer and does not add sensitive
+collectors or live provider sends.
 
 A future frontend phase can move this surface to a richer application shell with
 role-specific onboarding, no-code alert rule editing, weekly report drilldowns,

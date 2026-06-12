@@ -112,6 +112,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase46.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase46.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase46.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase47.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase47.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase47.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-service-manifests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-windows-task.ps1
 ```
@@ -149,3 +152,11 @@ problems into owned dry-run recovery plans with SLA state and audit proof, and
 surfaces that proof in the monetisation command center. Live-send remediation
 modes are rejected; provider secrets, alert bodies, screenshots, passwords,
 tokens, cookies, raw URLs, and private content are not collected or stored.
+
+Phase 47 adds a premium notification command center and typed
+`/api/v1/tenants/{tenantId}/notification-command-center` API. It packages open
+anomaly/policy/tamper alerts, email delivery proof, push reach, dashboard route
+proof, remediation SLA state, paid-tier labels, and owner actions into a
+buyer-facing dashboard surface. It remains metadata-only and does not collect
+or store provider secrets, alert bodies, screenshots, passwords, tokens,
+cookies, raw URLs, page titles, or private content.

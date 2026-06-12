@@ -7,6 +7,7 @@ dashboard for paid-plan demos.
 
 ```text
 GET /api/v1/tenants/{tenantId}/monetization-summary
+GET /api/v1/tenants/{tenantId}/notification-command-center
 ```
 
 The response includes:
@@ -19,10 +20,13 @@ The response includes:
 - paid capability proof for weekly reports, alert rules, role dashboards,
   managed rollout, notification proof, and compliance export readiness
 - conversion action queue for the next customer-facing steps
+- premium notification command center summary for alert funnel, email proof,
+  push proof, route assurance, remediation SLA state, paid-tier labels, and
+  owner action SLAs
 
-The endpoint aggregates existing privacy-aware metadata. It does not add
-password, credential, screenshot, keystroke, raw URL, private message, camera,
-or microphone collection.
+These endpoints aggregate existing privacy-aware metadata. They do not add
+password, credential, screenshot, keystroke, raw URL, page title, private
+message, camera, microphone, alert-body, or provider-secret collection.
 
 ## Dashboard
 
@@ -30,6 +34,7 @@ The embedded dashboard now adds:
 
 - Monetisation Command Center
 - Notification Guarantee
+- Premium Notification Command Center
 - Paid Feature Proof
 - Conversion Action Queue
 
@@ -43,4 +48,7 @@ observability product rather than only a local monitoring utility.
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase25.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase25.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase25.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase47.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase47.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase47.ps1
 ```

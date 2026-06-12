@@ -756,6 +756,34 @@ func (m *Memory) TenantAlertInbox(_ context.Context, tenantID string) (model.Ten
 	}, nil
 }
 
+func (m *Memory) TenantNotificationCommandCenter(ctx context.Context, tenantID string) (model.TenantNotificationCommandCenter, error) {
+	generatedAt := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	operations, err := m.TenantOperationsSummary(ctx, tenantID)
+	if err != nil {
+		return model.TenantNotificationCommandCenter{}, err
+	}
+	monetization, err := m.TenantMonetizationSummary(ctx, tenantID)
+	if err != nil {
+		return model.TenantNotificationCommandCenter{}, err
+	}
+	inbox, err := m.TenantAlertInbox(ctx, tenantID)
+	if err != nil {
+		return model.TenantNotificationCommandCenter{}, err
+	}
+	drilldown, err := m.TenantDeliveryDrilldown(ctx, tenantID)
+	if err != nil {
+		return model.TenantNotificationCommandCenter{}, err
+	}
+	remediation, err := m.TenantDeliveryRemediation(ctx, tenantID)
+	if err != nil {
+		return model.TenantNotificationCommandCenter{}, err
+	}
+
+	return buildTenantNotificationCommandCenter(operations, monetization, inbox, drilldown, remediation, generatedAt), nil
+}
+
 func (m *Memory) TenantSyncHealth(_ context.Context, tenantID string) (model.TenantSyncHealth, error) {
 	now := time.Now().UTC()
 	tenantID = strings.TrimSpace(tenantID)
@@ -3314,6 +3342,260 @@ func tenantConversionActions(operations model.TenantOperationsSummary, tenant mo
 		})
 	}
 	return actions
+}
+
+func buildTenantNotificationCommandCenter(
+	operations model.TenantOperationsSummary,
+	monetization model.TenantMonetizationSummary,
+	inbox model.TenantAlertInbox,
+	drilldown model.TenantDeliveryDrilldown,
+	remediation model.TenantDeliveryRemediation,
+	generatedAt time.Time,
+) model.TenantNotificationCommandCenter {
+	summary := model.TenantNotificationCommandCenterSummary{
+		Status:                 notificationCommandStatus(operations, inbox, remediation),
+		Headline:               notificationCommandHeadline(inbox, operations, monetization),
+		NotificationScore:      operations.NotificationScore,
+		MonetizationReadiness:  operations.MonetizationReadiness,
+		TrustScore:             monetization.TrustScore,
+		OpenAlerts:             inbox.Summary.Open,
+		HighPriorityAlerts:     inbox.Summary.HighOrCritical,
+		PolicyViolations:       operations.OpenPolicyViolations,
+		Anomalies:              operations.OpenAnomalies,
+		TamperSignals:          operations.TamperSignals,
+		EmailDelivered:         operations.EmailDelivered,
+		PushDelivered:          operations.PushDelivered,
+		DashboardDelivered:     operations.DashboardDelivered,
+		DeliveryFailed:         operations.DeliveryFailed,
+		DeliveryRetrying:       operations.DeliveryRetrying,
+		RoutesTotal:            drilldown.Summary.RoutesTotal,
+		RoutesNeedingProof:     drilldown.Summary.RoutesNeedingProof,
+		RemediationOpen:        remediation.Summary.ProblemsOpen,
+		RemediationPlanned:     remediation.Summary.PlannedActions,
+		RemediationSLAWatch:    remediation.Summary.SLAWatch,
+		WeeklyReportReady:      true,
+		ArchiveBacklog:         operations.ArchiveBacklog,
+		RecommendedPaidPackage: firstNonEmpty(monetization.PlanName, operations.PlanName, constants.PlanFamilyPro),
+	}
+
+	return model.TenantNotificationCommandCenter{
+		TenantID:        operations.TenantID,
+		TenantName:      operations.TenantName,
+		PlanID:          operations.PlanID,
+		PlanName:        operations.PlanName,
+		Audience:        monetization.Audience,
+		Summary:         summary,
+		Channels:        notificationCommandChannels(drilldown.Routes),
+		Alerts:          notificationCommandAlerts(inbox.Items),
+		Actions:         notificationCommandActions(inbox.Items, remediation.Actions, monetization.ConversionActions, generatedAt),
+		PrivacyBoundary: constants.NotificationCommandPrivacyNote,
+		GeneratedAt:     generatedAt,
+	}
+}
+
+func notificationCommandStatus(operations model.TenantOperationsSummary, inbox model.TenantAlertInbox, remediation model.TenantDeliveryRemediation) string {
+	switch {
+	case operations.DeliveryFailed > 0 || inbox.Summary.HighOrCritical > 0:
+		return constants.StatusAttention
+	case remediation.Summary.ProblemsOpen > 0 || operations.DeliveryRetrying > 0 || inbox.Summary.Open > 0:
+		return constants.StatusWatch
+	case operations.NotificationScore >= 70:
+		return constants.StatusHealthy
+	default:
+		return constants.StatusPending
+	}
+}
+
+func notificationCommandHeadline(inbox model.TenantAlertInbox, operations model.TenantOperationsSummary, monetization model.TenantMonetizationSummary) string {
+	if len(inbox.Items) > 0 {
+		top := inbox.Items[0]
+		return fmt.Sprintf("%s on %s needs %s delivery proof", top.Title, top.HostName, top.Severity)
+	}
+	if operations.DeliveryFailed > 0 || operations.DeliveryRetrying > 0 {
+		return fmt.Sprintf("%d notification routes need delivery assurance", operations.DeliveryFailed+operations.DeliveryRetrying)
+	}
+	return fmt.Sprintf("%s notification proof is ready for %s", firstNonEmpty(monetization.PlanName, operations.PlanName, "TraceDeck"), firstNonEmpty(monetization.Audience, "paid customer"))
+}
+
+func notificationCommandChannels(routes []model.TenantDeliveryDrilldownRoute) []model.TenantNotificationCommandCenterChannel {
+	channels := make([]model.TenantNotificationCommandCenterChannel, 0, len(routes))
+	for _, route := range routes {
+		channels = append(channels, model.TenantNotificationCommandCenterChannel{
+			Channel:              route.Channel,
+			Provider:             route.Provider,
+			Recipient:            route.RecipientLabel,
+			Enabled:              route.Enabled,
+			RouteStatus:          route.RouteStatus,
+			ProofState:           route.ProofState,
+			LatestDeliveryStatus: route.LatestDeliveryStatus,
+			Attempts:             route.Attempts,
+			LastDeliveryAt:       route.LatestDeliveryAt,
+			NextRetryAt:          nil,
+			SLA:                  route.SLA,
+			Evidence:             route.Evidence,
+			NextAction:           route.NextAction,
+			PaidTier:             notificationCommandChannelTier(route.Channel),
+		})
+	}
+	return channels
+}
+
+func notificationCommandAlerts(items []model.TenantAlertInboxItem) []model.TenantNotificationCommandCenterAlert {
+	alerts := make([]model.TenantNotificationCommandCenterAlert, 0, len(items))
+	for _, item := range items {
+		alerts = append(alerts, model.TenantNotificationCommandCenterAlert{
+			ID:              item.ID,
+			EventID:         item.EventID,
+			DeviceID:        item.DeviceID,
+			HostName:        item.HostName,
+			Type:            item.Type,
+			Severity:        item.Severity,
+			Category:        item.Category,
+			Status:          item.Status,
+			Title:           item.Title,
+			Detail:          item.Detail,
+			Recommendation:  item.Recommendation,
+			DeliveryState:   item.DeliveryState,
+			EmailStatus:     alertDeliveryProofStatus(item.DeliveryProof, constants.DeliveryChannelEmail),
+			PushStatus:      alertDeliveryProofStatus(item.DeliveryProof, constants.DeliveryChannelPush),
+			DashboardStatus: alertDeliveryProofStatus(item.DeliveryProof, constants.DeliveryChannelDashboard),
+			NextAction:      item.NextAction,
+			PaidTier:        notificationCommandAlertTier(item),
+			ObservedAt:      item.ObservedAt,
+		})
+	}
+	if len(alerts) > 8 {
+		return alerts[:8]
+	}
+	return alerts
+}
+
+func notificationCommandActions(
+	alerts []model.TenantAlertInboxItem,
+	remedies []model.TenantDeliveryRemediationAction,
+	conversion []model.TenantOperationsSignal,
+	generatedAt time.Time,
+) []model.TenantNotificationCommandCenterAction {
+	actions := make([]model.TenantNotificationCommandCenterAction, 0, 8)
+	for _, alert := range alerts {
+		if len(actions) >= 3 {
+			break
+		}
+		actions = append(actions, model.TenantNotificationCommandCenterAction{
+			Title:      "Triage " + alert.Title,
+			Detail:     firstNonEmpty(alert.NextAction, alert.Recommendation, alert.Detail),
+			Severity:   alert.Severity,
+			Channel:    notificationCommandPreferredChannel(alert),
+			Status:     alert.Status,
+			Owner:      alert.HostName,
+			SLA:        notificationCommandSLA(alert.Severity),
+			PaidTier:   notificationCommandAlertTier(alert),
+			ObservedAt: alert.ObservedAt,
+		})
+	}
+	for _, remedy := range remedies {
+		if len(actions) >= 6 {
+			break
+		}
+		if remedy.Status == constants.DeliveryRemediationStatusHealthy {
+			continue
+		}
+		actions = append(actions, model.TenantNotificationCommandCenterAction{
+			Title:      titleWord(remedy.Channel) + " delivery assurance",
+			Detail:     firstNonEmpty(remedy.Plan, remedy.Problem, "Keep route proof current for paid notification SLAs."),
+			Severity:   constants.SeverityMedium,
+			Channel:    remedy.Channel,
+			Status:     remedy.Status,
+			Owner:      remedy.Owner,
+			SLA:        remedy.SLATarget,
+			PaidTier:   notificationCommandChannelTier(remedy.Channel),
+			ObservedAt: remedy.CreatedAt,
+		})
+	}
+	for _, signal := range conversion {
+		if len(actions) >= 8 {
+			break
+		}
+		actions = append(actions, model.TenantNotificationCommandCenterAction{
+			Title:      signal.Title,
+			Detail:     signal.Detail,
+			Severity:   signal.Severity,
+			Channel:    signal.Channel,
+			Status:     signal.Status,
+			Owner:      signal.Owner,
+			SLA:        "before paid demo",
+			PaidTier:   constants.PlanFamilyPro,
+			ObservedAt: signal.ObservedAt,
+		})
+	}
+	if len(actions) == 0 {
+		actions = append(actions, model.TenantNotificationCommandCenterAction{
+			Title:      "Notification command center ready",
+			Detail:     "Anomaly alerts, email proof, push reach, dashboard inbox, and delivery assurance are visible.",
+			Severity:   constants.SeverityInfo,
+			Channel:    constants.DeliveryChannelDashboard,
+			Status:     constants.StatusHealthy,
+			Owner:      constants.RoleBusinessManager,
+			SLA:        "review weekly",
+			PaidTier:   constants.PlanFamilyPro,
+			ObservedAt: generatedAt,
+		})
+	}
+	return actions
+}
+
+func alertDeliveryProofStatus(proof []model.TenantAlertDeliveryProof, channel string) string {
+	for _, item := range proof {
+		if item.Channel == channel {
+			return item.Status
+		}
+	}
+	return constants.DeliveryStatusPending
+}
+
+func notificationCommandChannelTier(channel string) string {
+	switch channel {
+	case constants.DeliveryChannelEmail, constants.DeliveryChannelPush:
+		return constants.PlanFamilyPro
+	case constants.DeliveryChannelDashboard:
+		return constants.PlanFree
+	default:
+		return constants.PlanBusiness
+	}
+}
+
+func notificationCommandAlertTier(item model.TenantAlertInboxItem) string {
+	switch item.Category {
+	case constants.RiskCategoryRiskySoftware, constants.RiskCategoryAgentHealth, constants.RiskCategoryArchiveHealth:
+		return constants.PlanBusiness
+	case constants.RiskCategoryPolicyChange:
+		return constants.PlanSchool
+	default:
+		return constants.PlanFamilyPro
+	}
+}
+
+func notificationCommandPreferredChannel(item model.TenantAlertInboxItem) string {
+	if alertDeliveryProofStatus(item.DeliveryProof, constants.DeliveryChannelEmail) != constants.DeliveryStatusPending {
+		return constants.DeliveryChannelEmail
+	}
+	if alertDeliveryProofStatus(item.DeliveryProof, constants.DeliveryChannelPush) != constants.DeliveryStatusPending {
+		return constants.DeliveryChannelPush
+	}
+	return constants.DeliveryChannelDashboard
+}
+
+func notificationCommandSLA(severity string) string {
+	switch severity {
+	case constants.SeverityCritical:
+		return "15 minutes"
+	case constants.SeverityHigh:
+		return "1 hour"
+	case constants.SeverityMedium:
+		return "same day"
+	default:
+		return "weekly review"
+	}
 }
 
 func statusFromCount(count int) string {
