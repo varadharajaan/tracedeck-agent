@@ -175,3 +175,8 @@
     reach, weekly report delivery, archive retention, trust/consent, owner
     action workflow, Postman/Newman coverage, screenshot-free layout guard,
     docs, and full local verification.
+52. Phase 49: notification preference center. Typed tenant preference API and
+    dashboard panel for immediate/digest/silent rules, quiet hours, escalation,
+    study-safe suppression, channel coverage, route proof gaps, audit proof,
+    Postman/Newman coverage, screenshot-free layout guard, docs, and full local
+    verification.

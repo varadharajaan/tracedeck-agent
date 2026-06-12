@@ -30,36 +30,37 @@ const (
 )
 
 const (
-	RouteSegmentSummary         = "summary"
-	RouteSegmentDaily           = "daily"
-	RouteSegmentReports         = "reports"
-	RouteSegmentWeekly          = "weekly"
-	RouteSegmentPDF             = "pdf"
-	RouteSegmentOverview        = "overview"
-	RouteSegmentAuditEvents     = "audit-events"
-	RouteSegmentAlertRules      = "alert-rules"
-	RouteSegmentConsentCenter   = "consent-center"
-	RouteSegmentAlertInbox      = "alert-inbox"
-	RouteSegmentOperations      = "operations-summary"
-	RouteSegmentMonetization    = "monetization-summary"
-	RouteSegmentNotificationCmd = "notification-command-center"
-	RouteSegmentDeliveryDrill   = "delivery-drilldown"
-	RouteSegmentDeliveryRemedy  = "delivery-remediation"
-	RouteSegmentSyncHealth      = "sync-health"
-	RouteSegmentActivityFeed    = "activity-feed"
-	RouteSegmentActivityViews   = "activity-views"
-	RouteSegmentNotifications   = "notification-routes"
-	RouteSegmentDataExports     = "data-exports"
-	RouteSegmentDeleteRequests  = "delete-requests"
-	RouteSegmentDeviceGroups    = "device-groups"
-	RouteSegmentPolicyAssign    = "policy-assignments"
-	RouteSegmentPolicyEvents    = "policy-violations"
-	RouteSegmentAnomalies       = "anomalies"
-	RouteSegmentTamperEvents    = "tamper-events"
-	RouteSegmentAlertDelivery   = "alert-deliveries"
-	RouteSegmentHealth          = "health"
-	RouteSegmentTelemetry       = "telemetry-events"
-	RouteSegmentTelemetryStatus = "telemetry-status"
+	RouteSegmentSummary          = "summary"
+	RouteSegmentDaily            = "daily"
+	RouteSegmentReports          = "reports"
+	RouteSegmentWeekly           = "weekly"
+	RouteSegmentPDF              = "pdf"
+	RouteSegmentOverview         = "overview"
+	RouteSegmentAuditEvents      = "audit-events"
+	RouteSegmentAlertRules       = "alert-rules"
+	RouteSegmentConsentCenter    = "consent-center"
+	RouteSegmentAlertInbox       = "alert-inbox"
+	RouteSegmentOperations       = "operations-summary"
+	RouteSegmentMonetization     = "monetization-summary"
+	RouteSegmentNotificationCmd  = "notification-command-center"
+	RouteSegmentDeliveryDrill    = "delivery-drilldown"
+	RouteSegmentDeliveryRemedy   = "delivery-remediation"
+	RouteSegmentSyncHealth       = "sync-health"
+	RouteSegmentActivityFeed     = "activity-feed"
+	RouteSegmentActivityViews    = "activity-views"
+	RouteSegmentNotifications    = "notification-routes"
+	RouteSegmentNotificationPref = "notification-preferences"
+	RouteSegmentDataExports      = "data-exports"
+	RouteSegmentDeleteRequests   = "delete-requests"
+	RouteSegmentDeviceGroups     = "device-groups"
+	RouteSegmentPolicyAssign     = "policy-assignments"
+	RouteSegmentPolicyEvents     = "policy-violations"
+	RouteSegmentAnomalies        = "anomalies"
+	RouteSegmentTamperEvents     = "tamper-events"
+	RouteSegmentAlertDelivery    = "alert-deliveries"
+	RouteSegmentHealth           = "health"
+	RouteSegmentTelemetry        = "telemetry-events"
+	RouteSegmentTelemetryStatus  = "telemetry-status"
 )
 
 const (
@@ -112,6 +113,7 @@ const (
 	AuditActionTenantCreated        = "tenant.created"
 	AuditActionAlertRuleCreated     = "alert_rule.created"
 	AuditActionNotificationRoute    = "notification_route.created"
+	AuditActionNotificationPref     = "notification_preferences.updated"
 	AuditActionDeliveryDrillRun     = "delivery_drilldown.rehearsed"
 	AuditActionDeliveryRemediation  = "delivery_remediation.planned"
 	AuditActionActivityViewCreated  = "activity_view.created"
@@ -275,7 +277,19 @@ const (
 )
 
 const (
-	NotificationCommandPrivacyNote = "metadata-only notification command center: no passwords, credentials, screenshots, raw URLs, page titles, tokens, cookies, private content, alert bodies, or provider secrets are collected or stored"
+	NotificationCommandPrivacyNote    = "metadata-only notification command center: no passwords, credentials, screenshots, raw URLs, page titles, tokens, cookies, private content, alert bodies, or provider secrets are collected or stored"
+	NotificationPreferencePrivacyNote = "metadata-only notification preferences: recipient labels, channel policy, quiet hours, report cadence, and escalation metadata only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, or private content are collected or stored"
+)
+
+const (
+	NotificationPreferenceModeImmediate = "immediate"
+	NotificationPreferenceModeDigest    = "digest"
+	NotificationPreferenceModeSilent    = "silent"
+)
+
+const (
+	NotificationDigestCadenceDaily  = "daily"
+	NotificationDigestCadenceWeekly = "weekly"
 )
 
 const (

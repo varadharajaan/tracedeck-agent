@@ -62,6 +62,8 @@ GET  /api/v1/tenants/{tenantId}/alert-rules
 POST /api/v1/tenants/{tenantId}/alert-rules
 GET  /api/v1/tenants/{tenantId}/notification-routes
 POST /api/v1/tenants/{tenantId}/notification-routes
+GET  /api/v1/tenants/{tenantId}/notification-preferences
+POST /api/v1/tenants/{tenantId}/notification-preferences
 GET  /api/v1/tenants/{tenantId}/consent-center
 GET  /api/v1/tenants/{tenantId}/operations-summary
 GET  /api/v1/tenants/{tenantId}/monetization-summary
@@ -208,6 +210,20 @@ Routes are typed records for email, push, and dashboard delivery readiness.
 They store channel, provider, enabled state, status, recipient label, route
 summary, and verification timestamp. They do not store SMTP passwords, API
 keys, push endpoint secrets, auth tokens, or raw message content.
+
+Phase 49 adds tenant-scoped notification preference APIs:
+
+- `GET /api/v1/tenants/{tenantId}/notification-preferences`
+- `POST /api/v1/tenants/{tenantId}/notification-preferences`
+
+The `GET` route returns a typed preference center with digest cadence, quiet
+hours, escalation policy, immediate/digest/silent rules, channel coverage,
+study-safe suppression count, route proof gaps, paid tier, retention evidence,
+and a privacy boundary. The `POST` route accepts typed metadata-only updates
+for cadence, quiet hours, escalation, and rules. Validation rejects unknown
+channels, severities, preference modes, and digest cadences. It never stores
+passwords, provider secrets, alert bodies, screenshots, tokens, cookies, raw
+URLs, page titles, or private content.
 
 Phase 44 adds provider-safe delivery drilldown APIs:
 

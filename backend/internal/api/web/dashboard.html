@@ -1437,6 +1437,70 @@
       </div>
     </section>
 
+    <section id="notification-preference-section" class="panel" aria-label="notification preference center">
+      <div class="section-head">
+        <div>
+          <h2>Notification Preference Center</h2>
+          <p class="muted">Typed customer policy for who receives anomaly alerts, which channels are used, quiet hours, digest cadence, escalation, and study-safe suppression.</p>
+        </div>
+        <span id="notification-preference-status" class="badge pending">pending</span>
+      </div>
+      <div class="metric-grid">
+        <div class="signal">
+          <small>Preference Score</small>
+          <strong id="notification-preference-score">-</strong>
+          <span id="notification-preference-score-sub" class="muted">No preference proof</span>
+        </div>
+        <div class="signal">
+          <small>Channel Policy</small>
+          <strong id="notification-preference-channels">-</strong>
+          <span id="notification-preference-channels-sub" class="muted">No channel policy</span>
+        </div>
+        <div class="signal">
+          <small>Quiet Hours</small>
+          <strong id="notification-preference-quiet">-</strong>
+          <span id="notification-preference-quiet-sub" class="muted">No quiet hours</span>
+        </div>
+        <div class="signal">
+          <small>Escalation</small>
+          <strong id="notification-preference-escalation">-</strong>
+          <span id="notification-preference-escalation-sub" class="muted">No escalation policy</span>
+        </div>
+      </div>
+      <div class="command-center-board">
+        <div>
+          <div class="section-head">
+            <div>
+              <h2>Preference Rule Matrix</h2>
+              <p class="muted">Immediate, digest, and silent rules with paid-tier and retention evidence.</p>
+            </div>
+            <span id="notification-preference-rule-count" class="pill">0 rules</span>
+          </div>
+          <div id="notification-preference-rule-list" class="growth-list"><div class="empty">No notification preference rules yet.</div></div>
+        </div>
+        <div>
+          <div class="section-head">
+            <div>
+              <h2>Study-Safe Suppression</h2>
+              <p class="muted">Learning-related sessions can be quieted without hiding risk and tamper alerts.</p>
+            </div>
+            <span id="notification-preference-suppression-count" class="pill">0 suppressed</span>
+          </div>
+          <div id="notification-preference-suppression-list" class="growth-list"><div class="empty">No study-safe suppression rules yet.</div></div>
+        </div>
+        <div>
+          <div class="section-head">
+            <div>
+              <h2>Preference Owner Actions</h2>
+              <p class="muted">What the parent, school admin, or business owner should verify before relying on alerts.</p>
+            </div>
+            <span id="notification-preference-action-count" class="pill">0 actions</span>
+          </div>
+          <div id="notification-preference-action-list" class="growth-list"><div class="empty">No notification preference actions yet.</div></div>
+        </div>
+      </div>
+    </section>
+
     <section id="command-navigation" class="command-nav" aria-label="command navigation">
       <div class="command-nav-summary">
         <div class="section-head">
@@ -3295,6 +3359,7 @@
       renderDeviceHealth(healthModel);
       renderTenantPlan(device, context);
       renderGrowthCockpit(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
+      renderNotificationPreferenceCenter(context.notificationPreferences);
       renderNotificationOperations(deliveries.items);
       renderAlertInbox(policy.items.concat(anomalies.items, tamper.items), deliveries.items);
       renderProductPackaging({ ...context, deliveries: deliveries.items });
@@ -3383,6 +3448,16 @@
       setText("growth-cockpit-audience", "audience pending");
       setText("growth-cockpit-notification", "notification pending");
       setText("growth-cockpit-next", "next action pending");
+      document.getElementById("notification-preference-status").outerHTML =
+        badge("pending").replace("<span", '<span id="notification-preference-status"');
+      setText("notification-preference-score", "-");
+      setText("notification-preference-score-sub", "No preference proof");
+      setText("notification-preference-channels", "-");
+      setText("notification-preference-channels-sub", "No channel policy");
+      setText("notification-preference-quiet", "-");
+      setText("notification-preference-quiet-sub", "No quiet hours");
+      setText("notification-preference-escalation", "-");
+      setText("notification-preference-escalation-sub", "No escalation policy");
     }
 
     function renderCommandNavigation(overview, health, policy, anomalies, tamper, deliveries, context) {
@@ -4020,6 +4095,132 @@
             <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
             <span class="pill">${escapeHTML(item.paid_tier || item.paidTier || "paid")}</span>
           </div>
+        </div>
+      `).join("");
+    }
+
+    function renderNotificationPreferenceCenter(center) {
+      const model = center || {};
+      const summary = model.summary || {};
+      const rules = model.rules || [];
+      const quiet = model.quiet_hours || {};
+      const escalation = model.escalation || {};
+      const status = summary.status || "pending";
+      document.getElementById("notification-preference-status").outerHTML =
+        badge(status).replace("<span", '<span id="notification-preference-status"');
+      setText("notification-preference-score", `${summary.preference_score || 0}%`);
+      setText("notification-preference-score-sub", `${summary.rules_total || rules.length} rules, ${summary.routes_needing_proof || 0} route proof gaps`);
+      const enabledChannels = [
+        summary.email_enabled ? "email" : "",
+        summary.push_enabled ? "push" : "",
+        summary.dashboard_enabled ? "dashboard" : ""
+      ].filter(Boolean);
+      setText("notification-preference-channels", enabledChannels.length ? enabledChannels.join(" + ") : "pending");
+      setText("notification-preference-channels-sub", `${summary.immediate_rules || 0} immediate, ${summary.digest_rules || 0} digest, ${summary.silent_rules || 0} silent`);
+      setText("notification-preference-quiet", quiet.enabled ? "enabled" : "disabled");
+      setText("notification-preference-quiet-sub", quiet.enabled ? `${quiet.start_local || "-"} to ${quiet.end_local || "-"} ${quiet.timezone || ""}` : "critical bypass rules can still notify");
+      setText("notification-preference-escalation", escalation.enabled ? `${escalation.after_minutes || 0} min` : "disabled");
+      setText("notification-preference-escalation-sub", escalation.enabled ? `${escalation.max_repeats || 0} repeats via ${(escalation.channels || []).join(", ") || "dashboard"}` : "no escalation owner configured");
+
+      renderNotificationPreferenceRules(rules);
+      renderNotificationPreferenceSuppression(rules);
+      renderNotificationPreferenceActions(model, summary, quiet, escalation);
+    }
+
+    function renderNotificationPreferenceRules(rules) {
+      setText("notification-preference-rule-count", `${rules.length} rule${rules.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("notification-preference-rule-list");
+      if (rules.length === 0) {
+        target.innerHTML = '<div class="empty">No notification preference rules yet.</div>';
+        return;
+      }
+      target.innerHTML = rules.map((rule) => `
+        <div class="growth-item">
+          <strong>${escapeHTML(rule.name)}</strong>
+          <span class="muted">${escapeHTML(rule.next_action || rule.delivery_sla || "No next action yet.")}</span>
+          <div class="action-meta">
+            ${badge(rule.mode || "pending")}
+            ${badge(rule.severity || "info")}
+            <span class="pill">${escapeHTML((rule.channels || []).join(" + "))}</span>
+            <span class="pill">${escapeHTML(rule.recipient_group || "recipient group pending")}</span>
+            <span class="pill">${escapeHTML(rule.paid_tier || "paid")}</span>
+          </div>
+          <span class="muted">${escapeHTML(rule.retention_evidence || "metadata-only retention evidence pending")}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderNotificationPreferenceSuppression(rules) {
+      const suppressed = rules.filter((rule) => rule.study_safe || rule.suppression_label);
+      setText("notification-preference-suppression-count", `${suppressed.length} suppressed`);
+      const target = document.getElementById("notification-preference-suppression-list");
+      if (suppressed.length === 0) {
+        target.innerHTML = '<div class="empty">No study-safe suppression rules yet.</div>';
+        return;
+      }
+      target.innerHTML = suppressed.map((rule) => `
+        <div class="growth-item">
+          <strong>${escapeHTML(rule.name)}</strong>
+          <span class="muted">${escapeHTML(rule.suppression_label || "Study-safe activity is quieted by policy.")}</span>
+          <div class="action-meta">
+            ${badge(rule.mode || "silent")}
+            <span class="pill">${escapeHTML(rule.event_type || "event type pending")}</span>
+            <span class="pill">${escapeHTML(rule.delivery_sla || "dashboard only")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderNotificationPreferenceActions(model, summary, quiet, escalation) {
+      const actions = [];
+      if ((summary.routes_needing_proof || 0) > 0) {
+        actions.push({
+          title: "Verify notification route proof",
+          detail: `${summary.routes_needing_proof} route${summary.routes_needing_proof === 1 ? "" : "s"} need delivery proof before relying on preference policy.`,
+          status: "watch"
+        });
+      }
+      if (!summary.push_enabled) {
+        actions.push({
+          title: "Enable push for urgent anomalies",
+          detail: "Push reach makes tamper and risky software alerts feel immediate for paid users.",
+          status: "attention"
+        });
+      }
+      if (!quiet.enabled) {
+        actions.push({
+          title: "Configure quiet hours",
+          detail: "Quiet hours reduce noisy alerts while critical bypass rules remain active.",
+          status: "watch"
+        });
+      }
+      if (!escalation.enabled) {
+        actions.push({
+          title: "Configure escalation owner",
+          detail: "Escalation metadata shows who owns failed or unacknowledged alert delivery.",
+          status: "watch"
+        });
+      }
+      if ((summary.study_suppression_rules || 0) === 0) {
+        actions.push({
+          title: "Add study-safe suppression",
+          detail: "Study-safe suppression keeps learning activity from creating unnecessary alerts.",
+          status: "pending"
+        });
+      }
+      if (actions.length === 0) {
+        actions.push({
+          title: "Preference center ready",
+          detail: `${model.plan_name || "Paid plan"} has immediate, digest, silent, quiet-hour, escalation, and study-safe preference proof.`,
+          status: "healthy"
+        });
+      }
+      setText("notification-preference-action-count", `${actions.length} action${actions.length === 1 ? "" : "s"}`);
+      document.getElementById("notification-preference-action-list").innerHTML = actions.map((item) => `
+        <div class="growth-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">${badge(item.status)}</div>
         </div>
       `).join("");
     }
@@ -6095,6 +6296,7 @@
       const deviceGroups = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/device-groups`) : null;
       const policyAssignments = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/policy-assignments`) : null;
       const notificationRoutes = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-routes`) : null;
+      const notificationPreferences = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-preferences`) : null;
       const deliveryDrilldown = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delivery-drilldown`) : null;
       const deliveryRemediation = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delivery-remediation`) : null;
       const telemetryStatus = await loadOptionalJSON(`${base}/telemetry-status`);
@@ -6119,6 +6321,7 @@
         deviceGroups,
         policyAssignments,
         notificationRoutes,
+        notificationPreferences,
         deliveryDrilldown,
         deliveryRemediation,
         telemetryStatus,

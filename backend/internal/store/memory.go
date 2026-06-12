@@ -30,6 +30,7 @@ type Memory struct {
 	auditEvents        []model.AuditEvent
 	alertRules         map[string][]model.AlertRule
 	notificationRoutes map[string][]model.NotificationRoute
+	notificationPrefs  map[string]model.NotificationPreferenceCenter
 	deliveryRemedies   map[string][]model.TenantDeliveryRemediationAction
 	activityViews      map[string][]model.TenantActivityView
 	dataExports        map[string][]model.TenantDataExport
@@ -50,6 +51,7 @@ func NewMemory() *Memory {
 		tenants:            make(map[string]model.Tenant),
 		alertRules:         make(map[string][]model.AlertRule),
 		notificationRoutes: make(map[string][]model.NotificationRoute),
+		notificationPrefs:  make(map[string]model.NotificationPreferenceCenter),
 		deliveryRemedies:   make(map[string][]model.TenantDeliveryRemediationAction),
 		activityViews:      make(map[string][]model.TenantActivityView),
 		dataExports:        make(map[string][]model.TenantDataExport),
@@ -125,6 +127,7 @@ func (m *Memory) CreateTenant(_ context.Context, req model.CreateTenantRequest) 
 	m.tenants[tenantID] = tenant
 	m.seedAlertRulesForTenantLocked(tenant)
 	m.seedNotificationRoutesForTenantLocked(tenant)
+	m.seedNotificationPreferencesForTenantLocked(tenant)
 	m.seedDeviceGroupsForTenantLocked(tenant)
 	m.seedPolicyAssignmentsForTenantLocked(tenant)
 	m.auditEvents = append(m.auditEvents, model.AuditEvent{
@@ -284,6 +287,69 @@ func (m *Memory) ListNotificationRoutes(_ context.Context, tenantID string) []mo
 		return routes[i].TenantID < routes[j].TenantID
 	})
 	return append([]model.NotificationRoute(nil), routes...)
+}
+
+func (m *Memory) TenantNotificationPreferences(_ context.Context, tenantID string) (model.NotificationPreferenceCenter, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	tenant, ok := m.tenants[tenantID]
+	if !ok {
+		return model.NotificationPreferenceCenter{}, ErrTenantNotFound
+	}
+	m.seedNotificationRoutesForTenantLocked(tenant)
+	m.seedNotificationPreferencesForTenantLocked(tenant)
+	center := buildNotificationPreferenceCenter(tenant, m.notificationPrefs[tenantID], m.notificationRoutes[tenantID], now)
+	if err := m.persistLocked(); err != nil {
+		return model.NotificationPreferenceCenter{}, err
+	}
+	return center, nil
+}
+
+func (m *Memory) UpdateTenantNotificationPreferences(_ context.Context, tenantID string, req model.UpdateNotificationPreferencesRequest) (model.NotificationPreferenceCenter, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	tenant, ok := m.tenants[tenantID]
+	if !ok {
+		return model.NotificationPreferenceCenter{}, ErrTenantNotFound
+	}
+	m.seedNotificationRoutesForTenantLocked(tenant)
+	m.seedNotificationPreferencesForTenantLocked(tenant)
+
+	current := m.notificationPrefs[tenantID]
+	if strings.TrimSpace(req.DigestCadence) != "" {
+		current.DigestCadence = strings.TrimSpace(req.DigestCadence)
+	}
+	if strings.TrimSpace(req.QuietHours.StartLocal) != "" || strings.TrimSpace(req.QuietHours.EndLocal) != "" || strings.TrimSpace(req.QuietHours.Timezone) != "" {
+		current.QuietHours = req.QuietHours
+	}
+	if req.Escalation.AfterMinutes > 0 || req.Escalation.RepeatEveryMins > 0 || req.Escalation.MaxRepeats > 0 || len(req.Escalation.Channels) > 0 || strings.TrimSpace(req.Escalation.Owner) != "" {
+		current.Escalation = req.Escalation
+	}
+	if len(req.Rules) > 0 {
+		current.Rules = normalizeNotificationPreferenceRules(tenantID, req.Rules, now)
+	}
+	current.UpdatedAt = now
+	m.notificationPrefs[tenantID] = current
+	m.auditEvents = append(m.auditEvents, model.AuditEvent{
+		ID:        auditID(tenantID, len(m.auditEvents)+1, now),
+		TenantID:  tenantID,
+		Category:  constants.AuditCategorySystem,
+		Action:    constants.AuditActionNotificationPref,
+		Actor:     constants.AuditActorLocalAPI,
+		ActorRole: constants.RoleBusinessManager,
+		Summary:   "notification preference center updated",
+		CreatedAt: now,
+	})
+	if err := m.persistLocked(); err != nil {
+		return model.NotificationPreferenceCenter{}, err
+	}
+	return buildNotificationPreferenceCenter(tenant, current, m.notificationRoutes[tenantID], now), nil
 }
 
 func (m *Memory) TenantDeliveryDrilldown(_ context.Context, tenantID string) (model.TenantDeliveryDrilldown, error) {
@@ -1589,6 +1655,96 @@ func (m *Memory) seedNotificationRoutesForTenantLocked(tenant model.Tenant) {
 	}
 }
 
+func (m *Memory) seedNotificationPreferencesForTenantLocked(tenant model.Tenant) {
+	tenantID := strings.TrimSpace(tenant.TenantID)
+	if tenantID == "" {
+		return
+	}
+	if _, ok := m.notificationPrefs[tenantID]; ok {
+		return
+	}
+	now := time.Now().UTC()
+	m.notificationPrefs[tenantID] = model.NotificationPreferenceCenter{
+		TenantID:      tenantID,
+		TenantName:    tenant.Name,
+		PlanID:        tenant.PlanID,
+		PlanName:      planByID(tenant.PlanID).Name,
+		Audience:      tenant.PrimaryProfile,
+		DigestCadence: constants.NotificationDigestCadenceWeekly,
+		QuietHours: model.NotificationQuietHours{
+			Enabled:    true,
+			StartLocal: "22:30",
+			EndLocal:   "06:30",
+			Timezone:   "local endpoint timezone",
+		},
+		Escalation: model.NotificationEscalationPolicy{
+			Enabled:         true,
+			AfterMinutes:    15,
+			RepeatEveryMins: 30,
+			MaxRepeats:      2,
+			Channels:        []string{constants.DeliveryChannelEmail, constants.DeliveryChannelPush},
+			Owner:           "parent or account owner",
+		},
+		Rules: []model.NotificationPreferenceRule{
+			{
+				ID:                notificationPreferenceRuleID(tenantID, 1, now),
+				TenantID:          tenantID,
+				Name:              "Critical tamper alerts",
+				EventType:         constants.RiskTypeTamper,
+				Severity:          constants.SeverityCritical,
+				Channels:          []string{constants.DeliveryChannelEmail, constants.DeliveryChannelPush, constants.DeliveryChannelDashboard},
+				Mode:              constants.NotificationPreferenceModeImmediate,
+				RecipientGroup:    "account owner",
+				QuietHoursBypass:  true,
+				PaidTier:          constants.PlanFamilyPro,
+				DeliverySLA:       "15 minutes",
+				NextAction:        "Keep email and push proof current for tamper signals.",
+				RetentionEvidence: "audit event and delivery metadata retained by tenant retention tier",
+				UpdatedAt:         now,
+			},
+			{
+				ID:                notificationPreferenceRuleID(tenantID, 2, now.Add(time.Millisecond)),
+				TenantID:          tenantID,
+				Name:              "Non-study entertainment digest",
+				EventType:         constants.RiskCategoryEntertainment,
+				Severity:          constants.SeverityMedium,
+				Channels:          []string{constants.DeliveryChannelEmail, constants.DeliveryChannelDashboard},
+				Mode:              constants.NotificationPreferenceModeDigest,
+				RecipientGroup:    "parent weekly report",
+				SuppressionLabel:  "study-safe YouTube and coding content suppressed",
+				StudySafe:         true,
+				QuietHoursBypass:  false,
+				PaidTier:          constants.PlanFamilyPro,
+				DeliverySLA:       "weekly report",
+				NextAction:        "Review digest only when entertainment crosses policy threshold.",
+				RetentionEvidence: "weekly report metadata and alert summary retained by tenant tier",
+				UpdatedAt:         now.Add(time.Millisecond),
+			},
+			{
+				ID:                notificationPreferenceRuleID(tenantID, 3, now.Add(2*time.Millisecond)),
+				TenantID:          tenantID,
+				Name:              "Study-safe learning activity",
+				EventType:         constants.AlertTriggerNonStudyYouTube,
+				Severity:          constants.SeverityLow,
+				Channels:          []string{constants.DeliveryChannelDashboard},
+				Mode:              constants.NotificationPreferenceModeSilent,
+				RecipientGroup:    "dashboard archive",
+				SuppressionLabel:  "coding, mathematics, system design, and study topics",
+				StudySafe:         true,
+				QuietHoursBypass:  false,
+				PaidTier:          constants.PlanFree,
+				DeliverySLA:       "dashboard only",
+				NextAction:        "Suppress alerts when classifier marks the session as study-safe.",
+				RetentionEvidence: "category metadata only; no raw URLs or page titles",
+				UpdatedAt:         now.Add(2 * time.Millisecond),
+			},
+		},
+		PrivacyBoundary: constants.NotificationPreferencePrivacyNote,
+		GeneratedAt:     now,
+		UpdatedAt:       now,
+	}
+}
+
 func (m *Memory) seedActivityViewsForTenantLocked(tenant model.Tenant) {
 	tenantID := strings.TrimSpace(tenant.TenantID)
 	if tenantID == "" || len(m.activityViews[tenantID]) > 0 {
@@ -2173,6 +2329,15 @@ func notificationRouteID(tenantID string, sequence int, createdAt time.Time) str
 	}, "-")
 }
 
+func notificationPreferenceRuleID(tenantID string, sequence int, createdAt time.Time) string {
+	return strings.Join([]string{
+		strings.TrimSpace(tenantID),
+		"notification-pref",
+		fmt.Sprintf("%03d", sequence),
+		createdAt.Format("20060102T150405Z"),
+	}, "-")
+}
+
 func deliveryRemediationID(tenantID string, sequence int, createdAt time.Time) string {
 	return strings.Join([]string{
 		strings.TrimSpace(tenantID),
@@ -2349,6 +2514,7 @@ type persistentState struct {
 	AuditEvents        []model.AuditEvent                                 `json:"audit_events"`
 	AlertRules         map[string][]model.AlertRule                       `json:"alert_rules"`
 	NotificationRoutes map[string][]model.NotificationRoute               `json:"notification_routes"`
+	NotificationPrefs  map[string]model.NotificationPreferenceCenter      `json:"notification_preferences"`
 	DeliveryRemedies   map[string][]model.TenantDeliveryRemediationAction `json:"delivery_remedies"`
 	ActivityViews      map[string][]model.TenantActivityView              `json:"activity_views"`
 	DataExports        map[string][]model.TenantDataExport                `json:"data_exports"`
@@ -2385,6 +2551,7 @@ func (m *Memory) load() error {
 	m.auditEvents = append([]model.AuditEvent(nil), state.AuditEvents...)
 	m.alertRules = cloneAlertRuleMap(state.AlertRules)
 	m.notificationRoutes = cloneNotificationRouteMap(state.NotificationRoutes)
+	m.notificationPrefs = cloneNotificationPreferenceMap(state.NotificationPrefs)
 	m.deliveryRemedies = cloneDeliveryRemediationMap(state.DeliveryRemedies)
 	m.activityViews = cloneActivityViewMap(state.ActivityViews)
 	m.dataExports = cloneDataExportMap(state.DataExports)
@@ -2411,6 +2578,7 @@ func (m *Memory) persistLocked() error {
 		AuditEvents:        append([]model.AuditEvent(nil), m.auditEvents...),
 		AlertRules:         cloneAlertRuleMap(m.alertRules),
 		NotificationRoutes: cloneNotificationRouteMap(m.notificationRoutes),
+		NotificationPrefs:  cloneNotificationPreferenceMap(m.notificationPrefs),
 		DeliveryRemedies:   cloneDeliveryRemediationMap(m.deliveryRemedies),
 		ActivityViews:      cloneActivityViewMap(m.activityViews),
 		DataExports:        cloneDataExportMap(m.dataExports),
@@ -2482,6 +2650,16 @@ func cloneNotificationRouteMap(input map[string][]model.NotificationRoute) map[s
 	output := make(map[string][]model.NotificationRoute, len(input))
 	for key, value := range input {
 		output[key] = append([]model.NotificationRoute(nil), value...)
+	}
+	return output
+}
+
+func cloneNotificationPreferenceMap(input map[string]model.NotificationPreferenceCenter) map[string]model.NotificationPreferenceCenter {
+	output := make(map[string]model.NotificationPreferenceCenter, len(input))
+	for key, value := range input {
+		value.Rules = append([]model.NotificationPreferenceRule(nil), value.Rules...)
+		value.Escalation.Channels = append([]string(nil), value.Escalation.Channels...)
+		output[key] = value
 	}
 	return output
 }
@@ -3084,6 +3262,217 @@ func notificationNextAction(delivery *model.AlertDelivery) string {
 	default:
 		return "Send a proof notification."
 	}
+}
+
+func buildNotificationPreferenceCenter(tenant model.Tenant, stored model.NotificationPreferenceCenter, routes []model.NotificationRoute, generatedAt time.Time) model.NotificationPreferenceCenter {
+	plan := planByID(tenant.PlanID)
+	rules := normalizeNotificationPreferenceRules(tenant.TenantID, stored.Rules, generatedAt)
+	if len(rules) == 0 {
+		rules = normalizeNotificationPreferenceRules(tenant.TenantID, defaultNotificationPreferenceRules(tenant.TenantID, generatedAt), generatedAt)
+	}
+	quietHours := stored.QuietHours
+	if strings.TrimSpace(quietHours.StartLocal) == "" {
+		quietHours = model.NotificationQuietHours{
+			Enabled:    true,
+			StartLocal: "22:30",
+			EndLocal:   "06:30",
+			Timezone:   "local endpoint timezone",
+		}
+	}
+	escalation := stored.Escalation
+	if escalation.AfterMinutes == 0 {
+		escalation = model.NotificationEscalationPolicy{
+			Enabled:         true,
+			AfterMinutes:    15,
+			RepeatEveryMins: 30,
+			MaxRepeats:      2,
+			Channels:        []string{constants.DeliveryChannelEmail, constants.DeliveryChannelPush},
+			Owner:           "parent or account owner",
+		}
+	}
+	digestCadence := strings.TrimSpace(stored.DigestCadence)
+	if digestCadence == "" {
+		digestCadence = constants.NotificationDigestCadenceWeekly
+	}
+	summary := notificationPreferenceSummary(rules, routes, quietHours, escalation)
+	return model.NotificationPreferenceCenter{
+		TenantID:        tenant.TenantID,
+		TenantName:      tenant.Name,
+		PlanID:          tenant.PlanID,
+		PlanName:        plan.Name,
+		Audience:        firstNonEmpty(plan.Audience, tenant.PrimaryProfile),
+		DigestCadence:   digestCadence,
+		QuietHours:      quietHours,
+		Escalation:      escalation,
+		Summary:         summary,
+		Rules:           rules,
+		PrivacyBoundary: constants.NotificationPreferencePrivacyNote,
+		GeneratedAt:     generatedAt,
+		UpdatedAt:       stored.UpdatedAt,
+	}
+}
+
+func notificationPreferenceSummary(rules []model.NotificationPreferenceRule, routes []model.NotificationRoute, quietHours model.NotificationQuietHours, escalation model.NotificationEscalationPolicy) model.NotificationPreferenceCenterSummary {
+	channels := map[string]bool{}
+	routesNeedingProof := 0
+	for _, route := range routes {
+		if route.Enabled {
+			channels[route.Channel] = true
+		}
+		if !route.Enabled || route.Status != constants.StatusHealthy || route.LastVerifiedAt == nil {
+			routesNeedingProof++
+		}
+	}
+	immediate := 0
+	digest := 0
+	silent := 0
+	studySafe := 0
+	for _, rule := range rules {
+		switch rule.Mode {
+		case constants.NotificationPreferenceModeImmediate:
+			immediate++
+		case constants.NotificationPreferenceModeDigest:
+			digest++
+		case constants.NotificationPreferenceModeSilent:
+			silent++
+		}
+		if rule.StudySafe || strings.TrimSpace(rule.SuppressionLabel) != "" {
+			studySafe++
+		}
+	}
+	checks := []bool{
+		len(rules) > 0,
+		immediate > 0,
+		digest > 0,
+		silent > 0,
+		channels[constants.DeliveryChannelEmail],
+		channels[constants.DeliveryChannelPush],
+		channels[constants.DeliveryChannelDashboard],
+		quietHours.Enabled,
+		escalation.Enabled,
+		studySafe > 0,
+		routesNeedingProof == 0,
+	}
+	score := (countTrue(checks) * 100) / len(checks)
+	status := constants.StatusHealthy
+	if routesNeedingProof > 0 || !channels[constants.DeliveryChannelPush] {
+		status = constants.StatusWatch
+	}
+	if len(rules) == 0 || !channels[constants.DeliveryChannelEmail] {
+		status = constants.StatusAttention
+	}
+	return model.NotificationPreferenceCenterSummary{
+		Status:                status,
+		PreferenceScore:       score,
+		RulesTotal:            len(rules),
+		ImmediateRules:        immediate,
+		DigestRules:           digest,
+		SilentRules:           silent,
+		EmailEnabled:          channels[constants.DeliveryChannelEmail],
+		PushEnabled:           channels[constants.DeliveryChannelPush],
+		DashboardEnabled:      channels[constants.DeliveryChannelDashboard],
+		QuietHoursEnabled:     quietHours.Enabled,
+		EscalationEnabled:     escalation.Enabled,
+		StudySuppressionRules: studySafe,
+		RoutesNeedingProof:    routesNeedingProof,
+		RecommendedPaidTier:   constants.PlanFamilyPro,
+	}
+}
+
+func defaultNotificationPreferenceRules(tenantID string, now time.Time) []model.NotificationPreferenceRule {
+	return []model.NotificationPreferenceRule{
+		{
+			ID:                notificationPreferenceRuleID(tenantID, 1, now),
+			TenantID:          tenantID,
+			Name:              "Critical tamper alerts",
+			EventType:         constants.RiskTypeTamper,
+			Severity:          constants.SeverityCritical,
+			Channels:          []string{constants.DeliveryChannelEmail, constants.DeliveryChannelPush, constants.DeliveryChannelDashboard},
+			Mode:              constants.NotificationPreferenceModeImmediate,
+			RecipientGroup:    "account owner",
+			QuietHoursBypass:  true,
+			PaidTier:          constants.PlanFamilyPro,
+			DeliverySLA:       "15 minutes",
+			NextAction:        "Keep email and push proof current for tamper signals.",
+			RetentionEvidence: "audit event and delivery metadata retained by tenant retention tier",
+			UpdatedAt:         now,
+		},
+	}
+}
+
+func normalizeNotificationPreferenceRules(tenantID string, rules []model.NotificationPreferenceRule, now time.Time) []model.NotificationPreferenceRule {
+	normalized := make([]model.NotificationPreferenceRule, 0, len(rules))
+	for index, rule := range rules {
+		rule.ID = strings.TrimSpace(rule.ID)
+		if rule.ID == "" {
+			rule.ID = notificationPreferenceRuleID(tenantID, index+1, now)
+		}
+		rule.TenantID = tenantID
+		rule.Name = strings.TrimSpace(rule.Name)
+		rule.EventType = strings.TrimSpace(rule.EventType)
+		rule.Severity = strings.TrimSpace(rule.Severity)
+		rule.Mode = strings.TrimSpace(rule.Mode)
+		rule.RecipientGroup = strings.TrimSpace(rule.RecipientGroup)
+		rule.SuppressionLabel = strings.TrimSpace(rule.SuppressionLabel)
+		rule.PaidTier = strings.TrimSpace(rule.PaidTier)
+		rule.DeliverySLA = strings.TrimSpace(rule.DeliverySLA)
+		rule.NextAction = strings.TrimSpace(rule.NextAction)
+		rule.RetentionEvidence = strings.TrimSpace(rule.RetentionEvidence)
+		if rule.Mode == "" {
+			rule.Mode = constants.NotificationPreferenceModeImmediate
+		}
+		if rule.Severity == "" {
+			rule.Severity = constants.SeverityMedium
+		}
+		rule.Channels = normalizeStringSlice(rule.Channels)
+		if len(rule.Channels) == 0 {
+			rule.Channels = []string{constants.DeliveryChannelDashboard}
+		}
+		if rule.PaidTier == "" {
+			rule.PaidTier = constants.PlanFamilyPro
+		}
+		if rule.DeliverySLA == "" {
+			rule.DeliverySLA = "tenant policy"
+		}
+		if rule.UpdatedAt.IsZero() {
+			rule.UpdatedAt = now
+		}
+		normalized = append(normalized, rule)
+	}
+	sort.Slice(normalized, func(i, j int) bool {
+		if normalized[i].Mode == normalized[j].Mode {
+			return normalized[i].Name < normalized[j].Name
+		}
+		return normalized[i].Mode < normalized[j].Mode
+	})
+	return normalized
+}
+
+func normalizeStringSlice(values []string) []string {
+	output := make([]string, 0, len(values))
+	seen := map[string]struct{}{}
+	for _, value := range values {
+		clean := strings.TrimSpace(value)
+		if clean == "" {
+			continue
+		}
+		if _, ok := seen[clean]; ok {
+			continue
+		}
+		seen[clean] = struct{}{}
+		output = append(output, clean)
+	}
+	return output
+}
+
+func countTrue(values []bool) int {
+	count := 0
+	for _, value := range values {
+		if value {
+			count++
+		}
+	}
+	return count
 }
 
 func deliveriesByEventID(deliveries []model.AlertDelivery) map[string][]model.AlertDelivery {
