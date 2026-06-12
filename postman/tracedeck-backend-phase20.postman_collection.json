@@ -1,0 +1,187 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 20",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Without API Key",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is public', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Tenant",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"name\":\"Family Varadha\",\"plan_id\":\"family_pro\",\"retention_tier_id\":\"family_cloud_90_365_archive\",\"primary_profile\":\"ai-btech-student\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/tenants"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('tenant created', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().tenant_id).to.eql('family-varadha');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Enroll Host",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"device_id\":\"phase20-dashboard-device\",\"host_name\":\"phase20-dashboard-host\",\"profile\":\"ai-btech-student\",\"os_name\":\"windows\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/devices/enroll"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('host enrolled', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().device_id).to.eql('phase20-dashboard-device');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Host Overview Has Alert Routes",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "url": "{{baseUrl}}/api/v1/devices/phase20-dashboard-device/overview"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('overview exposes anomaly and delivery signals', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.anomalies.length).to.be.above(0);",
+              "  pm.expect(body.alert_deliveries.some((item) => item.channel === 'email')).to.eql(true);",
+              "  pm.expect(body.alert_deliveries.some((item) => item.channel === 'push')).to.eql(true);",
+              "  pm.expect(body.alert_deliveries.some((item) => item.channel === 'dashboard')).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Consent Center",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/consent-center"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('consent center discloses collection boundaries', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.monitoring_visible).to.eql(true);",
+              "  pm.expect(body.data_export_ready).to.eql(true);",
+              "  pm.expect(body.delete_request_ready).to.eql(true);",
+              "  pm.expect(body.alert_recipients.length).to.be.above(0);",
+              "  pm.expect(body.audit_events.length).to.be.above(0);",
+              "  pm.expect(body.collection.some((item) => item.name === 'Passwords and credentials' && item.status === 'denied')).to.eql(true);",
+              "  pm.expect(body.collection.some((item) => item.name === 'Screenshots' && item.status === 'denied')).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Contains Paid Alert Ops",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('dashboard exposes monetisation-grade alert and consent panels', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('Alert Revenue Operations');",
+              "  pm.expect(html).to.include('Push Notification Center');",
+              "  pm.expect(html).to.include('Mail Delivery Center');",
+              "  pm.expect(html).to.include('Anomaly Notification Inbox');",
+              "  pm.expect(html).to.include('Consent + Audit Center');",
+              "  pm.expect(html).to.include('Denied categories include passwords and credentials, screenshots, and private content.');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18080"
+    },
+    {
+      "key": "apiKey",
+      "value": "phase20-local-secret"
+    }
+  ]
+}

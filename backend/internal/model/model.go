@@ -194,6 +194,25 @@ type CreateAlertRuleRequest struct {
 	Enabled    bool               `json:"enabled"`
 }
 
+type ConsentCollectionItem struct {
+	Name        string `json:"name"`
+	Status      string `json:"status"`
+	Description string `json:"description"`
+	Retention   string `json:"retention"`
+}
+
+type ConsentCenter struct {
+	TenantID           string                  `json:"tenant_id"`
+	MonitoringVisible  bool                    `json:"monitoring_visible"`
+	PauseControls      string                  `json:"pause_controls"`
+	DataExportReady    bool                    `json:"data_export_ready"`
+	DeleteRequestReady bool                    `json:"delete_request_ready"`
+	AlertRecipients    []string                `json:"alert_recipients"`
+	Collection         []ConsentCollectionItem `json:"collection"`
+	AuditEvents        []AuditEvent            `json:"audit_events"`
+	UpdatedAt          time.Time               `json:"updated_at"`
+}
+
 type Plan struct {
 	ID                 string   `json:"id"`
 	Name               string   `json:"name"`

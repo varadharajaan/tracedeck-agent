@@ -296,6 +296,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantAuditEvents(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentAlertRules:
 		s.handleTenantAlertRules(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentConsentCenter && r.Method == http.MethodGet:
+		s.handleTenantConsentCenter(w, r, tenantID)
 	default:
 		http.NotFound(w, r)
 	}
@@ -379,6 +381,26 @@ func (s *Server) handleTenantAlertRules(w http.ResponseWriter, r *http.Request, 
 	default:
 		writeMethodNotAllowed(w)
 	}
+}
+
+func (s *Server) handleTenantConsentCenter(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	tenant, err := s.store.GetTenant(r.Context(), tenantID)
+	if err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant lookup failed")
+		return
+	}
+	auditEvents := s.store.ListAuditEvents(r.Context(), tenantID)
+	auditEvents = filterAuditEventsForPrincipal(r.Context(), auditEvents)
+	rules := s.store.ListAlertRules(r.Context(), tenantID)
+	writeJSON(w, http.StatusOK, buildConsentCenter(tenant, auditEvents, rules))
 }
 
 func (s *Server) handleDevice(w http.ResponseWriter, r *http.Request, deviceID string) {
@@ -720,6 +742,71 @@ func knownChannels(channels []string) bool {
 		}
 	}
 	return true
+}
+
+func buildConsentCenter(tenant model.Tenant, auditEvents []model.AuditEvent, rules []model.AlertRule) model.ConsentCenter {
+	alertRecipients := []string{
+		"configured email recipients from endpoint policy",
+		"parent mobile push subscriptions",
+		"local dashboard feed",
+	}
+	if len(rules) == 0 {
+		alertRecipients = []string{"local dashboard feed"}
+	}
+	return model.ConsentCenter{
+		TenantID:           tenant.TenantID,
+		MonitoringVisible:  true,
+		PauseControls:      "service manager can stop/start local collection where policy and law allow",
+		DataExportReady:    true,
+		DeleteRequestReady: true,
+		AlertRecipients:    alertRecipients,
+		Collection: []model.ConsentCollectionItem{
+			{
+				Name:        constants.ConsentCollectionAppUsage,
+				Status:      constants.ConsentStatusCollected,
+				Description: "process name, category, severity, and policy metadata for productivity and risk reporting",
+				Retention:   "bounded by selected retention tier",
+			},
+			{
+				Name:        constants.ConsentCollectionBrowserDomains,
+				Status:      constants.ConsentStatusCollected,
+				Description: "domain/category activity without raw URLs or page titles",
+				Retention:   "bounded by selected retention tier",
+			},
+			{
+				Name:        constants.ConsentCollectionDeviceHealth,
+				Status:      constants.ConsentStatusDerived,
+				Description: "CPU, memory, disk, battery, startup, crash, and agent heartbeat health score",
+				Retention:   "bounded by selected retention tier",
+			},
+			{
+				Name:        constants.ConsentCollectionArchiveHealth,
+				Status:      constants.ConsentStatusDerived,
+				Description: "S3 archive provider, backlog, upload key, and retry health metadata",
+				Retention:   "bounded by selected retention tier",
+			},
+			{
+				Name:        constants.ConsentCollectionPasswords,
+				Status:      constants.ConsentStatusDenied,
+				Description: "passwords, credentials, auth tokens, cookies, and keystrokes are not collected",
+				Retention:   "not collected",
+			},
+			{
+				Name:        constants.ConsentCollectionScreenshots,
+				Status:      constants.ConsentStatusDenied,
+				Description: "screenshots and hidden screen content are not collected",
+				Retention:   "not collected",
+			},
+			{
+				Name:        constants.ConsentCollectionPrivateContent,
+				Status:      constants.ConsentStatusDenied,
+				Description: "private messages, camera, microphone, raw URLs, and page titles are not collected",
+				Retention:   "not collected",
+			},
+		},
+		AuditEvents: auditEvents,
+		UpdatedAt:   time.Now().UTC(),
+	}
 }
 
 func writeJSON(w http.ResponseWriter, status int, body any) {

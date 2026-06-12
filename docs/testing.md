@@ -225,6 +225,23 @@ rule builder recipes. Newman runs
 `postman/tracedeck-backend-phase19.postman_collection.json` against a live
 API-key-protected backend.
 
+Phase 20 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase20.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase20.ps1
+```
+
+The Phase 20 smoke builds and boots the backend on localhost, creates a Family
+Pro tenant, verifies the consent center readiness flags, checks denied password
+and screenshot collection disclosures, confirms audit/recipient visibility, and
+asserts the dashboard contains alert revenue operations, push notification
+center, consent, and audit panels. Newman runs
+`postman/tracedeck-backend-phase20.postman_collection.json` against a live
+API-key-protected backend, enrolls a host, checks anomaly plus email, push, and
+dashboard delivery routes, checks the consent center, and checks the dashboard
+shell.
+
 Phase 13 adds:
 
 ```powershell

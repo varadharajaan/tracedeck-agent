@@ -34,6 +34,9 @@ coverage, executive briefing, and notification action queue before the deeper
 technical tables.
 Phase 19 adds no-code alert rule builder panels for saved tenant automations
 and paid rule recipes.
+Phase 20 adds consent/audit trust panels and a stronger paid alert operations
+band: anomaly notification proof, mail delivery proof, push notification reach,
+and customer audit evidence.
 
 The dashboard reads the base backend endpoints:
 
@@ -57,6 +60,7 @@ For the selected host it reads:
 - `/api/v1/policy-templates`
 - `/api/v1/alert-rule-templates`
 - `/api/v1/tenants/{tenantId}/alert-rules`
+- `/api/v1/tenants/{tenantId}/consent-center`
 
 Current panels:
 
@@ -68,6 +72,10 @@ Current panels:
 - executive briefing for top risk, study signal, alert outcome, and archive
   trust
 - notification action queue for delivery retries and open risk events
+- alert revenue operations for anomaly coverage, mail delivery, push reach, and
+  audit proof
+- push notification center for mobile anomaly routing, retry timing, provider,
+  recipient, and last-send state
 - compliance score, risk score, device health, policy, anomaly, tamper, and
   delivery metrics
 - study/coding/entertainment activity mix
@@ -95,6 +103,9 @@ Current panels:
 - retention and archive plan catalog
 - no-code alert rules for saved tenant automations
 - rule builder recipes for paid alert templates
+- consent and audit center with visible monitoring, recipients, export/delete
+  readiness, pause controls, and denied sensitive collection categories
+- policy audit trail for recent tenant and policy changes
 
 API-provided text is escaped before rendering.
 

@@ -198,6 +198,34 @@
     .brief-item span {
       overflow-wrap: anywhere;
     }
+    .ops-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .ops-tile {
+      min-height: 118px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+      display: grid;
+      align-content: space-between;
+      gap: 8px;
+    }
+    .ops-tile small {
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .ops-tile strong {
+      font-size: 18px;
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+    }
+    .ops-tile span {
+      overflow-wrap: anywhere;
+    }
     .action-list {
       display: grid;
       gap: 10px;
@@ -485,6 +513,7 @@
       .shell, .content-grid { grid-template-columns: 1fr; }
       .command-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .brief-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .ops-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
     @media (max-width: 720px) {
@@ -496,6 +525,7 @@
       .route-grid { grid-template-columns: 1fr; }
       .command-board { grid-template-columns: 1fr; }
       .brief-grid { grid-template-columns: 1fr; }
+      .ops-strip { grid-template-columns: 1fr; }
       .summary-line { grid-template-columns: 1fr; }
       .kv div { grid-template-columns: 1fr; }
       main { width: min(100vw - 20px, 1400px); }
@@ -601,6 +631,41 @@
           <span id="action-count" class="pill">0 actions</span>
         </div>
         <div id="notification-actions" class="action-list"><div class="empty">No notification actions yet.</div></div>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Alert Revenue Operations</h2>
+            <p class="muted">Monetisation-ready proof for anomaly notification, mail delivery, push reach, and audit trust</p>
+          </div>
+          <span id="revenue-ops-status" class="badge pending">pending</span>
+        </div>
+        <div class="ops-strip">
+          <div class="ops-tile"><small>Anomaly Coverage</small><strong id="ops-anomaly">-</strong><span id="ops-anomaly-sub" class="muted">No anomaly route yet</span></div>
+          <div class="ops-tile"><small>Mail Delivery</small><strong id="ops-mail">-</strong><span id="ops-mail-sub" class="muted">No email proof yet</span></div>
+          <div class="ops-tile"><small>Push Notification</small><strong id="ops-push">-</strong><span id="ops-push-sub" class="muted">No push route yet</span></div>
+          <div class="ops-tile"><small>Customer Proof</small><strong id="ops-proof">-</strong><span id="ops-proof-sub" class="muted">No audit proof yet</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Push Notification Center</h2>
+            <p class="muted">Mobile anomaly routing, escalation state, retry timing, and recipient readiness</p>
+          </div>
+          <span id="push-center-status" class="badge pending">pending</span>
+        </div>
+        <div class="summary-list">
+          <div class="summary-line"><span>Recipient</span><strong id="push-recipient">-</strong></div>
+          <div class="summary-line"><span>Anomaly</span><strong id="push-anomaly">-</strong></div>
+          <div class="summary-line"><span>Status</span><strong id="push-status">-</strong></div>
+          <div class="summary-line"><span>Provider</span><strong id="push-provider">-</strong></div>
+          <div class="summary-line"><span>Retry</span><strong id="push-retry">-</strong></div>
+          <div class="summary-line"><span>Last Send</span><strong id="push-last-send">-</strong></div>
+        </div>
       </div>
     </section>
 
@@ -906,6 +971,36 @@
             <div id="alert-template-list" class="catalog-list"><div class="empty">No alert rule recipes yet.</div></div>
           </div>
         </section>
+
+        <section class="content-grid">
+          <div class="panel">
+            <div class="section-head">
+            <div>
+              <h2>Consent + Audit Center</h2>
+                <p class="muted">Transparent collection status, recipients, rights, and policy history. Denied categories include passwords and credentials, screenshots, and private content.</p>
+            </div>
+              <span id="consent-status" class="badge pending">pending</span>
+            </div>
+            <div class="summary-list">
+              <div class="summary-line"><span>Visibility</span><strong id="consent-visible">-</strong></div>
+              <div class="summary-line"><span>Pause</span><strong id="consent-pause">-</strong></div>
+              <div class="summary-line"><span>Export</span><strong id="consent-export">-</strong></div>
+              <div class="summary-line"><span>Delete</span><strong id="consent-delete">-</strong></div>
+              <div class="summary-line"><span>Recipients</span><strong id="consent-recipients">-</strong></div>
+            </div>
+            <div id="consent-collection-list" class="catalog-list" style="margin-top: 12px;"><div class="empty">No consent collection data yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Policy Audit Trail</h2>
+                <p class="muted">Recent tenant, policy, and access history for trust reviews</p>
+              </div>
+              <span id="consent-audit-count" class="pill">0 events</span>
+            </div>
+            <div id="consent-audit-list" class="timeline"><div class="empty">No audit events yet.</div></div>
+          </div>
+        </section>
       </div>
     </section>
   </main>
@@ -1097,10 +1192,13 @@
       renderCommandBoard(overview, healthModel, policy, anomalies, tamper, deliveries, context);
       renderExecutiveBrief(overview, healthModel, policy, anomalies, tamper, deliveries, context);
       renderNotificationActionQueue(policy.items.concat(anomalies.items, tamper.items), deliveries.items);
+      renderAlertRevenueOperations(anomalies.items, deliveries.items, context);
+      renderPushNotificationCenter(anomalies.items, deliveries.items);
       renderMarketplace(context.templates);
       renderRetentionTiers(context.retentionTiers);
       renderAlertRules(context.alertRules);
       renderAlertRuleTemplates(context.alertRuleTemplates);
+      renderConsentCenter(context.consentCenter);
       renderTimeline(policy.items.concat(anomalies.items, tamper.items));
       renderRiskTable("policy-table", policy.items, ["severity", "category", "source", "reason", "status"]);
       renderRiskTable("anomaly-table", anomalies.items, ["severity", "category", "source", "reason"]);
@@ -1278,6 +1376,60 @@
           </div>
         </div>
       `).join("");
+    }
+
+    function eventForDelivery(delivery, events) {
+      if (!delivery) return null;
+      return events.find((event) => event.id === delivery.event_id) || null;
+    }
+
+    function latestDeliveryForEvents(deliveries, events) {
+      const eventIds = new Set(events.map((event) => event.id));
+      const matching = deliveries.filter((delivery) => eventIds.has(delivery.event_id));
+      return latestDelivery(matching.length > 0 ? matching : deliveries);
+    }
+
+    function renderAlertRevenueOperations(anomalies, deliveries, context) {
+      const email = latestDelivery(deliveryByChannel(deliveries, CHANNEL.email));
+      const push = latestDeliveryForEvents(deliveryByChannel(deliveries, CHANNEL.push), anomalies);
+      const topAnomaly = topRiskEvent(anomalies);
+      const auditCount = Math.max(
+        Number((context.auditEvents && context.auditEvents.count) || 0),
+        Number((context.consentCenter && context.consentCenter.audit_events && context.consentCenter.audit_events.length) || 0)
+      );
+      const rulesCount = Number((context.alertRules && context.alertRules.count) || 0);
+      const readyChecks = [
+        anomalies.length > 0,
+        email && email.status === DELIVERY_STATUS.delivered,
+        push && push.status === DELIVERY_STATUS.delivered,
+        auditCount > 0,
+        rulesCount > 0
+      ];
+      const readyScore = Math.round((readyChecks.filter(Boolean).length / readyChecks.length) * 100);
+
+      document.getElementById("revenue-ops-status").outerHTML =
+        badge(readyScore >= 80 ? "healthy" : readyScore >= 60 ? "watch" : "attention").replace("<span", '<span id="revenue-ops-status"');
+      setText("ops-anomaly", anomalies.length > 0 ? `${anomalies.length} routed signal${anomalies.length === 1 ? "" : "s"}` : "No anomaly route");
+      setText("ops-anomaly-sub", topAnomaly ? `${rowDetail(topAnomaly)} - ${topAnomaly.reason}` : "Seed or collect anomaly events for paid demos.");
+      setText("ops-mail", email ? `${email.status} email` : "Email route missing");
+      setText("ops-mail-sub", email ? `${email.recipient} via ${email.provider}` : "Configure SMTP or SES delivery.");
+      setText("ops-push", push ? `${push.status} push` : "Push route missing");
+      setText("ops-push-sub", push ? `${push.recipient} via ${push.provider}` : "Configure mobile/web push subscribers.");
+      setText("ops-proof", `${auditCount} audit event${auditCount === 1 ? "" : "s"}`);
+      setText("ops-proof-sub", `${rulesCount} saved alert rule${rulesCount === 1 ? "" : "s"}, consent and delivery evidence visible.`);
+    }
+
+    function renderPushNotificationCenter(anomalies, deliveries) {
+      const push = latestDeliveryForEvents(deliveryByChannel(deliveries, CHANNEL.push), anomalies);
+      const anomaly = eventForDelivery(push, anomalies) || topRiskEvent(anomalies);
+      document.getElementById("push-center-status").outerHTML =
+        badge(push ? push.status : "pending").replace("<span", '<span id="push-center-status"');
+      setText("push-recipient", push ? push.recipient : "mobile subscriber missing");
+      setText("push-anomaly", anomaly ? `${rowDetail(anomaly)} - ${anomaly.reason}` : "no anomaly selected");
+      setText("push-status", push ? `${push.status}, ${push.attempts} attempt${push.attempts === 1 ? "" : "s"}` : "not routed");
+      setText("push-provider", push ? push.provider : "web push not configured");
+      setText("push-retry", push && push.next_retry_at ? formatDate(push.next_retry_at) : "no retry scheduled");
+      setText("push-last-send", push ? formatDate(push.last_attempt_at) : "not sent");
     }
 
     function renderDeviceHealth(health) {
@@ -1498,6 +1650,52 @@
       `).join("");
     }
 
+    function renderConsentCenter(consent) {
+      const center = consent || {};
+      document.getElementById("consent-status").outerHTML =
+        badge(center.monitoring_visible ? "visible" : "pending").replace("<span", '<span id="consent-status"');
+      setText("consent-visible", center.monitoring_visible ? "visible monitoring status" : "not available");
+      setText("consent-pause", center.pause_controls || "not configured");
+      setText("consent-export", center.data_export_ready ? "export ready" : "export pending");
+      setText("consent-delete", center.delete_request_ready ? "delete request ready" : "delete pending");
+      setText("consent-recipients", (center.alert_recipients || []).join(", ") || "no recipients");
+
+      const collectionItems = center.collection || [];
+      const collectionTarget = document.getElementById("consent-collection-list");
+      if (collectionItems.length === 0) {
+        collectionTarget.innerHTML = '<div class="empty">No consent collection data yet.</div>';
+      } else {
+        collectionTarget.innerHTML = collectionItems.map((item) => `
+          <div class="catalog-item">
+            <strong>${escapeHTML(item.name)}</strong>
+            <span class="muted">${escapeHTML(item.description)}</span>
+            <div class="action-meta">
+              ${badge(item.status)}
+              <span class="pill">${escapeHTML(item.retention)}</span>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      const auditItems = (center.audit_events || []).slice().sort((left, right) => new Date(right.created_at) - new Date(left.created_at)).slice(0, 5);
+      setText("consent-audit-count", `${auditItems.length} event${auditItems.length === 1 ? "" : "s"}`);
+      const auditTarget = document.getElementById("consent-audit-list");
+      if (auditItems.length === 0) {
+        auditTarget.innerHTML = '<div class="empty">No audit events yet.</div>';
+        return;
+      }
+      auditTarget.innerHTML = auditItems.map((item) => `
+        <div class="timeline-item">
+          <span class="dot info"></span>
+          <div>
+            <h3>${escapeHTML(item.action)}</h3>
+            <p class="muted">${escapeHTML(item.summary)}</p>
+            <p>${badge(item.category)} <span class="pill">${escapeHTML(item.actor_role)}</span> <span class="pill">${escapeHTML(formatDate(item.created_at))}</span></p>
+          </div>
+        </div>
+      `).join("");
+    }
+
     function renderTimeline(events) {
       const sorted = events.slice().sort((left, right) => new Date(right.observed_at) - new Date(left.observed_at));
       setText("timeline-count", `${sorted.length} events`);
@@ -1631,6 +1829,7 @@
       ]);
       const tenant = await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}`);
       const alertRules = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/alert-rules`) : null;
+      const consentCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/consent-center`) : null;
       renderOverview(overview, deviceHealth, policy, anomalies, tamper, deliveries, {
         tenant,
         plans,
@@ -1639,6 +1838,7 @@
         templates,
         alertRuleTemplates,
         alertRules,
+        consentCenter,
         auditEvents,
         weeklyReport
       });
