@@ -56,3 +56,12 @@ location and enable/start the service when run without `-DryRun`.
 
 The wrapper does not add new collectors or relax the privacy contract. It only
 manages the lifecycle for the existing agent command.
+
+## Phase 66 Deployment Proof
+
+Phase 66 adds a typed Deployment Readiness Center for service rollout proof.
+The dashboard and API show Windows Task Scheduler, macOS launchd, Linux systemd,
+manifest templates, rendered output paths, live boot status, autostart status,
+background start status, offline replay readiness, archive backlog, and owner
+actions. The proof remains metadata-only and does not install, start, stop, or
+remove native services unless an operator explicitly runs the service scripts.

@@ -347,6 +347,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantCustomerSettingsCenter(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentRevenueOps && r.Method == http.MethodGet:
 		s.handleTenantRevenueOperationsCenter(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentDeploymentReady && r.Method == http.MethodGet:
+		s.handleTenantDeploymentReadinessCenter(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentRoleExperience && r.Method == http.MethodGet:
 		s.handleTenantRoleExperiences(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentCustomerControl && r.Method == http.MethodGet:
@@ -716,6 +718,23 @@ func (s *Server) handleTenantRevenueOperationsCenter(w http.ResponseWriter, r *h
 			return
 		}
 		writeError(w, http.StatusInternalServerError, "tenant revenue operations center lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, center)
+}
+
+func (s *Server) handleTenantDeploymentReadinessCenter(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	center, err := s.store.TenantDeploymentReadinessCenter(r.Context(), tenantID)
+	if err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant deployment readiness center lookup failed")
 		return
 	}
 	writeJSON(w, http.StatusOK, center)

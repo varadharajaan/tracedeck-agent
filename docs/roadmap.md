@@ -272,3 +272,9 @@
     settings, provider proof, package fit, commercial levers, owner actions,
     Postman/Newman coverage, screenshot-free layout guard, docs, and full local
     verification.
+69. Phase 66: deployment readiness center. Typed tenant
+    deployment-readiness-center API and dashboard surface for Windows Task
+    Scheduler, macOS launchd, Linux systemd, service manifests, reboot
+    persistence, background startup, live boot, offline replay, archive backlog,
+    owner actions, Postman/Newman coverage, screenshot-free layout guard,
+    service/autostart verification, docs, and full local verification.

@@ -485,3 +485,15 @@ privacy boundary. It does not collect or store passwords, screenshots, raw
 URLs, page titles, alert bodies, provider secrets, push endpoints, endpoint
 payloads, private content, invoices, tokens, cookies, payment card data, or raw
 provider payloads.
+
+Phase 66 adds `GET /api/v1/tenants/{tenantId}/deployment-readiness-center`. It
+composes onboarding, customer settings, sync-health, portfolio, and revenue
+operations metadata into a typed deployment readiness contract. The response
+includes deployment readiness score, Windows/macOS/Linux platform rows, Task
+Scheduler/launchd/systemd manifest rows, live boot and autostart status,
+background start readiness, offline replay readiness, archive backlog, owner
+actions, and a strict metadata-only privacy boundary. It does not collect or
+store passwords, screenshots, raw URLs, page titles, alert bodies, provider
+secrets, push endpoints, endpoint payloads, private content, invoices, tokens,
+cookies, payment card data, raw provider payloads, keylogging, or hidden
+collection bypasses.

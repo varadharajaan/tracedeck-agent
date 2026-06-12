@@ -76,6 +76,24 @@ REQUIRED_IDS = (
     "revenue-delivery-list",
     "revenue-lever-list",
     "revenue-action-list",
+    "deployment-readiness-section",
+    "deployment-readiness-status",
+    "deployment-readiness-headline",
+    "deployment-readiness-score",
+    "deployment-readiness-score-bar",
+    "deployment-readiness-package",
+    "deployment-readiness-next",
+    "deployment-readiness-privacy",
+    "deployment-kpi-platforms",
+    "deployment-kpi-manifests",
+    "deployment-kpi-liveboot",
+    "deployment-kpi-autostart",
+    "deployment-kpi-replay",
+    "deployment-kpi-archive",
+    "deployment-platform-list",
+    "deployment-manifest-list",
+    "deployment-proof-list",
+    "deployment-action-list",
     "executive-console-section",
     "executive-console-status",
     "executive-console-headline",
@@ -277,8 +295,8 @@ def main() -> int:
                             clientHeight: element.clientHeight
                           }));
                           checks.push({
-                            name: "command-navigation-has-twenty-jumps",
-                            ok: jumpBoxes.length === 20,
+                            name: "command-navigation-has-twenty-one-jumps",
+                            ok: jumpBoxes.length === 21,
                             detail: `${jumpBoxes.length} command jump buttons`
                           });
                           for (const item of jumpBoxes) {

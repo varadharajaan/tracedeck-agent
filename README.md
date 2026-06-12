@@ -179,6 +179,13 @@ docs, smoke/Newman coverage, and layout guards only; it does not add password,
 credential, raw URL, page title, private message, camera, microphone, or
 covert screenshot collection.
 
+Phase 66 adds a Deployment Readiness Center for reboot persistence and
+cross-platform rollout proof. It exposes Windows Task Scheduler, macOS launchd,
+Linux systemd, service manifest, live boot, background startup, offline replay,
+archive backlog, and owner-action metadata through a typed API and dashboard
+panel. Verification is under `scripts/verify/verify-phase66.ps1`,
+`scripts/local/smoke-phase66.ps1`, and `scripts/local/newman-phase66.ps1`.
+
 Phase 46 adds a delivery remediation center and typed
 `/api/v1/tenants/{tenantId}/delivery-remediation` API. It turns mail/push route
 problems into owned dry-run recovery plans with SLA state and audit proof, and

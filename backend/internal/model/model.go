@@ -2078,6 +2078,87 @@ type TenantRevenueOperationsCenter struct {
 	GeneratedAt     time.Time                         `json:"generated_at"`
 }
 
+type TenantDeploymentReadinessSummary struct {
+	Status             string `json:"status"`
+	Headline           string `json:"headline"`
+	Detail             string `json:"detail"`
+	ReadinessScore     int    `json:"readiness_score"`
+	PlatformsReady     int    `json:"platforms_ready"`
+	PlatformsTotal     int    `json:"platforms_total"`
+	ManifestsReady     int    `json:"manifests_ready"`
+	ManifestsTotal     int    `json:"manifests_total"`
+	LiveBootReady      bool   `json:"live_boot_ready"`
+	AutostartReady     bool   `json:"autostart_ready"`
+	SilentStartReady   bool   `json:"silent_start_ready"`
+	OfflineReplayReady bool   `json:"offline_replay_ready"`
+	ArchiveBacklog     int    `json:"archive_backlog"`
+	HostsTotal         int    `json:"hosts_total"`
+	HostsReporting     int    `json:"hosts_reporting"`
+	RecommendedPackage string `json:"recommended_package"`
+	OwnerNextStep      string `json:"owner_next_step"`
+}
+
+type TenantDeploymentPlatform struct {
+	Platform       string `json:"platform"`
+	ServiceManager string `json:"service_manager"`
+	Manifest       string `json:"manifest"`
+	RegisterScript string `json:"register_script"`
+	StatusScript   string `json:"status_script"`
+	InstallMode    string `json:"install_mode"`
+	Autostart      string `json:"autostart"`
+	SilentStart    string `json:"silent_start"`
+	Status         string `json:"status"`
+	Evidence       string `json:"evidence"`
+	NextAction     string `json:"next_action"`
+	PaidTier       string `json:"paid_tier"`
+}
+
+type TenantDeploymentManifest struct {
+	ID           string `json:"id"`
+	Platform     string `json:"platform"`
+	TemplatePath string `json:"template_path"`
+	OutputPath   string `json:"output_path"`
+	Manager      string `json:"manager"`
+	Status       string `json:"status"`
+	Evidence     string `json:"evidence"`
+	NextAction   string `json:"next_action"`
+}
+
+type TenantDeploymentProof struct {
+	ID       string `json:"id"`
+	Label    string `json:"label"`
+	Value    string `json:"value"`
+	Detail   string `json:"detail"`
+	Status   string `json:"status"`
+	PaidTier string `json:"paid_tier"`
+}
+
+type TenantDeploymentAction struct {
+	Title    string `json:"title"`
+	Detail   string `json:"detail"`
+	Owner    string `json:"owner"`
+	Status   string `json:"status"`
+	Severity string `json:"severity"`
+	SLA      string `json:"sla"`
+	PaidTier string `json:"paid_tier"`
+	Source   string `json:"source"`
+}
+
+type TenantDeploymentReadinessCenter struct {
+	TenantID        string                           `json:"tenant_id"`
+	TenantName      string                           `json:"tenant_name"`
+	PlanID          string                           `json:"plan_id"`
+	PlanName        string                           `json:"plan_name"`
+	Audience        string                           `json:"audience"`
+	Summary         TenantDeploymentReadinessSummary `json:"summary"`
+	Platforms       []TenantDeploymentPlatform       `json:"platforms"`
+	Manifests       []TenantDeploymentManifest       `json:"manifests"`
+	Proof           []TenantDeploymentProof          `json:"proof"`
+	Actions         []TenantDeploymentAction         `json:"actions"`
+	PrivacyBoundary string                           `json:"privacy_boundary"`
+	GeneratedAt     time.Time                        `json:"generated_at"`
+}
+
 type TenantExecutiveConsoleSummary struct {
 	Status                 string `json:"status"`
 	Headline               string `json:"headline"`

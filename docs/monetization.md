@@ -463,3 +463,15 @@ Phase 65 adds a Revenue Operations Center for monetisable daily operations:
 This is the dashboard surface that should open sales and admin conversations:
 it explains what happened, whether the owner was notified, what proof is still
 missing, and which paid package/value lever the customer can buy.
+
+Phase 66 adds a Deployment Readiness Center for paid rollout confidence:
+
+- Windows Task Scheduler, macOS launchd, and Linux systemd proof in one view
+- service manifest template and output-path proof for managed deployments
+- reboot persistence, background startup, live boot, and offline replay status
+- archive backlog and recovery posture for laptop-off scenarios
+- owner actions for UAC registration, status checks, and cross-platform rollout
+
+This helps monetisation because buyers can see whether TraceDeck survives
+restart, how it will be installed on each OS, what proof is still missing, and
+which admin action unlocks a safe paid deployment.

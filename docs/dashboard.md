@@ -454,6 +454,14 @@ command navigation adds a Rev Ops target so demos and admin reviews can answer
 "is the product working and sellable today?" before drilling into individual
 host or route panels.
 
+Phase 66 adds a Deployment Readiness Center after Revenue Operations. It
+renders the typed `deployment-readiness-center` API as the rollout proof view:
+Windows Task Scheduler, macOS launchd, Linux systemd, service manifests, live
+boot, reboot persistence, background startup, offline replay, archive backlog,
+and deployment owner actions. The command navigation adds a Deploy target so
+admins can answer "will the agent come back after restart?" without leaving the
+monetisation dashboard.
+
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
 paid customer onboarding workflows.

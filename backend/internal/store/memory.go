@@ -1204,6 +1204,34 @@ func (m *Memory) TenantRevenueOperationsCenter(ctx context.Context, tenantID str
 	return buildTenantRevenueOperationsCenter(controlRoom, successPacket, pushActivation, portfolio, onboarding, settings, packageBilling, provider, generatedAt), nil
 }
 
+func (m *Memory) TenantDeploymentReadinessCenter(ctx context.Context, tenantID string) (model.TenantDeploymentReadinessCenter, error) {
+	generatedAt := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	onboarding, err := m.TenantOnboardingCenter(ctx, tenantID)
+	if err != nil {
+		return model.TenantDeploymentReadinessCenter{}, err
+	}
+	settings, err := m.TenantCustomerSettingsCenter(ctx, tenantID)
+	if err != nil {
+		return model.TenantDeploymentReadinessCenter{}, err
+	}
+	syncHealth, err := m.TenantSyncHealth(ctx, tenantID)
+	if err != nil {
+		return model.TenantDeploymentReadinessCenter{}, err
+	}
+	portfolio, err := m.TenantPortfolioCenter(ctx, tenantID)
+	if err != nil {
+		return model.TenantDeploymentReadinessCenter{}, err
+	}
+	revenueOps, err := m.TenantRevenueOperationsCenter(ctx, tenantID)
+	if err != nil {
+		return model.TenantDeploymentReadinessCenter{}, err
+	}
+
+	return buildTenantDeploymentReadinessCenter(onboarding, settings, syncHealth, portfolio, revenueOps, generatedAt), nil
+}
+
 func (m *Memory) TenantExecutiveConsole(ctx context.Context, tenantID string) (model.TenantExecutiveConsole, error) {
 	generatedAt := time.Now().UTC()
 	tenantID = strings.TrimSpace(tenantID)
@@ -6276,6 +6304,335 @@ func revenueOperationsActions(
 		})
 	}
 	return actions
+}
+
+func buildTenantDeploymentReadinessCenter(
+	onboarding model.TenantOnboardingCenter,
+	settings model.TenantCustomerSettingsCenter,
+	syncHealth model.TenantSyncHealth,
+	portfolio model.TenantPortfolioCenter,
+	revenueOps model.TenantRevenueOperationsCenter,
+	generatedAt time.Time,
+) model.TenantDeploymentReadinessCenter {
+	platforms := deploymentPlatforms(onboarding, settings)
+	manifests := deploymentManifests(onboarding)
+	platformsReady := countDeploymentPlatformReady(platforms)
+	manifestsReady := countDeploymentManifestReady(manifests)
+	liveBootReady := syncHealth.HostsReporting > 0 && syncHealth.BackendVisible
+	autostartReady := onboarding.Summary.AutostartReady && settings.Summary.AutostartReady
+	silentStartReady := autostartReady && platformsReady == len(platforms)
+	offlineReplayReady := syncHealth.OfflineReplayReady
+	archiveBacklog := maxInt(revenueOps.Summary.ArchiveBacklog, portfolio.Summary.ArchiveBacklog)
+	readiness := averageScore(
+		onboarding.Summary.ReadinessScore,
+		settings.Summary.SettingsScore,
+		boolScore(liveBootReady),
+		boolScore(autostartReady),
+		boolScore(silentStartReady),
+		boolScore(offlineReplayReady),
+		(manifestsReady*100)/maxInt(len(manifests), 1),
+	)
+
+	summary := model.TenantDeploymentReadinessSummary{
+		ReadinessScore:     readiness,
+		PlatformsReady:     platformsReady,
+		PlatformsTotal:     len(platforms),
+		ManifestsReady:     manifestsReady,
+		ManifestsTotal:     len(manifests),
+		LiveBootReady:      liveBootReady,
+		AutostartReady:     autostartReady,
+		SilentStartReady:   silentStartReady,
+		OfflineReplayReady: offlineReplayReady,
+		ArchiveBacklog:     archiveBacklog,
+		HostsTotal:         maxInt(syncHealth.HostsTotal, onboarding.Summary.HostsTotal, portfolio.Summary.HostsTotal),
+		HostsReporting:     maxInt(syncHealth.HostsReporting, onboarding.Summary.HostsReporting),
+		RecommendedPackage: firstNonEmpty(revenueOps.Summary.RecommendedPaidPackage, onboarding.Summary.RecommendedPackage, settings.Summary.RecommendedPlan, revenueOps.PlanName),
+	}
+	summary.Status = deploymentReadinessStatus(summary)
+	summary.Headline = deploymentReadinessHeadline(summary)
+	summary.Detail = deploymentReadinessDetail(summary)
+	summary.OwnerNextStep = deploymentReadinessNextStep(summary)
+
+	return model.TenantDeploymentReadinessCenter{
+		TenantID:        onboarding.TenantID,
+		TenantName:      onboarding.TenantName,
+		PlanID:          onboarding.PlanID,
+		PlanName:        onboarding.PlanName,
+		Audience:        firstNonEmpty(onboarding.Audience, settings.Audience, revenueOps.Audience),
+		Summary:         summary,
+		Platforms:       platforms,
+		Manifests:       manifests,
+		Proof:           deploymentProof(summary, syncHealth, onboarding, revenueOps),
+		Actions:         deploymentActions(summary),
+		PrivacyBoundary: constants.DeploymentReadinessPrivacyNote,
+		GeneratedAt:     generatedAt,
+	}
+}
+
+func deploymentReadinessStatus(summary model.TenantDeploymentReadinessSummary) string {
+	switch {
+	case !summary.LiveBootReady || !summary.AutostartReady:
+		return constants.StatusAttention
+	case summary.ArchiveBacklog > 0 || !summary.OfflineReplayReady:
+		return constants.StatusWatch
+	case summary.ReadinessScore >= 85 && summary.PlatformsReady == summary.PlatformsTotal:
+		return constants.StatusHealthy
+	default:
+		return constants.StatusPending
+	}
+}
+
+func deploymentReadinessHeadline(summary model.TenantDeploymentReadinessSummary) string {
+	if !summary.LiveBootReady {
+		return "Live boot proof is missing for deployed hosts"
+	}
+	if !summary.AutostartReady {
+		return "Reboot persistence needs admin verification"
+	}
+	if summary.ArchiveBacklog > 0 {
+		return fmt.Sprintf("%d offline/archive batch%s need replay proof", summary.ArchiveBacklog, pluralSuffix(summary.ArchiveBacklog))
+	}
+	return fmt.Sprintf("%s deployment is %d%% ready", firstNonEmpty(summary.RecommendedPackage, "TraceDeck"), summary.ReadinessScore)
+}
+
+func deploymentReadinessDetail(summary model.TenantDeploymentReadinessSummary) string {
+	return fmt.Sprintf("%d/%d platforms ready, %d/%d manifests ready, %d/%d hosts reporting, live boot %s, autostart %s, background start %s, offline replay %s.",
+		summary.PlatformsReady,
+		summary.PlatformsTotal,
+		summary.ManifestsReady,
+		summary.ManifestsTotal,
+		summary.HostsReporting,
+		summary.HostsTotal,
+		boolReady(summary.LiveBootReady),
+		boolReady(summary.AutostartReady),
+		boolReady(summary.SilentStartReady),
+		boolReady(summary.OfflineReplayReady),
+	)
+}
+
+func deploymentReadinessNextStep(summary model.TenantDeploymentReadinessSummary) string {
+	switch {
+	case !summary.LiveBootReady:
+		return "Run the live boot smoke and verify the host reports to the local backend after restart."
+	case !summary.AutostartReady:
+		return "Register the native service and query Task Scheduler, launchd, or systemd status from scripts."
+	case summary.ArchiveBacklog > 0:
+		return "Let the agent replay local backlog and confirm S3 archive status returns to current."
+	case !summary.OfflineReplayReady:
+		return "Run offline replay verification before claiming laptop-off recovery."
+	default:
+		return "Keep native service manifests, status scripts, and live boot proof current before paid rollout."
+	}
+}
+
+func deploymentPlatforms(onboarding model.TenantOnboardingCenter, settings model.TenantCustomerSettingsCenter) []model.TenantDeploymentPlatform {
+	autostart := onboarding.Summary.AutostartReady && settings.Summary.AutostartReady
+	status := boolStatus(autostart)
+	return []model.TenantDeploymentPlatform{
+		{
+			Platform:       constants.PlatformWindows,
+			ServiceManager: constants.ServiceManagerTaskScheduler,
+			Manifest:       constants.WindowsTaskOutputPath,
+			RegisterScript: "scripts/local/register-windows-task.ps1",
+			StatusScript:   "scripts/local/get-windows-task-status.ps1",
+			InstallMode:    "admin-approved Task Scheduler registration",
+			Autostart:      "at logon through committed XML template",
+			SilentStart:    "no foreground console after native task registration",
+			Status:         status,
+			Evidence:       "render-windows-task.ps1 and test-windows-task-template.ps1 verify XML before registration.",
+			NextAction:     "Run register-windows-task.ps1 with UAC approval, then query task status.",
+			PaidTier:       constants.PlanFamilyPro,
+		},
+		{
+			Platform:       constants.PlatformDarwin,
+			ServiceManager: constants.ServiceManagerLaunchd,
+			Manifest:       constants.DarwinLaunchdOutput,
+			RegisterScript: "scripts/local/manage-agent-service.ps1 -Platform darwin -Action install",
+			StatusScript:   "scripts/local/manage-agent-service.ps1 -Platform darwin -Action status",
+			InstallMode:    "launchd user service manifest",
+			Autostart:      "launchctl bootstrap and enable",
+			SilentStart:    "background launchd job with visible app consent/audit surfaces",
+			Status:         status,
+			Evidence:       "render-service-manifests.ps1 renders the launchd plist from a committed template.",
+			NextAction:     "Dry-run the darwin install/status plan before native macOS rollout.",
+			PaidTier:       constants.PlanSchool,
+		},
+		{
+			Platform:       constants.PlatformLinux,
+			ServiceManager: constants.ServiceManagerSystemd,
+			Manifest:       constants.LinuxSystemdOutput,
+			RegisterScript: "scripts/local/manage-agent-service.ps1 -Platform linux -Action install",
+			StatusScript:   "scripts/local/manage-agent-service.ps1 -Platform linux -Action status",
+			InstallMode:    "systemd unit with enable/start",
+			Autostart:      "systemctl enable and start",
+			SilentStart:    "background systemd unit with visible admin controls",
+			Status:         status,
+			Evidence:       "render-service-manifests.ps1 renders the systemd unit from a committed template.",
+			NextAction:     "Dry-run the linux install/status plan before native Linux rollout.",
+			PaidTier:       constants.PlanSchool,
+		},
+	}
+}
+
+func deploymentManifests(onboarding model.TenantOnboardingCenter) []model.TenantDeploymentManifest {
+	status := boolStatus(onboarding.Summary.InstallReady)
+	return []model.TenantDeploymentManifest{
+		{
+			ID:           "windows-task",
+			Platform:     constants.PlatformWindows,
+			TemplatePath: constants.WindowsTaskTemplatePath,
+			OutputPath:   constants.WindowsTaskOutputPath,
+			Manager:      constants.ServiceManagerTaskScheduler,
+			Status:       status,
+			Evidence:     "Windows scheduled task XML template is committed and parsed by local tests.",
+			NextAction:   "Render the XML under data/local and register it through the scripted UAC flow.",
+		},
+		{
+			ID:           "macos-launchd",
+			Platform:     constants.PlatformDarwin,
+			TemplatePath: constants.DarwinLaunchdTemplate,
+			OutputPath:   constants.DarwinLaunchdOutput,
+			Manager:      constants.ServiceManagerLaunchd,
+			Status:       status,
+			Evidence:     "macOS launchd plist template is committed and rendered by local scripts.",
+			NextAction:   "Render and dry-run launchd install/status before native rollout.",
+		},
+		{
+			ID:           "linux-systemd",
+			Platform:     constants.PlatformLinux,
+			TemplatePath: constants.LinuxSystemdTemplate,
+			OutputPath:   constants.LinuxSystemdOutput,
+			Manager:      constants.ServiceManagerSystemd,
+			Status:       status,
+			Evidence:     "Linux systemd unit template is committed and rendered by local scripts.",
+			NextAction:   "Render and dry-run systemd install/status before native rollout.",
+		},
+	}
+}
+
+func deploymentProof(summary model.TenantDeploymentReadinessSummary, syncHealth model.TenantSyncHealth, onboarding model.TenantOnboardingCenter, revenueOps model.TenantRevenueOperationsCenter) []model.TenantDeploymentProof {
+	return []model.TenantDeploymentProof{
+		{
+			ID:       "live-boot",
+			Label:    "Live Boot Proof",
+			Value:    boolReady(summary.LiveBootReady),
+			Detail:   fmt.Sprintf("%d/%d hosts reporting after backend boot; %s", summary.HostsReporting, summary.HostsTotal, syncHealth.OfflineReplaySummary),
+			Status:   boolStatus(summary.LiveBootReady),
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "windows-task-scheduler",
+			Label:    "Windows Task Scheduler",
+			Value:    boolReady(summary.AutostartReady),
+			Detail:   "Task XML, registration script, status query script, and service manager wrapper are available.",
+			Status:   boolStatus(summary.AutostartReady),
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "macos-linux-services",
+			Label:    "macOS And Linux Services",
+			Value:    fmt.Sprintf("%d/%d manifests", summary.ManifestsReady, summary.ManifestsTotal),
+			Detail:   "launchd and systemd templates render from committed deployment assets.",
+			Status:   scoreStatus((summary.ManifestsReady * 100) / maxInt(summary.ManifestsTotal, 1)),
+			PaidTier: constants.PlanSchool,
+		},
+		{
+			ID:       "offline-replay",
+			Label:    "Offline Replay",
+			Value:    boolReady(summary.OfflineReplayReady),
+			Detail:   firstNonEmpty(syncHealth.OfflineReplaySummary, "Offline laptop recovery replays local metadata batches when online."),
+			Status:   boolStatus(summary.OfflineReplayReady),
+			PaidTier: constants.PlanSchool,
+		},
+		{
+			ID:       "archive-backlog",
+			Label:    "Archive Backlog",
+			Value:    fmt.Sprintf("%d pending", summary.ArchiveBacklog),
+			Detail:   fmt.Sprintf("Revenue operations archive posture: %d pending batch%s.", revenueOps.Summary.ArchiveBacklog, pluralSuffix(revenueOps.Summary.ArchiveBacklog)),
+			Status:   archiveValueStatus(summary.ArchiveBacklog, true),
+			PaidTier: constants.PlanBusiness,
+		},
+		{
+			ID:       "setup-evidence",
+			Label:    "Setup Evidence",
+			Value:    fmt.Sprintf("%d/%d steps", onboarding.Summary.SetupStepsReady, onboarding.Summary.SetupStepsTotal),
+			Detail:   onboarding.Summary.Detail,
+			Status:   onboarding.Summary.Status,
+			PaidTier: constants.PlanFamilyPro,
+		},
+	}
+}
+
+func deploymentActions(summary model.TenantDeploymentReadinessSummary) []model.TenantDeploymentAction {
+	return []model.TenantDeploymentAction{
+		{
+			Title:    "Register Windows reboot persistence",
+			Detail:   "Render Task Scheduler XML, approve the UAC registration, then query status and last run result through scripts.",
+			Owner:    constants.RoleBusinessManager,
+			Status:   boolStatus(summary.AutostartReady),
+			Severity: constants.SeverityMedium,
+			SLA:      "before Windows pilot rollout",
+			PaidTier: constants.PlanFamilyPro,
+			Source:   "windows task scheduler",
+		},
+		{
+			Title:    "Dry-run macOS launchd rollout",
+			Detail:   "Render the launchd plist and capture install/status dry-run proof before testing on a managed Mac.",
+			Owner:    constants.RoleBusinessManager,
+			Status:   scoreStatus((summary.ManifestsReady * 100) / maxInt(summary.ManifestsTotal, 1)),
+			Severity: constants.SeverityInfo,
+			SLA:      "before macOS beta",
+			PaidTier: constants.PlanSchool,
+			Source:   "launchd manifest",
+		},
+		{
+			Title:    "Dry-run Linux systemd rollout",
+			Detail:   "Render the systemd unit and capture enable/start/status dry-run proof before Linux rollout.",
+			Owner:    constants.RoleBusinessManager,
+			Status:   scoreStatus((summary.ManifestsReady * 100) / maxInt(summary.ManifestsTotal, 1)),
+			Severity: constants.SeverityInfo,
+			SLA:      "before Linux beta",
+			PaidTier: constants.PlanSchool,
+			Source:   "systemd manifest",
+		},
+		{
+			Title:    "Verify restart recovery",
+			Detail:   summary.OwnerNextStep,
+			Owner:    constants.RoleBusinessManager,
+			Status:   summary.Status,
+			Severity: constants.SeverityHigh,
+			SLA:      "before paid deployment",
+			PaidTier: constants.PlanBusiness,
+			Source:   "deployment readiness center",
+		},
+	}
+}
+
+func countDeploymentPlatformReady(items []model.TenantDeploymentPlatform) int {
+	ready := 0
+	for _, item := range items {
+		if item.Status == constants.StatusHealthy {
+			ready++
+		}
+	}
+	return ready
+}
+
+func countDeploymentManifestReady(items []model.TenantDeploymentManifest) int {
+	ready := 0
+	for _, item := range items {
+		if item.Status == constants.StatusHealthy {
+			ready++
+		}
+	}
+	return ready
+}
+
+func boolScore(ready bool) int {
+	if ready {
+		return 100
+	}
+	return 45
 }
 
 func maxInt(values ...int) int {

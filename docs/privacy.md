@@ -178,3 +178,12 @@ actions, and trust guardrails. It does not add collectors and does not store
 passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets,
 push endpoints, endpoint payloads, private content, invoices, tokens, cookies,
 payment card data, or raw provider payloads.
+
+Phase 66 deployment readiness center is metadata-only. It exposes tenant
+labels, host counts, platform names, service manager labels, manifest paths,
+dry-run command labels, autostart status, live boot labels, offline replay and
+archive backlog counts, owner actions, and setup evidence. It does not add
+collectors and does not store passwords, screenshots, raw URLs, page titles,
+alert bodies, provider secrets, push endpoints, endpoint payloads, private
+content, invoices, tokens, cookies, payment card data, raw provider payloads,
+keylogging, or hidden collection bypasses.
