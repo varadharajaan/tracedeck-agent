@@ -38,6 +38,34 @@ func TestHealthAndVersion(t *testing.T) {
 	}
 }
 
+func TestDashboardLocalAuthPanel(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServerWithAuth(store.NewMemory(), slog.Default(), AuthConfig{
+		APIKey:   "local-secret",
+		TenantID: "family-varadha",
+		ActorID:  "dashboard-test",
+		RoleID:   constants.RoleBusinessManager,
+	}).Handler()
+
+	dashboard := httptest.NewRecorder()
+	handler.ServeHTTP(dashboard, httptest.NewRequest(http.MethodGet, constants.RouteDashboard, nil))
+	if dashboard.Code != http.StatusOK {
+		t.Fatalf("expected dashboard 200 without API key, got %d", dashboard.Code)
+	}
+	body := dashboard.Body.String()
+	for _, marker := range []string{
+		"Local Dashboard Access",
+		"X-TraceDeck-API-Key",
+		"sessionStorage",
+		"tracedeck.dashboard.apiKey",
+	} {
+		if !strings.Contains(body, marker) {
+			t.Fatalf("expected dashboard auth marker %q, got %s", marker, body)
+		}
+	}
+}
+
 func TestDeviceEnrollmentAndLookup(t *testing.T) {
 	t.Parallel()
 
