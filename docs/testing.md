@@ -733,6 +733,15 @@ contract. Newman runs
 `postman/tracedeck-backend-phase57.postman_collection.json` against the same
 live demo and covers dashboard markers plus typed customer control proof.
 
+The Phase 58 smoke live-boots the seeded dashboard, verifies Customer Success
+Packet, Success Proof Stack, Buyer Objection Answers, Success Packet Actions,
+and Delivery And Trust Promise markers, checks the tenant
+`customer-success-packet` API, verifies readiness, notification, package, mail,
+push, host, proof, objection, action, and strict privacy/forbidden markers, and
+reruns the screenshot-free dashboard layout contract. Newman runs
+`postman/tracedeck-backend-phase58.postman_collection.json` against the same
+live demo and covers dashboard markers plus typed customer success proof.
+
 Phase 13 adds:
 
 ```powershell

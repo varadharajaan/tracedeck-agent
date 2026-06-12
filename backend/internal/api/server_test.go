@@ -1649,6 +1649,89 @@ func TestTenantCustomerControlRoomEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantCustomerSuccessPacketEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "customer-success-device-001",
+		"host_name": "customer-success-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentSuccessPacket, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected customer success packet 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var packet model.TenantCustomerSuccessPacket
+	if err := json.Unmarshal(response.Body.Bytes(), &packet); err != nil {
+		t.Fatalf("decode customer success packet: %v", err)
+	}
+	if packet.Summary.ReadinessScore == 0 || packet.Summary.NotificationScore == 0 || packet.Summary.PackageScore == 0 || packet.Summary.OwnerNextStep == "" {
+		t.Fatalf("expected scored customer success summary: %+v", packet.Summary)
+	}
+	if packet.Summary.MailDelivered == 0 || packet.Summary.HostsTotal == 0 {
+		t.Fatalf("expected mail and host proof in customer success packet: %+v", packet.Summary)
+	}
+	if len(packet.Proofs) < 7 || len(packet.Objections) < 4 || len(packet.Actions) == 0 {
+		t.Fatalf("expected proofs, objections, and actions: %+v", packet)
+	}
+	hasAnomalyProof := false
+	hasMailProof := false
+	hasPushProof := false
+	hasPrivacyAnswer := false
+	for _, proof := range packet.Proofs {
+		if proof.ID == "anomaly-command" && proof.BuyerImpact != "" && proof.PaidTier != "" {
+			hasAnomalyProof = true
+		}
+		if proof.ID == "mail-delivery" && proof.Status != "" {
+			hasMailProof = true
+		}
+		if proof.ID == "push-notification" && proof.Status != "" {
+			hasPushProof = true
+		}
+	}
+	for _, objection := range packet.Objections {
+		if objection.ID == "privacy-boundary" && strings.Contains(objection.Answer, "metadata-only") {
+			hasPrivacyAnswer = true
+		}
+	}
+	if !hasAnomalyProof || !hasMailProof || !hasPushProof || !hasPrivacyAnswer {
+		t.Fatalf("expected anomaly, mail, push, and privacy proof: proofs=%+v objections=%+v", packet.Proofs, packet.Objections)
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "push_endpoint", "screenshot_bytes", "raw_url", "page_title", "alert_body", "card_number", "cvv", "payment_token"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("customer success packet leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+	if !strings.Contains(packet.PrivacyBoundary, "metadata-only") || !strings.Contains(packet.PrivacyBoundary, "no passwords") || !strings.Contains(packet.PrivacyBoundary, "screenshots") {
+		t.Fatalf("expected strict customer success privacy boundary, got %q", packet.PrivacyBoundary)
+	}
+}
+
 func TestTenantNotificationRevenueCockpitEndpoint(t *testing.T) {
 	t.Parallel()
 

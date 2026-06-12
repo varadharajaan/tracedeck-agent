@@ -139,6 +139,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase57.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase57.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase57.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase58.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase58.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase58.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase49.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase49.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase49.ps1
@@ -252,3 +255,12 @@ evidence, provider proof, report/archive readiness, package billing, customer
 health, and owner monetisation actions. It is metadata-only and does not
 collect passwords, screenshots, raw URLs, page titles, alert bodies, provider
 secrets, endpoint payloads, private content, or payment card data.
+
+Phase 58 adds a typed Customer Success Packet at
+`/api/v1/tenants/{tenantId}/customer-success-packet`. It turns the same
+metadata-only evidence into a buyer/admin review packet with anomaly proof,
+mail delivery, push notification proof, report/archive readiness, package fit,
+provider rehearsal, privacy assurances, objection answers, and owner actions.
+It does not collect passwords, screenshots, raw URLs, page titles, alert
+bodies, provider secrets, push endpoints, endpoint payloads, private content,
+invoices, or payment card data.
