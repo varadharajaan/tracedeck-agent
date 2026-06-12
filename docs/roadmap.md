@@ -76,3 +76,9 @@
 27. Phase 24: dashboard demo lifecycle hardening. Targeted stale listener
     cleanup, isolated demo data paths, startup exit checks, lifecycle smoke,
     Newman coverage, and local verification.
+28. Phase 25: monetization command center. Typed tenant monetisation summary,
+    notification guarantee, paid feature proof, conversion actions, route-level
+    proof, Postman/Newman coverage, and local verification.
+29. Phase 26: notification route registry. Tenant-scoped email, push, and
+    dashboard route records, provider/channel validation, route readiness
+    dashboard panels, Postman/Newman coverage, and local verification.

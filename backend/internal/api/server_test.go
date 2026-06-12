@@ -387,6 +387,70 @@ func TestNoCodeAlertRuleEndpoints(t *testing.T) {
 	}
 }
 
+func TestNotificationRouteEndpoints(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	seededRoutes := httptest.NewRecorder()
+	handler.ServeHTTP(seededRoutes, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentNotifications, nil))
+	if seededRoutes.Code != http.StatusOK {
+		t.Fatalf("expected seeded routes 200, got %d", seededRoutes.Code)
+	}
+	var routes model.ListResponse[model.NotificationRoute]
+	if err := json.Unmarshal(seededRoutes.Body.Bytes(), &routes); err != nil {
+		t.Fatalf("decode notification routes: %v", err)
+	}
+	if routes.Count != 3 {
+		t.Fatalf("expected three seeded notification routes: %+v", routes)
+	}
+
+	routeBody := []byte(`{
+		"channel": "push",
+		"provider": "web_push",
+		"recipient_label": "parent secondary phone",
+		"status": "watch",
+		"enabled": true,
+		"last_summary": "Waiting for first delivered push proof."
+	}`)
+	createRoute := httptest.NewRecorder()
+	handler.ServeHTTP(createRoute, httptest.NewRequest(http.MethodPost, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentNotifications, bytes.NewReader(routeBody)))
+	if createRoute.Code != http.StatusCreated {
+		t.Fatalf("expected route create 201, got %d: %s", createRoute.Code, createRoute.Body.String())
+	}
+	if !strings.Contains(createRoute.Body.String(), "parent secondary phone") {
+		t.Fatalf("expected created route body, got %s", createRoute.Body.String())
+	}
+
+	invalidRoute := httptest.NewRecorder()
+	handler.ServeHTTP(invalidRoute, httptest.NewRequest(http.MethodPost, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentNotifications, strings.NewReader(`{"channel":"email","provider":"web_push","recipient_label":"bad","enabled":true}`)))
+	if invalidRoute.Code != http.StatusBadRequest {
+		t.Fatalf("expected invalid route 400, got %d: %s", invalidRoute.Code, invalidRoute.Body.String())
+	}
+
+	audit := httptest.NewRecorder()
+	handler.ServeHTTP(audit, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentAuditEvents, nil))
+	if audit.Code != http.StatusOK {
+		t.Fatalf("expected audit 200, got %d", audit.Code)
+	}
+	if !strings.Contains(audit.Body.String(), constants.AuditActionNotificationRoute) {
+		t.Fatalf("expected route audit event, got %s", audit.Body.String())
+	}
+}
+
 func TestConsentCenterEndpoint(t *testing.T) {
 	t.Parallel()
 

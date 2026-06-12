@@ -13,6 +13,8 @@ type Repository interface {
 	ListAuditEvents(context.Context, string) []model.AuditEvent
 	CreateAlertRule(context.Context, string, model.CreateAlertRuleRequest) (model.AlertRule, error)
 	ListAlertRules(context.Context, string) []model.AlertRule
+	CreateNotificationRoute(context.Context, string, model.CreateNotificationRouteRequest) (model.NotificationRoute, error)
+	ListNotificationRoutes(context.Context, string) []model.NotificationRoute
 	TenantOperationsSummary(context.Context, string) (model.TenantOperationsSummary, error)
 	TenantMonetizationSummary(context.Context, string) (model.TenantMonetizationSummary, error)
 	CreateTenantDataExport(context.Context, string, model.CreateTenantDataExportRequest) (model.TenantDataExport, error)

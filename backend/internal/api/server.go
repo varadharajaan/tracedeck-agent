@@ -296,6 +296,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantAuditEvents(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentAlertRules:
 		s.handleTenantAlertRules(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentNotifications:
+		s.handleTenantNotificationRoutes(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentConsentCenter && r.Method == http.MethodGet:
 		s.handleTenantConsentCenter(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentOperations && r.Method == http.MethodGet:
@@ -390,6 +392,48 @@ func (s *Server) handleTenantAlertRules(w http.ResponseWriter, r *http.Request, 
 			return
 		}
 		writeJSON(w, http.StatusCreated, rule)
+	default:
+		writeMethodNotAllowed(w)
+	}
+}
+
+func (s *Server) handleTenantNotificationRoutes(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	if _, err := s.store.GetTenant(r.Context(), tenantID); err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant lookup failed")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		routes := s.store.ListNotificationRoutes(r.Context(), tenantID)
+		writeJSON(w, http.StatusOK, model.ListResponse[model.NotificationRoute]{
+			Items: routes,
+			Count: len(routes),
+		})
+	case http.MethodPost:
+		var req model.CreateNotificationRouteRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid notification route json")
+			return
+		}
+		if err := validateCreateNotificationRouteRequest(req); err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		route, err := s.store.CreateNotificationRoute(r.Context(), tenantID, req)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "notification route creation failed")
+			return
+		}
+		writeJSON(w, http.StatusCreated, route)
 	default:
 		writeMethodNotAllowed(w)
 	}
@@ -938,6 +982,27 @@ func validateCreateAlertRuleRequest(req model.CreateAlertRuleRequest) error {
 	}
 }
 
+func validateCreateNotificationRouteRequest(req model.CreateNotificationRouteRequest) error {
+	switch {
+	case strings.TrimSpace(req.Channel) == "":
+		return errors.New("channel is required")
+	case !knownChannels([]string{req.Channel}):
+		return errors.New("channel is unknown")
+	case strings.TrimSpace(req.Provider) == "":
+		return errors.New("provider is required")
+	case !knownDeliveryProvider(req.Provider):
+		return errors.New("provider is unknown")
+	case !providerAllowedForChannel(req.Provider, req.Channel):
+		return errors.New("provider is not valid for channel")
+	case strings.TrimSpace(req.RecipientLabel) == "":
+		return errors.New("recipient_label is required")
+	case strings.TrimSpace(req.Status) != "" && !knownRouteStatus(req.Status):
+		return errors.New("status is unknown")
+	default:
+		return nil
+	}
+}
+
 func validateCreateDeviceGroupRequest(req model.CreateDeviceGroupRequest) error {
 	switch {
 	case strings.TrimSpace(req.Name) == "":
@@ -1067,6 +1132,37 @@ func knownChannels(channels []string) bool {
 		}
 	}
 	return true
+}
+
+func knownDeliveryProvider(provider string) bool {
+	switch strings.TrimSpace(provider) {
+	case constants.DeliveryProviderSMTP, constants.DeliveryProviderWebPush, constants.DeliveryProviderLocalFeed:
+		return true
+	default:
+		return false
+	}
+}
+
+func providerAllowedForChannel(provider string, channel string) bool {
+	switch strings.TrimSpace(channel) {
+	case constants.DeliveryChannelEmail:
+		return strings.TrimSpace(provider) == constants.DeliveryProviderSMTP
+	case constants.DeliveryChannelPush:
+		return strings.TrimSpace(provider) == constants.DeliveryProviderWebPush
+	case constants.DeliveryChannelDashboard:
+		return strings.TrimSpace(provider) == constants.DeliveryProviderLocalFeed
+	default:
+		return false
+	}
+}
+
+func knownRouteStatus(status string) bool {
+	switch strings.TrimSpace(status) {
+	case constants.StatusHealthy, constants.StatusWatch, constants.StatusAttention, constants.StatusPending:
+		return true
+	default:
+		return false
+	}
 }
 
 func buildConsentCenter(tenant model.Tenant, auditEvents []model.AuditEvent, rules []model.AlertRule) model.ConsentCenter {

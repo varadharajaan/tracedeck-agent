@@ -273,6 +273,29 @@ type CreateAlertRuleRequest struct {
 	Enabled    bool               `json:"enabled"`
 }
 
+type NotificationRoute struct {
+	ID             string     `json:"id"`
+	TenantID       string     `json:"tenant_id"`
+	Channel        string     `json:"channel"`
+	Provider       string     `json:"provider"`
+	RecipientLabel string     `json:"recipient_label"`
+	Status         string     `json:"status"`
+	Enabled        bool       `json:"enabled"`
+	LastVerifiedAt *time.Time `json:"last_verified_at,omitempty"`
+	LastSummary    string     `json:"last_summary"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+}
+
+type CreateNotificationRouteRequest struct {
+	Channel        string `json:"channel"`
+	Provider       string `json:"provider"`
+	RecipientLabel string `json:"recipient_label"`
+	Status         string `json:"status"`
+	Enabled        bool   `json:"enabled"`
+	LastSummary    string `json:"last_summary"`
+}
+
 type ConsentCollectionItem struct {
 	Name        string `json:"name"`
 	Status      string `json:"status"`

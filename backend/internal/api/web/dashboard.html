@@ -652,6 +652,34 @@
       <div class="panel">
         <div class="section-head">
           <div>
+            <h2>Notification Route Registry</h2>
+            <p class="muted">Configured email, push, and dashboard routes without storing provider secrets</p>
+          </div>
+          <span id="notification-route-count" class="pill">0 routes</span>
+        </div>
+        <div id="notification-route-list" class="catalog-list"><div class="empty">No notification routes yet.</div></div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Route Readiness Proof</h2>
+            <p class="muted">Delivery route setup compared with the latest alert delivery evidence</p>
+          </div>
+          <span id="route-readiness-status" class="badge pending">pending</span>
+        </div>
+        <div class="brief-grid">
+          <div class="brief-item"><small>Configured</small><strong id="route-readiness-configured">-</strong><span id="route-readiness-configured-sub" class="muted">No configured routes</span></div>
+          <div class="brief-item"><small>Enabled</small><strong id="route-readiness-enabled">-</strong><span id="route-readiness-enabled-sub" class="muted">No enabled routes</span></div>
+          <div class="brief-item"><small>Verified</small><strong id="route-readiness-verified">-</strong><span id="route-readiness-verified-sub" class="muted">No verified routes</span></div>
+          <div class="brief-item"><small>Attention</small><strong id="route-readiness-attention">-</strong><span id="route-readiness-attention-sub" class="muted">No route issues</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <div class="panel">
+        <div class="section-head">
+          <div>
             <h2>Paid Feature Proof</h2>
             <p class="muted">Capabilities that justify Family Pro, school, and business pricing</p>
           </div>
@@ -1372,6 +1400,7 @@
       renderConsentCenter(context.consentCenter);
       renderTenantOperations(context.tenantOperations);
       renderMonetizationSummary(context.monetizationSummary);
+      renderNotificationRoutes(context.notificationRoutes);
       renderDataExports(context.dataExports);
       renderDeleteRequests(context.deleteRequests);
       renderTimeline(policy.items.concat(anomalies.items, tamper.items));
@@ -1987,6 +2016,52 @@
       `).join("");
     }
 
+    function renderNotificationRoutes(routes) {
+      const items = (routes && routes.items) || [];
+      const enabled = items.filter((item) => item.enabled);
+      const verified = items.filter((item) => item.last_verified_at);
+      const attention = items.filter((item) => item.status === "attention" || item.status === "watch" || !item.enabled);
+      setText("notification-route-count", `${items.length} route${items.length === 1 ? "" : "s"}`);
+      document.getElementById("route-readiness-status").outerHTML =
+        badge(attention.length === 0 && verified.length > 0 ? "healthy" : attention.length > 0 ? "watch" : "pending").replace("<span", '<span id="route-readiness-status"');
+      setText("route-readiness-configured", items.length);
+      setText("route-readiness-configured-sub", `${channelCoverage(items)} channel coverage`);
+      setText("route-readiness-enabled", enabled.length);
+      setText("route-readiness-enabled-sub", `${items.length - enabled.length} disabled route${items.length - enabled.length === 1 ? "" : "s"}`);
+      setText("route-readiness-verified", verified.length);
+      setText("route-readiness-verified-sub", verified.length ? `latest ${formatDate(latestRouteVerification(verified))}` : "verification pending");
+      setText("route-readiness-attention", attention.length);
+      setText("route-readiness-attention-sub", attention.length ? "watch route setup before paid demo" : "all routes look ready");
+
+      const target = document.getElementById("notification-route-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No notification routes yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="catalog-item">
+          <strong>${escapeHTML(capitalize(item.channel))} via ${escapeHTML(item.provider)}</strong>
+          <span class="muted">${escapeHTML(item.last_summary || "No route summary yet.")}</span>
+          <div class="action-meta">
+            ${badge(item.status)}
+            ${badge(item.enabled ? "enabled" : "disabled")}
+            <span class="pill">${escapeHTML(item.recipient_label)}</span>
+            <span class="pill">verified ${escapeHTML(formatDate(item.last_verified_at))}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function channelCoverage(items) {
+      const channels = new Set(items.map((item) => item.channel).filter(Boolean));
+      return `${channels.size}/3`;
+    }
+
+    function latestRouteVerification(items) {
+      const latest = items.slice().sort((left, right) => new Date(right.last_verified_at) - new Date(left.last_verified_at))[0];
+      return latest ? latest.last_verified_at : "";
+    }
+
     function renderTenantSignalList(listID, countID, items, noun) {
       setText(countID, `${items.length} ${noun}${items.length === 1 ? "" : "s"}`);
       const target = document.getElementById(listID);
@@ -2230,6 +2305,7 @@
       const alertRules = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/alert-rules`) : null;
       const deviceGroups = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/device-groups`) : null;
       const policyAssignments = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/policy-assignments`) : null;
+      const notificationRoutes = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-routes`) : null;
       const consentCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/consent-center`) : null;
       const tenantOperations = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/operations-summary`) : null;
       const monetizationSummary = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/monetization-summary`) : null;
@@ -2245,6 +2321,7 @@
         alertRules,
         deviceGroups,
         policyAssignments,
+        notificationRoutes,
         consentCenter,
         tenantOperations,
         monetizationSummary,

@@ -41,6 +41,7 @@ const (
 	RouteSegmentConsentCenter  = "consent-center"
 	RouteSegmentOperations     = "operations-summary"
 	RouteSegmentMonetization   = "monetization-summary"
+	RouteSegmentNotifications  = "notification-routes"
 	RouteSegmentDataExports    = "data-exports"
 	RouteSegmentDeleteRequests = "delete-requests"
 	RouteSegmentDeviceGroups   = "device-groups"
@@ -101,6 +102,7 @@ const (
 const (
 	AuditActionTenantCreated        = "tenant.created"
 	AuditActionAlertRuleCreated     = "alert_rule.created"
+	AuditActionNotificationRoute    = "notification_route.created"
 	AuditActionDeviceGroupCreated   = "device_group.created"
 	AuditActionDataExportCreated    = "data_export.created"
 	AuditActionDeleteRequestCreated = "delete_request.created"
