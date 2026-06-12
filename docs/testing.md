@@ -360,6 +360,21 @@ Replay Health panels. Newman runs
 `postman/tracedeck-backend-phase31.postman_collection.json` against the live
 dashboard demo and checks the same API/UI contract.
 
+Phase 32 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase32.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase32.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase32.ps1
+```
+
+The Phase 32 smoke live-boots the seeded dashboard, verifies the Tenant
+Activity Feed and Filtered Command Feed markers, checks the default tenant feed,
+checks selected-host email delivery filtering, posts one stable metadata event,
+and verifies telemetry sync proof appears in the same feed. Newman runs
+`postman/tracedeck-backend-phase32.postman_collection.json` against the live
+dashboard demo and checks the same API/UI contract.
+
 Phase 13 adds:
 
 ```powershell

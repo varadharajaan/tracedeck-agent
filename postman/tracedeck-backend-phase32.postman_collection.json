@@ -1,0 +1,90 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 32",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Contains Activity Feed",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard has activity feed panels', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Tenant Activity Feed');",
+        "  pm.expect(html).to.include('Filtered Command Feed');",
+        "  pm.expect(html).to.include('activity-feed-list');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Default Tenant Activity Feed",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/activity-feed?limit=20" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('feed rolls up risk and delivery items', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.summary.risk_items).to.be.above(0);",
+        "  pm.expect(body.summary.delivery_items).to.be.above(0);",
+        "  pm.expect(body.items.length).to.be.above(0);",
+        "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Email Delivery Feed Filter",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/activity-feed?device_id=demo-study-laptop&kind=delivery&channel=email&limit=5" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('feed filters to selected-host email delivery', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.filters.device_id).to.eql('demo-study-laptop');",
+        "  pm.expect(body.filters.channel).to.eql('email');",
+        "  pm.expect(body.summary.delivery_items).to.be.above(0);",
+        "  pm.expect(body.items.every((item) => item.channel === 'email')).to.eql(true);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Ingest Telemetry For Feed",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/v1/devices/feed-newman-device/telemetry-events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"device_id\":\"feed-newman-device\",\"host_name\":\"feed-newman-host\",\"profile\":\"ai-btech-student\",\"os_name\":\"windows\",\"events\":[{\"id\":\"local-event-3201\",\"type\":\"process.observed\",\"source\":\"collector.process\",\"observed_at\":\"2026-06-12T08:00:00Z\",\"app_name\":\"Code.exe\",\"process_id\":3201,\"path_hash\":\"hash-only\",\"metadata\":{\"category\":\"coding\"}}]}"
+        }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('telemetry for feed is accepted', function () {",
+        "  pm.response.to.have.status(202);",
+        "  pm.expect(pm.response.json().accepted_events).to.eql(1);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Telemetry Feed Filter",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/activity-feed?device_id=feed-newman-device&kind=telemetry&limit=5" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('feed includes telemetry sync proof', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.summary.telemetry_items).to.eql(1);",
+        "  pm.expect(body.items[0].kind).to.eql('telemetry');",
+        "  pm.expect(body.items[0].id).to.eql('local-event-3201');",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

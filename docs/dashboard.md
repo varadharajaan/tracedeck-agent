@@ -63,6 +63,10 @@ paid demo can show agent sync proof, anomaly pipeline status, mail delivery,
 push notification reach, weekly report mail, archive trust, highest replay
 cursor, source counts, and host recommendations from the tenant sync-health
 API.
+Phase 32 adds a Tenant Activity Feed and Filtered Command Feed backed by the
+tenant activity-feed API. The selected host drives a feed filter so anomaly,
+policy, tamper, mail, push, and telemetry sync proof can be reviewed in one
+timeline.
 
 The dashboard reads the base backend endpoints:
 
@@ -91,6 +95,7 @@ For the selected host it reads:
 - `/api/v1/tenants/{tenantId}/operations-summary`
 - `/api/v1/tenants/{tenantId}/monetization-summary`
 - `/api/v1/tenants/{tenantId}/sync-health`
+- `/api/v1/tenants/{tenantId}/activity-feed`
 - `/api/v1/tenants/{tenantId}/data-exports`
 - `/api/v1/tenants/{tenantId}/delete-requests`
 - `/api/v1/tenants/{tenantId}/device-groups`
@@ -113,6 +118,10 @@ Current panels:
 - offline replay health for tenant reporting hosts, stored backend events,
   stable local-event cursor, last ingest, privacy boundary, and per-host source
   counts
+- tenant activity feed for cross-host risk, alert delivery, and telemetry sync
+  summary counts
+- filtered command feed for the selected host across anomaly, policy, tamper,
+  mail, push, and backend-visible metadata events
 - priority action board for the highest-value intervention
 - notification promise for email, push, and dashboard delivery status
 - commercial readiness score for Family Pro, school, and business packaging

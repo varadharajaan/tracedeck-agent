@@ -534,6 +534,230 @@ func (m *Memory) TenantSyncHealth(_ context.Context, tenantID string) (model.Ten
 	}, nil
 }
 
+func (m *Memory) TenantActivityFeed(_ context.Context, tenantID string, filter model.TenantActivityFeedFilter) (model.TenantActivityFeed, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+	filter = normalizeActivityFeedFilter(filter)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	tenant, ok := m.tenants[tenantID]
+	if !ok {
+		return model.TenantActivityFeed{}, ErrTenantNotFound
+	}
+
+	items := make([]model.TenantActivityFeedItem, 0)
+	sourceHosts := make(map[string]bool)
+	reportingHosts := make(map[string]bool)
+	for _, device := range m.devices {
+		if device.TenantID != tenantID {
+			continue
+		}
+		if filter.DeviceID != "" && filter.DeviceID != device.DeviceID {
+			continue
+		}
+		sourceHosts[device.DeviceID] = true
+		m.seedDashboardForDeviceLocked(device)
+		items = append(items, riskFeedItems(tenantID, device, m.policyEvents[device.DeviceID])...)
+		items = append(items, riskFeedItems(tenantID, device, m.anomalyEvents[device.DeviceID])...)
+		items = append(items, riskFeedItems(tenantID, device, m.tamperEvents[device.DeviceID])...)
+		items = append(items, deliveryFeedItems(tenantID, device, m.alertDeliveries[device.DeviceID])...)
+		telemetryEvents := cloneTelemetryEvents(m.telemetryEvents[device.DeviceID])
+		if len(telemetryEvents) > 0 {
+			reportingHosts[device.DeviceID] = true
+		}
+		items = append(items, telemetryFeedItems(tenantID, device, telemetryEvents)...)
+	}
+	if err := m.persistLocked(); err != nil {
+		return model.TenantActivityFeed{}, err
+	}
+
+	matched := make([]model.TenantActivityFeedItem, 0, len(items))
+	for _, item := range items {
+		if activityFeedItemMatches(item, filter) {
+			matched = append(matched, item)
+		}
+	}
+	sort.Slice(matched, func(i, j int) bool {
+		if matched[i].ObservedAt.Equal(matched[j].ObservedAt) {
+			return severityRank(matched[i].Severity) > severityRank(matched[j].Severity)
+		}
+		return matched[i].ObservedAt.After(matched[j].ObservedAt)
+	})
+
+	summary := activityFeedSummary(matched, len(sourceHosts), len(reportingHosts))
+	limited := matched
+	if len(limited) > filter.Limit {
+		limited = limited[:filter.Limit]
+	}
+
+	return model.TenantActivityFeed{
+		TenantID:        tenant.TenantID,
+		TenantName:      tenant.Name,
+		Filters:         filter,
+		Summary:         summary,
+		Items:           append([]model.TenantActivityFeedItem(nil), limited...),
+		GeneratedAt:     now,
+		PrivacyBoundary: constants.TelemetryPrivacyBoundary,
+	}, nil
+}
+
+func normalizeActivityFeedFilter(filter model.TenantActivityFeedFilter) model.TenantActivityFeedFilter {
+	filter.DeviceID = strings.TrimSpace(filter.DeviceID)
+	filter.Kind = strings.ToLower(strings.TrimSpace(filter.Kind))
+	filter.Severity = strings.ToLower(strings.TrimSpace(filter.Severity))
+	filter.Channel = strings.ToLower(strings.TrimSpace(filter.Channel))
+	filter.Status = strings.ToLower(strings.TrimSpace(filter.Status))
+	filter.Query = strings.ToLower(strings.TrimSpace(filter.Query))
+	if filter.Limit <= 0 {
+		filter.Limit = constants.ActivityFeedDefaultLimit
+	}
+	if filter.Limit > constants.ActivityFeedMaxLimit {
+		filter.Limit = constants.ActivityFeedMaxLimit
+	}
+	return filter
+}
+
+func riskFeedItems(tenantID string, device model.Device, events []model.RiskEvent) []model.TenantActivityFeedItem {
+	items := make([]model.TenantActivityFeedItem, 0, len(events))
+	for _, event := range events {
+		title := fallbackString(event.AppName, fallbackString(event.Domain, fallbackString(event.ResourceLabel, event.Category)))
+		items = append(items, model.TenantActivityFeedItem{
+			ID:             event.ID,
+			TenantID:       tenantID,
+			DeviceID:       device.DeviceID,
+			HostName:       device.HostName,
+			Kind:           constants.ActivityFeedKindRisk,
+			Type:           event.Type,
+			Severity:       event.Severity,
+			Category:       event.Category,
+			Status:         event.Status,
+			Title:          title,
+			Detail:         event.Reason,
+			Recommendation: event.Recommendation,
+			Source:         event.Source,
+			ObservedAt:     event.ObservedAt,
+		})
+	}
+	return items
+}
+
+func deliveryFeedItems(tenantID string, device model.Device, deliveries []model.AlertDelivery) []model.TenantActivityFeedItem {
+	items := make([]model.TenantActivityFeedItem, 0, len(deliveries))
+	for _, delivery := range deliveries {
+		items = append(items, model.TenantActivityFeedItem{
+			ID:         delivery.ID,
+			TenantID:   tenantID,
+			DeviceID:   device.DeviceID,
+			HostName:   device.HostName,
+			Kind:       constants.ActivityFeedKindDelivery,
+			Type:       constants.ActivityFeedKindDelivery,
+			Channel:    delivery.Channel,
+			Status:     delivery.Status,
+			Title:      fmt.Sprintf("%s delivery %s", titleWord(delivery.Channel), delivery.Status),
+			Detail:     fallbackString(delivery.LastError, delivery.Summary),
+			Source:     delivery.Provider,
+			Provider:   delivery.Provider,
+			Recipient:  delivery.Recipient,
+			EventID:    delivery.EventID,
+			ObservedAt: delivery.LastAttemptAt,
+		})
+	}
+	return items
+}
+
+func telemetryFeedItems(tenantID string, device model.Device, events []model.TelemetryEvent) []model.TenantActivityFeedItem {
+	items := make([]model.TenantActivityFeedItem, 0, len(events))
+	for _, event := range events {
+		title := fallbackString(event.AppName, fallbackString(event.Type, "metadata event"))
+		items = append(items, model.TenantActivityFeedItem{
+			ID:         event.ID,
+			TenantID:   tenantID,
+			DeviceID:   device.DeviceID,
+			HostName:   device.HostName,
+			Kind:       constants.ActivityFeedKindTelemetry,
+			Type:       event.Type,
+			Category:   event.Metadata["category"],
+			Status:     constants.StatusOK,
+			Title:      title,
+			Detail:     fmt.Sprintf("%s metadata with %d redacted fields", event.Source, len(event.Metadata)),
+			Source:     event.Source,
+			ObservedAt: event.ObservedAt,
+		})
+	}
+	return items
+}
+
+func activityFeedItemMatches(item model.TenantActivityFeedItem, filter model.TenantActivityFeedFilter) bool {
+	if filter.Kind != "" && strings.ToLower(item.Kind) != filter.Kind {
+		return false
+	}
+	if filter.Severity != "" && strings.ToLower(item.Severity) != filter.Severity {
+		return false
+	}
+	if filter.Channel != "" && strings.ToLower(item.Channel) != filter.Channel {
+		return false
+	}
+	if filter.Status != "" && strings.ToLower(item.Status) != filter.Status {
+		return false
+	}
+	if filter.Query != "" && !strings.Contains(activityFeedSearchText(item), filter.Query) {
+		return false
+	}
+	return true
+}
+
+func activityFeedSearchText(item model.TenantActivityFeedItem) string {
+	parts := []string{
+		item.ID,
+		item.DeviceID,
+		item.HostName,
+		item.Kind,
+		item.Type,
+		item.Severity,
+		item.Category,
+		item.Channel,
+		item.Status,
+		item.Title,
+		item.Detail,
+		item.Recommendation,
+		item.Source,
+		item.Provider,
+		item.Recipient,
+		item.EventID,
+	}
+	return strings.ToLower(strings.Join(parts, " "))
+}
+
+func activityFeedSummary(items []model.TenantActivityFeedItem, sourceHostCount int, reportingHosts int) model.TenantActivityFeedSummary {
+	summary := model.TenantActivityFeedSummary{
+		Total:           len(items),
+		SourceHostCount: sourceHostCount,
+		ReportingHosts:  reportingHosts,
+	}
+	for _, item := range items {
+		switch item.Kind {
+		case constants.ActivityFeedKindRisk:
+			summary.RiskItems++
+			if item.Status == constants.RiskStatusOpen && severityRank(item.Severity) >= severityRank(constants.SeverityHigh) {
+				summary.HighRiskOpen++
+			}
+		case constants.ActivityFeedKindDelivery:
+			summary.DeliveryItems++
+			if item.Channel == constants.DeliveryChannelEmail && item.Status == constants.DeliveryStatusDelivered {
+				summary.EmailDelivered++
+			}
+			if item.Channel == constants.DeliveryChannelPush && item.Status != constants.DeliveryStatusDelivered {
+				summary.PushNeedsRetry++
+			}
+		case constants.ActivityFeedKindTelemetry:
+			summary.TelemetryItems++
+		}
+	}
+	return summary
+}
+
 func deviceSyncHealth(device model.Device, events []model.TelemetryEvent) model.DeviceSyncHealth {
 	sort.Slice(events, func(i, j int) bool {
 		return events[i].ObservedAt.After(events[j].ObservedAt)

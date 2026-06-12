@@ -206,6 +206,71 @@ func TestTenantSyncHealthEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantActivityFeedEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	body := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "feed-device-001",
+		"host_name": "feed-host",
+		"profile": "ai-btech-student",
+		"os_name": "windows",
+		"events": [
+			{
+				"id": "local-event-41",
+				"type": "process.observed",
+				"source": "collector.process",
+				"observed_at": "2026-06-12T08:00:00Z",
+				"app_name": "Code.exe",
+				"path_hash": "hash-only",
+				"metadata": { "category": "coding" }
+			}
+		]
+	}`)
+	ingest := httptest.NewRecorder()
+	handler.ServeHTTP(ingest, httptest.NewRequest(http.MethodPost, constants.RouteDevices+"/feed-device-001/"+constants.RouteSegmentTelemetry, bytes.NewReader(body)))
+	if ingest.Code != http.StatusAccepted {
+		t.Fatalf("expected telemetry ingest 202, got %d: %s", ingest.Code, ingest.Body.String())
+	}
+
+	feedResponse := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentActivityFeed+"?device_id=feed-device-001&kind=delivery&channel=email&limit=5", nil)
+	handler.ServeHTTP(feedResponse, request)
+	if feedResponse.Code != http.StatusOK {
+		t.Fatalf("expected activity feed 200, got %d: %s", feedResponse.Code, feedResponse.Body.String())
+	}
+	var feed model.TenantActivityFeed
+	if err := json.Unmarshal(feedResponse.Body.Bytes(), &feed); err != nil {
+		t.Fatalf("decode activity feed: %v", err)
+	}
+	if feed.Filters.DeviceID != "feed-device-001" || feed.Filters.Channel != constants.DeliveryChannelEmail {
+		t.Fatalf("expected normalized feed filters: %+v", feed.Filters)
+	}
+	if feed.Summary.DeliveryItems == 0 || feed.Items[0].Channel != constants.DeliveryChannelEmail {
+		t.Fatalf("expected filtered email delivery items: %+v", feed)
+	}
+
+	riskResponse := httptest.NewRecorder()
+	handler.ServeHTTP(riskResponse, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentActivityFeed+"?q=youtube&limit=3", nil))
+	if riskResponse.Code != http.StatusOK || !strings.Contains(riskResponse.Body.String(), "youtube") {
+		t.Fatalf("expected query feed to include youtube risk item, got %d: %s", riskResponse.Code, riskResponse.Body.String())
+	}
+}
+
 func TestHostDashboardRiskEndpoints(t *testing.T) {
 	t.Parallel()
 

@@ -42,6 +42,7 @@ const (
 	RouteSegmentOperations      = "operations-summary"
 	RouteSegmentMonetization    = "monetization-summary"
 	RouteSegmentSyncHealth      = "sync-health"
+	RouteSegmentActivityFeed    = "activity-feed"
 	RouteSegmentNotifications   = "notification-routes"
 	RouteSegmentDataExports     = "data-exports"
 	RouteSegmentDeleteRequests  = "delete-requests"
@@ -292,4 +293,12 @@ const (
 	TelemetryIngestMaxEvents    = 500
 	TelemetryStatusRecentEvents = 8
 	TelemetryPrivacyBoundary    = "metadata-only: no passwords, credentials, screenshots, tokens, cookies, keylogs, private messages, raw URLs, or page titles"
+)
+
+const (
+	ActivityFeedDefaultLimit  = 12
+	ActivityFeedMaxLimit      = 50
+	ActivityFeedKindRisk      = "risk"
+	ActivityFeedKindDelivery  = "delivery"
+	ActivityFeedKindTelemetry = "telemetry"
 )

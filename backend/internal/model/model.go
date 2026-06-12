@@ -237,6 +237,59 @@ type TelemetryIngestStatus struct {
 	PrivacyBoundary string           `json:"privacy_boundary"`
 }
 
+type TenantActivityFeedFilter struct {
+	DeviceID string `json:"device_id"`
+	Kind     string `json:"kind"`
+	Severity string `json:"severity"`
+	Channel  string `json:"channel"`
+	Status   string `json:"status"`
+	Query    string `json:"query"`
+	Limit    int    `json:"limit"`
+}
+
+type TenantActivityFeedSummary struct {
+	Total           int `json:"total"`
+	RiskItems       int `json:"risk_items"`
+	DeliveryItems   int `json:"delivery_items"`
+	TelemetryItems  int `json:"telemetry_items"`
+	HighRiskOpen    int `json:"high_risk_open"`
+	EmailDelivered  int `json:"email_delivered"`
+	PushNeedsRetry  int `json:"push_needs_retry"`
+	ReportingHosts  int `json:"reporting_hosts"`
+	SourceHostCount int `json:"source_host_count"`
+}
+
+type TenantActivityFeedItem struct {
+	ID             string    `json:"id"`
+	TenantID       string    `json:"tenant_id"`
+	DeviceID       string    `json:"device_id"`
+	HostName       string    `json:"host_name"`
+	Kind           string    `json:"kind"`
+	Type           string    `json:"type"`
+	Severity       string    `json:"severity"`
+	Category       string    `json:"category"`
+	Channel        string    `json:"channel"`
+	Status         string    `json:"status"`
+	Title          string    `json:"title"`
+	Detail         string    `json:"detail"`
+	Recommendation string    `json:"recommendation"`
+	Source         string    `json:"source"`
+	Provider       string    `json:"provider"`
+	Recipient      string    `json:"recipient"`
+	EventID        string    `json:"event_id"`
+	ObservedAt     time.Time `json:"observed_at"`
+}
+
+type TenantActivityFeed struct {
+	TenantID        string                    `json:"tenant_id"`
+	TenantName      string                    `json:"tenant_name"`
+	Filters         TenantActivityFeedFilter  `json:"filters"`
+	Summary         TenantActivityFeedSummary `json:"summary"`
+	Items           []TenantActivityFeedItem  `json:"items"`
+	GeneratedAt     time.Time                 `json:"generated_at"`
+	PrivacyBoundary string                    `json:"privacy_boundary"`
+}
+
 type DeviceSyncHealth struct {
 	TenantID          string    `json:"tenant_id"`
 	DeviceID          string    `json:"device_id"`
