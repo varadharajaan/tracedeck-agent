@@ -1,0 +1,51 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 43",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Has Layout-Safe CSS",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard contains screenshot-free layout contract markers', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Command Navigation');",
+        "  pm.expect(html).to.include('Buyer Operations Brief');",
+        "  pm.expect(html).to.include('buyer-ops-section');",
+        "  pm.expect(html).to.include('Push Notification Dispatch');",
+        "  pm.expect(html).to.include('Mail Delivery Proof');",
+        "  pm.expect(html).to.include('buyer-delivery-list');",
+        "  pm.expect(html).to.include('main > *');",
+        "  pm.expect(html).to.include('min-width: 0');",
+        "  pm.expect(html).to.include('text-overflow: ellipsis');",
+        "  pm.expect(html).to.include('margin: 20px 10px 32px');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Command Navigation KPI Data Still Works",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/monetization-summary" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('monetisation summary still backs command navigation', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.readiness_score).to.be.above(0);",
+        "  pm.expect(body.notification_score).to.be.above(0);",
+        "  pm.expect(body.trust_score).to.be.above(0);",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

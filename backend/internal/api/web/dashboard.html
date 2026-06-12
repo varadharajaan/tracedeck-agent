@@ -41,7 +41,8 @@
       background: var(--surface);
     }
     main {
-      width: min(1400px, calc(100vw - 32px));
+      width: calc(100% - 32px);
+      max-width: 1400px;
       margin: 20px auto 32px;
       display: grid;
       gap: 16px;
@@ -106,8 +107,22 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       box-shadow: var(--shadow);
+      min-width: 0;
     }
     .panel { padding: 16px; }
+    main > *,
+    .command-nav,
+    .buyer-ops-brief,
+    .paid-ops-console,
+    .commercial-room,
+    .launch-deck,
+    .revenue-suite,
+    .content-grid,
+    .shell,
+    .stack,
+    .host-card {
+      min-width: 0;
+    }
     .auth-panel {
       background: #fffaf0;
       border: 1px solid #fedf89;
@@ -226,6 +241,105 @@
       color: var(--muted);
       font-size: 11px;
       font-weight: 650;
+      overflow-wrap: anywhere;
+    }
+    .buyer-ops-brief {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.9fr) minmax(0, 2.1fr);
+      gap: 16px;
+    }
+    .buyer-ops-focus {
+      min-height: 336px;
+      display: grid;
+      align-content: space-between;
+      gap: 16px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--green);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .buyer-ops-focus h2 {
+      font-size: 20px;
+    }
+    .buyer-ops-focus strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 31px;
+      line-height: 1.06;
+      overflow-wrap: anywhere;
+    }
+    .buyer-ops-focus p {
+      color: var(--muted);
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+    .buyer-ops-score {
+      display: grid;
+      gap: 8px;
+    }
+    .buyer-ops-track {
+      height: 12px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #eef1f5;
+    }
+    .buyer-ops-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--green), var(--teal));
+    }
+    .buyer-ops-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .buyer-ops-tile {
+      min-height: 138px;
+      display: grid;
+      align-content: space-between;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .buyer-ops-tile small {
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .buyer-ops-tile strong {
+      font-size: 20px;
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+    }
+    .buyer-ops-tile span {
+      overflow-wrap: anywhere;
+    }
+    .buyer-ops-board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .buyer-ops-list {
+      display: grid;
+      gap: 8px;
+    }
+    .buyer-ops-list-item {
+      display: grid;
+      gap: 6px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+    }
+    .buyer-ops-list-item strong,
+    .buyer-ops-list-item span {
       overflow-wrap: anywhere;
     }
     .launch-deck {
@@ -743,6 +857,9 @@
       font-size: 12px;
       font-weight: 750;
       white-space: nowrap;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .badge.high, .badge.critical, .badge.failed { color: var(--red); background: #fff4f2; border-color: #fecdca; }
     .badge.medium, .badge.retrying, .badge.pending { color: var(--amber); background: #fffaeb; border-color: #fedf89; }
@@ -925,6 +1042,8 @@
       .command-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .command-nav { grid-template-columns: 1fr; position: static; }
       .command-nav-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .buyer-ops-brief { grid-template-columns: 1fr; }
+      .buyer-ops-grid, .buyer-ops-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .launch-deck { grid-template-columns: 1fr; }
       .brief-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .ops-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -952,6 +1071,7 @@
       .route-grid { grid-template-columns: 1fr; }
       .command-board { grid-template-columns: 1fr; }
       .command-nav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .buyer-ops-grid, .buyer-ops-board { grid-template-columns: 1fr; }
       .launch-grid, .launch-actions { grid-template-columns: 1fr; }
       .brief-grid { grid-template-columns: 1fr; }
       .ops-strip { grid-template-columns: 1fr; }
@@ -962,7 +1082,10 @@
       .revenue-grid, .assurance-grid { grid-template-columns: 1fr; }
       .summary-line { grid-template-columns: 1fr; }
       .kv div { grid-template-columns: 1fr; }
-      main { width: min(100vw - 20px, 1400px); }
+      main {
+        width: auto;
+        margin: 20px 10px 32px;
+      }
     }
   </style>
 </head>
@@ -1035,6 +1158,98 @@
         <button class="command-jump" type="button" data-jump-target="trust-proof-section">Trust<span id="nav-trust-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="host-detail-section">Hosts<span id="nav-host-meta">waiting</span></button>
       </nav>
+    </section>
+
+    <section id="buyer-ops-section" class="buyer-ops-brief" aria-label="buyer operations brief">
+      <div class="buyer-ops-focus">
+        <div class="section-head">
+          <div>
+            <h2>Buyer Operations Brief</h2>
+            <p>Paid-product first screen for anomaly alerting, push notification dispatch, mail delivery proof, weekly reports, archive trust, and next commercial action.</p>
+          </div>
+          <span id="buyer-ops-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Monetisation Health</span>
+          <strong id="buyer-ops-headline">No tenant loaded</strong>
+          <p id="buyer-ops-detail">Waiting for notification, report, archive, and trust proof.</p>
+        </div>
+        <div class="buyer-ops-score">
+          <div class="score-meta"><span>Sellable readiness</span><span id="buyer-ops-score">0%</span></div>
+          <div class="buyer-ops-track"><div id="buyer-ops-score-bar" class="buyer-ops-fill"></div></div>
+        </div>
+        <div class="action-meta">
+          <span id="buyer-ops-plan" class="pill">plan pending</span>
+          <span id="buyer-ops-audience" class="pill">audience pending</span>
+          <span id="buyer-ops-next-action" class="pill">action pending</span>
+        </div>
+      </div>
+      <div>
+        <div class="buyer-ops-grid">
+          <div class="buyer-ops-tile">
+            <small>Anomaly Alerting</small>
+            <strong id="buyer-signal-anomaly">-</strong>
+            <span id="buyer-signal-anomaly-sub" class="muted">No alert inbox proof</span>
+          </div>
+          <div class="buyer-ops-tile">
+            <small>Mail Delivery Proof</small>
+            <strong id="buyer-signal-mail">-</strong>
+            <span id="buyer-signal-mail-sub" class="muted">No email delivery proof</span>
+          </div>
+          <div class="buyer-ops-tile">
+            <small>Push Notification Dispatch</small>
+            <strong id="buyer-signal-push">-</strong>
+            <span id="buyer-signal-push-sub" class="muted">No push delivery proof</span>
+          </div>
+          <div class="buyer-ops-tile">
+            <small>Weekly Report Delivery</small>
+            <strong id="buyer-signal-report">-</strong>
+            <span id="buyer-signal-report-sub" class="muted">No report mail proof</span>
+          </div>
+          <div class="buyer-ops-tile">
+            <small>Archive Retention</small>
+            <strong id="buyer-signal-archive">-</strong>
+            <span id="buyer-signal-archive-sub" class="muted">No archive proof</span>
+          </div>
+          <div class="buyer-ops-tile">
+            <small>Trust And Audit</small>
+            <strong id="buyer-signal-trust">-</strong>
+            <span id="buyer-signal-trust-sub" class="muted">No consent or audit proof</span>
+          </div>
+        </div>
+        <div class="buyer-ops-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Delivery Command</h2>
+                <p class="muted">Email, push, and dashboard routes a buyer can trust.</p>
+              </div>
+              <span id="buyer-delivery-status" class="badge pending">pending</span>
+            </div>
+            <div id="buyer-delivery-list" class="buyer-ops-list"><div class="empty">No delivery proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Packaging Snapshot</h2>
+                <p class="muted">Plan, audience, retention, and role packaging for monetisation.</p>
+              </div>
+              <span id="buyer-package-status" class="badge pending">pending</span>
+            </div>
+            <div id="buyer-package-list" class="buyer-ops-list"><div class="empty">No package proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Action And SLA</h2>
+                <p class="muted">The next operational action before billing, demo, or renewal.</p>
+              </div>
+              <span id="buyer-action-status" class="badge pending">pending</span>
+            </div>
+            <div id="buyer-action-list" class="buyer-ops-list"><div class="empty">No buyer actions yet.</div></div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section id="paid-ops-section" class="paid-ops-console" aria-label="paid operations console">
@@ -2523,6 +2738,7 @@
       renderNotificationOperations(deliveries.items);
       renderAlertInbox(policy.items.concat(anomalies.items, tamper.items), deliveries.items);
       renderProductPackaging({ ...context, deliveries: deliveries.items });
+      renderBuyerOperationsBrief(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderPaidOpsConsole(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderTenantAlertInbox(context.alertInbox);
       renderCommandBoard(overview, healthModel, policy, anomalies, tamper, deliveries, context);
@@ -2657,6 +2873,136 @@
         Number(health.score || 0) >= 70
       ];
       return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+    }
+
+    function renderBuyerOperationsBrief(overview, health, events, deliveries, context) {
+      const monetization = context.monetizationSummary || {};
+      const operations = context.tenantOperations || {};
+      const tenant = context.tenant || {};
+      const weekly = context.weeklyReport || {};
+      const consent = context.consentCenter || {};
+      const inbox = context.alertInbox || {};
+      const inboxSummary = inbox.summary || {};
+      const plans = (context.plans && context.plans.items) || [];
+      const tiers = (context.retentionTiers && context.retentionTiers.items) || [];
+      const roles = context.roles || {};
+      const templates = context.templates || {};
+      const routes = (context.notificationRoutes && context.notificationRoutes.items) || [];
+      const plan = plans.find((item) => item.id === (tenant.plan_id || monetization.plan_id || operations.plan_id)) || {};
+      const retention = tiers.find((item) => item.id === tenant.retention_tier_id) || {};
+      const email = latestDelivery(deliveryByChannel(deliveries, CHANNEL.email));
+      const push = latestDelivery(deliveryByChannel(deliveries, CHANNEL.push));
+      const dashboard = latestDelivery(deliveryByChannel(deliveries, CHANNEL.dashboard));
+      const delivered = deliveries.filter((item) => item.status === DELIVERY_STATUS.delivered).length;
+      const deliveryScore = deliveries.length > 0 ? Math.round((delivered / deliveries.length) * 100) : Number(monetization.notification_score || operations.notification_score || 0);
+      const readiness = Number(monetization.readiness_score || operations.monetization_readiness || readinessScore(context, deliveries, overview.archive, health));
+      const trustScore = Number(monetization.trust_score || Math.round(([
+        Boolean(consent.monitoring_visible),
+        Number((context.auditEvents && context.auditEvents.count) || 0) > 0,
+        health.agent_healthy,
+        overview.archive.provider === "s3",
+        Boolean(dashboard)
+      ].filter(Boolean).length / 5) * 100));
+      const archiveReady = overview.archive.provider === "s3" && Number(overview.archive.pending_batches || 0) === 0;
+      const reportReady = weekly.email_ready && weekly.pdf_ready;
+      const routeReady = Boolean(email && push && dashboard);
+      const alertReady = Number(inboxSummary.open || events.length || 0) > 0 && Number(inboxSummary.notification_ready || deliveryScore) > 0;
+      const sellableScore = Math.round((readiness + deliveryScore + trustScore + (archiveReady ? 100 : 55) + (reportReady ? 100 : weekly.email_ready ? 70 : 35)) / 5);
+      const status = sellableScore >= 80 ? "healthy" : sellableScore >= 55 ? "watch" : "attention";
+      const topEvent = topRiskEvent(events);
+      const routeProblem = topDeliveryProblem(deliveries);
+      const conversionAction = ((monetization.conversion_actions || [])[0]) || ((operations.upgrade_signals || [])[0]) || {};
+      const packageName = monetization.plan_name || operations.plan_name || plan.name || tenant.plan_id || "TraceDeck paid plan";
+      const audience = monetization.audience || plan.audience || tenant.primary_profile || overview.device.profile || "buyer";
+      const nextAction = routeProblem
+        ? `${capitalize(routeProblem.channel)} route needs proof`
+        : topEvent
+          ? `Review ${rowDetail(topEvent)}`
+          : conversionAction.title || (reportReady && routeReady ? "Ready for paid walkthrough" : "Complete report and route proof");
+
+      document.getElementById("buyer-ops-status").outerHTML =
+        badge(status).replace("<span", '<span id="buyer-ops-status"');
+      setText("buyer-ops-headline", `${packageName}: ${sellableScore}% sellable`);
+      setText("buyer-ops-detail", `${audience} view with ${deliveryScore}% notification delivery, ${readiness}% readiness, ${trustScore}% trust, and ${overview.archive.pending_batches || 0} archive batches pending.`);
+      setText("buyer-ops-score", `${sellableScore}%`);
+      document.getElementById("buyer-ops-score-bar").style.width = sellableScore + "%";
+      setText("buyer-ops-plan", packageName);
+      setText("buyer-ops-audience", audience);
+      setText("buyer-ops-next-action", nextAction);
+
+      setText("buyer-signal-anomaly", inboxSummary.open !== undefined ? `${inboxSummary.open} open` : `${events.length} signals`);
+      setText("buyer-signal-anomaly-sub", alertReady ? `${inboxSummary.high_or_critical || 0} high/critical, ${inboxSummary.notification_ready || deliveryScore}% route linked` : "No alert inbox proof yet.");
+      setText("buyer-signal-mail", email ? `${capitalize(email.status)} email` : "mail missing");
+      setText("buyer-signal-mail-sub", email ? `${email.recipient} via ${email.provider}; ${formatAge(email.last_attempt_at)}` : "Add SMTP or SES delivery proof.");
+      setText("buyer-signal-push", push ? `${capitalize(push.status)} push` : "push missing");
+      setText("buyer-signal-push-sub", push ? `${push.recipient} via ${push.provider}; ${push.summary || "push route visible"}` : "Add web or mobile push route proof.");
+      setText("buyer-signal-report", reportReady ? "email + PDF ready" : weekly.email_ready ? "email ready" : "report pending");
+      setText("buyer-signal-report-sub", weekly.email_preview || weekly.generated_note || "Weekly report mail proof pending.");
+      setText("buyer-signal-archive", overview.archive.provider === "s3" ? `${overview.archive.pending_batches} pending` : "archive pending");
+      setText("buyer-signal-archive-sub", retention.name ? `${retention.name}: ${retention.s3_standard_days}d standard, IA until ${retention.s3_standard_ia_until_days}d` : `${overview.archive.provider || "no provider"} retention proof.`);
+      setText("buyer-signal-trust", `${trustScore}% trust`);
+      setText("buyer-signal-trust-sub", `${consent.monitoring_visible ? "visible monitoring" : "visibility pending"}, ${health.agent_healthy ? "agent healthy" : "agent needs review"}, ${(context.auditEvents && context.auditEvents.count) || 0} audit events.`);
+
+      document.getElementById("buyer-delivery-status").outerHTML =
+        badge(deliveryScore >= 70 ? "healthy" : deliveryScore > 0 ? "watch" : "pending").replace("<span", '<span id="buyer-delivery-status"');
+      const deliveryTarget = document.getElementById("buyer-delivery-list");
+      const deliveryItems = [
+        { title: "Email alert route", item: email, fallback: "SMTP or SES proof missing" },
+        { title: "Push anomaly route", item: push, fallback: "Web or mobile push proof missing" },
+        { title: "Dashboard inbox route", item: dashboard, fallback: "Dashboard delivery proof missing" }
+      ];
+      deliveryTarget.innerHTML = deliveryItems.map((entry) => `
+        <div class="buyer-ops-list-item">
+          <strong>${escapeHTML(entry.title)}</strong>
+          <span class="muted">${escapeHTML(entry.item ? `${entry.item.recipient} via ${entry.item.provider}` : entry.fallback)}</span>
+          <div class="action-meta">
+            ${badge(entry.item ? entry.item.status : "pending")}
+            <span class="pill">${escapeHTML(entry.item ? `${entry.item.attempts || 0} attempts` : "not configured")}</span>
+          </div>
+        </div>
+      `).join("");
+
+      document.getElementById("buyer-package-status").outerHTML =
+        badge(readiness >= 80 ? "healthy" : readiness >= 55 ? "watch" : "pending").replace("<span", '<span id="buyer-package-status"');
+      document.getElementById("buyer-package-list").innerHTML = [
+        { title: "Plan", detail: `${packageName} for ${audience}` },
+        { title: "Retention", detail: retention.name || tenant.retention_tier_id || "retention tier pending" },
+        { title: "Templates and roles", detail: `${templates.count || 0} templates, ${roles.count || 0} role views` }
+      ].map((item) => `
+        <div class="buyer-ops-list-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+        </div>
+      `).join("");
+
+      const actionItems = [];
+      if (routeProblem) {
+        actionItems.push({ title: nextAction, detail: routeProblem.last_error || routeProblem.summary || "Retry or verify delivery route.", status: routeProblem.status });
+      }
+      if (topEvent) {
+        actionItems.push({ title: `Resolve ${rowDetail(topEvent)}`, detail: topEvent.recommendation || topEvent.reason, status: topEvent.severity });
+      }
+      if (!reportReady) {
+        actionItems.push({ title: "Finish weekly report proof", detail: weekly.email_preview || "Generate report email preview and PDF readiness.", status: weekly.email_ready ? "watch" : "pending" });
+      }
+      if (!archiveReady) {
+        actionItems.push({ title: "Clear archive proof", detail: `${overview.archive.pending_batches || 0} pending batches through ${overview.archive.provider || "archive provider"}.`, status: overview.archive.status || "watch" });
+      }
+      if (conversionAction.title || conversionAction.detail) {
+        actionItems.push({ title: conversionAction.title || "Commercial follow-up", detail: conversionAction.detail || "Use paid proof in the next walkthrough.", status: conversionAction.status || "watch" });
+      }
+      if (actionItems.length === 0) {
+        actionItems.push({ title: "Paid walkthrough ready", detail: "Anomaly, email, push, dashboard, weekly report, archive, and trust proof are visible.", status: "healthy" });
+      }
+      document.getElementById("buyer-action-status").outerHTML =
+        badge(actionItems.some((item) => ["failed", "critical", "high", "attention"].includes(String(item.status || "").toLowerCase())) ? "attention" : actionItems.length > 1 ? "watch" : "healthy").replace("<span", '<span id="buyer-action-status"');
+      document.getElementById("buyer-action-list").innerHTML = actionItems.slice(0, 4).map((item) => `
+        <div class="buyer-ops-list-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">${badge(item.status || "watch")}</div>
+        </div>
+      `).join("");
     }
 
     function renderPaidOpsConsole(overview, health, events, deliveries, context) {

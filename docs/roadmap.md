@@ -145,3 +145,9 @@
     ops, revenue, notifications, reports, archive, trust, and hosts with typed
     KPI backing data, dashboard contract guard, smoke/Newman coverage, docs, and
     full local verification.
+46. Phase 43: buyer operations layout contract. First-screen buyer operations
+    brief for anomaly alerting, mail delivery proof, push notification
+    dispatch, weekly report delivery, archive retention, trust/audit, delivery
+    command, package snapshot, and next commercial action, plus screenshot-free
+    Playwright layout metrics across desktop, tablet, and mobile viewports,
+    smoke/Newman coverage, docs, and full local verification.

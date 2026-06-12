@@ -45,10 +45,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase40.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase41.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase42.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase43.ps1
 go run ./agent/cmd/tracedeck-agent validate-config --config ./examples/policies/ai-btech-student.yaml
 go run ./agent/cmd/tracedeck-agent schema --version v1alpha1 --out ./docs/schema/policy-v1alpha1.schema.json
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-policy-schema.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-contract.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-layout.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-autostart-assurance.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase5.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase5.ps1
@@ -99,9 +101,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase4
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase41.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase42.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase42.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase43.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase43.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-service-manifests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-windows-task.ps1
 ```
 
 All repeatable setup and verification work is kept under `scripts/`, and script
 logs are written under `logs/local/`.
+
+Phase 43 adds a buyer operations brief and screenshot-free dashboard layout
+contract. The first-screen UI now makes anomaly alerting, mail proof, push
+notification dispatch, weekly report delivery, archive retention, trust/audit,
+delivery command, packaging snapshot, and next commercial action visible for a
+monetisation demo. The Playwright check records layout metrics only under
+`data/local/dashboard-layout/` and does not capture screenshots, video,
+credentials, or page content.
