@@ -201,3 +201,9 @@
     archive posture, role packaging, paid value tiles, owner actions,
     Postman/Newman coverage, screenshot-free layout guard, docs, and full local
     verification.
+57. Phase 54: notification revenue cockpit. Typed tenant
+    notification-revenue-cockpit API and first-screen monetisation UI for
+    anomaly SLA, mail proof, push proof, dashboard delivery, weekly report
+    readiness, escalation policy, scenario templates, channel proof matrix,
+    upgrade action levers, Postman/Newman coverage, screenshot-free layout
+    guard, docs, and full local verification.

@@ -489,6 +489,90 @@ type TenantNotificationCommandCenter struct {
 	GeneratedAt     time.Time                                `json:"generated_at"`
 }
 
+type TenantNotificationRevenueSummary struct {
+	Status                 string `json:"status"`
+	Headline               string `json:"headline"`
+	Detail                 string `json:"detail"`
+	RevenueReadiness       int    `json:"revenue_readiness"`
+	NotificationScore      int    `json:"notification_score"`
+	AlertSLAReady          int    `json:"alert_sla_ready"`
+	OpenAnomalies          int    `json:"open_anomalies"`
+	HighPriorityAlerts     int    `json:"high_priority_alerts"`
+	EmailDelivered         int    `json:"email_delivered"`
+	PushDelivered          int    `json:"push_delivered"`
+	DashboardDelivered     int    `json:"dashboard_delivered"`
+	DeliveryFailed         int    `json:"delivery_failed"`
+	DeliveryRetrying       int    `json:"delivery_retrying"`
+	RoutesNeedingProof     int    `json:"routes_needing_proof"`
+	WeeklyReportReady      bool   `json:"weekly_report_ready"`
+	EscalationReady        bool   `json:"escalation_ready"`
+	BuyerDemoReady         bool   `json:"buyer_demo_ready"`
+	RecommendedPaidPackage string `json:"recommended_paid_package"`
+	NextBestAction         string `json:"next_best_action"`
+}
+
+type TenantNotificationRevenueKPI struct {
+	ID       string `json:"id"`
+	Label    string `json:"label"`
+	Value    string `json:"value"`
+	Detail   string `json:"detail"`
+	Status   string `json:"status"`
+	PaidTier string `json:"paid_tier"`
+}
+
+type TenantNotificationRevenueChannel struct {
+	Channel              string     `json:"channel"`
+	Provider             string     `json:"provider"`
+	RecipientLabel       string     `json:"recipient_label"`
+	Status               string     `json:"status"`
+	ProofState           string     `json:"proof_state"`
+	LatestDeliveryStatus string     `json:"latest_delivery_status"`
+	Attempts             int        `json:"attempts"`
+	LastDeliveryAt       *time.Time `json:"last_delivery_at,omitempty"`
+	SLA                  string     `json:"sla"`
+	BusinessValue        string     `json:"business_value"`
+	NextAction           string     `json:"next_action"`
+	PaidTier             string     `json:"paid_tier"`
+}
+
+type TenantNotificationRevenueScenario struct {
+	Title          string   `json:"title"`
+	Detail         string   `json:"detail"`
+	Trigger        string   `json:"trigger"`
+	Channels       []string `json:"channels"`
+	Severity       string   `json:"severity"`
+	Status         string   `json:"status"`
+	ExampleOutcome string   `json:"example_outcome"`
+	PaidTier       string   `json:"paid_tier"`
+}
+
+type TenantNotificationRevenueAction struct {
+	Title           string    `json:"title"`
+	Detail          string    `json:"detail"`
+	Owner           string    `json:"owner"`
+	Status          string    `json:"status"`
+	Severity        string    `json:"severity"`
+	SLA             string    `json:"sla"`
+	ConversionLever string    `json:"conversion_lever"`
+	Source          string    `json:"source"`
+	ObservedAt      time.Time `json:"observed_at"`
+}
+
+type TenantNotificationRevenueCockpit struct {
+	TenantID        string                              `json:"tenant_id"`
+	TenantName      string                              `json:"tenant_name"`
+	PlanID          string                              `json:"plan_id"`
+	PlanName        string                              `json:"plan_name"`
+	Audience        string                              `json:"audience"`
+	Summary         TenantNotificationRevenueSummary    `json:"summary"`
+	KPIs            []TenantNotificationRevenueKPI      `json:"kpis"`
+	Channels        []TenantNotificationRevenueChannel  `json:"channels"`
+	Scenarios       []TenantNotificationRevenueScenario `json:"scenarios"`
+	Actions         []TenantNotificationRevenueAction   `json:"actions"`
+	PrivacyBoundary string                              `json:"privacy_boundary"`
+	GeneratedAt     time.Time                           `json:"generated_at"`
+}
+
 type TenantActivityView struct {
 	ID          string                   `json:"id"`
 	TenantID    string                   `json:"tenant_id"`

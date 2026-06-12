@@ -70,6 +70,7 @@ GET  /api/v1/tenants/{tenantId}/monetization-summary
 GET  /api/v1/tenants/{tenantId}/business-dashboard
 GET  /api/v1/tenants/{tenantId}/role-experiences
 GET  /api/v1/tenants/{tenantId}/executive-console
+GET  /api/v1/tenants/{tenantId}/notification-revenue-cockpit
 GET  /api/v1/tenants/{tenantId}/notification-command-center
 GET  /api/v1/tenants/{tenantId}/delivery-timeline
 GET  /api/v1/tenants/{tenantId}/sync-health
@@ -305,6 +306,18 @@ archive backlog, role-view readiness, recommended paid package, next best
 action, value tiles, alert stream rows, delivery proof rows, owner actions, and
 a strict metadata-only privacy boundary. It does not store provider secrets,
 alert bodies, screenshots, passwords, tokens, cookies, raw URLs, page titles,
+private content, or endpoint payloads.
+
+Phase 54 adds `GET /api/v1/tenants/{tenantId}/notification-revenue-cockpit`.
+It composes operations, monetisation, notification command center,
+notification preferences, and delivery timeline proof into a typed
+buyer-facing notification revenue contract. The response includes revenue
+readiness, notification score, anomaly SLA readiness, mail/push/dashboard
+delivery proof, route proof gaps, weekly report readiness, escalation state,
+recommended paid package, next best action, KPI proof rows, channel proof
+matrix, anomaly delivery scenarios, upgrade action levers, and a strict
+metadata-only privacy boundary. It does not store provider secrets, alert
+bodies, screenshots, passwords, tokens, cookies, raw URLs, page titles,
 private content, or endpoint payloads.
 
 Phase 31 adds `GET /api/v1/tenants/{tenantId}/sync-health` for buyer and admin

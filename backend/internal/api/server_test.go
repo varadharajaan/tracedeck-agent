@@ -1563,6 +1563,78 @@ func TestTenantExecutiveConsoleEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantNotificationRevenueCockpitEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "notification-revenue-device-001",
+		"host_name": "notification-revenue-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentNotificationRev, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected notification revenue cockpit 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var cockpit model.TenantNotificationRevenueCockpit
+	if err := json.Unmarshal(response.Body.Bytes(), &cockpit); err != nil {
+		t.Fatalf("decode notification revenue cockpit: %v", err)
+	}
+	if cockpit.Summary.RevenueReadiness == 0 || cockpit.Summary.NotificationScore == 0 || cockpit.Summary.AlertSLAReady == 0 || cockpit.Summary.RecommendedPaidPackage == "" {
+		t.Fatalf("expected scored notification revenue summary: %+v", cockpit.Summary)
+	}
+	if cockpit.Summary.EmailDelivered == 0 || cockpit.Summary.DashboardDelivered == 0 || cockpit.Summary.NextBestAction == "" {
+		t.Fatalf("expected mail/dashboard proof and next action: %+v", cockpit.Summary)
+	}
+	if len(cockpit.KPIs) < 6 || len(cockpit.Channels) < 3 || len(cockpit.Scenarios) < 4 || len(cockpit.Actions) == 0 {
+		t.Fatalf("expected KPI, channel, scenario, and action surfaces: %+v", cockpit)
+	}
+	hasPush := false
+	for _, channel := range cockpit.Channels {
+		if channel.Channel == constants.DeliveryChannelPush && channel.PaidTier != "" && channel.BusinessValue != "" {
+			hasPush = true
+		}
+	}
+	if !hasPush {
+		t.Fatalf("expected push notification business-value proof: %+v", cockpit.Channels)
+	}
+	if cockpit.Scenarios[0].Trigger == "" || len(cockpit.Scenarios[0].Channels) == 0 || cockpit.Actions[0].ConversionLever == "" {
+		t.Fatalf("expected typed scenario and conversion action metadata: %+v %+v", cockpit.Scenarios, cockpit.Actions)
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "screenshot_bytes", "raw_url", "page_title", "alert_body"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("notification revenue cockpit leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+	if !strings.Contains(cockpit.PrivacyBoundary, "metadata-only") || !strings.Contains(cockpit.PrivacyBoundary, "no passwords") || !strings.Contains(cockpit.PrivacyBoundary, "screenshots") {
+		t.Fatalf("expected strict notification revenue privacy boundary, got %q", cockpit.PrivacyBoundary)
+	}
+}
+
 func TestDeviceGroupAndPolicyAssignmentEndpoints(t *testing.T) {
 	t.Parallel()
 

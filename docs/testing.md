@@ -692,6 +692,17 @@ screenshot-free dashboard layout contract. Newman runs
 `postman/tracedeck-backend-phase53.postman_collection.json` against the same
 live demo and covers dashboard markers plus typed executive console packaging.
 
+The Phase 54 smoke live-boots the seeded dashboard, verifies Notification
+Revenue Cockpit, Revenue KPI Proof, Anomaly Delivery Scenarios, Channel Proof
+Matrix, and Upgrade Action Levers markers, checks the tenant
+`notification-revenue-cockpit` API, verifies revenue readiness, anomaly SLA,
+mail proof, push proof, dashboard proof, scenario, channel, and upgrade action
+surfaces, checks strict privacy/forbidden markers, and reruns the
+screenshot-free dashboard layout contract. Newman runs
+`postman/tracedeck-backend-phase54.postman_collection.json` against the same
+live demo and covers dashboard markers plus typed notification revenue
+packaging.
+
 Phase 13 adds:
 
 ```powershell
