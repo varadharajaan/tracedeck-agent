@@ -421,6 +421,13 @@ posture, tenant rows, proof cards, owner actions, and privacy guard. The
 command navigation includes an Account jump target so admins can move between
 account-level and tenant-level proof without losing context.
 
+Phase 62 adds a Monetisation Overview above the existing drilldowns. It makes
+the first screen read like a paid product cockpit: account and host proof,
+anomaly notification proof, mail delivery, push reach, weekly report readiness,
+archive posture, package/revenue fit, owner actions, and trust guardrails are
+visible immediately. The section reuses existing typed APIs rather than adding
+new collectors.
+
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
 paid customer onboarding workflows.

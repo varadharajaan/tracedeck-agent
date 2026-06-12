@@ -401,3 +401,18 @@ Phase 61 adds an Account Portfolio Index for multi-tenant packaging:
 This makes TraceDeck easier to sell above a single family tenant: a school,
 coaching center, MSP, or small business can see which account needs attention,
 which routes have proof, and what package value is ready for renewal.
+
+Phase 62 adds a Monetisation Overview as the buyer-facing dashboard front door:
+
+- account and host coverage proof before tenant drilldowns
+- anomaly notification proof with mail, push, dashboard, and weekly report
+  status
+- package and revenue fit for family, school, coaching center, and business
+  buyers
+- owner action queue for conversion, retention, route proof, and archive
+  readiness
+- trust and delivery guardrails that keep the sales view metadata-only
+
+This helps monetisation because the first screen now answers the buyer's main
+questions: what is happening, was I notified, can I trust delivery, what package
+is ready, and what should I do next.

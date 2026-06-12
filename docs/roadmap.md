@@ -247,3 +247,9 @@
     archive/sync posture, package readiness, owner actions, tenant-scoped
     filtering, Postman/Newman coverage, screenshot-free layout guard, docs, and
     full local verification.
+65. Phase 62: monetisation overview dashboard. First-screen buyer-grade UI that
+    composes existing typed metadata into account coverage, host coverage,
+    anomaly notification proof, mail delivery proof, push reach, weekly report
+    readiness, archive posture, package fit, owner actions, and trust guardrails
+    with Postman/Newman coverage, screenshot-free layout guard, docs, and full
+    local verification.
