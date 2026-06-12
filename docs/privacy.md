@@ -136,3 +136,11 @@ It does not add collectors and does not store passwords, screenshots, raw URLs,
 page titles, alert bodies, provider secrets, push endpoints, endpoint payloads,
 private content, invoices, tokens, cookies, payment card data, or raw provider
 payloads.
+
+Phase 61 account portfolio index is metadata-only. It exposes tenant labels,
+plan labels, host counts, score summaries, alert counts, notification proof,
+archive backlog, package readiness, tenant-scoped row filtering, and owner
+actions. It does not add collectors and does not store passwords, screenshots,
+raw URLs, page titles, alert bodies, provider secrets, push endpoints, endpoint
+payloads, private content, invoices, tokens, cookies, payment card data, or raw
+provider payloads.

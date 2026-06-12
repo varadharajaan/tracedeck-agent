@@ -54,6 +54,7 @@ GET  /api/v1/plans
 GET  /api/v1/roles
 GET  /api/v1/retention-tiers
 GET  /api/v1/audit-events
+GET  /api/v1/account-portfolio-index
 POST /api/v1/tenants
 GET  /api/v1/tenants
 GET  /api/v1/tenants/{tenantId}
@@ -394,6 +395,19 @@ strict metadata-only privacy boundary. It does not collect or store
 passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets,
 push endpoints, endpoint payloads, private content, invoices, tokens, cookies,
 payment card data, or raw provider payloads.
+
+Phase 61 adds `GET /api/v1/account-portfolio-index`. It composes visible
+tenant Portfolio Center contracts into a typed account-level index for
+multi-tenant admins and customer owners. The response includes account,
+notification, and trust scores; tenant and host coverage; open/high-priority
+alerts; mail, push, and dashboard delivery proof; archive backlog; route proof
+gaps; tenant rows with plan, audience, scores, alert counts, delivery counts,
+and next action; account proof cards; owner actions; and a strict metadata-only
+privacy boundary. Tenant-scoped API keys only see rows for their configured
+tenant. It does not collect or store passwords, screenshots, raw URLs, page
+titles, alert bodies, provider secrets, push endpoints, endpoint payloads,
+private content, invoices, tokens, cookies, payment card data, or raw provider
+payloads.
 
 Phase 31 adds `GET /api/v1/tenants/{tenantId}/sync-health` for buyer and admin
 proof that backend-visible telemetry is arriving per host. It returns reporting

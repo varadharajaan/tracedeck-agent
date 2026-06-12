@@ -1896,6 +1896,105 @@ func TestTenantPortfolioCenterEndpoint(t *testing.T) {
 	}
 }
 
+func TestAccountPortfolioIndexEndpoint(t *testing.T) {
+	t.Parallel()
+
+	repo := store.NewMemory()
+	handler := NewServer(repo, slog.Default()).Handler()
+	for _, body := range [][]byte{
+		[]byte(`{
+			"tenant_id": "family-varadha",
+			"name": "Family Varadha",
+			"plan_id": "family_pro",
+			"retention_tier_id": "family_cloud_90_365_archive",
+			"primary_profile": "ai-btech-student"
+		}`),
+		[]byte(`{
+			"tenant_id": "school-alpha",
+			"name": "School Alpha",
+			"plan_id": "school",
+			"retention_tier_id": "school_year_archive",
+			"primary_profile": "school-laptop"
+		}`),
+	} {
+		createTenant := httptest.NewRecorder()
+		handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(body)))
+		if createTenant.Code != http.StatusCreated {
+			t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+		}
+	}
+
+	for _, body := range [][]byte{
+		[]byte(`{
+			"tenant_id": "family-varadha",
+			"device_id": "account-device-family",
+			"host_name": "account-family-laptop",
+			"profile": "ai-btech-student",
+			"os_name": "windows"
+		}`),
+		[]byte(`{
+			"tenant_id": "school-alpha",
+			"device_id": "account-device-school",
+			"host_name": "account-school-laptop",
+			"profile": "school-laptop",
+			"os_name": "linux"
+		}`),
+	} {
+		enroll := httptest.NewRecorder()
+		handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(body)))
+		if enroll.Code != http.StatusCreated {
+			t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+		}
+	}
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteAccountPortfolio, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected account portfolio 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var index model.AccountPortfolioIndex
+	if err := json.Unmarshal(response.Body.Bytes(), &index); err != nil {
+		t.Fatalf("decode account portfolio index: %v", err)
+	}
+	if index.Summary.AccountScore == 0 || index.Summary.NotificationScore == 0 || index.Summary.TenantsTotal != 2 || index.Summary.HostsTotal < 2 || index.Summary.OwnerNextStep == "" {
+		t.Fatalf("expected scored account portfolio summary: %+v", index.Summary)
+	}
+	if index.Summary.MailDelivered == 0 || index.Summary.DashboardDelivered == 0 || index.Summary.RoutesNeedingProof == 0 {
+		t.Fatalf("expected account notification and route proof: %+v", index.Summary)
+	}
+	if len(index.Tenants) != 2 || len(index.Proof) < 5 || len(index.Actions) == 0 {
+		t.Fatalf("expected tenant rows, proof cards, and actions: %+v", index)
+	}
+	if index.Tenants[0].TenantID == "" || index.Tenants[0].NextAction == "" || index.Tenants[0].PrivacyBoundary == "" {
+		t.Fatalf("expected typed metadata-only tenant row: %+v", index.Tenants[0])
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "push_endpoint", "screenshot_bytes", "raw_url", "page_title", "alert_body", "card_number", "cvv", "payment_token"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("account portfolio leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+	if !strings.Contains(index.PrivacyBoundary, "metadata-only") || !strings.Contains(index.PrivacyBoundary, "no passwords") || !strings.Contains(index.PrivacyBoundary, "no screenshots") || !strings.Contains(index.PrivacyBoundary, "push endpoints") {
+		t.Fatalf("expected strict account privacy boundary, got %q", index.PrivacyBoundary)
+	}
+
+	scopedHandler := NewServerWithAuth(repo, slog.Default(), AuthConfig{APIKey: "local-key", TenantID: "school-alpha"}).Handler()
+	scopedRequest := httptest.NewRequest(http.MethodGet, constants.RouteAccountPortfolio, nil)
+	scopedRequest.Header.Set(constants.HeaderAPIKey, "local-key")
+	scopedResponse := httptest.NewRecorder()
+	scopedHandler.ServeHTTP(scopedResponse, scopedRequest)
+	if scopedResponse.Code != http.StatusOK {
+		t.Fatalf("expected scoped account portfolio 200, got %d: %s", scopedResponse.Code, scopedResponse.Body.String())
+	}
+	var scoped model.AccountPortfolioIndex
+	if err := json.Unmarshal(scopedResponse.Body.Bytes(), &scoped); err != nil {
+		t.Fatalf("decode scoped account portfolio index: %v", err)
+	}
+	if scoped.Summary.TenantsTotal != 1 || len(scoped.Tenants) != 1 || scoped.Tenants[0].TenantID != "school-alpha" {
+		t.Fatalf("expected tenant-scoped account portfolio, got %+v", scoped)
+	}
+}
+
 func TestTenantNotificationRevenueCockpitEndpoint(t *testing.T) {
 	t.Parallel()
 

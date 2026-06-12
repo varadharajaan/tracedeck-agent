@@ -32,6 +32,7 @@ type Repository interface {
 	TenantCustomerSuccessPacket(context.Context, string) (model.TenantCustomerSuccessPacket, error)
 	TenantPushActivationCenter(context.Context, string) (model.TenantPushActivationCenter, error)
 	TenantPortfolioCenter(context.Context, string) (model.TenantPortfolioCenter, error)
+	AccountPortfolioIndex(context.Context, []string) (model.AccountPortfolioIndex, error)
 	TenantExecutiveConsole(context.Context, string) (model.TenantExecutiveConsole, error)
 	TenantNotificationRevenueCockpit(context.Context, string) (model.TenantNotificationRevenueCockpit, error)
 	TenantAlertInbox(context.Context, string) (model.TenantAlertInbox, error)

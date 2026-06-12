@@ -743,6 +743,39 @@ func (m *Memory) TenantPortfolioCenter(ctx context.Context, tenantID string) (mo
 	return buildTenantPortfolioCenter(operations, business, syncHealth, inbox, timeline, packageBilling, hosts, generatedAt), nil
 }
 
+func (m *Memory) AccountPortfolioIndex(ctx context.Context, tenantIDs []string) (model.AccountPortfolioIndex, error) {
+	generatedAt := time.Now().UTC()
+	allowed := make(map[string]struct{}, len(tenantIDs))
+	for _, tenantID := range tenantIDs {
+		tenantID = strings.TrimSpace(tenantID)
+		if tenantID != "" {
+			allowed[tenantID] = struct{}{}
+		}
+	}
+	filtered := len(allowed) > 0
+
+	tenants := m.ListTenants(ctx)
+	sort.Slice(tenants, func(i, j int) bool {
+		return tenants[i].Name < tenants[j].Name
+	})
+
+	centers := make([]model.TenantPortfolioCenter, 0, len(tenants))
+	for _, tenant := range tenants {
+		if filtered {
+			if _, ok := allowed[tenant.TenantID]; !ok {
+				continue
+			}
+		}
+		center, err := m.TenantPortfolioCenter(ctx, tenant.TenantID)
+		if err != nil {
+			return model.AccountPortfolioIndex{}, err
+		}
+		centers = append(centers, center)
+	}
+
+	return buildAccountPortfolioIndex(centers, generatedAt), nil
+}
+
 func (m *Memory) deliveriesForTenantLocked(tenantID string) []model.AlertDelivery {
 	deliveries := make([]model.AlertDelivery, 0)
 	for _, device := range m.devices {
@@ -6638,6 +6671,272 @@ func boolProofState(value bool) string {
 		return constants.StatusHealthy
 	}
 	return constants.StatusPending
+}
+
+func buildAccountPortfolioIndex(centers []model.TenantPortfolioCenter, generatedAt time.Time) model.AccountPortfolioIndex {
+	tenants := accountPortfolioTenantRows(centers)
+	summary := accountPortfolioSummary(centers)
+	summary.Status = accountPortfolioStatus(summary)
+	summary.Headline = accountPortfolioHeadline(summary)
+	summary.Detail = accountPortfolioDetail(summary)
+	summary.OwnerNextStep = accountPortfolioNextStep(summary)
+	return model.AccountPortfolioIndex{
+		Summary:         summary,
+		Tenants:         tenants,
+		Proof:           accountPortfolioProof(summary),
+		Actions:         accountPortfolioActions(summary, tenants),
+		PrivacyBoundary: constants.AccountPortfolioPrivacyNote,
+		GeneratedAt:     generatedAt,
+	}
+}
+
+func accountPortfolioTenantRows(centers []model.TenantPortfolioCenter) []model.AccountPortfolioTenant {
+	rows := make([]model.AccountPortfolioTenant, 0, len(centers))
+	for _, center := range centers {
+		summary := center.Summary
+		rows = append(rows, model.AccountPortfolioTenant{
+			TenantID:               center.TenantID,
+			TenantName:             center.TenantName,
+			PlanID:                 center.PlanID,
+			PlanName:               center.PlanName,
+			Audience:               center.Audience,
+			Status:                 summary.Status,
+			PortfolioScore:         summary.PortfolioScore,
+			NotificationScore:      summary.NotificationScore,
+			TrustScore:             summary.TrustScore,
+			RiskScore:              summary.RiskScore,
+			HostsTotal:             summary.HostsTotal,
+			HostsAttention:         summary.HostsAttention,
+			OpenAlerts:             summary.OpenAlerts,
+			HighPriorityAlerts:     summary.HighPriorityAlerts,
+			MailDelivered:          summary.MailDelivered,
+			PushDelivered:          summary.PushDelivered,
+			DashboardDelivered:     summary.DashboardDelivered,
+			ArchiveBacklog:         summary.ArchiveBacklog,
+			RoutesNeedingProof:     summary.RoutesNeedingProof,
+			RecommendedPaidPackage: summary.RecommendedPaidPackage,
+			NextAction:             summary.OwnerNextStep,
+			PrivacyBoundary:        center.PrivacyBoundary,
+		})
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		leftRank := statusRankValue(rows[i].Status)
+		rightRank := statusRankValue(rows[j].Status)
+		if leftRank != rightRank {
+			return leftRank > rightRank
+		}
+		if rows[i].PortfolioScore != rows[j].PortfolioScore {
+			return rows[i].PortfolioScore < rows[j].PortfolioScore
+		}
+		return rows[i].TenantName < rows[j].TenantName
+	})
+	return rows
+}
+
+func accountPortfolioSummary(centers []model.TenantPortfolioCenter) model.AccountPortfolioSummary {
+	summary := model.AccountPortfolioSummary{
+		TenantsTotal:           len(centers),
+		RecommendedPaidPackage: constants.PlanFamilyPro,
+	}
+	var accountScores []int
+	var notificationScores []int
+	var trustScores []int
+	packageRank := 0
+	for _, center := range centers {
+		item := center.Summary
+		if item.Status == constants.StatusAttention || item.Status == constants.StatusWatch {
+			summary.TenantsAttention++
+		}
+		summary.HostsTotal += item.HostsTotal
+		summary.HostsAttention += item.HostsAttention
+		summary.OpenAlerts += item.OpenAlerts
+		summary.HighPriorityAlerts += item.HighPriorityAlerts
+		summary.MailDelivered += item.MailDelivered
+		summary.PushDelivered += item.PushDelivered
+		summary.DashboardDelivered += item.DashboardDelivered
+		summary.ArchiveBacklog += item.ArchiveBacklog
+		summary.RoutesNeedingProof += item.RoutesNeedingProof
+		accountScores = append(accountScores, item.PortfolioScore)
+		notificationScores = append(notificationScores, item.NotificationScore)
+		trustScores = append(trustScores, item.TrustScore)
+		if rank := paidPackageRank(item.RecommendedPaidPackage); rank > packageRank {
+			packageRank = rank
+			summary.RecommendedPaidPackage = item.RecommendedPaidPackage
+		}
+	}
+	summary.AccountScore = averageScore(accountScores...)
+	summary.NotificationScore = averageScore(notificationScores...)
+	summary.TrustScore = averageScore(trustScores...)
+	return summary
+}
+
+func accountPortfolioStatus(summary model.AccountPortfolioSummary) string {
+	switch {
+	case summary.HighPriorityAlerts > 0 || summary.TenantsAttention > 0:
+		return constants.StatusAttention
+	case summary.RoutesNeedingProof > 0 || summary.ArchiveBacklog > 0:
+		return constants.StatusWatch
+	case summary.AccountScore >= 80:
+		return constants.StatusHealthy
+	case summary.TenantsTotal == 0:
+		return constants.StatusPending
+	default:
+		return constants.StatusWatch
+	}
+}
+
+func accountPortfolioHeadline(summary model.AccountPortfolioSummary) string {
+	switch {
+	case summary.TenantsTotal == 0:
+		return "Account portfolio is waiting for tenants"
+	case summary.HighPriorityAlerts > 0:
+		return fmt.Sprintf("%d high-priority alert%s need account-level review", summary.HighPriorityAlerts, pluralSuffix(summary.HighPriorityAlerts))
+	case summary.TenantsAttention > 0:
+		return fmt.Sprintf("%d tenant%s need owner attention across the account", summary.TenantsAttention, pluralSuffix(summary.TenantsAttention))
+	default:
+		return fmt.Sprintf("%d tenant%s are ready for account portfolio review", summary.TenantsTotal, pluralSuffix(summary.TenantsTotal))
+	}
+}
+
+func accountPortfolioDetail(summary model.AccountPortfolioSummary) string {
+	return fmt.Sprintf("%d tenants, %d hosts, %d open alerts, %d mail delivered, %d push delivered, %d dashboard delivered, %d route proof gaps, %d archive batches pending.",
+		summary.TenantsTotal,
+		summary.HostsTotal,
+		summary.OpenAlerts,
+		summary.MailDelivered,
+		summary.PushDelivered,
+		summary.DashboardDelivered,
+		summary.RoutesNeedingProof,
+		summary.ArchiveBacklog,
+	)
+}
+
+func accountPortfolioNextStep(summary model.AccountPortfolioSummary) string {
+	switch {
+	case summary.TenantsTotal == 0:
+		return "Create or sync tenants before account review."
+	case summary.HighPriorityAlerts > 0:
+		return "Open tenant rows with high-priority alerts and confirm mail/push proof."
+	case summary.RoutesNeedingProof > 0:
+		return "Run delivery proof rehearsals for tenants with route gaps."
+	case summary.ArchiveBacklog > 0:
+		return "Clear archive backlog before renewal or school review."
+	case summary.TenantsAttention > 0:
+		return "Review attention tenants and assign owner actions."
+	default:
+		return "Use this account portfolio as the admin opening view."
+	}
+}
+
+func accountPortfolioProof(summary model.AccountPortfolioSummary) []model.AccountPortfolioProof {
+	return []model.AccountPortfolioProof{
+		{
+			Label:      "Tenant coverage",
+			Value:      fmt.Sprintf("%d tenants / %d hosts", summary.TenantsTotal, summary.HostsTotal),
+			Detail:     fmt.Sprintf("%d tenants and %d hosts need attention.", summary.TenantsAttention, summary.HostsAttention),
+			Status:     gapStatus(summary.TenantsAttention),
+			Channel:    constants.DeliveryChannelDashboard,
+			PaidTier:   firstNonEmpty(summary.RecommendedPaidPackage, constants.PlanFamilyPro),
+			NextAction: "Use tenant coverage as the account admin opening proof.",
+		},
+		{
+			Label:      "Notification delivery proof",
+			Value:      fmt.Sprintf("%d mail / %d push / %d dashboard", summary.MailDelivered, summary.PushDelivered, summary.DashboardDelivered),
+			Detail:     fmt.Sprintf("%d route proof gaps remain across visible tenants.", summary.RoutesNeedingProof),
+			Status:     gapStatus(summary.RoutesNeedingProof),
+			Channel:    constants.DeliveryChannelEmail,
+			PaidTier:   constants.PlanFamilyPro,
+			NextAction: "Close route proof gaps before a paid customer review.",
+		},
+		{
+			Label:      "Alert queue proof",
+			Value:      fmt.Sprintf("%d open / %d high", summary.OpenAlerts, summary.HighPriorityAlerts),
+			Detail:     "Account-level anomaly, policy, and tamper pressure without exposing raw content.",
+			Status:     gapStatus(summary.HighPriorityAlerts),
+			Channel:    constants.DeliveryChannelDashboard,
+			PaidTier:   constants.PlanFamilyPro,
+			NextAction: accountPortfolioNextStep(summary),
+		},
+		{
+			Label:      "Package readiness",
+			Value:      fmt.Sprintf("%d%% account score", summary.AccountScore),
+			Detail:     fmt.Sprintf("%s is the recommended account package posture.", firstNonEmpty(summary.RecommendedPaidPackage, constants.PlanFamilyPro)),
+			Status:     accountPortfolioStatus(summary),
+			Channel:    constants.DeliveryChannelDashboard,
+			PaidTier:   firstNonEmpty(summary.RecommendedPaidPackage, constants.PlanFamilyPro),
+			NextAction: "Use score and package proof for expansion and renewal motions.",
+		},
+		{
+			Label:      "Archive and sync proof",
+			Value:      fmt.Sprintf("%d pending", summary.ArchiveBacklog),
+			Detail:     "Archive backlog is summarized as metadata only for account review.",
+			Status:     gapStatus(summary.ArchiveBacklog),
+			Channel:    constants.DeliveryChannelDashboard,
+			PaidTier:   constants.PlanSchool,
+			NextAction: "Clear backlog before compliance export or weekly report review.",
+		},
+	}
+}
+
+func accountPortfolioActions(summary model.AccountPortfolioSummary, tenants []model.AccountPortfolioTenant) []model.AccountPortfolioAction {
+	actions := make([]model.AccountPortfolioAction, 0, 6)
+	for _, tenant := range tenants {
+		if len(actions) >= 3 {
+			break
+		}
+		if tenant.Status == constants.StatusHealthy {
+			continue
+		}
+		actions = append(actions, model.AccountPortfolioAction{
+			Title:    "Review tenant account row",
+			Detail:   fmt.Sprintf("%s: %s", tenant.TenantName, tenant.NextAction),
+			Owner:    tenant.TenantName,
+			Status:   tenant.Status,
+			Severity: constants.SeverityMedium,
+			PaidTier: firstNonEmpty(tenant.RecommendedPaidPackage, constants.PlanFamilyPro),
+			Source:   "account portfolio tenant row",
+		})
+	}
+	if summary.RoutesNeedingProof > 0 {
+		actions = append(actions, model.AccountPortfolioAction{
+			Title:    "Close account route proof gaps",
+			Detail:   fmt.Sprintf("%d provider-safe proof gaps remain across visible tenants.", summary.RoutesNeedingProof),
+			Owner:    constants.RoleBusinessManager,
+			Status:   constants.StatusWatch,
+			Severity: constants.SeverityMedium,
+			PaidTier: constants.PlanFamilyPro,
+			Source:   "account notification proof",
+		})
+	}
+	if len(actions) == 0 {
+		actions = append(actions, model.AccountPortfolioAction{
+			Title:    "Use account portfolio for renewal",
+			Detail:   "Open with tenant coverage, notification proof, archive posture, and paid package readiness.",
+			Owner:    constants.RoleBusinessManager,
+			Status:   constants.StatusHealthy,
+			Severity: constants.SeverityInfo,
+			PaidTier: firstNonEmpty(summary.RecommendedPaidPackage, constants.PlanFamilyPro),
+			Source:   "account portfolio index",
+		})
+	}
+	return actions
+}
+
+func paidPackageRank(packageID string) int {
+	switch strings.TrimSpace(packageID) {
+	case constants.PlanEnterprise:
+		return 5
+	case constants.PlanBusiness:
+		return 4
+	case constants.PlanSchool:
+		return 3
+	case constants.PlanFamilyPro:
+		return 2
+	case constants.PlanFree:
+		return 1
+	default:
+		return 0
+	}
 }
 
 func tenantPortfolioActions(summary model.TenantPortfolioSummary, hosts []model.TenantPortfolioHost, generatedAt time.Time) []model.TenantPortfolioAction {

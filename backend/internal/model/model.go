@@ -932,6 +932,82 @@ type TenantPortfolioCenter struct {
 	GeneratedAt        time.Time                          `json:"generated_at"`
 }
 
+type AccountPortfolioSummary struct {
+	Status                 string `json:"status"`
+	Headline               string `json:"headline"`
+	Detail                 string `json:"detail"`
+	AccountScore           int    `json:"account_score"`
+	NotificationScore      int    `json:"notification_score"`
+	TrustScore             int    `json:"trust_score"`
+	TenantsTotal           int    `json:"tenants_total"`
+	TenantsAttention       int    `json:"tenants_attention"`
+	HostsTotal             int    `json:"hosts_total"`
+	HostsAttention         int    `json:"hosts_attention"`
+	OpenAlerts             int    `json:"open_alerts"`
+	HighPriorityAlerts     int    `json:"high_priority_alerts"`
+	MailDelivered          int    `json:"mail_delivered"`
+	PushDelivered          int    `json:"push_delivered"`
+	DashboardDelivered     int    `json:"dashboard_delivered"`
+	ArchiveBacklog         int    `json:"archive_backlog"`
+	RoutesNeedingProof     int    `json:"routes_needing_proof"`
+	RecommendedPaidPackage string `json:"recommended_paid_package"`
+	OwnerNextStep          string `json:"owner_next_step"`
+}
+
+type AccountPortfolioTenant struct {
+	TenantID               string `json:"tenant_id"`
+	TenantName             string `json:"tenant_name"`
+	PlanID                 string `json:"plan_id"`
+	PlanName               string `json:"plan_name"`
+	Audience               string `json:"audience"`
+	Status                 string `json:"status"`
+	PortfolioScore         int    `json:"portfolio_score"`
+	NotificationScore      int    `json:"notification_score"`
+	TrustScore             int    `json:"trust_score"`
+	RiskScore              int    `json:"risk_score"`
+	HostsTotal             int    `json:"hosts_total"`
+	HostsAttention         int    `json:"hosts_attention"`
+	OpenAlerts             int    `json:"open_alerts"`
+	HighPriorityAlerts     int    `json:"high_priority_alerts"`
+	MailDelivered          int    `json:"mail_delivered"`
+	PushDelivered          int    `json:"push_delivered"`
+	DashboardDelivered     int    `json:"dashboard_delivered"`
+	ArchiveBacklog         int    `json:"archive_backlog"`
+	RoutesNeedingProof     int    `json:"routes_needing_proof"`
+	RecommendedPaidPackage string `json:"recommended_paid_package"`
+	NextAction             string `json:"next_action"`
+	PrivacyBoundary        string `json:"privacy_boundary"`
+}
+
+type AccountPortfolioProof struct {
+	Label      string `json:"label"`
+	Value      string `json:"value"`
+	Detail     string `json:"detail"`
+	Status     string `json:"status"`
+	Channel    string `json:"channel"`
+	PaidTier   string `json:"paid_tier"`
+	NextAction string `json:"next_action"`
+}
+
+type AccountPortfolioAction struct {
+	Title    string `json:"title"`
+	Detail   string `json:"detail"`
+	Owner    string `json:"owner"`
+	Status   string `json:"status"`
+	Severity string `json:"severity"`
+	PaidTier string `json:"paid_tier"`
+	Source   string `json:"source"`
+}
+
+type AccountPortfolioIndex struct {
+	Summary         AccountPortfolioSummary  `json:"summary"`
+	Tenants         []AccountPortfolioTenant `json:"tenants"`
+	Proof           []AccountPortfolioProof  `json:"proof"`
+	Actions         []AccountPortfolioAction `json:"actions"`
+	PrivacyBoundary string                   `json:"privacy_boundary"`
+	GeneratedAt     time.Time                `json:"generated_at"`
+}
+
 type TenantActivityView struct {
 	ID          string                   `json:"id"`
 	TenantID    string                   `json:"tenant_id"`
