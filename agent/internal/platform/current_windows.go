@@ -23,9 +23,5 @@ func (windowsAdapter) Hostname(ctx context.Context) (string, error) {
 }
 
 func (windowsAdapter) Capabilities() Capabilities {
-	return Capabilities{
-		OperatingSystem:   constants.OperatingSystemWindows,
-		ProcessCollection: true,
-		LocalStorage:      true,
-	}
+	return WindowsCapabilities()
 }

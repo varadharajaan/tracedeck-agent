@@ -1,0 +1,16 @@
+[Unit]
+Description=TraceDeck Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{USER}}
+WorkingDirectory={{WORKING_DIR}}
+ExecStart={{AGENT_PATH}} run --config {{CONFIG_PATH}}
+Restart=always
+RestartSec=15
+Environment=TRACEDECK_LOG_DIR={{LOG_DIR}}
+
+[Install]
+WantedBy=multi-user.target

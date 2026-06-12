@@ -23,9 +23,5 @@ func (otherAdapter) Hostname(ctx context.Context) (string, error) {
 }
 
 func (otherAdapter) Capabilities() Capabilities {
-	return Capabilities{
-		OperatingSystem:   constants.OperatingSystemOther,
-		ProcessCollection: false,
-		LocalStorage:      true,
-	}
+	return OtherCapabilities()
 }

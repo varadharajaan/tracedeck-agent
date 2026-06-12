@@ -23,9 +23,5 @@ func (darwinAdapter) Hostname(ctx context.Context) (string, error) {
 }
 
 func (darwinAdapter) Capabilities() Capabilities {
-	return Capabilities{
-		OperatingSystem:   constants.OperatingSystemMacOS,
-		ProcessCollection: true,
-		LocalStorage:      true,
-	}
+	return DarwinCapabilities()
 }
