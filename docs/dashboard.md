@@ -197,6 +197,8 @@ Current panels:
   report delivery proof
 - buyer demo checklist for anomaly, route, report, archive, consent/data
   rights, and saved-view readiness
+- command navigation for paid ops, revenue, notifications, reports, archive,
+  trust, and hosts with KPI summaries backed by existing typed APIs
 
 API-provided text is escaped before rendering.
 
@@ -234,6 +236,11 @@ mail/PDF readiness, host risk, anomaly urgency, email delivery, push delivery,
 and customer success actions into one first-screen surface. The phase adds
 presentation and verification only; it does not add sensitive collection.
 
+Phase 42 adds a sticky command navigation strip so paid demos can jump directly
+to paid ops, revenue, notification proof, reports, archive, trust, and host
+details. The strip summarizes alert, route, report, archive, readiness, and
+trust state from the same typed APIs used by the rest of the dashboard.
+
 A future frontend phase can move this surface to a richer application shell with
-authentication, role-specific navigation, no-code alert rule editing, weekly
-report drilldowns, durable event search, and paid customer onboarding.
+role-specific onboarding, no-code alert rule editing, weekly report drilldowns,
+durable event search, and paid customer onboarding.

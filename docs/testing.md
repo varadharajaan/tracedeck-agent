@@ -517,6 +517,22 @@ delivery continuity, and the metadata-only privacy boundary. Newman runs
 `postman/tracedeck-backend-phase41.postman_collection.json` against the same
 live demo.
 
+Phase 42 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase42.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase42.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase42.ps1
+```
+
+The Phase 42 smoke live-boots the seeded dashboard and verifies the command
+navigation strip, stable jump targets for paid ops, revenue, notifications,
+reports, archive, trust, and hosts, and the typed API data that backs those
+navigation KPIs: alert inbox, notification routes, monetisation readiness, and
+weekly report email/PDF readiness. Newman runs
+`postman/tracedeck-backend-phase42.postman_collection.json` against the same
+live demo.
+
 Phase 13 adds:
 
 ```powershell

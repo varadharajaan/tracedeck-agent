@@ -141,3 +141,7 @@
     revenue command, notification proof, mail delivery, push notification,
     archive retention, tamper trust, smoke/Newman coverage, docs, and full local
     verification.
+45. Phase 42: command navigation. Sticky dashboard command navigation for paid
+    ops, revenue, notifications, reports, archive, trust, and hosts with typed
+    KPI backing data, dashboard contract guard, smoke/Newman coverage, docs, and
+    full local verification.
