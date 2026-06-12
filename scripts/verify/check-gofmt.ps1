@@ -7,9 +7,14 @@ $ErrorActionPreference = "Stop"
 Initialize-TraceDeckScriptLog -Name "check-gofmt" -LogRoot "logs/local/verify" | Out-Null
 
 try {
-    $files = Get-ChildItem -Path "agent" -Recurse -Filter "*.go" | ForEach-Object { $_.FullName }
+    $files = @()
+    foreach ($path in @("agent", "scripts/tools")) {
+        if (Test-Path $path) {
+            $files += Get-ChildItem -Path $path -Recurse -Filter "*.go" | ForEach-Object { $_.FullName }
+        }
+    }
     if (-not $files) {
-        Write-TraceDeckLog -Level "WARN" -Message "No Go files found under agent"
+        Write-TraceDeckLog -Level "WARN" -Message "No Go files found under agent or scripts/tools"
         Complete-TraceDeckScriptLog
         exit 0
     }

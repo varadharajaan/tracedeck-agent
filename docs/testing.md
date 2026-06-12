@@ -11,11 +11,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase1b.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase2.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase2b.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase3.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
 Root-level generated artifacts are rejected by `scripts/verify/check-root-clean.ps1`.
 Cross-platform build outputs are written under `data/local/build/`.
+Browser fixture smoke data is generated under `data/local/smoke-phase3/`, and
+the smoke archive is checked to ensure raw URLs and page titles are not stored.
+Earlier phase smokes pass `--disable-browser-history` so they do not collect
+real local browser history while validating process/archive/alert behavior.
 
 `go test -race ./...` is run when the local Go toolchain supports it. On
 Windows shells where CGO is disabled or no race-capable C toolchain is active,

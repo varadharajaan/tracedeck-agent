@@ -24,7 +24,7 @@ try {
     Write-TraceDeckLog -Level "INFO" -Message "Started continuous smoke sleeper process: $($sleeper.Id)"
 
     Invoke-TraceDeckLoggedCommand -Label "Run continuous agent for two cycles" -Command {
-        go run ./agent/cmd/tracedeck-agent run --config $policyPath --data-dir $smokeRoot --log-dir ./logs/local/agent --outbox-dir $outboxRoot --process-limit 512 --collection-interval 1s --max-cycles 2 --archive-dry-run --alert-dry-run
+        go run ./agent/cmd/tracedeck-agent run --config $policyPath --data-dir $smokeRoot --log-dir ./logs/local/agent --outbox-dir $outboxRoot --process-limit 512 --collection-interval 1s --max-cycles 2 --archive-dry-run --alert-dry-run --disable-browser-history
     }
 
     $archiveFiles = @(Get-ChildItem -Path (Join-Path $outboxRoot "archive") -Filter "*.jsonl.gz" -File -ErrorAction SilentlyContinue)

@@ -5,7 +5,7 @@
 3. Phase 1B: platform adapter contracts and cross-platform builds.
 4. Phase 2: S3 archive and email alerting.
 5. Phase 2B: continuous runner and bounded local service smoke.
-6. Phase 3: browser activity.
+6. Phase 3: browser activity. Domain-only Chromium history collection is added.
 7. Phase 4: policy and anomaly engine.
 8. Phase 5: backend and dashboard.
 9. Phase 6: SaaS readiness.

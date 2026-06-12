@@ -23,7 +23,7 @@ try {
     Write-TraceDeckLog -Level "INFO" -Message "Started smoke sleeper process: $($sleeper.Id)"
 
     Invoke-TraceDeckLoggedCommand -Label "Run local agent archive and alert dry-run" -Command {
-        go run ./agent/cmd/tracedeck-agent run --once --config $policyPath --data-dir $smokeRoot --log-dir ./logs/local/agent --outbox-dir $outboxRoot --process-limit 512 --archive-once --archive-dry-run --alert-once --alert-dry-run
+        go run ./agent/cmd/tracedeck-agent run --once --config $policyPath --data-dir $smokeRoot --log-dir ./logs/local/agent --outbox-dir $outboxRoot --process-limit 512 --archive-once --archive-dry-run --alert-once --alert-dry-run --disable-browser-history
     }
 
     $archiveFiles = @(Get-ChildItem -Path (Join-Path $outboxRoot "archive") -Filter "*.jsonl.gz" -File -ErrorAction SilentlyContinue)

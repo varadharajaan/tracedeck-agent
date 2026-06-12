@@ -16,14 +16,24 @@ try {
     }
 
     Invoke-TraceDeckLoggedCommand -Label "gofmt write" -Command {
-        $files = Get-ChildItem -Path "agent" -Recurse -Filter "*.go" | ForEach-Object { $_.FullName }
+        $files = @()
+        foreach ($path in @("agent", "scripts/tools")) {
+            if (Test-Path $path) {
+                $files += Get-ChildItem -Path $path -Recurse -Filter "*.go" | ForEach-Object { $_.FullName }
+            }
+        }
         if ($files) { gofmt -w $files }
     }
 
     $goimports = Get-Command goimports -ErrorAction SilentlyContinue
     if ($goimports) {
         Invoke-TraceDeckLoggedCommand -Label "goimports write" -Command {
-            $files = Get-ChildItem -Path "agent" -Recurse -Filter "*.go" | ForEach-Object { $_.FullName }
+            $files = @()
+            foreach ($path in @("agent", "scripts/tools")) {
+                if (Test-Path $path) {
+                    $files += Get-ChildItem -Path $path -Recurse -Filter "*.go" | ForEach-Object { $_.FullName }
+                }
+            }
             if ($files) { goimports -w $files }
         }
     }

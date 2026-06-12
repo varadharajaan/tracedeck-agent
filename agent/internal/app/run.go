@@ -4,32 +4,39 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"path/filepath"
 	"time"
 
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/alert"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/archive"
+	browsercollector "github.com/varadharajaan/tracedeck-agent/agent/internal/collector/browser"
 	processcollector "github.com/varadharajaan/tracedeck-agent/agent/internal/collector/process"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/config"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/constants"
+	"github.com/varadharajaan/tracedeck-agent/agent/internal/domain/event"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/logging"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/platform"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/storage/sqlite"
 )
 
 type RunOptions struct {
-	ConfigPath         string
-	DataDir            string
-	LogDir             string
-	LogLevel           string
-	OutboxDir          string
-	Once               bool
-	ProcessLimit       int
-	ArchiveOnce        bool
-	ArchiveDryRun      bool
-	AlertOnce          bool
-	AlertDryRun        bool
-	CollectionInterval string
-	MaxCycles          int
+	ConfigPath            string
+	DataDir               string
+	LogDir                string
+	LogLevel              string
+	OutboxDir             string
+	Once                  bool
+	ProcessLimit          int
+	ArchiveOnce           bool
+	ArchiveDryRun         bool
+	AlertOnce             bool
+	AlertDryRun           bool
+	CollectionInterval    string
+	MaxCycles             int
+	BrowserHistoryPath    []string
+	BrowserHistoryLimit   int
+	BrowserCacheDir       string
+	DisableBrowserHistory bool
 }
 
 type RunResult struct {
@@ -40,6 +47,7 @@ type RunResult struct {
 	ArchiveUploaded bool
 	AlertsRaised    int
 	AlertOutboxPath string
+	BrowserEvents   int
 }
 
 func Run(ctx context.Context, opts RunOptions) (RunResult, error) {
@@ -154,10 +162,33 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 
 	platformAdapter := platform.Current()
 	collector := processcollector.New(r.opts.ProcessLimit, platformAdapter)
-	events, err := collector.Collect(ctx, r.policy)
+	processEvents, err := collector.Collect(ctx, r.policy)
 	if err != nil {
 		return RunResult{}, err
 	}
+	events := processEvents
+
+	browserEvents := []event.Event{}
+	if !r.opts.DisableBrowserHistory {
+		browserCacheDir := r.opts.BrowserCacheDir
+		if browserCacheDir == "" {
+			dataDir := r.opts.DataDir
+			if dataDir == "" {
+				dataDir = constants.DefaultDataDir
+			}
+			browserCacheDir = filepath.Join(dataDir, constants.BrowserCacheDirName)
+		}
+		browserEvents, err = browsercollector.New(
+			r.opts.BrowserHistoryPath,
+			r.opts.BrowserHistoryLimit,
+			browserCacheDir,
+			platformAdapter,
+		).Collect(ctx, r.policy)
+		if err != nil {
+			return RunResult{}, err
+		}
+	}
+	events = append(events, browserEvents...)
 
 	for _, evt := range events {
 		if err := r.store.SaveEvent(ctx, evt); err != nil {
@@ -170,7 +201,7 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 		return RunResult{}, err
 	}
 
-	result := RunResult{Cycles: 1, CollectedEvents: len(events), StoredEvents: total}
+	result := RunResult{Cycles: 1, CollectedEvents: len(events), StoredEvents: total, BrowserEvents: len(browserEvents)}
 
 	if archiveEnabled {
 		batch, err := archive.NewWriter(r.opts.OutboxDir).WriteBatch(ctx, r.policy, events)
@@ -222,6 +253,8 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 		"device_id", r.policy.DeviceID,
 		"operating_system", platformAdapter.Name(),
 		"collected_events", len(events),
+		"process_events", len(processEvents),
+		"browser_events", len(browserEvents),
 		"stored_events", total,
 	)
 
@@ -237,6 +270,7 @@ func (r *RunResult) merge(next RunResult) {
 	}
 	r.ArchiveUploaded = r.ArchiveUploaded || next.ArchiveUploaded
 	r.AlertsRaised += next.AlertsRaised
+	r.BrowserEvents += next.BrowserEvents
 	if next.AlertOutboxPath != "" {
 		r.AlertOutboxPath = next.AlertOutboxPath
 	}
@@ -255,10 +289,11 @@ func parseDurationOrDefault(value string, fallback string) (time.Duration, error
 
 func FormatRunResult(result RunResult) string {
 	return fmt.Sprintf(
-		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_outbox=%s",
+		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d browser_events=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_outbox=%s",
 		result.Cycles,
 		result.CollectedEvents,
 		result.StoredEvents,
+		result.BrowserEvents,
 		result.ArchiveBatch,
 		result.ArchiveUploaded,
 		result.AlertsRaised,

@@ -8,7 +8,7 @@ Initialize-TraceDeckScriptLog -Name "smoke-phase1" -LogRoot "logs/local/smoke" |
 
 try {
     Invoke-TraceDeckLoggedCommand -Label "Run local agent once" -Command {
-        go run ./agent/cmd/tracedeck-agent run --once --config ./examples/policies/ai-btech-student.yaml --data-dir ./data/local/smoke --log-dir ./logs/local/agent --process-limit 25
+        go run ./agent/cmd/tracedeck-agent run --once --config ./examples/policies/ai-btech-student.yaml --data-dir ./data/local/smoke --log-dir ./logs/local/agent --process-limit 25 --disable-browser-history
     }
 
     $dbPath = Join-Path $script:TraceDeckRepoRoot "data/local/smoke/tracedeck-agent.sqlite"
