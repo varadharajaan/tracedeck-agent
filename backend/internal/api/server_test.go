@@ -1731,6 +1731,80 @@ func TestTenantProviderSimulationLabEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantPackageBillingReadinessEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "package-billing-device-001",
+		"host_name": "package-billing-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentPackageBilling, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected package billing readiness 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var readiness model.TenantPackageBillingReadiness
+	if err := json.Unmarshal(response.Body.Bytes(), &readiness); err != nil {
+		t.Fatalf("decode package billing readiness: %v", err)
+	}
+	if readiness.Summary.PackageScore == 0 || readiness.Summary.CurrentPlan == "" || readiness.Summary.BillingStatus == "" || readiness.Summary.NextBestAction == "" {
+		t.Fatalf("expected scored package billing summary: %+v", readiness.Summary)
+	}
+	if readiness.PlanID != constants.PlanFamilyPro || readiness.RetentionTierID != constants.RetentionFamilyCloud || readiness.RetentionName == "" {
+		t.Fatalf("expected typed plan and retention proof: %+v", readiness)
+	}
+	if len(readiness.Plans) < 4 || len(readiness.FeatureGates) < 8 || len(readiness.Milestones) < 5 || len(readiness.Actions) == 0 {
+		t.Fatalf("expected plans, feature gates, milestones, and actions: %+v", readiness)
+	}
+	hasBillingGate := false
+	hasArchiveGate := false
+	for _, gate := range readiness.FeatureGates {
+		if gate.ID == "billing-setup" && gate.BuyerValue != "" && gate.PaidTier != "" {
+			hasBillingGate = true
+		}
+		if gate.ID == "archive-retention" && gate.Enabled {
+			hasArchiveGate = true
+		}
+	}
+	if !hasBillingGate || !hasArchiveGate {
+		t.Fatalf("expected billing and archive feature gates: %+v", readiness.FeatureGates)
+	}
+	if !strings.Contains(readiness.PrivacyBoundary, "metadata-only") || !strings.Contains(readiness.PrivacyBoundary, "no payment card data") || !strings.Contains(readiness.PrivacyBoundary, "no passwords") {
+		t.Fatalf("expected strict package billing privacy boundary, got %q", readiness.PrivacyBoundary)
+	}
+
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"card_number", "cvv", "payment_token", "provider_secret", "screenshot_bytes", "raw_url", "page_title", "alert_body"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("package billing readiness leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+}
+
 func TestDeviceGroupAndPolicyAssignmentEndpoints(t *testing.T) {
 	t.Parallel()
 

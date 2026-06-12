@@ -229,3 +229,12 @@ scenarios, provider action queue, audit proof, and privacy proof for paid
 demos. It does not send live provider payloads or store SMTP passwords, push
 endpoint payloads, alert bodies, screenshots, raw URLs, provider secrets,
 tokens, cookies, or private content.
+
+Phase 56 adds typed Package Billing Readiness at
+`/api/v1/tenants/{tenantId}/package-billing-readiness`. It gives the dashboard
+a buyer-facing package layer for plan fit, billing setup metadata, feature
+gates, retention/archive value, weekly reports, notification proof, provider
+simulation proof, trust/data-rights readiness, and upgrade actions. It is
+metadata-only and does not collect payment card data, invoices, provider
+secrets, passwords, screenshots, raw URLs, page titles, alert bodies, tokens,
+cookies, private content, or endpoint payloads.

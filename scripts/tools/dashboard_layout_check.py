@@ -33,6 +33,13 @@ REQUIRED_IDS = (
     "provider-simulation-route-list",
     "provider-simulation-scenario-list",
     "provider-simulation-action-list",
+    "package-billing-section",
+    "package-billing-status",
+    "package-billing-headline",
+    "package-billing-plan-list",
+    "package-billing-feature-list",
+    "package-billing-milestone-list",
+    "package-billing-action-list",
     "business-dashboard-section",
     "business-dashboard-status",
     "business-dashboard-headline",
@@ -185,8 +192,8 @@ def main() -> int:
                             clientHeight: element.clientHeight
                           }));
                           checks.push({
-                            name: "command-navigation-has-eleven-jumps",
-                            ok: jumpBoxes.length === 11,
+                            name: "command-navigation-has-twelve-jumps",
+                            ok: jumpBoxes.length === 12,
                             detail: `${jumpBoxes.length} command jump buttons`
                           });
                           for (const item of jumpBoxes) {

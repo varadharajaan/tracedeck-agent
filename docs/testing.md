@@ -713,6 +713,16 @@ dashboard layout contract. Newman runs
 live demo and covers dashboard markers plus typed provider simulation GET/POST
 workflows.
 
+The Phase 56 smoke live-boots the seeded dashboard, verifies Package Billing
+Readiness, Plan Fit Matrix, Feature Gate Proof, Billing Milestones, and Upgrade
+Actions markers, checks the tenant `package-billing-readiness` API, verifies
+package score, billing status, plans, feature gates, milestones, actions, and
+strict privacy/forbidden markers, and reruns the screenshot-free dashboard
+layout contract. Newman runs
+`postman/tracedeck-backend-phase56.postman_collection.json` against the same
+live demo and covers dashboard markers plus typed package billing readiness
+proof.
+
 Phase 13 adds:
 
 ```powershell

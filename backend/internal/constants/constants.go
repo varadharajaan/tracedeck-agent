@@ -47,6 +47,7 @@ const (
 	RouteSegmentExecutiveConsole = "executive-console"
 	RouteSegmentNotificationRev  = "notification-revenue-cockpit"
 	RouteSegmentProviderSim      = "provider-simulation-lab"
+	RouteSegmentPackageBilling   = "package-billing-readiness"
 	RouteSegmentNotificationCmd  = "notification-command-center"
 	RouteSegmentDeliveryTimeline = "delivery-timeline"
 	RouteSegmentDeliveryDrill    = "delivery-drilldown"
@@ -296,6 +297,7 @@ const (
 	RoleExperiencePrivacyNote         = "metadata-only role experience center: role labels, dashboard scope, onboarding status, notification proof, archive/report readiness, consent controls, and paid-tier packaging only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"
 	ExecutiveConsolePrivacyNote       = "metadata-only executive console: product readiness, anomaly categories, host labels, email/push/dashboard delivery proof, weekly report readiness, archive status, role packaging, and owner actions only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"
 	NotificationRevenuePrivacyNote    = "metadata-only notification revenue cockpit: anomaly SLA categories, mail/push/dashboard delivery proof, buyer demo readiness, escalation state, paid-package levers, weekly report readiness, and owner actions only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"
+	PackageBillingPrivacyNote         = "metadata-only package billing readiness: plan labels, feature gates, seat counts, retention tier, billing setup status, report/archive value, notification proof, and upgrade actions only; no payment card data, no invoices, no provider secrets, no passwords, no screenshots, no raw URLs, no page titles, no alert bodies, no tokens, no cookies, no private content, and no endpoint payloads are collected or stored"
 )
 
 const (
