@@ -14,3 +14,8 @@ Phase 6 tenant, plan, role, retention, and audit endpoints are readiness APIs.
 They do not grant remote access, do not implement billing side effects, and do
 not change endpoint collection behavior. Remote multi-tenant use requires an
 explicit authentication and authorization design first.
+
+Phase 7 service templates do not install or start services automatically. macOS
+foreground app support is marked as requiring Accessibility permission, and
+Linux foreground support is marked partial because X11 and Wayland differ. No
+new collector is enabled without typed policy and platform support work.

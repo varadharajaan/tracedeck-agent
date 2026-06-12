@@ -14,4 +14,6 @@
 9. Phase 6: SaaS readiness. Localhost backend APIs for tenant readiness,
    subscription plan catalog, role catalog, retention tier catalog, audit
    events, dashboard visibility, and Newman-backed verification.
-10. Phase 7: deeper macOS and Linux native collectors.
+10. Phase 7: macOS and Linux endpoint support hardening. Typed platform
+    capability metadata, unsupported-capability errors, launchd/systemd service
+    templates, render script, docs, tests, and cross-platform verification.

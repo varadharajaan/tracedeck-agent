@@ -48,3 +48,9 @@ tiers, and audit events. The backend remains localhost-only and in-memory; this
 phase proves API shape, catalog packaging, dashboard visibility, and
 Postman/Newman coverage before durable multi-tenant storage, authentication,
 billing integration, and SSO are added.
+
+Phase 7 hardens platform support metadata. Platform adapters report a typed
+service manager id, typed capability support rows, and branchable unsupported
+capability errors. macOS launchd and Linux systemd templates are stored under
+`deployments/service/` and rendered locally through script into `data/local/`
+for review.

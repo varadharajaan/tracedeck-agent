@@ -15,6 +15,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase4.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase5.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase6.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase7.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
@@ -61,6 +62,17 @@ The Phase 6 smoke builds and boots the backend on localhost, exercises plan,
 role, retention, tenant, audit, and dashboard routes, then stops the process.
 Newman runs the committed Phase 6 Postman collection and writes its JSON report
 under `data/local/newman/phase6/`.
+
+Phase 7 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-platform-support.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-service-manifests.ps1
+```
+
+The Phase 7 verifier checks platform support tests, renders macOS launchd and
+Linux systemd manifests under `data/local/service-manifests/phase7/`, runs
+cross-platform builds, and verifies root artifact hygiene.
 
 `go test -race ./...` is run when the local Go toolchain supports it. On
 Windows shells where CGO is disabled or no race-capable C toolchain is active,

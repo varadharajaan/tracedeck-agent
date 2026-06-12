@@ -23,9 +23,5 @@ func (linuxAdapter) Hostname(ctx context.Context) (string, error) {
 }
 
 func (linuxAdapter) Capabilities() Capabilities {
-	return Capabilities{
-		OperatingSystem:   constants.OperatingSystemLinux,
-		ProcessCollection: true,
-		LocalStorage:      true,
-	}
+	return LinuxCapabilities()
 }
