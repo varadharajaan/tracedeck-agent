@@ -748,6 +748,42 @@ func (m *Memory) TenantMonetizationSummary(ctx context.Context, tenantID string)
 	}, nil
 }
 
+func (m *Memory) TenantBusinessDashboard(ctx context.Context, tenantID string) (model.TenantBusinessDashboard, error) {
+	generatedAt := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	operations, err := m.TenantOperationsSummary(ctx, tenantID)
+	if err != nil {
+		return model.TenantBusinessDashboard{}, err
+	}
+	monetization, err := m.TenantMonetizationSummary(ctx, tenantID)
+	if err != nil {
+		return model.TenantBusinessDashboard{}, err
+	}
+	inbox, err := m.TenantAlertInbox(ctx, tenantID)
+	if err != nil {
+		return model.TenantBusinessDashboard{}, err
+	}
+	commandCenter, err := m.TenantNotificationCommandCenter(ctx, tenantID)
+	if err != nil {
+		return model.TenantBusinessDashboard{}, err
+	}
+	preferences, err := m.TenantNotificationPreferences(ctx, tenantID)
+	if err != nil {
+		return model.TenantBusinessDashboard{}, err
+	}
+	drilldown, err := m.TenantDeliveryDrilldown(ctx, tenantID)
+	if err != nil {
+		return model.TenantBusinessDashboard{}, err
+	}
+	remediation, err := m.TenantDeliveryRemediation(ctx, tenantID)
+	if err != nil {
+		return model.TenantBusinessDashboard{}, err
+	}
+
+	return buildTenantBusinessDashboard(operations, monetization, inbox, commandCenter, preferences, drilldown, remediation, generatedAt), nil
+}
+
 func (m *Memory) TenantAlertInbox(_ context.Context, tenantID string) (model.TenantAlertInbox, error) {
 	now := time.Now().UTC()
 	tenantID = strings.TrimSpace(tenantID)
@@ -3779,6 +3815,345 @@ func buildTenantNotificationCommandCenter(
 		Actions:         notificationCommandActions(inbox.Items, remediation.Actions, monetization.ConversionActions, generatedAt),
 		PrivacyBoundary: constants.NotificationCommandPrivacyNote,
 		GeneratedAt:     generatedAt,
+	}
+}
+
+func buildTenantBusinessDashboard(
+	operations model.TenantOperationsSummary,
+	monetization model.TenantMonetizationSummary,
+	inbox model.TenantAlertInbox,
+	commandCenter model.TenantNotificationCommandCenter,
+	preferences model.NotificationPreferenceCenter,
+	drilldown model.TenantDeliveryDrilldown,
+	remediation model.TenantDeliveryRemediation,
+	generatedAt time.Time,
+) model.TenantBusinessDashboard {
+	productScore := averageScore(operations.MonetizationReadiness, operations.NotificationScore, monetization.TrustScore, preferences.Summary.PreferenceScore)
+	status := businessDashboardStatus(operations, inbox, drilldown, remediation, productScore)
+	headline, detail := businessDashboardNarrative(operations, monetization, inbox, drilldown, status)
+	summary := model.TenantBusinessDashboardSummary{
+		Status:             status,
+		Headline:           headline,
+		Detail:             detail,
+		ProductScore:       productScore,
+		CustomerHealth:     operations.CustomerHealth,
+		RevenueStage:       monetization.ConversionStage,
+		RecommendedPackage: firstNonEmpty(commandCenter.Summary.RecommendedPaidPackage, monetization.PlanName, operations.PlanName),
+		HostsTotal:         operations.HostsTotal,
+		HostsAttention:     operations.HostsAttention,
+		OpenAlerts:         inbox.Summary.Open,
+		HighPriorityAlerts: inbox.Summary.HighOrCritical,
+		NotificationScore:  operations.NotificationScore,
+		PreferenceScore:    preferences.Summary.PreferenceScore,
+		TrustScore:         monetization.TrustScore,
+		MailDelivered:      operations.EmailDelivered,
+		PushDelivered:      operations.PushDelivered,
+		DashboardDelivered: operations.DashboardDelivered,
+		RoutesNeedingProof: drilldown.Summary.RoutesNeedingProof,
+		ArchiveBacklog:     operations.ArchiveBacklog,
+		WeeklyReportReady:  commandCenter.Summary.WeeklyReportReady,
+		ConsentVisible:     true,
+		DataRightsReady:    monetization.TrustScore >= 65,
+	}
+
+	return model.TenantBusinessDashboard{
+		TenantID:        operations.TenantID,
+		TenantName:      operations.TenantName,
+		PlanID:          operations.PlanID,
+		PlanName:        operations.PlanName,
+		Audience:        monetization.Audience,
+		Summary:         summary,
+		Metrics:         businessDashboardMetrics(summary, operations, monetization, preferences, drilldown),
+		Alerts:          businessDashboardAlerts(commandCenter.Alerts),
+		Channels:        businessDashboardChannels(commandCenter.Channels),
+		Packages:        businessDashboardPackages(monetization),
+		Actions:         businessDashboardActions(commandCenter.Actions, remediation.Actions, monetization.ConversionActions, generatedAt),
+		PrivacyBoundary: constants.BusinessDashboardPrivacyNote,
+		GeneratedAt:     generatedAt,
+	}
+}
+
+func businessDashboardStatus(operations model.TenantOperationsSummary, inbox model.TenantAlertInbox, drilldown model.TenantDeliveryDrilldown, remediation model.TenantDeliveryRemediation, productScore int) string {
+	switch {
+	case operations.DeliveryFailed > 0 || inbox.Summary.HighOrCritical > 0:
+		return constants.StatusAttention
+	case drilldown.Summary.RoutesNeedingProof > 0 || remediation.Summary.ProblemsOpen > 0 || operations.HostsAttention > 0:
+		return constants.StatusWatch
+	case productScore >= 75:
+		return constants.StatusHealthy
+	default:
+		return constants.StatusPending
+	}
+}
+
+func businessDashboardNarrative(operations model.TenantOperationsSummary, monetization model.TenantMonetizationSummary, inbox model.TenantAlertInbox, drilldown model.TenantDeliveryDrilldown, status string) (string, string) {
+	if len(inbox.Items) > 0 {
+		top := inbox.Items[0]
+		return fmt.Sprintf("%s needs %s notification assurance", top.Title, top.Severity),
+			fmt.Sprintf("%s on %s has email, push, and dashboard status visible for paid customer review.", top.Category, top.HostName)
+	}
+	if drilldown.Summary.RoutesNeedingProof > 0 {
+		return fmt.Sprintf("%d notification routes need proof before paid demo", drilldown.Summary.RoutesNeedingProof),
+			"Mail, push, dashboard, and weekly report routes must show provider-safe evidence before onboarding."
+	}
+	if operations.ArchiveBacklog > 0 {
+		return "Archive backlog is the current trust story",
+			"Show retry behavior, S3 lifecycle readiness, and owner action proof before selling longer retention."
+	}
+	if status == constants.StatusHealthy {
+		return fmt.Sprintf("%s is ready for a paid product demo", firstNonEmpty(monetization.PlanName, operations.PlanName, "TraceDeck")),
+			"Anomaly alerts, notification delivery, archive retention, weekly reports, and trust proof are visible in one cockpit."
+	}
+	return "Business dashboard is waiting for stronger proof",
+		"Enroll hosts, verify notification routes, and keep consent, archive, and report evidence current."
+}
+
+func businessDashboardMetrics(summary model.TenantBusinessDashboardSummary, operations model.TenantOperationsSummary, monetization model.TenantMonetizationSummary, preferences model.NotificationPreferenceCenter, drilldown model.TenantDeliveryDrilldown) []model.TenantBusinessDashboardMetric {
+	return []model.TenantBusinessDashboardMetric{
+		{
+			ID:       "customer-health",
+			Label:    "Customer Health",
+			Value:    titleWord(summary.CustomerHealth),
+			Detail:   fmt.Sprintf("%d/%d hosts need attention", summary.HostsAttention, summary.HostsTotal),
+			Status:   summary.CustomerHealth,
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "anomaly-alerts",
+			Label:    "Anomaly Alerts",
+			Value:    fmt.Sprintf("%d open", summary.OpenAlerts),
+			Detail:   fmt.Sprintf("%d high-priority signals with delivery proof", summary.HighPriorityAlerts),
+			Status:   countStatus(summary.OpenAlerts),
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "mail-delivery",
+			Label:    "Mail Delivery",
+			Value:    fmt.Sprintf("%d delivered", summary.MailDelivered),
+			Detail:   monetization.NotificationPromise.Email,
+			Status:   deliveryValueStatus(summary.MailDelivered),
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "push-reach",
+			Label:    "Push Reach",
+			Value:    fmt.Sprintf("%d delivered", summary.PushDelivered),
+			Detail:   monetization.NotificationPromise.Push,
+			Status:   deliveryValueStatus(summary.PushDelivered),
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "route-proof",
+			Label:    "Route Proof",
+			Value:    fmt.Sprintf("%d/%d ready", drilldown.Summary.HealthyRoutes, drilldown.Summary.RoutesTotal),
+			Detail:   fmt.Sprintf("%d routes need proof", summary.RoutesNeedingProof),
+			Status:   scoreStatus(operations.NotificationScore),
+			PaidTier: constants.PlanBusiness,
+		},
+		{
+			ID:       "preference-policy",
+			Label:    "Preference Policy",
+			Value:    fmt.Sprintf("%d%%", summary.PreferenceScore),
+			Detail:   fmt.Sprintf("%d typed rules, %s digest", preferences.Summary.RulesTotal, preferences.DigestCadence),
+			Status:   scoreStatus(summary.PreferenceScore),
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "archive-report",
+			Label:    "Archive And Reports",
+			Value:    boolReady(summary.WeeklyReportReady),
+			Detail:   fmt.Sprintf("%d archive batches waiting", summary.ArchiveBacklog),
+			Status:   archiveValueStatus(summary.ArchiveBacklog, true),
+			PaidTier: constants.PlanSchool,
+		},
+		{
+			ID:       "paid-stage",
+			Label:    "Paid Stage",
+			Value:    titleWord(summary.RevenueStage),
+			Detail:   fmt.Sprintf("%d%% readiness, %d%% trust", monetization.ReadinessScore, monetization.TrustScore),
+			Status:   monetization.RevenueHealth,
+			PaidTier: constants.PlanBusiness,
+		},
+	}
+}
+
+func businessDashboardAlerts(alerts []model.TenantNotificationCommandCenterAlert) []model.TenantBusinessDashboardAlert {
+	items := make([]model.TenantBusinessDashboardAlert, 0, len(alerts))
+	for _, alert := range alerts {
+		items = append(items, model.TenantBusinessDashboardAlert{
+			ID:              alert.ID,
+			Title:           alert.Title,
+			Detail:          firstNonEmpty(alert.Detail, alert.Recommendation),
+			Severity:        alert.Severity,
+			Status:          alert.Status,
+			HostName:        alert.HostName,
+			Category:        alert.Category,
+			EmailStatus:     alert.EmailStatus,
+			PushStatus:      alert.PushStatus,
+			DashboardStatus: alert.DashboardStatus,
+			NextAction:      alert.NextAction,
+			PaidTier:        alert.PaidTier,
+			ObservedAt:      alert.ObservedAt,
+		})
+	}
+	if len(items) > 6 {
+		return items[:6]
+	}
+	return items
+}
+
+func businessDashboardChannels(channels []model.TenantNotificationCommandCenterChannel) []model.TenantBusinessDashboardChannel {
+	items := make([]model.TenantBusinessDashboardChannel, 0, len(channels))
+	for _, channel := range channels {
+		status := firstNonEmpty(channel.LatestDeliveryStatus, channel.RouteStatus)
+		items = append(items, model.TenantBusinessDashboardChannel{
+			Channel:        channel.Channel,
+			Provider:       channel.Provider,
+			Status:         status,
+			ProofState:     channel.ProofState,
+			RecipientLabel: channel.Recipient,
+			Attempts:       channel.Attempts,
+			LastDeliveryAt: channel.LastDeliveryAt,
+			NextAction:     channel.NextAction,
+			PaidTier:       channel.PaidTier,
+		})
+	}
+	return items
+}
+
+func businessDashboardPackages(monetization model.TenantMonetizationSummary) []model.TenantBusinessDashboardPackage {
+	plans := []model.Plan{planByID(constants.PlanFamilyPro), planByID(constants.PlanSchool), planByID(constants.PlanBusiness)}
+	packages := make([]model.TenantBusinessDashboardPackage, 0, len(plans))
+	for _, plan := range plans {
+		status := constants.StatusWatch
+		nextAction := "Keep collecting product proof before upgrade."
+		if plan.ID == monetization.PlanID {
+			status = constants.StatusHealthy
+			nextAction = "Use current tenant evidence as the paid package proof."
+		}
+		packages = append(packages, model.TenantBusinessDashboardPackage{
+			Name:       plan.Name,
+			Tier:       plan.ID,
+			Audience:   plan.Audience,
+			PriceModel: plan.PriceModel,
+			Status:     status,
+			Included:   append([]string(nil), plan.Features...),
+			Value:      businessPackageValue(plan.ID),
+			NextAction: nextAction,
+		})
+	}
+	return packages
+}
+
+func businessDashboardActions(commandActions []model.TenantNotificationCommandCenterAction, remedies []model.TenantDeliveryRemediationAction, conversion []model.TenantOperationsSignal, generatedAt time.Time) []model.TenantBusinessDashboardAction {
+	actions := make([]model.TenantBusinessDashboardAction, 0, 8)
+	for _, action := range commandActions {
+		if len(actions) >= 4 {
+			break
+		}
+		actions = append(actions, model.TenantBusinessDashboardAction{
+			Title:      action.Title,
+			Detail:     action.Detail,
+			Severity:   action.Severity,
+			Status:     action.Status,
+			Owner:      action.Owner,
+			Channel:    action.Channel,
+			SLA:        action.SLA,
+			PaidTier:   action.PaidTier,
+			Source:     "notification command center",
+			ObservedAt: action.ObservedAt,
+		})
+	}
+	for _, remedy := range remedies {
+		if len(actions) >= 6 {
+			break
+		}
+		if remedy.Status == constants.DeliveryRemediationStatusHealthy {
+			continue
+		}
+		actions = append(actions, model.TenantBusinessDashboardAction{
+			Title:      titleWord(remedy.Channel) + " delivery route",
+			Detail:     firstNonEmpty(remedy.Plan, remedy.Problem),
+			Severity:   constants.SeverityMedium,
+			Status:     remedy.Status,
+			Owner:      remedy.Owner,
+			Channel:    remedy.Channel,
+			SLA:        remedy.SLATarget,
+			PaidTier:   notificationCommandChannelTier(remedy.Channel),
+			Source:     "delivery remediation",
+			ObservedAt: remedy.CreatedAt,
+		})
+	}
+	for _, signal := range conversion {
+		if len(actions) >= 8 {
+			break
+		}
+		actions = append(actions, model.TenantBusinessDashboardAction{
+			Title:      signal.Title,
+			Detail:     signal.Detail,
+			Severity:   signal.Severity,
+			Status:     signal.Status,
+			Owner:      signal.Owner,
+			Channel:    signal.Channel,
+			SLA:        "before paid review",
+			PaidTier:   constants.PlanFamilyPro,
+			Source:     "monetisation summary",
+			ObservedAt: signal.ObservedAt,
+		})
+	}
+	if len(actions) == 0 {
+		actions = append(actions, model.TenantBusinessDashboardAction{
+			Title:      "Business dashboard ready",
+			Detail:     "Customer health, anomaly alerts, mail delivery, push reach, archive retention, and paid packaging are visible.",
+			Severity:   constants.SeverityInfo,
+			Status:     constants.StatusHealthy,
+			Owner:      constants.RoleBusinessManager,
+			Channel:    constants.DeliveryChannelDashboard,
+			SLA:        "weekly review",
+			PaidTier:   constants.PlanFamilyPro,
+			Source:     "business dashboard",
+			ObservedAt: generatedAt,
+		})
+	}
+	return actions
+}
+
+func averageScore(scores ...int) int {
+	total := 0
+	count := 0
+	for _, score := range scores {
+		if score < 0 {
+			continue
+		}
+		if score > 100 {
+			score = 100
+		}
+		total += score
+		count++
+	}
+	if count == 0 {
+		return 0
+	}
+	return total / count
+}
+
+func boolReady(ready bool) string {
+	if ready {
+		return "ready"
+	}
+	return "pending"
+}
+
+func businessPackageValue(planID string) string {
+	switch planID {
+	case constants.PlanFamilyPro:
+		return "Family-ready weekly reports, anomaly notifications, role views, and cloud archive proof."
+	case constants.PlanSchool:
+		return "School rollout packaging with cohorts, audit history, retention controls, and admin workflows."
+	case constants.PlanBusiness:
+		return "Endpoint productivity, risky software, delivery assurance, and compliance export value."
+	default:
+		return "Paid packaging proof for customer review."
 	}
 }
 

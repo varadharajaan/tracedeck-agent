@@ -1273,6 +1273,78 @@ func TestTenantMonetizationSummaryEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantBusinessDashboardEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "business-dashboard-device-001",
+		"host_name": "business-dashboard-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentBusinessDash, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected business dashboard 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var dashboard model.TenantBusinessDashboard
+	if err := json.Unmarshal(response.Body.Bytes(), &dashboard); err != nil {
+		t.Fatalf("decode business dashboard: %v", err)
+	}
+	if dashboard.Summary.ProductScore == 0 || dashboard.Summary.NotificationScore == 0 || dashboard.Summary.RecommendedPackage == "" {
+		t.Fatalf("expected scored business dashboard summary: %+v", dashboard.Summary)
+	}
+	if dashboard.Summary.MailDelivered == 0 || dashboard.Summary.DashboardDelivered == 0 {
+		t.Fatalf("expected mail and dashboard delivery proof: %+v", dashboard.Summary)
+	}
+	if len(dashboard.Metrics) < 8 || len(dashboard.Alerts) == 0 || len(dashboard.Channels) < 3 || len(dashboard.Packages) < 3 || len(dashboard.Actions) == 0 {
+		t.Fatalf("expected monetisable dashboard surfaces: %+v", dashboard)
+	}
+	hasPush := false
+	for _, channel := range dashboard.Channels {
+		if channel.Channel == constants.DeliveryChannelPush && channel.Status != "" {
+			hasPush = true
+		}
+	}
+	if !hasPush {
+		t.Fatalf("expected push notification route proof: %+v", dashboard.Channels)
+	}
+	if dashboard.Packages[0].Tier == "" || dashboard.Channels[0].PaidTier == "" || dashboard.Actions[0].Source == "" {
+		t.Fatalf("expected typed package, channel, and action metadata: %+v %+v %+v", dashboard.Packages, dashboard.Channels, dashboard.Actions)
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "screenshot_bytes", "raw_url", "alert_body"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("business dashboard leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+	if !strings.Contains(dashboard.PrivacyBoundary, "no passwords") || !strings.Contains(dashboard.PrivacyBoundary, "screenshots") {
+		t.Fatalf("expected strict business dashboard privacy boundary, got %q", dashboard.PrivacyBoundary)
+	}
+}
+
 func TestDeviceGroupAndPolicyAssignmentEndpoints(t *testing.T) {
 	t.Parallel()
 

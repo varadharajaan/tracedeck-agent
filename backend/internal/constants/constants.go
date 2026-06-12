@@ -42,6 +42,7 @@ const (
 	RouteSegmentAlertInbox       = "alert-inbox"
 	RouteSegmentOperations       = "operations-summary"
 	RouteSegmentMonetization     = "monetization-summary"
+	RouteSegmentBusinessDash     = "business-dashboard"
 	RouteSegmentNotificationCmd  = "notification-command-center"
 	RouteSegmentDeliveryDrill    = "delivery-drilldown"
 	RouteSegmentDeliveryRemedy   = "delivery-remediation"
@@ -279,6 +280,7 @@ const (
 const (
 	NotificationCommandPrivacyNote    = "metadata-only notification command center: no passwords, credentials, screenshots, raw URLs, page titles, tokens, cookies, private content, alert bodies, or provider secrets are collected or stored"
 	NotificationPreferencePrivacyNote = "metadata-only notification preferences: recipient labels, channel policy, quiet hours, report cadence, and escalation metadata only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, or private content are collected or stored"
+	BusinessDashboardPrivacyNote      = "metadata-only business dashboard: customer health, notification route proof, anomaly categories, paid-plan packaging, archive/report readiness, and owner actions only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"
 )
 
 const (

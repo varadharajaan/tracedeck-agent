@@ -262,6 +262,17 @@ labels, and owner action items. It is metadata-only and does not store provider
 secrets, alert bodies, screenshots, passwords, tokens, cookies, raw URLs, page
 titles, or private content.
 
+Phase 50 adds `GET /api/v1/tenants/{tenantId}/business-dashboard`. It composes
+operations, monetisation, alert inbox, notification command center,
+notification preferences, delivery drilldown, and delivery remediation into one
+typed product contract for the dashboard. The response includes product score,
+customer health, revenue stage, recommended package, host attention, open and
+high-priority alerts, mail/push/dashboard delivery proof, route proof gaps,
+archive backlog, weekly report readiness, KPI tiles, alert rows, channel rows,
+paid package cards, and customer owner actions. It is metadata-only and does
+not store provider secrets, alert bodies, screenshots, passwords, tokens,
+cookies, raw URLs, page titles, private content, or endpoint payloads.
+
 Phase 31 adds `GET /api/v1/tenants/{tenantId}/sync-health` for buyer and admin
 proof that backend-visible telemetry is arriving per host. It returns reporting
 host counts, stored metadata event totals, the highest stable `local-event-*`

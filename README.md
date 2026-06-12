@@ -121,6 +121,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase49.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase49.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase49.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase50.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase50.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase50.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-service-manifests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-windows-task.ps1
 ```
@@ -178,3 +181,11 @@ Phase 49 adds a typed Notification Preference Center at
 policy, quiet hours, digest cadence, escalation, study-safe suppression, and
 owner actions with metadata-only privacy boundaries, plus dashboard, smoke,
 Newman, and verifier coverage.
+
+Phase 50 adds a typed Business Dashboard at
+`/api/v1/tenants/{tenantId}/business-dashboard`. It creates a monetisation-grade
+first screen for customer health, anomaly notification, mail delivery, push
+reach, route proof, archive/report value, paid package cards, and customer owner
+actions. It aggregates existing metadata-only APIs and does not add password,
+screenshot, raw URL, page title, alert body, provider secret, token, cookie, or
+private-content collection.

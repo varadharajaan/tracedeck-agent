@@ -216,3 +216,17 @@ This is monetisable because parents, schools, coaching centers, and small
 businesses need confidence that alerting is configurable and explainable, not
 just noisy. The feature stores typed policy metadata only and avoids provider
 secrets, alert bodies, screenshots, raw URLs, page titles, and private content.
+
+Phase 50 adds a Business Dashboard as the top paid-product surface:
+
+- customer health and product readiness headline
+- anomaly notification inbox with mail, push, and dashboard status
+- push and mail route proof for paid alert reliability
+- route proof and preference policy readiness
+- archive and weekly report value in the same cockpit
+- Family Pro, School, and Business package cards
+- customer owner actions with owner, SLA, source, and paid tier
+
+This makes TraceDeck easier to sell because a buyer can see value, proof, and
+next action without digging through host-level tables. It composes existing
+typed metadata-only APIs and does not add sensitive collectors.

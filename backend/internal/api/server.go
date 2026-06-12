@@ -313,6 +313,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantOperationsSummary(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentMonetization && r.Method == http.MethodGet:
 		s.handleTenantMonetizationSummary(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentBusinessDash && r.Method == http.MethodGet:
+		s.handleTenantBusinessDashboard(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentNotificationCmd && r.Method == http.MethodGet:
 		s.handleTenantNotificationCommandCenter(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentDeliveryDrill:
@@ -580,6 +582,23 @@ func (s *Server) handleTenantMonetizationSummary(w http.ResponseWriter, r *http.
 		return
 	}
 	writeJSON(w, http.StatusOK, summary)
+}
+
+func (s *Server) handleTenantBusinessDashboard(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	dashboard, err := s.store.TenantBusinessDashboard(r.Context(), tenantID)
+	if err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant business dashboard lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, dashboard)
 }
 
 func (s *Server) handleTenantNotificationCommandCenter(w http.ResponseWriter, r *http.Request, tenantID string) {
