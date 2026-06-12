@@ -1,0 +1,104 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 27",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Contains Revenue Panels",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard has buyer revenue controls', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Revenue Control Room');",
+        "  pm.expect(html).to.include('Buyer Notification Assurance');",
+        "  pm.expect(html).to.include('revenue-package');",
+        "  pm.expect(html).to.include('assurance-push');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Discover Seeded Device",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/devices" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('seeded device is available', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.count).to.be.at.least(1);",
+        "  pm.collectionVariables.set('deviceId', body.items[0].device_id);",
+        "  pm.collectionVariables.set('tenantId', body.items[0].tenant_id);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Tenant Operations Summary Feeds Buyer Console",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/operations-summary" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('tenant operations has monetisation and notification proof', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.hosts_total).to.be.at.least(1);",
+        "  pm.expect(body.notification_score).to.be.above(0);",
+        "  pm.expect(body.monetization_readiness).to.be.above(0);",
+        "  pm.expect(body.priority_signals).to.be.an('array');",
+        "  pm.expect(body.upgrade_signals).to.be.an('array');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Monetization Summary Has Paid Proof",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/{{tenantId}}/monetization-summary" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('monetization summary contains value panels and conversion actions', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.readiness_score).to.be.above(0);",
+        "  pm.expect(body.notification_score).to.be.above(0);",
+        "  pm.expect(body.value_panels).to.be.an('array').that.is.not.empty;",
+        "  pm.expect(body.paid_capabilities).to.be.an('array').that.is.not.empty;",
+        "  pm.expect(body.notification_promise.email).to.be.a('string').that.is.not.empty;",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Alert Deliveries Include Email Push Dashboard",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/devices/{{deviceId}}/alert-deliveries" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('alert deliveries include buyer assurance channels', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  const channels = body.items.map((item) => item.channel);",
+        "  pm.expect(channels).to.include('email');",
+        "  pm.expect(channels).to.include('push');",
+        "  pm.expect(channels).to.include('dashboard');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Weekly Report Mail Readiness",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/devices/{{deviceId}}/reports/weekly" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('weekly report is email and pdf ready', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.email_ready).to.eql(true);",
+        "  pm.expect(body.pdf_ready).to.eql(true);",
+        "  pm.expect(body.email_subject).to.be.a('string').that.is.not.empty;",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" },
+    { "key": "deviceId", "value": "" },
+    { "key": "tenantId", "value": "" }
+  ]
+}

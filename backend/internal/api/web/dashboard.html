@@ -231,6 +231,17 @@
     .ops-tile span {
       overflow-wrap: anywhere;
     }
+    .revenue-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .assurance-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
     .action-list {
       display: grid;
       gap: 10px;
@@ -520,6 +531,7 @@
       .brief-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .ops-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .cockpit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .revenue-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
     @media (max-width: 720px) {
@@ -533,6 +545,7 @@
       .brief-grid { grid-template-columns: 1fr; }
       .ops-strip { grid-template-columns: 1fr; }
       .cockpit-grid { grid-template-columns: 1fr; }
+      .revenue-grid, .assurance-grid { grid-template-columns: 1fr; }
       .summary-line { grid-template-columns: 1fr; }
       .kv div { grid-template-columns: 1fr; }
       main { width: min(100vw - 20px, 1400px); }
@@ -609,6 +622,45 @@
         <div class="action-meta">
           <span id="trust-agent" class="pill">agent pending</span>
           <span id="trust-archive" class="pill">archive pending</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Revenue Control Room</h2>
+            <p class="muted">Customer package, paid proof, renewal risk, and upgrade motion for the selected tenant</p>
+          </div>
+          <span id="revenue-status" class="badge pending">pending</span>
+        </div>
+        <div class="revenue-grid">
+          <div class="ops-tile"><small>Package Fit</small><strong id="revenue-package">-</strong><span id="revenue-package-sub" class="muted">No tenant selected</span></div>
+          <div class="ops-tile"><small>Paid Proof</small><strong id="revenue-proof">-</strong><span id="revenue-proof-sub" class="muted">No proof yet</span></div>
+          <div class="ops-tile"><small>Upgrade Motion</small><strong id="revenue-upgrade">-</strong><span id="revenue-upgrade-sub" class="muted">No conversion stage</span></div>
+          <div class="ops-tile"><small>Renewal Risk</small><strong id="revenue-risk">-</strong><span id="revenue-risk-sub" class="muted">No risk model</span></div>
+          <div class="ops-tile"><small>Commercial Lever</small><strong id="revenue-lever">-</strong><span id="revenue-lever-sub" class="muted">No lever selected</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Buyer Notification Assurance</h2>
+            <p class="muted">Anomaly alerting, push reach, mail delivery, and weekly report readiness in one place</p>
+          </div>
+          <span id="assurance-status" class="badge pending">pending</span>
+        </div>
+        <div class="assurance-grid">
+          <div class="brief-item"><small>Anomaly Alerts</small><strong id="assurance-anomaly">-</strong><span id="assurance-anomaly-sub" class="muted">No anomaly route</span></div>
+          <div class="brief-item"><small>Email Delivery</small><strong id="assurance-email">-</strong><span id="assurance-email-sub" class="muted">No email proof</span></div>
+          <div class="brief-item"><small>Push Delivery</small><strong id="assurance-push">-</strong><span id="assurance-push-sub" class="muted">No push proof</span></div>
+          <div class="brief-item"><small>Report Mail</small><strong id="assurance-report">-</strong><span id="assurance-report-sub" class="muted">No report proof</span></div>
+        </div>
+        <div class="summary-list" style="margin-top: 12px;">
+          <div class="summary-line"><span>Buyer Outcome</span><strong id="assurance-outcome">-</strong></div>
+          <div class="summary-line"><span>Last Signal</span><strong id="assurance-last">-</strong></div>
+          <div class="summary-line"><span>Next Action</span><strong id="assurance-action">-</strong></div>
         </div>
       </div>
     </section>
@@ -1400,6 +1452,7 @@
       renderConsentCenter(context.consentCenter);
       renderTenantOperations(context.tenantOperations);
       renderMonetizationSummary(context.monetizationSummary);
+      renderBuyerMonetizationConsole(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderNotificationRoutes(context.notificationRoutes);
       renderDataExports(context.dataExports);
       renderDeleteRequests(context.deleteRequests);
@@ -1954,6 +2007,59 @@
       renderMonetizationRoutes(model.notification_routes || []);
       renderPaidCapabilities(model.paid_capabilities || []);
       renderConversionActions(model.conversion_actions || []);
+    }
+
+    function renderBuyerMonetizationConsole(overview, health, events, deliveries, context) {
+      const monetization = context.monetizationSummary || {};
+      const operations = context.tenantOperations || {};
+      const tenant = context.tenant || {};
+      const plan = (context.plans.items || []).find((item) => item.id === (tenant.plan_id || monetization.plan_id)) || {};
+      const weekly = context.weeklyReport || {};
+      const email = latestDelivery(deliveryByChannel(deliveries, CHANNEL.email));
+      const push = latestDelivery(deliveryByChannel(deliveries, CHANNEL.push));
+      const dashboard = latestDelivery(deliveryByChannel(deliveries, CHANNEL.dashboard));
+      const delivered = deliveries.filter((item) => item.status === DELIVERY_STATUS.delivered).length;
+      const deliveryScore = deliveries.length > 0 ? Math.round((delivered / deliveries.length) * 100) : 0;
+      const topEvent = topRiskEvent(events);
+      const valuePanels = monetization.value_panels || [];
+      const leadPanel = valuePanels[0] || {};
+      const actionPool = (monetization.conversion_actions || []).length > 0 ? monetization.conversion_actions : (operations.priority_signals || []);
+      const action = actionPool[0] || {};
+      const readiness = Number(monetization.readiness_score || operations.monetization_readiness || readinessScore(context, deliveries, overview.archive, health));
+      const trust = Number(monetization.trust_score || 0);
+      const riskLabel = operations.customer_health || (overview.risk_score >= 75 ? "attention" : overview.risk_score >= 45 ? "watch" : "healthy");
+      const proofCount = (monetization.paid_capabilities || []).filter((item) => ["healthy", "delivered", "ready"].includes(item.status)).length;
+
+      document.getElementById("revenue-status").outerHTML =
+        badge(monetization.revenue_health || riskLabel).replace("<span", '<span id="revenue-status"');
+      setText("revenue-package", monetization.plan_name || plan.name || "Plan pending");
+      setText("revenue-package-sub", `${monetization.audience || plan.audience || tenant.primary_profile || "customer"} - ${plan.price_model || "price model pending"}`);
+      setText("revenue-proof", `${proofCount}/${(monetization.paid_capabilities || []).length || 0} capabilities`);
+      setText("revenue-proof-sub", leadPanel.metric ? `${leadPanel.title}: ${leadPanel.metric}` : `${readiness}% readiness, ${deliveryScore}% delivery`);
+      setText("revenue-upgrade", monetization.conversion_stage || operations.customer_health || "pilot");
+      setText("revenue-upgrade-sub", action.title || "Keep notification, archive, and report proof visible.");
+      setText("revenue-risk", riskLabel);
+      setText("revenue-risk-sub", `${operations.hosts_attention || 0} host${operations.hosts_attention === 1 ? "" : "s"} need attention, average risk ${operations.risk_score || overview.risk_score || 0}`);
+      setText("revenue-lever", leadPanel.paid_tier || monetization.plan_id || plan.id || "Family Pro");
+      setText("revenue-lever-sub", leadPanel.detail || `${plan.features && plan.features.length > 0 ? plan.features.slice(0, 2).join(", ") : "weekly reports and notification proof"}`);
+
+      const assuranceHealthy = deliveryScore >= 70 && Boolean(email) && Boolean(push) && weekly.email_ready;
+      document.getElementById("assurance-status").outerHTML =
+        badge(assuranceHealthy ? "healthy" : deliveryScore > 0 ? "watch" : "pending").replace("<span", '<span id="assurance-status"');
+      setText("assurance-anomaly", topEvent ? rowDetail(topEvent) : "No active anomaly");
+      setText("assurance-anomaly-sub", topEvent ? `${topEvent.severity} ${topEvent.category}: ${topEvent.reason}` : "No policy, anomaly, or tamper signal selected.");
+      setText("assurance-email", email ? `${email.status} email` : "Email missing");
+      setText("assurance-email-sub", email ? `${email.recipient} via ${email.provider}` : "Add email route proof before demo.");
+      setText("assurance-push", push ? `${push.status} push` : "Push missing");
+      setText("assurance-push-sub", push ? `${push.recipient} via ${push.provider}` : "Add web/mobile push route proof.");
+      setText("assurance-report", weekly.email_ready ? "weekly email ready" : "report pending");
+      setText("assurance-report-sub", weekly.pdf_ready ? "PDF attachment ready" : weekly.generated_note || "Generate report proof.");
+      setText("assurance-outcome", assuranceHealthy ? "Alerts and reports are demo-ready for paid customers." : "Finish delivery proof before monetisation demo.");
+      setText("assurance-last", topEvent ? `${rowDetail(topEvent)} - ${formatAge(topEvent.observed_at)}` : dashboard ? `${dashboard.channel} ${dashboard.status} - ${formatAge(dashboard.last_attempt_at)}` : "No recent signal");
+      setText("assurance-action", action.detail || (email && push ? "Package this tenant for a paid-plan walkthrough." : "Configure missing notification routes."));
+      if (trust > 0) {
+        setText("revenue-proof-sub", `${readiness}% readiness, ${trust}% trust, ${deliveryScore}% delivery`);
+      }
     }
 
     function renderMonetizationRoutes(items) {

@@ -82,3 +82,7 @@
 29. Phase 26: notification route registry. Tenant-scoped email, push, and
     dashboard route records, provider/channel validation, route readiness
     dashboard panels, Postman/Newman coverage, and local verification.
+30. Phase 27: revenue control room. Buyer-facing dashboard layer for package
+    fit, paid proof, upgrade motion, renewal risk, commercial lever, anomaly
+    assurance, email delivery, push delivery, report mail readiness,
+    Postman/Newman coverage, and local verification.
