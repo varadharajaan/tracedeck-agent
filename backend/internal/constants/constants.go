@@ -30,22 +30,24 @@ const (
 )
 
 const (
-	RouteSegmentSummary       = "summary"
-	RouteSegmentDaily         = "daily"
-	RouteSegmentReports       = "reports"
-	RouteSegmentWeekly        = "weekly"
-	RouteSegmentPDF           = "pdf"
-	RouteSegmentOverview      = "overview"
-	RouteSegmentAuditEvents   = "audit-events"
-	RouteSegmentAlertRules    = "alert-rules"
-	RouteSegmentConsentCenter = "consent-center"
-	RouteSegmentDeviceGroups  = "device-groups"
-	RouteSegmentPolicyAssign  = "policy-assignments"
-	RouteSegmentPolicyEvents  = "policy-violations"
-	RouteSegmentAnomalies     = "anomalies"
-	RouteSegmentTamperEvents  = "tamper-events"
-	RouteSegmentAlertDelivery = "alert-deliveries"
-	RouteSegmentHealth        = "health"
+	RouteSegmentSummary        = "summary"
+	RouteSegmentDaily          = "daily"
+	RouteSegmentReports        = "reports"
+	RouteSegmentWeekly         = "weekly"
+	RouteSegmentPDF            = "pdf"
+	RouteSegmentOverview       = "overview"
+	RouteSegmentAuditEvents    = "audit-events"
+	RouteSegmentAlertRules     = "alert-rules"
+	RouteSegmentConsentCenter  = "consent-center"
+	RouteSegmentDataExports    = "data-exports"
+	RouteSegmentDeleteRequests = "delete-requests"
+	RouteSegmentDeviceGroups   = "device-groups"
+	RouteSegmentPolicyAssign   = "policy-assignments"
+	RouteSegmentPolicyEvents   = "policy-violations"
+	RouteSegmentAnomalies      = "anomalies"
+	RouteSegmentTamperEvents   = "tamper-events"
+	RouteSegmentAlertDelivery  = "alert-deliveries"
+	RouteSegmentHealth         = "health"
 )
 
 const (
@@ -95,11 +97,36 @@ const (
 )
 
 const (
-	AuditActionTenantCreated      = "tenant.created"
-	AuditActionAlertRuleCreated   = "alert_rule.created"
-	AuditActionDeviceGroupCreated = "device_group.created"
-	AuditActionPolicyAssigned     = "policy_assignment.created"
-	AuditActorLocalAPI            = "local_backend"
+	AuditActionTenantCreated        = "tenant.created"
+	AuditActionAlertRuleCreated     = "alert_rule.created"
+	AuditActionDeviceGroupCreated   = "device_group.created"
+	AuditActionDataExportCreated    = "data_export.created"
+	AuditActionDeleteRequestCreated = "delete_request.created"
+	AuditActionPolicyAssigned       = "policy_assignment.created"
+	AuditActorLocalAPI              = "local_backend"
+)
+
+const (
+	DataExportFormatJSON = "json"
+	DataExportFormatPDF  = "pdf"
+)
+
+const (
+	DataExportScopeTenant = "tenant"
+	DataExportScopeDevice = "device"
+)
+
+const (
+	DataExportStatusReady = "ready"
+)
+
+const (
+	DeleteRequestScopeTenant = "tenant"
+	DeleteRequestScopeDevice = "device"
+)
+
+const (
+	DeleteRequestStatusQueued = "queued"
 )
 
 const (

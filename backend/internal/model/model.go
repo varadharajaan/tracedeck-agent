@@ -87,6 +87,42 @@ type CreatePolicyAssignmentRequest struct {
 	Mode             string   `json:"mode"`
 }
 
+type TenantDataExport struct {
+	ID            string     `json:"id"`
+	TenantID      string     `json:"tenant_id"`
+	Format        string     `json:"format"`
+	Scope         string     `json:"scope"`
+	Status        string     `json:"status"`
+	ResourceCount int        `json:"resource_count"`
+	StorageKey    string     `json:"storage_key"`
+	RequestedBy   string     `json:"requested_by"`
+	CreatedAt     time.Time  `json:"created_at"`
+	CompletedAt   time.Time  `json:"completed_at"`
+	ExpiresAt     *time.Time `json:"expires_at,omitempty"`
+}
+
+type CreateTenantDataExportRequest struct {
+	Format string `json:"format"`
+	Scope  string `json:"scope"`
+}
+
+type DeleteRequest struct {
+	ID          string    `json:"id"`
+	TenantID    string    `json:"tenant_id"`
+	Scope       string    `json:"scope"`
+	Reason      string    `json:"reason"`
+	Status      string    `json:"status"`
+	RequestedBy string    `json:"requested_by"`
+	DueAt       time.Time `json:"due_at"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type CreateDeleteRequestRequest struct {
+	Scope  string `json:"scope"`
+	Reason string `json:"reason"`
+}
+
 type EnrollDeviceRequest struct {
 	TenantID string `json:"tenant_id"`
 	DeviceID string `json:"device_id"`

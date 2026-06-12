@@ -13,6 +13,10 @@ type Repository interface {
 	ListAuditEvents(context.Context, string) []model.AuditEvent
 	CreateAlertRule(context.Context, string, model.CreateAlertRuleRequest) (model.AlertRule, error)
 	ListAlertRules(context.Context, string) []model.AlertRule
+	CreateTenantDataExport(context.Context, string, model.CreateTenantDataExportRequest) (model.TenantDataExport, error)
+	ListTenantDataExports(context.Context, string) []model.TenantDataExport
+	CreateDeleteRequest(context.Context, string, model.CreateDeleteRequestRequest) (model.DeleteRequest, error)
+	ListDeleteRequests(context.Context, string) []model.DeleteRequest
 	CreateDeviceGroup(context.Context, string, model.CreateDeviceGroupRequest) (model.DeviceGroup, error)
 	ListDeviceGroups(context.Context, string) []model.DeviceGroup
 	CreatePolicyAssignment(context.Context, string, model.CreatePolicyAssignmentRequest) (model.PolicyAssignment, error)

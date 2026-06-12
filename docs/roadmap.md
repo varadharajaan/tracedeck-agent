@@ -67,3 +67,6 @@
 24. Phase 21: device groups and policy assignments. Tenant-scoped managed
     rollout APIs, seeded primary group/assignment, assignment audit events,
     dashboard rollout panels, Postman/Newman coverage, and local verification.
+25. Phase 22: data rights workflows. Tenant-scoped export manifests,
+    non-destructive delete request queue, access audit events, dashboard
+    export/delete panels, Postman/Newman coverage, and local verification.

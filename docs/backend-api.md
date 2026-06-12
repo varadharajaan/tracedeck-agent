@@ -61,6 +61,10 @@ GET  /api/v1/tenants/{tenantId}/audit-events
 GET  /api/v1/tenants/{tenantId}/alert-rules
 POST /api/v1/tenants/{tenantId}/alert-rules
 GET  /api/v1/tenants/{tenantId}/consent-center
+GET  /api/v1/tenants/{tenantId}/data-exports
+POST /api/v1/tenants/{tenantId}/data-exports
+GET  /api/v1/tenants/{tenantId}/delete-requests
+POST /api/v1/tenants/{tenantId}/delete-requests
 GET  /api/v1/tenants/{tenantId}/device-groups
 POST /api/v1/tenants/{tenantId}/device-groups
 GET  /api/v1/tenants/{tenantId}/policy-assignments
@@ -164,6 +168,10 @@ New tenants receive a seeded primary device group and policy assignment.
 Creating groups or assignments records tenant audit events. Assignments use
 typed target values (`tenant`, `device_group`, `device`) and typed modes
 (`audit`, `active`).
+
+Phase 22 adds data rights workflow APIs for tenant exports and delete requests.
+Exports create ready manifests; delete requests are queued for review and audit
+instead of silently deleting data.
 
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.

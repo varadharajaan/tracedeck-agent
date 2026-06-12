@@ -28,6 +28,8 @@ type Memory struct {
 	tenants         map[string]model.Tenant
 	auditEvents     []model.AuditEvent
 	alertRules      map[string][]model.AlertRule
+	dataExports     map[string][]model.TenantDataExport
+	deleteRequests  map[string][]model.DeleteRequest
 	deviceGroups    map[string][]model.DeviceGroup
 	policyAssigns   map[string][]model.PolicyAssignment
 	policyEvents    map[string][]model.RiskEvent
@@ -42,6 +44,8 @@ func NewMemory() *Memory {
 		devices:         make(map[string]model.Device),
 		tenants:         make(map[string]model.Tenant),
 		alertRules:      make(map[string][]model.AlertRule),
+		dataExports:     make(map[string][]model.TenantDataExport),
+		deleteRequests:  make(map[string][]model.DeleteRequest),
 		deviceGroups:    make(map[string][]model.DeviceGroup),
 		policyAssigns:   make(map[string][]model.PolicyAssignment),
 		policyEvents:    make(map[string][]model.RiskEvent),
@@ -194,6 +198,127 @@ func (m *Memory) ListAlertRules(_ context.Context, tenantID string) []model.Aler
 		return rules[i].TenantID < rules[j].TenantID
 	})
 	return rules
+}
+
+func (m *Memory) CreateTenantDataExport(_ context.Context, tenantID string, req model.CreateTenantDataExportRequest) (model.TenantDataExport, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.tenants[tenantID]; !ok {
+		return model.TenantDataExport{}, ErrTenantNotFound
+	}
+	expiresAt := now.Add(7 * 24 * time.Hour)
+	export := model.TenantDataExport{
+		ID:            dataExportID(tenantID, len(m.dataExports[tenantID])+1, now),
+		TenantID:      tenantID,
+		Format:        strings.TrimSpace(req.Format),
+		Scope:         strings.TrimSpace(req.Scope),
+		Status:        constants.DataExportStatusReady,
+		ResourceCount: tenantResourceCountLocked(m, tenantID),
+		StorageKey:    dataExportKey(tenantID, now, strings.TrimSpace(req.Format)),
+		RequestedBy:   constants.AuditActorLocalAPI,
+		CreatedAt:     now,
+		CompletedAt:   now,
+		ExpiresAt:     &expiresAt,
+	}
+	m.dataExports[tenantID] = append(m.dataExports[tenantID], export)
+	m.auditEvents = append(m.auditEvents, model.AuditEvent{
+		ID:        auditID(tenantID, len(m.auditEvents)+1, now),
+		TenantID:  tenantID,
+		Category:  constants.AuditCategoryAccess,
+		Action:    constants.AuditActionDataExportCreated,
+		Actor:     constants.AuditActorLocalAPI,
+		ActorRole: constants.RoleBusinessManager,
+		Summary:   "tenant data export created",
+		CreatedAt: now,
+	})
+	if err := m.persistLocked(); err != nil {
+		return model.TenantDataExport{}, err
+	}
+	return export, nil
+}
+
+func (m *Memory) ListTenantDataExports(_ context.Context, tenantID string) []model.TenantDataExport {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	tenantID = strings.TrimSpace(tenantID)
+	exports := make([]model.TenantDataExport, 0)
+	if tenantID == "" {
+		for _, tenantExports := range m.dataExports {
+			exports = append(exports, tenantExports...)
+		}
+	} else {
+		exports = append(exports, m.dataExports[tenantID]...)
+	}
+	sort.Slice(exports, func(i, j int) bool {
+		if exports[i].TenantID == exports[j].TenantID {
+			return exports[i].CreatedAt.Before(exports[j].CreatedAt)
+		}
+		return exports[i].TenantID < exports[j].TenantID
+	})
+	return append([]model.TenantDataExport(nil), exports...)
+}
+
+func (m *Memory) CreateDeleteRequest(_ context.Context, tenantID string, req model.CreateDeleteRequestRequest) (model.DeleteRequest, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.tenants[tenantID]; !ok {
+		return model.DeleteRequest{}, ErrTenantNotFound
+	}
+	deleteRequest := model.DeleteRequest{
+		ID:          deleteRequestID(tenantID, len(m.deleteRequests[tenantID])+1, now),
+		TenantID:    tenantID,
+		Scope:       strings.TrimSpace(req.Scope),
+		Reason:      strings.TrimSpace(req.Reason),
+		Status:      constants.DeleteRequestStatusQueued,
+		RequestedBy: constants.AuditActorLocalAPI,
+		DueAt:       now.Add(30 * 24 * time.Hour),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+	m.deleteRequests[tenantID] = append(m.deleteRequests[tenantID], deleteRequest)
+	m.auditEvents = append(m.auditEvents, model.AuditEvent{
+		ID:        auditID(tenantID, len(m.auditEvents)+1, now),
+		TenantID:  tenantID,
+		Category:  constants.AuditCategoryAccess,
+		Action:    constants.AuditActionDeleteRequestCreated,
+		Actor:     constants.AuditActorLocalAPI,
+		ActorRole: constants.RoleBusinessManager,
+		Summary:   "delete request queued: " + deleteRequest.Scope,
+		CreatedAt: now,
+	})
+	if err := m.persistLocked(); err != nil {
+		return model.DeleteRequest{}, err
+	}
+	return deleteRequest, nil
+}
+
+func (m *Memory) ListDeleteRequests(_ context.Context, tenantID string) []model.DeleteRequest {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	tenantID = strings.TrimSpace(tenantID)
+	requests := make([]model.DeleteRequest, 0)
+	if tenantID == "" {
+		for _, tenantRequests := range m.deleteRequests {
+			requests = append(requests, tenantRequests...)
+		}
+	} else {
+		requests = append(requests, m.deleteRequests[tenantID]...)
+	}
+	sort.Slice(requests, func(i, j int) bool {
+		if requests[i].TenantID == requests[j].TenantID {
+			return requests[i].CreatedAt.Before(requests[j].CreatedAt)
+		}
+		return requests[i].TenantID < requests[j].TenantID
+	})
+	return append([]model.DeleteRequest(nil), requests...)
 }
 
 func (m *Memory) CreateDeviceGroup(_ context.Context, tenantID string, req model.CreateDeviceGroupRequest) (model.DeviceGroup, error) {
@@ -859,6 +984,56 @@ func alertRuleIDs(rules []model.AlertRule) []string {
 	return ids
 }
 
+func dataExportID(tenantID string, sequence int, createdAt time.Time) string {
+	return strings.Join([]string{
+		strings.TrimSpace(tenantID),
+		"data-export",
+		fmt.Sprintf("%03d", sequence),
+		createdAt.Format("20060102T150405Z"),
+	}, "-")
+}
+
+func deleteRequestID(tenantID string, sequence int, createdAt time.Time) string {
+	return strings.Join([]string{
+		strings.TrimSpace(tenantID),
+		"delete-request",
+		fmt.Sprintf("%03d", sequence),
+		createdAt.Format("20060102T150405Z"),
+	}, "-")
+}
+
+func dataExportKey(tenantID string, createdAt time.Time, format string) string {
+	return strings.Join([]string{
+		"tenant=" + strings.TrimSpace(tenantID),
+		"exports",
+		createdAt.Format(time.DateOnly),
+		createdAt.Format("150405") + "." + strings.TrimSpace(format),
+	}, "/")
+}
+
+func tenantResourceCountLocked(m *Memory, tenantID string) int {
+	count := 0
+	if _, ok := m.tenants[tenantID]; ok {
+		count++
+	}
+	for _, device := range m.devices {
+		if device.TenantID == tenantID {
+			count++
+		}
+	}
+	for _, event := range m.auditEvents {
+		if event.TenantID == tenantID {
+			count++
+		}
+	}
+	count += len(m.alertRules[tenantID])
+	count += len(m.dataExports[tenantID])
+	count += len(m.deleteRequests[tenantID])
+	count += len(m.deviceGroups[tenantID])
+	count += len(m.policyAssigns[tenantID])
+	return count
+}
+
 func normalizeStrings(values []string) []string {
 	normalized := make([]string, 0, len(values))
 	seen := make(map[string]bool, len(values))
@@ -890,6 +1065,8 @@ type persistentState struct {
 	Devices         map[string]model.Device             `json:"devices"`
 	AuditEvents     []model.AuditEvent                  `json:"audit_events"`
 	AlertRules      map[string][]model.AlertRule        `json:"alert_rules"`
+	DataExports     map[string][]model.TenantDataExport `json:"data_exports"`
+	DeleteRequests  map[string][]model.DeleteRequest    `json:"delete_requests"`
 	DeviceGroups    map[string][]model.DeviceGroup      `json:"device_groups"`
 	PolicyAssigns   map[string][]model.PolicyAssignment `json:"policy_assignments"`
 	PolicyEvents    map[string][]model.RiskEvent        `json:"policy_events"`
@@ -920,6 +1097,8 @@ func (m *Memory) load() error {
 	m.devices = cloneDeviceMap(state.Devices)
 	m.auditEvents = append([]model.AuditEvent(nil), state.AuditEvents...)
 	m.alertRules = cloneAlertRuleMap(state.AlertRules)
+	m.dataExports = cloneDataExportMap(state.DataExports)
+	m.deleteRequests = cloneDeleteRequestMap(state.DeleteRequests)
 	m.deviceGroups = cloneDeviceGroupMap(state.DeviceGroups)
 	m.policyAssigns = clonePolicyAssignmentMap(state.PolicyAssigns)
 	m.policyEvents = cloneRiskMap(state.PolicyEvents)
@@ -940,6 +1119,8 @@ func (m *Memory) persistLocked() error {
 		Devices:         cloneDeviceMap(m.devices),
 		AuditEvents:     append([]model.AuditEvent(nil), m.auditEvents...),
 		AlertRules:      cloneAlertRuleMap(m.alertRules),
+		DataExports:     cloneDataExportMap(m.dataExports),
+		DeleteRequests:  cloneDeleteRequestMap(m.deleteRequests),
 		DeviceGroups:    cloneDeviceGroupMap(m.deviceGroups),
 		PolicyAssigns:   clonePolicyAssignmentMap(m.policyAssigns),
 		PolicyEvents:    cloneRiskMap(m.policyEvents),
@@ -998,6 +1179,22 @@ func cloneAlertRuleMap(input map[string][]model.AlertRule) map[string][]model.Al
 	output := make(map[string][]model.AlertRule, len(input))
 	for key, value := range input {
 		output[key] = append([]model.AlertRule(nil), value...)
+	}
+	return output
+}
+
+func cloneDataExportMap(input map[string][]model.TenantDataExport) map[string][]model.TenantDataExport {
+	output := make(map[string][]model.TenantDataExport, len(input))
+	for key, value := range input {
+		output[key] = append([]model.TenantDataExport(nil), value...)
+	}
+	return output
+}
+
+func cloneDeleteRequestMap(input map[string][]model.DeleteRequest) map[string][]model.DeleteRequest {
+	output := make(map[string][]model.DeleteRequest, len(input))
+	for key, value := range input {
+		output[key] = append([]model.DeleteRequest(nil), value...)
 	}
 	return output
 }

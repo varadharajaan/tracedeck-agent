@@ -92,6 +92,26 @@ func TestPersistentStoreSurvivesRestart(t *testing.T) {
 	if assignment.ID == "" {
 		t.Fatalf("expected policy assignment id: %+v", assignment)
 	}
+	export, err := first.CreateTenantDataExport(ctx, "family-varadha", model.CreateTenantDataExportRequest{
+		Format: constants.DataExportFormatJSON,
+		Scope:  constants.DataExportScopeTenant,
+	})
+	if err != nil {
+		t.Fatalf("create data export: %v", err)
+	}
+	if export.ID == "" || export.StorageKey == "" {
+		t.Fatalf("expected data export id and key: %+v", export)
+	}
+	deleteRequest, err := first.CreateDeleteRequest(ctx, "family-varadha", model.CreateDeleteRequestRequest{
+		Scope:  constants.DeleteRequestScopeTenant,
+		Reason: "cleanup request",
+	})
+	if err != nil {
+		t.Fatalf("create delete request: %v", err)
+	}
+	if deleteRequest.ID == "" || deleteRequest.Status != constants.DeleteRequestStatusQueued {
+		t.Fatalf("expected queued delete request: %+v", deleteRequest)
+	}
 
 	second, err := NewPersistent(statePath)
 	if err != nil {
@@ -129,5 +149,13 @@ func TestPersistentStoreSurvivesRestart(t *testing.T) {
 	assignments := second.ListPolicyAssignments(ctx, "family-varadha")
 	if len(assignments) < 2 {
 		t.Fatalf("expected seeded and custom policy assignments after restart: %+v", assignments)
+	}
+	exports := second.ListTenantDataExports(ctx, "family-varadha")
+	if len(exports) != 1 || exports[0].StorageKey == "" {
+		t.Fatalf("expected persisted data export after restart: %+v", exports)
+	}
+	deleteRequests := second.ListDeleteRequests(ctx, "family-varadha")
+	if len(deleteRequests) != 1 || deleteRequests[0].Status != constants.DeleteRequestStatusQueued {
+		t.Fatalf("expected persisted delete request after restart: %+v", deleteRequests)
 	}
 }

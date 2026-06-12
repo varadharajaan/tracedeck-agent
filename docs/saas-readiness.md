@@ -19,6 +19,7 @@ remote unauthenticated backend.
   delivery proof, push reach, and customer audit evidence.
 - Device group and policy assignment APIs for tenant, group, and device-level
   rollout readiness.
+- Data export and delete-request workflow APIs for consent center readiness.
 
 ## Boundaries
 
@@ -36,6 +37,6 @@ remote unauthenticated backend.
 - Authentication and tenant authorization.
 - Billing provider integration.
 - Hosted policy assignment by tenant, role, and device group.
-- Authenticated hosted consent/audit center with durable export and deletion
-  workflows.
+- Authenticated hosted consent/audit center with durable export and approved
+  deletion execution.
 - Report export and retention enforcement.

@@ -298,6 +298,10 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantAlertRules(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentConsentCenter && r.Method == http.MethodGet:
 		s.handleTenantConsentCenter(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentDataExports:
+		s.handleTenantDataExports(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentDeleteRequests:
+		s.handleTenantDeleteRequests(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentDeviceGroups:
 		s.handleTenantDeviceGroups(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentPolicyAssign:
@@ -405,6 +409,90 @@ func (s *Server) handleTenantConsentCenter(w http.ResponseWriter, r *http.Reques
 	auditEvents = filterAuditEventsForPrincipal(r.Context(), auditEvents)
 	rules := s.store.ListAlertRules(r.Context(), tenantID)
 	writeJSON(w, http.StatusOK, buildConsentCenter(tenant, auditEvents, rules))
+}
+
+func (s *Server) handleTenantDataExports(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	if _, err := s.store.GetTenant(r.Context(), tenantID); err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant lookup failed")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		exports := s.store.ListTenantDataExports(r.Context(), tenantID)
+		writeJSON(w, http.StatusOK, model.ListResponse[model.TenantDataExport]{
+			Items: exports,
+			Count: len(exports),
+		})
+	case http.MethodPost:
+		var req model.CreateTenantDataExportRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid data export json")
+			return
+		}
+		if err := validateCreateTenantDataExportRequest(req); err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		export, err := s.store.CreateTenantDataExport(r.Context(), tenantID, req)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "data export creation failed")
+			return
+		}
+		writeJSON(w, http.StatusCreated, export)
+	default:
+		writeMethodNotAllowed(w)
+	}
+}
+
+func (s *Server) handleTenantDeleteRequests(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	if _, err := s.store.GetTenant(r.Context(), tenantID); err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant lookup failed")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		requests := s.store.ListDeleteRequests(r.Context(), tenantID)
+		writeJSON(w, http.StatusOK, model.ListResponse[model.DeleteRequest]{
+			Items: requests,
+			Count: len(requests),
+		})
+	case http.MethodPost:
+		var req model.CreateDeleteRequestRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid delete request json")
+			return
+		}
+		if err := validateCreateDeleteRequestRequest(req); err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		deleteRequest, err := s.store.CreateDeleteRequest(r.Context(), tenantID, req)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "delete request creation failed")
+			return
+		}
+		writeJSON(w, http.StatusCreated, deleteRequest)
+	default:
+		writeMethodNotAllowed(w)
+	}
 }
 
 func (s *Server) handleTenantDeviceGroups(w http.ResponseWriter, r *http.Request, tenantID string) {
@@ -850,9 +938,64 @@ func validateCreatePolicyAssignmentRequest(req model.CreatePolicyAssignmentReque
 	}
 }
 
+func validateCreateTenantDataExportRequest(req model.CreateTenantDataExportRequest) error {
+	switch {
+	case strings.TrimSpace(req.Format) == "":
+		return errors.New("format is required")
+	case !knownDataExportFormat(req.Format):
+		return errors.New("format is unknown")
+	case strings.TrimSpace(req.Scope) == "":
+		return errors.New("scope is required")
+	case !knownDataExportScope(req.Scope):
+		return errors.New("scope is unknown")
+	default:
+		return nil
+	}
+}
+
+func validateCreateDeleteRequestRequest(req model.CreateDeleteRequestRequest) error {
+	switch {
+	case strings.TrimSpace(req.Scope) == "":
+		return errors.New("scope is required")
+	case !knownDeleteRequestScope(req.Scope):
+		return errors.New("scope is unknown")
+	case strings.TrimSpace(req.Reason) == "":
+		return errors.New("reason is required")
+	default:
+		return nil
+	}
+}
+
 func knownSeverity(severity string) bool {
 	switch strings.TrimSpace(severity) {
 	case constants.SeverityInfo, constants.SeverityLow, constants.SeverityMedium, constants.SeverityHigh, constants.SeverityCritical:
+		return true
+	default:
+		return false
+	}
+}
+
+func knownDataExportFormat(format string) bool {
+	switch strings.TrimSpace(format) {
+	case constants.DataExportFormatJSON, constants.DataExportFormatPDF:
+		return true
+	default:
+		return false
+	}
+}
+
+func knownDataExportScope(scope string) bool {
+	switch strings.TrimSpace(scope) {
+	case constants.DataExportScopeTenant, constants.DataExportScopeDevice:
+		return true
+	default:
+		return false
+	}
+}
+
+func knownDeleteRequestScope(scope string) bool {
+	switch strings.TrimSpace(scope) {
+	case constants.DeleteRequestScopeTenant, constants.DeleteRequestScopeDevice:
 		return true
 	default:
 		return false

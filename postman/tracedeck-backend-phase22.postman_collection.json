@@ -1,0 +1,132 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 22",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Create Tenant",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "body": { "mode": "raw", "raw": "{\"tenant_id\":\"family-varadha\",\"name\":\"Family Varadha\",\"plan_id\":\"family_pro\",\"retention_tier_id\":\"family_cloud_90_365_archive\",\"primary_profile\":\"ai-btech-student\"}" },
+        "url": "{{baseUrl}}/api/v1/tenants"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('tenant created', function () { pm.response.to.have.status(201); pm.expect(pm.response.json().tenant_id).to.eql('family-varadha'); });"
+      ] } }]
+    },
+    {
+      "name": "Create Data Export",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "body": { "mode": "raw", "raw": "{\"format\":\"json\",\"scope\":\"tenant\"}" },
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/data-exports"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('data export is ready', function () {",
+        "  pm.response.to.have.status(201);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.status).to.eql('ready');",
+        "  pm.expect(body.storage_key).to.include('exports');",
+        "  pm.expect(body.resource_count).to.be.above(0);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Create Delete Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "body": { "mode": "raw", "raw": "{\"scope\":\"tenant\",\"reason\":\"family account data cleanup request\"}" },
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/delete-requests"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('delete request is queued', function () { pm.response.to.have.status(201); pm.expect(pm.response.json().status).to.eql('queued'); });"
+      ] } }]
+    },
+    {
+      "name": "List Data Exports",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/data-exports"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('export list has data', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().count).to.be.above(0); });"
+      ] } }]
+    },
+    {
+      "name": "List Delete Requests",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/delete-requests"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('delete request list has data', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().count).to.be.above(0); });"
+      ] } }]
+    },
+    {
+      "name": "Audit Includes Export And Delete",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/audit-events"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('audit records export and delete request', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const items = pm.response.json().items;",
+        "  pm.expect(items.some((item) => item.action === 'data_export.created')).to.eql(true);",
+        "  pm.expect(items.some((item) => item.action === 'delete_request.created')).to.eql(true);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Contains Export Delete Panels",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard exposes export and delete workflow panels', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Data Export Center');",
+        "  pm.expect(html).to.include('Delete Request Queue');",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" },
+    { "key": "apiKey", "value": "phase22-local-secret" }
+  ]
+}

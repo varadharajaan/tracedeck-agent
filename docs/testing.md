@@ -257,6 +257,20 @@ Assignments panels. Newman runs
 `postman/tracedeck-backend-phase21.postman_collection.json` against a live
 API-key-protected backend and checks the same managed rollout contract.
 
+Phase 22 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase22.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase22.ps1
+```
+
+The Phase 22 smoke builds and boots the backend on localhost, creates a Family
+Pro tenant, creates a ready tenant export manifest, queues a non-destructive
+delete request, verifies list APIs and audit events, and asserts the dashboard
+contains Data Export Center and Delete Request Queue panels. Newman runs
+`postman/tracedeck-backend-phase22.postman_collection.json` against a live
+API-key-protected backend.
+
 Phase 13 adds:
 
 ```powershell
