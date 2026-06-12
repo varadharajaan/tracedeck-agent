@@ -174,6 +174,60 @@
       grid-template-columns: minmax(280px, 1.35fr) repeat(3, minmax(190px, 1fr));
       gap: 12px;
     }
+    .command-nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.28fr);
+      gap: 12px;
+      align-items: stretch;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .command-nav-summary {
+      display: grid;
+      align-content: space-between;
+      gap: 8px;
+      min-width: 0;
+    }
+    .command-nav-summary strong {
+      display: block;
+      font-size: 18px;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+    .command-nav-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(86px, 1fr));
+      gap: 8px;
+    }
+    .command-jump {
+      min-height: 62px;
+      padding: 8px;
+      border-radius: 8px;
+      display: grid;
+      align-content: space-between;
+      gap: 4px;
+      text-align: left;
+      line-height: 1.15;
+    }
+    .command-jump.is-active {
+      border-color: var(--teal);
+      background: #eef9f9;
+      color: var(--teal);
+    }
+    .command-jump span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 650;
+      overflow-wrap: anywhere;
+    }
     .launch-deck {
       display: grid;
       grid-template-columns: minmax(320px, 1.2fr) minmax(0, 1.8fr);
@@ -869,6 +923,8 @@
     @media (max-width: 1180px) {
       .shell, .content-grid { grid-template-columns: 1fr; }
       .command-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .command-nav { grid-template-columns: 1fr; position: static; }
+      .command-nav-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       .launch-deck { grid-template-columns: 1fr; }
       .brief-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .ops-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -895,6 +951,7 @@
       .signal-grid { grid-template-columns: 1fr; }
       .route-grid { grid-template-columns: 1fr; }
       .command-board { grid-template-columns: 1fr; }
+      .command-nav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .launch-grid, .launch-actions { grid-template-columns: 1fr; }
       .brief-grid { grid-template-columns: 1fr; }
       .ops-strip { grid-template-columns: 1fr; }
@@ -950,7 +1007,37 @@
       </div>
     </section>
 
-    <section class="paid-ops-console" aria-label="paid operations console">
+    <section id="command-navigation" class="command-nav" aria-label="command navigation">
+      <div class="command-nav-summary">
+        <div class="section-head">
+          <div>
+            <h2>Command Navigation</h2>
+          </div>
+          <span id="command-nav-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Selected View</span>
+          <strong id="command-nav-title">No tenant loaded</strong>
+        </div>
+        <div class="action-meta">
+          <span id="command-nav-alerts" class="pill">alerts pending</span>
+          <span id="command-nav-routes" class="pill">routes pending</span>
+          <span id="command-nav-report" class="pill">report pending</span>
+          <span id="command-nav-archive" class="pill">archive pending</span>
+        </div>
+      </div>
+      <nav class="command-nav-grid" aria-label="dashboard sections">
+        <button class="command-jump is-active" type="button" data-jump-target="paid-ops-section">Paid Ops<span id="nav-paid-ops-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="revenue-section">Revenue<span id="nav-revenue-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="notification-proof-section">Notifications<span id="nav-notification-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="mail-report-section">Reports<span id="nav-report-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="archive-proof-section">Archive<span id="nav-archive-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="trust-proof-section">Trust<span id="nav-trust-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="host-detail-section">Hosts<span id="nav-host-meta">waiting</span></button>
+      </nav>
+    </section>
+
+    <section id="paid-ops-section" class="paid-ops-console" aria-label="paid operations console">
       <div class="paid-ops-focus">
         <div class="section-head">
           <div>
@@ -1046,7 +1133,7 @@
       </div>
     </section>
 
-    <section class="commercial-room" aria-label="commercial control room">
+    <section id="commercial-section" class="commercial-room" aria-label="commercial control room">
       <div class="commercial-hero">
         <div class="section-head">
           <div>
@@ -1215,7 +1302,7 @@
       </div>
     </section>
 
-    <section class="revenue-suite" aria-label="revenue command center">
+    <section id="revenue-section" class="revenue-suite" aria-label="revenue command center">
       <div class="panel suite-focus">
         <div class="section-head">
           <div>
@@ -1256,7 +1343,7 @@
       </div>
     </section>
 
-    <section class="content-grid" aria-label="notification proof and buyer checklist">
+    <section id="notification-proof-section" class="content-grid" aria-label="notification proof and buyer checklist">
       <div class="panel">
         <div class="section-head">
           <div>
@@ -1305,7 +1392,7 @@
       </div>
     </section>
 
-    <section class="metric-grid" aria-label="host metrics">
+    <section id="host-metrics-section" class="metric-grid" aria-label="host metrics">
       <div class="metric"><span class="muted">Compliance</span><strong id="metric-compliance">-</strong><small id="metric-compliance-sub">No host selected</small></div>
       <div class="metric"><span class="muted">Risk Score</span><strong id="metric-risk">-</strong><small id="metric-risk-sub">Risk level</small></div>
       <div class="metric"><span class="muted">Device Health</span><strong id="metric-health">-</strong><small id="metric-health-sub">Endpoint score</small></div>
@@ -1315,7 +1402,7 @@
       <div class="metric"><span class="muted">Delivery</span><strong id="metric-delivery">-</strong><small>Email, push, dashboard</small></div>
     </section>
 
-    <section class="content-grid">
+    <section id="archive-proof-section" class="content-grid">
       <div class="panel">
         <div class="section-head">
           <div>
@@ -1735,7 +1822,7 @@
       </div>
     </section>
 
-    <section class="shell">
+    <section id="host-detail-section" class="shell">
       <aside class="panel host-card">
         <div>
           <p class="muted">Selected Host</p>
@@ -1815,7 +1902,7 @@
       </aside>
 
       <div class="stack">
-        <section class="content-grid">
+        <section id="risk-timeline-section" class="content-grid">
           <div class="panel">
             <div class="section-head">
               <div>
@@ -1843,7 +1930,7 @@
           </div>
         </section>
 
-        <section class="content-grid">
+        <section id="mail-report-section" class="content-grid">
           <div class="panel">
             <div class="section-head">
               <div>
@@ -1872,7 +1959,7 @@
           </div>
         </section>
 
-        <section class="content-grid">
+        <section id="notification-ops-section" class="content-grid">
           <div class="panel">
             <div class="section-head">
               <div>
@@ -1960,7 +2047,7 @@
           </div>
         </section>
 
-        <section class="panel">
+        <section id="trust-proof-section" class="panel">
           <div class="section-head">
             <div>
               <h2>Risky Software Watchlist</h2>
@@ -2154,9 +2241,19 @@
     const HTTP_STATUS = Object.freeze({
       unauthorized: 401
     });
+    const COMMAND_TARGET = Object.freeze({
+      paidOps: "paid-ops-section",
+      revenue: "revenue-section",
+      notifications: "notification-proof-section",
+      reports: "mail-report-section",
+      archive: "archive-proof-section",
+      trust: "trust-proof-section",
+      hosts: "host-detail-section"
+    });
     const state = {
       devices: [],
       selectedDeviceId: "",
+      activeCommandTarget: COMMAND_TARGET.paidOps,
       auth: {
         apiKey: sessionStorage.getItem(AUTH_STORAGE.apiKey) || "",
         tenantID: sessionStorage.getItem(AUTH_STORAGE.tenantID) || "family-varadha",
@@ -2256,6 +2353,30 @@
       if (authState) {
         authState.outerHTML = badge(state.auth.apiKey ? "unlocked" : "open").replace("<span", '<span id="auth-state"');
       }
+    }
+
+    function initializeCommandNavigation() {
+      document.querySelectorAll("[data-jump-target]").forEach((button) => {
+        button.addEventListener("click", () => jumpToCommandTarget(button.dataset.jumpTarget));
+      });
+      setActiveCommandTarget(state.activeCommandTarget);
+    }
+
+    function jumpToCommandTarget(targetID) {
+      const target = document.getElementById(targetID);
+      if (!target) return;
+      setActiveCommandTarget(targetID);
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function setActiveCommandTarget(targetID) {
+      state.activeCommandTarget = targetID || COMMAND_TARGET.paidOps;
+      document.querySelectorAll("[data-jump-target]").forEach((button) => {
+        const active = button.dataset.jumpTarget === state.activeCommandTarget;
+        button.classList.toggle("is-active", active);
+        if (active) button.setAttribute("aria-current", "true");
+        else button.removeAttribute("aria-current");
+      });
     }
 
     function text(value) {
@@ -2436,6 +2557,7 @@
       renderRiskySoftware(anomalies.items);
       renderTamperTable(tamper.items);
       renderDeliveries(deliveries.items);
+      renderCommandNavigation(overview, healthModel, policy, anomalies, tamper, deliveries, context);
 
       setText("policy-count", `${policy.count} open`);
       setText("anomaly-count", `${anomalies.count} active`);
@@ -2443,6 +2565,58 @@
       setText("delivery-count", `${deliveries.count} routes`);
       document.getElementById("metric-delivery").nextElementSibling.textContent =
         deliveryIssues === 0 ? "All routes delivered" : `${deliveryIssues} route needs attention`;
+    }
+
+    function renderCommandNavigationEmpty() {
+      document.getElementById("command-nav-status").outerHTML =
+        badge("pending").replace("<span", '<span id="command-nav-status"');
+      setText("command-nav-title", "No tenant loaded");
+      setText("command-nav-alerts", "alerts pending");
+      setText("command-nav-routes", "routes pending");
+      setText("command-nav-report", "report pending");
+      setText("command-nav-archive", "archive pending");
+      setText("nav-paid-ops-meta", "waiting");
+      setText("nav-revenue-meta", "waiting");
+      setText("nav-notification-meta", "waiting");
+      setText("nav-report-meta", "waiting");
+      setText("nav-archive-meta", "waiting");
+      setText("nav-trust-meta", "waiting");
+      setText("nav-host-meta", "waiting");
+    }
+
+    function renderCommandNavigation(overview, health, policy, anomalies, tamper, deliveries, context) {
+      const tenant = context.tenant || {};
+      const monetization = context.monetizationSummary || {};
+      const operations = context.tenantOperations || {};
+      const weekly = context.weeklyReport || {};
+      const alertInbox = context.alertInbox || {};
+      const inboxSummary = alertInbox.summary || {};
+      const routes = (context.notificationRoutes && context.notificationRoutes.items) || [];
+      const delivered = deliveries.items.filter((item) => item.status === DELIVERY_STATUS.delivered).length;
+      const deliveryScore = deliveries.count > 0 ? Math.round((delivered / deliveries.count) * 100) : Number(monetization.notification_score || operations.notification_score || 0);
+      const readiness = Number(monetization.readiness_score || operations.monetization_readiness || readinessScore(context, deliveries.items, overview.archive, health));
+      const trust = Number(monetization.trust_score || 0);
+      const openAlerts = Number(inboxSummary.open ?? (policy.count + anomalies.count + tamper.count));
+      const highAlerts = Number(inboxSummary.high_or_critical || 0);
+      const reportReady = weekly.email_ready && weekly.pdf_ready;
+      const archiveProvider = overview.archive.provider || "archive";
+      const archivePending = Number(overview.archive.pending_batches || 0);
+      const status = readiness >= 80 && deliveryScore >= 60 ? "healthy" : readiness >= 55 || deliveryScore > 0 ? "watch" : "attention";
+
+      document.getElementById("command-nav-status").outerHTML =
+        badge(status).replace("<span", '<span id="command-nav-status"');
+      setText("command-nav-title", `${tenant.name || monetization.tenant_name || overview.device.host_name}: ${readiness}% ready`);
+      setText("command-nav-alerts", `${openAlerts} open alerts`);
+      setText("command-nav-routes", `${routes.length || deliveries.count} routes`);
+      setText("command-nav-report", reportReady ? "report ready" : weekly.email_ready ? "email ready" : "report pending");
+      setText("command-nav-archive", archiveProvider === "s3" ? `${archivePending} archive pending` : `${archiveProvider} pending`);
+      setText("nav-paid-ops-meta", `${readiness}% ready`);
+      setText("nav-revenue-meta", monetization.conversion_stage || operations.customer_health || "pilot");
+      setText("nav-notification-meta", `${deliveryScore}% delivery`);
+      setText("nav-report-meta", reportReady ? "email + PDF" : weekly.email_ready ? "email ready" : "pending");
+      setText("nav-archive-meta", archiveProvider === "s3" ? `${archivePending} pending` : archiveProvider);
+      setText("nav-trust-meta", trust > 0 ? `${trust}% trust` : `${highAlerts} high`);
+      setText("nav-host-meta", `${state.devices.length} host${state.devices.length === 1 ? "" : "s"}`);
     }
 
     function topRiskEvent(events) {
@@ -4156,6 +4330,7 @@
       setText("host-profile", "-");
       setText("host-os", "-");
       setText("host-last-seen", "-");
+      renderCommandNavigationEmpty();
     }
 
     async function refresh() {
@@ -4265,6 +4440,7 @@
     }
 
     initializeAuthPanel();
+    initializeCommandNavigation();
     refresh().catch(showError);
   </script>
 </body>

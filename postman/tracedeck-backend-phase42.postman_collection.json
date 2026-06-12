@@ -1,0 +1,89 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 42",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Has Command Navigation",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard has command navigation and jump targets', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Command Navigation');",
+        "  pm.expect(html).to.include('command-nav-status');",
+        "  pm.expect(html).to.include('command-nav-title');",
+        "  pm.expect(html).to.include('data-jump-target=\"paid-ops-section\"');",
+        "  pm.expect(html).to.include('data-jump-target=\"revenue-section\"');",
+        "  pm.expect(html).to.include('data-jump-target=\"notification-proof-section\"');",
+        "  pm.expect(html).to.include('data-jump-target=\"mail-report-section\"');",
+        "  pm.expect(html).to.include('data-jump-target=\"archive-proof-section\"');",
+        "  pm.expect(html).to.include('data-jump-target=\"trust-proof-section\"');",
+        "  pm.expect(html).to.include('data-jump-target=\"host-detail-section\"');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Tenant Alert KPI Backing Data",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/alert-inbox" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('alert inbox backs command navigation alert KPI', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.summary.open).to.be.above(0);",
+        "  pm.expect(body.summary.with_email).to.be.above(0);",
+        "  pm.expect(body.summary.with_push).to.be.above(0);",
+        "  pm.expect(body.summary.with_dashboard).to.be.above(0);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Notification Route KPI Backing Data",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/notification-routes" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('routes back command navigation route KPI', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.count).to.eql(3);",
+        "  pm.expect(body.items.map((item) => item.channel)).to.include.members(['email', 'push', 'dashboard']);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Monetisation KPI Backing Data",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/monetization-summary" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('monetisation summary backs readiness navigation KPI', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.readiness_score).to.be.above(0);",
+        "  pm.expect(body.notification_score).to.be.above(0);",
+        "  pm.expect(body.trust_score).to.be.above(0);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Weekly Report KPI Backing Data",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/devices/demo-study-laptop/reports/weekly" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('weekly report backs report navigation KPI', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.email_ready).to.eql(true);",
+        "  pm.expect(body.pdf_ready).to.eql(true);",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

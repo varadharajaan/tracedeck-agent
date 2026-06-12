@@ -33,7 +33,24 @@ func TestDashboardDOMContract(t *testing.T) {
 		t.Fatalf("dashboard JavaScript references missing DOM ids: %s", strings.Join(missing, ", "))
 	}
 
+	for _, id := range dashboardJumpTargets(html) {
+		if _, ok := ids[id]; !ok {
+			missing = append(missing, id)
+		}
+	}
+	if len(missing) > 0 {
+		t.Fatalf("dashboard command navigation references missing DOM ids: %s", strings.Join(missing, ", "))
+	}
+
 	for _, marker := range []string{
+		"Command Navigation",
+		"data-jump-target=\"paid-ops-section\"",
+		"data-jump-target=\"revenue-section\"",
+		"data-jump-target=\"notification-proof-section\"",
+		"data-jump-target=\"mail-report-section\"",
+		"data-jump-target=\"archive-proof-section\"",
+		"data-jump-target=\"trust-proof-section\"",
+		"data-jump-target=\"host-detail-section\"",
 		"Paid Ops Console",
 		"Commercial Control Room",
 		"Revenue Command Center",
@@ -49,6 +66,21 @@ func TestDashboardDOMContract(t *testing.T) {
 			t.Fatalf("dashboard is missing monetisation marker %q", marker)
 		}
 	}
+}
+
+func dashboardJumpTargets(html string) []string {
+	pattern := regexp.MustCompile(`data-jump-target="([^"]+)"`)
+	seen := map[string]struct{}{}
+	for _, match := range pattern.FindAllStringSubmatch(html, -1) {
+		seen[match[1]] = struct{}{}
+	}
+
+	ids := make([]string, 0, len(seen))
+	for id := range seen {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	return ids
 }
 
 func dashboardElementIDs(html string) (map[string]struct{}, []string) {
