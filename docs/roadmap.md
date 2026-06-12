@@ -121,3 +121,6 @@
 39. Phase 36: monetisation-grade revenue dashboard. First-screen Revenue
     Command Center, Monetisation Value Stack, Notification Proof Rail, Buyer
     Demo Checklist, live smoke/Newman coverage, docs, and local verification.
+40. Phase 37: dashboard contract guard. Embedded dashboard DOM/JavaScript ID
+    contract test, local script, smoke/Newman coverage, docs, and full local
+    verification.
