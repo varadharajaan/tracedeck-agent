@@ -65,6 +65,51 @@ type DeviceSummary struct {
 	DataCompletenessPct int    `json:"data_completeness_pct"`
 }
 
+type HostOverview struct {
+	Device           Device          `json:"device"`
+	Summary          DeviceSummary   `json:"summary"`
+	RiskLevel        string          `json:"risk_level"`
+	RiskScore        int             `json:"risk_score"`
+	Archive          ArchiveStatus   `json:"archive"`
+	PolicyViolations []RiskEvent     `json:"policy_violations"`
+	Anomalies        []RiskEvent     `json:"anomalies"`
+	TamperEvents     []RiskEvent     `json:"tamper_events"`
+	AlertDeliveries  []AlertDelivery `json:"alert_deliveries"`
+	GeneratedAt      time.Time       `json:"generated_at"`
+}
+
+type RiskEvent struct {
+	ID             string    `json:"id"`
+	DeviceID       string    `json:"device_id"`
+	Type           string    `json:"type"`
+	Severity       string    `json:"severity"`
+	Category       string    `json:"category"`
+	Source         string    `json:"source"`
+	AppName        string    `json:"app_name"`
+	Domain         string    `json:"domain"`
+	ResourceLabel  string    `json:"resource_label"`
+	Reason         string    `json:"reason"`
+	Recommendation string    `json:"recommendation"`
+	Status         string    `json:"status"`
+	ObservedAt     time.Time `json:"observed_at"`
+}
+
+type AlertDelivery struct {
+	ID               string     `json:"id"`
+	DeviceID         string     `json:"device_id"`
+	EventID          string     `json:"event_id"`
+	Channel          string     `json:"channel"`
+	Recipient        string     `json:"recipient"`
+	Provider         string     `json:"provider"`
+	Status           string     `json:"status"`
+	Attempts         int        `json:"attempts"`
+	LastAttemptAt    time.Time  `json:"last_attempt_at"`
+	NextRetryAt      *time.Time `json:"next_retry_at,omitempty"`
+	LastError        string     `json:"last_error,omitempty"`
+	SuppressedReason string     `json:"suppressed_reason,omitempty"`
+	Summary          string     `json:"summary"`
+}
+
 type WeeklyReport struct {
 	DeviceID      string   `json:"device_id"`
 	Week          string   `json:"week"`

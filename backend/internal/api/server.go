@@ -204,12 +204,16 @@ func (s *Server) handleDeviceRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleDailySummary(w, r, deviceID)
 	case len(parts) == 3 && parts[1] == constants.RouteSegmentReports && parts[2] == constants.RouteSegmentWeekly && r.Method == http.MethodGet:
 		s.handleWeeklyReport(w, r, deviceID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentOverview && r.Method == http.MethodGet:
+		s.handleHostOverview(w, r, deviceID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentPolicyEvents && r.Method == http.MethodGet:
-		writeJSON(w, http.StatusOK, model.ListResponse[string]{Items: []string{}, Count: 0})
+		s.handlePolicyViolations(w, r, deviceID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentAnomalies && r.Method == http.MethodGet:
-		writeJSON(w, http.StatusOK, model.ListResponse[string]{Items: []string{}, Count: 0})
+		s.handleAnomalies(w, r, deviceID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentTamperEvents && r.Method == http.MethodGet:
-		writeJSON(w, http.StatusOK, model.ListResponse[string]{Items: []string{}, Count: 0})
+		s.handleTamperEvents(w, r, deviceID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentAlertDelivery && r.Method == http.MethodGet:
+		s.handleAlertDeliveries(w, r, deviceID)
 	default:
 		http.NotFound(w, r)
 	}
@@ -320,6 +324,71 @@ func (s *Server) handleDailySummary(w http.ResponseWriter, r *http.Request, devi
 		return
 	}
 	writeJSON(w, http.StatusOK, summary)
+}
+
+func (s *Server) handleHostOverview(w http.ResponseWriter, r *http.Request, deviceID string) {
+	overview, err := s.store.HostOverview(r.Context(), deviceID)
+	if err != nil {
+		if errors.Is(err, store.ErrDeviceNotFound) {
+			writeError(w, http.StatusNotFound, "device not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "host overview lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, overview)
+}
+
+func (s *Server) handlePolicyViolations(w http.ResponseWriter, r *http.Request, deviceID string) {
+	events, err := s.store.ListPolicyViolations(r.Context(), deviceID)
+	if err != nil {
+		if errors.Is(err, store.ErrDeviceNotFound) {
+			writeError(w, http.StatusNotFound, "device not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "policy violation lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, model.ListResponse[model.RiskEvent]{Items: events, Count: len(events)})
+}
+
+func (s *Server) handleAnomalies(w http.ResponseWriter, r *http.Request, deviceID string) {
+	events, err := s.store.ListAnomalies(r.Context(), deviceID)
+	if err != nil {
+		if errors.Is(err, store.ErrDeviceNotFound) {
+			writeError(w, http.StatusNotFound, "device not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "anomaly lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, model.ListResponse[model.RiskEvent]{Items: events, Count: len(events)})
+}
+
+func (s *Server) handleTamperEvents(w http.ResponseWriter, r *http.Request, deviceID string) {
+	events, err := s.store.ListTamperEvents(r.Context(), deviceID)
+	if err != nil {
+		if errors.Is(err, store.ErrDeviceNotFound) {
+			writeError(w, http.StatusNotFound, "device not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tamper event lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, model.ListResponse[model.RiskEvent]{Items: events, Count: len(events)})
+}
+
+func (s *Server) handleAlertDeliveries(w http.ResponseWriter, r *http.Request, deviceID string) {
+	deliveries, err := s.store.ListAlertDeliveries(r.Context(), deviceID)
+	if err != nil {
+		if errors.Is(err, store.ErrDeviceNotFound) {
+			writeError(w, http.StatusNotFound, "device not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "alert delivery lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, model.ListResponse[model.AlertDelivery]{Items: deliveries, Count: len(deliveries)})
 }
 
 func (s *Server) handleWeeklyReport(w http.ResponseWriter, _ *http.Request, deviceID string) {

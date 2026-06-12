@@ -20,3 +20,7 @@
 11. Phase 8: Windows scheduled-task autostart. Task Scheduler XML, render,
     register, status/query scripts, reboot persistence docs, and local
     verification.
+12. Phase 9: host dashboard risk views. Embedded command-center dashboard with
+    host filtering, typed host overview, policy violation, anomaly, tamper,
+    alert delivery, archive health panels, Postman/Newman coverage, and local
+    verification.

@@ -30,11 +30,13 @@ GET  /api/v1/tenants/{tenantId}/audit-events
 POST /api/v1/devices/enroll
 GET  /api/v1/devices
 GET  /api/v1/devices/{deviceId}
+GET  /api/v1/devices/{deviceId}/overview
 GET  /api/v1/devices/{deviceId}/summary/daily
 GET  /api/v1/devices/{deviceId}/reports/weekly
 GET  /api/v1/devices/{deviceId}/policy-violations
 GET  /api/v1/devices/{deviceId}/anomalies
 GET  /api/v1/devices/{deviceId}/tamper-events
+GET  /api/v1/devices/{deviceId}/alert-deliveries
 GET  /api/v1/policy-templates
 GET  /api/v1/archive/status
 GET  /
@@ -66,7 +68,20 @@ Device enrollment request:
 
 Phase 5 storage is intentionally in-memory. Phase 6 keeps that boundary while
 adding SaaS readiness catalogs for tenants, plans, roles, retention tiers, and
-audit events. Durable backend storage remains a later SaaS phase.
+audit events.
+
+Phase 9 adds typed host dashboard APIs:
+
+- host overview with device, summary, risk score, risk level, archive health,
+  policy violations, anomalies, tamper events, and alert deliveries
+- policy violation events
+- anomaly events
+- tamper and trust events
+- alert delivery routes for email, push, and dashboard channels
+
+Phase 9 uses in-memory demo risk data seeded for enrolled devices. Durable
+backend event storage, tenant authorization, remote auth, and persistent alert
+delivery history remain later SaaS phases.
 
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.

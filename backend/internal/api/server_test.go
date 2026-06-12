@@ -76,6 +76,74 @@ func TestDeviceEnrollmentAndLookup(t *testing.T) {
 	}
 }
 
+func TestHostDashboardRiskEndpoints(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	body := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "laptop-cousin-001",
+		"host_name": "study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(body)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	overview := httptest.NewRecorder()
+	handler.ServeHTTP(overview, httptest.NewRequest(http.MethodGet, constants.RouteDevices+"/laptop-cousin-001/"+constants.RouteSegmentOverview, nil))
+	if overview.Code != http.StatusOK {
+		t.Fatalf("expected overview 200, got %d: %s", overview.Code, overview.Body.String())
+	}
+	var host model.HostOverview
+	if err := json.Unmarshal(overview.Body.Bytes(), &host); err != nil {
+		t.Fatalf("decode host overview: %v", err)
+	}
+	if host.Device.DeviceID != "laptop-cousin-001" || host.Summary.PolicyViolations == 0 {
+		t.Fatalf("unexpected host overview: %+v", host)
+	}
+	if len(host.AlertDeliveries) == 0 || host.AlertDeliveries[0].Channel == "" {
+		t.Fatalf("expected alert delivery visibility: %+v", host.AlertDeliveries)
+	}
+
+	policy := httptest.NewRecorder()
+	handler.ServeHTTP(policy, httptest.NewRequest(http.MethodGet, constants.RouteDevices+"/laptop-cousin-001/"+constants.RouteSegmentPolicyEvents, nil))
+	if policy.Code != http.StatusOK {
+		t.Fatalf("expected policy violations 200, got %d", policy.Code)
+	}
+	var policyEvents model.ListResponse[model.RiskEvent]
+	if err := json.Unmarshal(policy.Body.Bytes(), &policyEvents); err != nil {
+		t.Fatalf("decode policy violations: %v", err)
+	}
+	if policyEvents.Count == 0 || policyEvents.Items[0].Type != constants.RiskTypePolicyViolation {
+		t.Fatalf("unexpected policy events: %+v", policyEvents)
+	}
+
+	deliveries := httptest.NewRecorder()
+	handler.ServeHTTP(deliveries, httptest.NewRequest(http.MethodGet, constants.RouteDevices+"/laptop-cousin-001/"+constants.RouteSegmentAlertDelivery, nil))
+	if deliveries.Code != http.StatusOK {
+		t.Fatalf("expected alert deliveries 200, got %d", deliveries.Code)
+	}
+	if !strings.Contains(deliveries.Body.String(), constants.DeliveryChannelEmail) {
+		t.Fatalf("expected email delivery visibility, got %s", deliveries.Body.String())
+	}
+}
+
+func TestHostDashboardRiskEndpointNotFound(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, constants.RouteDevices+"/missing-device/"+constants.RouteSegmentOverview, nil))
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("expected overview 404 for missing device, got %d", recorder.Code)
+	}
+}
+
 func TestDeviceEnrollmentValidation(t *testing.T) {
 	t.Parallel()
 
