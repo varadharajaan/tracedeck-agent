@@ -139,6 +139,82 @@
       grid-template-columns: minmax(280px, 1.35fr) repeat(3, minmax(190px, 1fr));
       gap: 12px;
     }
+    .launch-deck {
+      display: grid;
+      grid-template-columns: minmax(320px, 1.2fr) minmax(0, 1.8fr);
+      gap: 16px;
+    }
+    .launch-card {
+      min-height: 238px;
+      display: grid;
+      align-content: space-between;
+      gap: 16px;
+      padding: 18px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--teal);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+    .launch-card h2 {
+      font-size: 19px;
+    }
+    .launch-card strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 31px;
+      line-height: 1.05;
+      overflow-wrap: anywhere;
+    }
+    .launch-card p {
+      color: var(--muted);
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+    .launch-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .launch-tile {
+      min-height: 152px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      display: grid;
+      align-content: space-between;
+      gap: 10px;
+    }
+    .launch-tile strong {
+      display: block;
+      font-size: 21px;
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+    }
+    .launch-tile span {
+      overflow-wrap: anywhere;
+    }
+    .launch-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .launch-action {
+      min-height: 86px;
+      display: grid;
+      align-content: space-between;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+    }
+    .launch-action strong, .launch-action span {
+      overflow-wrap: anywhere;
+    }
     .command-card {
       min-height: 126px;
       display: grid;
@@ -528,10 +604,12 @@
     @media (max-width: 1180px) {
       .shell, .content-grid { grid-template-columns: 1fr; }
       .command-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .launch-deck { grid-template-columns: 1fr; }
       .brief-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .ops-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .cockpit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .revenue-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .launch-grid, .launch-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
     @media (max-width: 720px) {
@@ -542,6 +620,7 @@
       .signal-grid { grid-template-columns: 1fr; }
       .route-grid { grid-template-columns: 1fr; }
       .command-board { grid-template-columns: 1fr; }
+      .launch-grid, .launch-actions { grid-template-columns: 1fr; }
       .brief-grid { grid-template-columns: 1fr; }
       .ops-strip { grid-template-columns: 1fr; }
       .cockpit-grid { grid-template-columns: 1fr; }
@@ -565,6 +644,97 @@
     </div>
   </header>
   <main>
+    <section class="launch-deck" aria-label="monetisation launch deck">
+      <div class="launch-card">
+        <div class="section-head">
+          <div>
+            <h2>Monetisation Launch Deck</h2>
+            <p>Paid-plan command view for host risk, anomaly notification, mail delivery, report proof, retention, and customer readiness.</p>
+          </div>
+          <span id="launch-health" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Customer Package</span>
+          <strong id="launch-package">No tenant selected</strong>
+          <p id="launch-package-sub">Waiting for dashboard seed data.</p>
+        </div>
+        <div class="action-meta">
+          <span id="launch-readiness" class="pill">readiness pending</span>
+          <span id="launch-notification-score" class="pill">notification pending</span>
+          <span id="launch-trust-score" class="pill">trust pending</span>
+        </div>
+      </div>
+      <div>
+        <div class="launch-grid">
+          <div class="launch-tile">
+            <div class="section-head">
+              <small class="muted">Anomaly Push Assurance</small>
+              <span id="launch-push-status" class="badge pending">pending</span>
+            </div>
+            <strong id="launch-push">Push route pending</strong>
+            <span id="launch-push-sub" class="muted">No anomaly push proof yet.</span>
+          </div>
+          <div class="launch-tile">
+            <div class="section-head">
+              <small class="muted">Mail Delivery Assurance</small>
+              <span id="launch-mail-status" class="badge pending">pending</span>
+            </div>
+            <strong id="launch-mail">Mail route pending</strong>
+            <span id="launch-mail-sub" class="muted">No alert email proof yet.</span>
+          </div>
+          <div class="launch-tile">
+            <div class="section-head">
+              <small class="muted">Weekly Report Proof</small>
+              <span id="launch-report-status" class="badge pending">pending</span>
+            </div>
+            <strong id="launch-report">Report pending</strong>
+            <span id="launch-report-sub" class="muted">Email and PDF proof not loaded.</span>
+          </div>
+          <div class="launch-tile">
+            <div class="section-head">
+              <small class="muted">Host Risk Command</small>
+              <span id="launch-risk-status" class="badge pending">pending</span>
+            </div>
+            <strong id="launch-risk">No host selected</strong>
+            <span id="launch-risk-sub" class="muted">Risk score waiting for host data.</span>
+          </div>
+          <div class="launch-tile">
+            <div class="section-head">
+              <small class="muted">Archive Retention</small>
+              <span id="launch-archive-status" class="badge pending">pending</span>
+            </div>
+            <strong id="launch-archive">Archive pending</strong>
+            <span id="launch-archive-sub" class="muted">No S3 retention proof yet.</span>
+          </div>
+          <div class="launch-tile">
+            <div class="section-head">
+              <small class="muted">Notification Revenue Stream</small>
+              <span id="launch-stream-status" class="badge pending">pending</span>
+            </div>
+            <strong id="launch-stream">No delivery score</strong>
+            <span id="launch-stream-sub" class="muted">Email, push, and dashboard proof pending.</span>
+          </div>
+        </div>
+        <div class="launch-actions" aria-label="buyer action queue">
+          <div class="launch-action">
+            <span class="muted">Immediate Buyer Action</span>
+            <strong id="launch-action-primary">Select a host</strong>
+            <span id="launch-action-primary-sub" class="muted">No customer action loaded.</span>
+          </div>
+          <div class="launch-action">
+            <span class="muted">Route Needing Proof</span>
+            <strong id="launch-action-route">Route pending</strong>
+            <span id="launch-action-route-sub" class="muted">No delivery route loaded.</span>
+          </div>
+          <div class="launch-action">
+            <span class="muted">Upgrade Lever</span>
+            <strong id="launch-action-upgrade">Package pending</strong>
+            <span id="launch-action-upgrade-sub" class="muted">No paid-plan lever loaded.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="metric-grid" aria-label="host metrics">
       <div class="metric"><span class="muted">Compliance</span><strong id="metric-compliance">-</strong><small id="metric-compliance-sub">No host selected</small></div>
       <div class="metric"><span class="muted">Risk Score</span><strong id="metric-risk">-</strong><small id="metric-risk-sub">Risk level</small></div>
@@ -1481,6 +1651,7 @@
       renderTenantOperations(context.tenantOperations);
       renderMonetizationSummary(context.monetizationSummary);
       renderBuyerMonetizationConsole(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
+      renderMonetisationLaunchDeck(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderTelemetryStatus(context.telemetryStatus);
       renderNotificationRoutes(context.notificationRoutes);
       renderDataExports(context.dataExports);
@@ -2089,6 +2260,77 @@
       if (trust > 0) {
         setText("revenue-proof-sub", `${readiness}% readiness, ${trust}% trust, ${deliveryScore}% delivery`);
       }
+    }
+
+    function renderMonetisationLaunchDeck(overview, health, events, deliveries, context) {
+      const monetization = context.monetizationSummary || {};
+      const operations = context.tenantOperations || {};
+      const tenant = context.tenant || {};
+      const plan = (context.plans.items || []).find((item) => item.id === (tenant.plan_id || monetization.plan_id)) || {};
+      const weekly = context.weeklyReport || {};
+      const retention = (context.retentionTiers.items || []).find((item) => item.id === tenant.retention_tier_id) || {};
+      const email = latestDelivery(deliveryByChannel(deliveries, CHANNEL.email));
+      const push = latestDelivery(deliveryByChannel(deliveries, CHANNEL.push));
+      const dashboard = latestDelivery(deliveryByChannel(deliveries, CHANNEL.dashboard));
+      const delivered = deliveries.filter((item) => item.status === DELIVERY_STATUS.delivered).length;
+      const deliveryScore = deliveries.length > 0 ? Math.round((delivered / deliveries.length) * 100) : Number(monetization.notification_score || operations.notification_score || 0);
+      const readiness = Number(monetization.readiness_score || operations.monetization_readiness || readinessScore(context, deliveries, overview.archive, health));
+      const trust = Number(monetization.trust_score || 0);
+      const topEvent = topRiskEvent(events);
+      const action = ((monetization.conversion_actions || [])[0]) || ((operations.priority_signals || [])[0]) || {};
+      const routeProblem = topDeliveryProblem(deliveries);
+      const upgradeSignal = ((operations.upgrade_signals || [])[0]) || ((monetization.paid_capabilities || [])[0]) || {};
+      const launchHealth = monetization.revenue_health || operations.customer_health || (readiness >= 80 && deliveryScore >= 70 ? "healthy" : readiness >= 55 ? "watch" : "attention");
+      const pushHealthy = push && push.status === DELIVERY_STATUS.delivered;
+      const mailHealthy = email && email.status === DELIVERY_STATUS.delivered;
+      const reportHealthy = weekly.email_ready && weekly.pdf_ready;
+      const archiveHealthy = overview.archive.provider === "s3" && overview.archive.pending_batches === 0;
+      const streamHealthy = deliveryScore >= 70 && Boolean(email) && Boolean(push) && Boolean(dashboard);
+
+      document.getElementById("launch-health").outerHTML =
+        badge(launchHealth).replace("<span", '<span id="launch-health"');
+      setText("launch-package", monetization.plan_name || plan.name || "Package pending");
+      setText("launch-package-sub", `${tenant.name || monetization.tenant_name || overview.device.tenant_id} - ${monetization.audience || plan.audience || tenant.primary_profile || "customer"} - ${monetization.conversion_stage || "pilot"}`);
+      setText("launch-readiness", `${readiness}% readiness`);
+      setText("launch-notification-score", `${deliveryScore}% notification`);
+      setText("launch-trust-score", trust > 0 ? `${trust}% trust` : `${operations.delivery_delivered || delivered}/${operations.delivery_total || deliveries.length} delivered`);
+
+      document.getElementById("launch-push-status").outerHTML =
+        badge(push ? push.status : "pending").replace("<span", '<span id="launch-push-status"');
+      setText("launch-push", push ? `${capitalize(push.status)} push` : "Push route missing");
+      setText("launch-push-sub", push ? `${push.recipient} via ${push.provider}; ${pushHealthy ? "ready for anomaly proof" : push.summary || "route needs proof"}` : "Add mobile or web push route for anomaly alerts.");
+
+      document.getElementById("launch-mail-status").outerHTML =
+        badge(email ? email.status : "pending").replace("<span", '<span id="launch-mail-status"');
+      setText("launch-mail", email ? `${capitalize(email.status)} email` : "Email route missing");
+      setText("launch-mail-sub", email ? `${email.recipient} via ${email.provider}; ${mailHealthy ? "buyer proof available" : email.last_error || email.summary || "route needs proof"}` : "Configure SMTP or SES and send proof email.");
+
+      document.getElementById("launch-report-status").outerHTML =
+        badge(reportHealthy ? "healthy" : weekly.email_ready ? "watch" : "pending").replace("<span", '<span id="launch-report-status"');
+      setText("launch-report", reportHealthy ? "Email + PDF ready" : weekly.generated ? "Report generated" : "Report pending");
+      setText("launch-report-sub", weekly.email_preview || weekly.generated_note || "Generate weekly report and attach PDF proof.");
+
+      document.getElementById("launch-risk-status").outerHTML =
+        badge(overview.risk_level || "pending").replace("<span", '<span id="launch-risk-status"');
+      setText("launch-risk", topEvent ? rowDetail(topEvent) : `${overview.risk_score || 0} risk score`);
+      setText("launch-risk-sub", topEvent ? `${topEvent.severity} ${topEvent.category}: ${topEvent.reason}` : `${overview.device.host_name} has ${events.length} active risk signals.`);
+
+      document.getElementById("launch-archive-status").outerHTML =
+        badge(archiveHealthy ? "healthy" : overview.archive.status || "pending").replace("<span", '<span id="launch-archive-status"');
+      setText("launch-archive", overview.archive.provider === "s3" ? `${overview.archive.pending_batches} pending` : "S3 pending");
+      setText("launch-archive-sub", retention.name ? `${retention.name}: ${retention.s3_standard_days}d standard, archive after ${retention.s3_archive_after_days}d` : `${overview.archive.provider || "archive"} retention proof pending.`);
+
+      document.getElementById("launch-stream-status").outerHTML =
+        badge(streamHealthy ? "healthy" : deliveryScore > 0 ? "watch" : "pending").replace("<span", '<span id="launch-stream-status"');
+      setText("launch-stream", `${delivered}/${deliveries.length} routes delivered`);
+      setText("launch-stream-sub", `Email ${email ? email.status : "missing"}, push ${push ? push.status : "missing"}, dashboard ${dashboard ? dashboard.status : "missing"}.`);
+
+      setText("launch-action-primary", action.title || (topEvent ? `Review ${rowDetail(topEvent)}` : "Ready for paid-plan demo"));
+      setText("launch-action-primary-sub", action.detail || (topEvent ? topEvent.recommendation || topEvent.reason : "All core proof panels are visible."));
+      setText("launch-action-route", routeProblem ? `${capitalize(routeProblem.channel)} ${routeProblem.status}` : streamHealthy ? "Routes proven" : "Finish route proof");
+      setText("launch-action-route-sub", routeProblem ? routeProblem.last_error || routeProblem.summary || "Review retry queue." : "Email, push, and dashboard delivery are visible.");
+      setText("launch-action-upgrade", upgradeSignal.title || upgradeSignal.name || monetization.conversion_stage || "Family Pro");
+      setText("launch-action-upgrade-sub", upgradeSignal.detail || upgradeSignal.evidence || "Use weekly reports, notification proof, archive, and dashboard trust as the paid-plan story.");
     }
 
     function renderMonetizationRoutes(items) {

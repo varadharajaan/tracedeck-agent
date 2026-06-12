@@ -90,3 +90,8 @@
     endpoint, telemetry status endpoint, agent backend sync policy/client,
     dashboard live telemetry panels, regenerated schema, Postman/Newman
     coverage, real agent live smoke, and local verification.
+32. Phase 29: monetisation launch deck. Buyer-ready first-screen dashboard for
+    customer package readiness, anomaly push assurance, mail delivery
+    assurance, weekly report proof, host risk command, S3 archive retention,
+    notification revenue stream, Postman/Newman coverage, and local
+    verification.

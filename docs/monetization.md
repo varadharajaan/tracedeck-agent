@@ -90,6 +90,18 @@ Phase 23 adds customer operations packaging for monetisation demos:
 - escalation workbench for customer follow-up
 - upgrade proof pack for Family Pro, school, and business buyers
 
+Phase 29 adds a buyer-ready first-screen launch deck:
+
+- customer package, readiness score, notification score, trust score, and
+  conversion stage
+- anomaly push assurance with route status, recipient, provider, and proof
+- mail delivery assurance with critical alert email proof
+- weekly report proof with email and PDF readiness
+- host risk command with the top policy, anomaly, or tamper signal
+- S3 archive retention proof and backlog status
+- notification revenue stream across email, push, and dashboard channels
+- immediate buyer action, route proof, and upgrade-lever prompts
+
 This still uses the existing privacy-aware API data: typed risk categories,
 delivery routes, report readiness, health, archive, role, retention, and policy
 template metadata. It does not add credential, keylog, private-message, raw URL,
