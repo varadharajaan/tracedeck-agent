@@ -144,3 +144,12 @@ actions. It does not add collectors and does not store passwords, screenshots,
 raw URLs, page titles, alert bodies, provider secrets, push endpoints, endpoint
 payloads, private content, invoices, tokens, cookies, payment card data, or raw
 provider payloads.
+
+Phase 62 monetisation overview is metadata-only. It composes existing dashboard
+and account evidence into a first-screen commercial view: account labels, host
+counts, scores, anomaly counts, mail/push/dashboard route status, weekly report
+readiness, archive posture, package labels, owner actions, and privacy
+guardrails. It does not add collectors and does not store passwords,
+screenshots, raw URLs, page titles, alert bodies, provider secrets, push
+endpoints, endpoint payloads, private content, invoices, tokens, cookies,
+payment card data, or raw provider payloads.

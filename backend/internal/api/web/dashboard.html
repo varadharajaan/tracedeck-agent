@@ -111,6 +111,7 @@
     }
     .panel { padding: 16px; }
     main > *,
+    .monetisation-overview,
     .command-nav,
     .executive-console,
     .notification-revenue-cockpit,
@@ -159,6 +160,101 @@
       gap: 8px;
       flex-wrap: wrap;
     }
+    .monetisation-overview {
+      display: grid;
+      grid-template-columns: minmax(330px, 0.86fr) minmax(0, 2.14fr);
+      gap: 16px;
+      min-width: 0;
+    }
+    .monetisation-focus {
+      min-height: 430px;
+      display: grid;
+      align-content: space-between;
+      gap: 16px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--blue);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .monetisation-focus h2 { font-size: 22px; }
+    .monetisation-focus strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 35px;
+      line-height: 1.03;
+      overflow-wrap: anywhere;
+    }
+    .monetisation-focus p {
+      color: var(--muted);
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+    .monetisation-meter {
+      display: grid;
+      gap: 8px;
+    }
+    .monetisation-meter-track {
+      height: 12px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #eef1f5;
+    }
+    .monetisation-meter-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--teal), var(--green));
+    }
+    .monetisation-proof-grid {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .monetisation-proof {
+      min-height: 132px;
+      display: grid;
+      align-content: space-between;
+      gap: 8px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .monetisation-proof small {
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .monetisation-proof strong {
+      font-size: 19px;
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+    }
+    .monetisation-proof span { overflow-wrap: anywhere; }
+    .monetisation-board {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .monetisation-board > .panel { min-width: 0; }
+    .monetisation-list {
+      display: grid;
+      gap: 8px;
+    }
+    .monetisation-item {
+      display: grid;
+      gap: 7px;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+    }
+    .monetisation-item strong,
+    .monetisation-item span { overflow-wrap: anywhere; }
     .metric {
       min-height: 108px;
       padding: 14px;
@@ -1617,6 +1713,9 @@
       .commercial-board { grid-template-columns: 1fr; }
       .launch-grid, .launch-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .monetisation-overview { grid-template-columns: 1fr; }
+      .monetisation-proof-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .monetisation-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 720px) {
       header { grid-template-columns: 1fr; }
@@ -1624,6 +1723,8 @@
       select, button { width: 100%; }
       .auth-grid { grid-template-columns: 1fr; }
       .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .monetisation-proof-grid { grid-template-columns: 1fr; }
+      .monetisation-board { grid-template-columns: 1fr; }
       .signal-grid { grid-template-columns: 1fr; }
       .route-grid { grid-template-columns: 1fr; }
       .command-board { grid-template-columns: 1fr; }
@@ -1699,6 +1800,87 @@
         <div class="auth-actions">
           <button id="save-auth-button" class="primary" type="button">Unlock</button>
           <button id="clear-auth-button" type="button">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="monetisation-overview-section" class="monetisation-overview" aria-label="monetisation overview">
+      <div class="monetisation-focus">
+        <div class="section-head">
+          <div>
+            <h2>Monetisation Overview</h2>
+            <p>Buyer-grade command surface for endpoint productivity, anomaly urgency, push notifications, mail delivery, weekly reports, archive posture, account coverage, package value, and trust proof.</p>
+          </div>
+          <span id="monetisation-overview-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Paid product opening view</span>
+          <strong id="monetisation-overview-headline">No tenant loaded</strong>
+          <p id="monetisation-overview-detail">Waiting for account, host, anomaly, mail, push, report, archive, package, and privacy proof.</p>
+        </div>
+        <div class="monetisation-meter">
+          <div class="score-meta"><span>Paid readiness</span><span id="monetisation-overview-score">0%</span></div>
+          <div class="monetisation-meter-track"><div id="monetisation-overview-score-bar" class="monetisation-meter-fill"></div></div>
+        </div>
+        <div class="action-meta">
+          <span id="monetisation-overview-package" class="pill">package pending</span>
+          <span id="monetisation-overview-audience" class="pill">audience pending</span>
+          <span id="monetisation-overview-next" class="pill">action pending</span>
+          <span id="monetisation-overview-privacy" class="pill">metadata-only</span>
+        </div>
+      </div>
+      <div>
+        <div class="monetisation-proof-grid">
+          <div class="monetisation-proof"><small>Accounts</small><strong id="monetisation-proof-accounts">-</strong><span id="monetisation-proof-accounts-sub" class="muted">No account proof</span></div>
+          <div class="monetisation-proof"><small>Hosts</small><strong id="monetisation-proof-hosts">-</strong><span id="monetisation-proof-hosts-sub" class="muted">No host proof</span></div>
+          <div class="monetisation-proof"><small>Anomalies</small><strong id="monetisation-proof-anomalies">-</strong><span id="monetisation-proof-anomalies-sub" class="muted">No anomaly proof</span></div>
+          <div class="monetisation-proof"><small>Mail Delivery</small><strong id="monetisation-proof-mail">-</strong><span id="monetisation-proof-mail-sub" class="muted">No mail proof</span></div>
+          <div class="monetisation-proof"><small>Push Reach</small><strong id="monetisation-proof-push">-</strong><span id="monetisation-proof-push-sub" class="muted">No push proof</span></div>
+          <div class="monetisation-proof"><small>Reports</small><strong id="monetisation-proof-report">-</strong><span id="monetisation-proof-report-sub" class="muted">No report proof</span></div>
+          <div class="monetisation-proof"><small>Archive</small><strong id="monetisation-proof-archive">-</strong><span id="monetisation-proof-archive-sub" class="muted">No archive proof</span></div>
+          <div class="monetisation-proof"><small>Trust</small><strong id="monetisation-proof-trust">-</strong><span id="monetisation-proof-trust-sub" class="muted">No trust proof</span></div>
+        </div>
+        <div class="monetisation-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Anomaly Notification Proof</h2>
+                <p class="muted">The sellable alert story: anomaly, mail, push, dashboard, weekly report, retry, and suppression proof.</p>
+              </div>
+              <span id="monetisation-notification-count" class="pill">0 proof</span>
+            </div>
+            <div id="monetisation-notification-list" class="monetisation-list"><div class="empty">No notification proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Package And Revenue Fit</h2>
+                <p class="muted">Plan, audience, seats, tenant coverage, role packaging, report value, and archive retention cues.</p>
+              </div>
+              <span id="monetisation-package-count" class="pill">0 levers</span>
+            </div>
+            <div id="monetisation-package-list" class="monetisation-list"><div class="empty">No package proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Owner Action Queue</h2>
+                <p class="muted">What the owner, parent, school admin, or business manager should do next to improve conversion and retention.</p>
+              </div>
+              <span id="monetisation-action-count" class="pill">0 actions</span>
+            </div>
+            <div id="monetisation-action-list" class="monetisation-list"><div class="empty">No owner actions yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Trust And Delivery Guard</h2>
+                <p class="muted">Privacy, consent, archive, route proof, and provider-safe delivery status for paid buyers.</p>
+              </div>
+              <span id="monetisation-trust-count" class="pill">0 guardrails</span>
+            </div>
+            <div id="monetisation-trust-list" class="monetisation-list"><div class="empty">No trust guardrails yet.</div></div>
+          </div>
         </div>
       </div>
     </section>
@@ -4570,6 +4752,7 @@
 
       renderDeviceHealth(healthModel);
       renderTenantPlan(device, context);
+      renderMonetisationOverview(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderCustomerControlRoom(context.customerControlRoom);
       renderCustomerSuccessPacket(context.customerSuccessPacket);
       renderPushActivationCenter(context.pushActivationCenter);
@@ -7742,6 +7925,172 @@
       `).join("");
     }
 
+    function renderMonetisationOverview(overview, health, events, deliveries, context) {
+      const model = context || {};
+      const deliveryItems = Array.isArray(deliveries) ? deliveries : [];
+      const riskItems = Array.isArray(events) ? events : [];
+      const account = model.accountPortfolio || {};
+      const accountSummary = account.summary || {};
+      const portfolio = model.portfolioCenter || {};
+      const portfolioSummary = portfolio.summary || {};
+      const customer = model.customerControlRoom || {};
+      const customerSummary = customer.summary || {};
+      const success = model.customerSuccessPacket || {};
+      const successSummary = success.summary || {};
+      const business = model.businessDashboard || {};
+      const businessSummary = business.summary || {};
+      const monetization = model.monetizationSummary || {};
+      const operations = model.tenantOperations || {};
+      const weekly = model.weeklyReport || {};
+      const tenant = model.tenant || {};
+      const consent = model.consentCenter || {};
+      const sync = model.syncHealth || {};
+      const topEvent = topRiskEvent(riskItems);
+      const email = latestDelivery(deliveryByChannel(deliveryItems, CHANNEL.email));
+      const push = latestDelivery(deliveryByChannel(deliveryItems, CHANNEL.push));
+      const dashboard = latestDelivery(deliveryByChannel(deliveryItems, CHANNEL.dashboard));
+      const delivered = deliveryItems.filter((item) => item.status === DELIVERY_STATUS.delivered).length;
+      const deliveryScore = deliveryItems.length > 0 ? Math.round((delivered / deliveryItems.length) * 100) : Number(accountSummary.notification_score || portfolioSummary.notification_score || monetization.notification_score || operations.notification_score || 0);
+      const readiness = Number(accountSummary.account_score || customerSummary.customer_ready_score || successSummary.readiness_score || businessSummary.product_score || monetization.readiness_score || operations.monetization_readiness || 0);
+      const trust = Number(accountSummary.trust_score || portfolioSummary.trust_score || successSummary.trust_score || monetization.trust_score || 0);
+      const paidScore = Math.round((readiness + deliveryScore + (trust || readiness)) / 3);
+      const status = paidScore >= 80 && deliveryScore >= 70 ? "healthy" : paidScore >= 55 || deliveryScore > 0 ? "watch" : "attention";
+      const archive = (overview && overview.archive) || {};
+      const archivePending = Number(accountSummary.archive_pending_batches ?? portfolioSummary.archive_pending_batches ?? archive.pending_batches ?? 0);
+      const archiveProvider = archive.provider || "s3";
+      const tenantCount = Number(accountSummary.tenants_total || (account.tenants || []).length || (tenant.tenant_id ? 1 : 0));
+      const hostCount = Number(accountSummary.hosts_total || portfolioSummary.hosts_total || operations.hosts_total || sync.hosts_total || state.devices.length || 0);
+      const openAlerts = Number(accountSummary.open_alerts || portfolioSummary.open_alerts || operations.open_alerts || riskItems.filter((item) => item.status !== "resolved").length || 0);
+      const packageName = accountSummary.recommended_paid_package || portfolioSummary.recommended_paid_package || customerSummary.recommended_paid_package || businessSummary.recommended_package || monetization.plan_name || tenant.plan_id || "Package pending";
+      const audience = monetization.audience || tenant.primary_profile || businessSummary.target_audience || "family, school, coaching, business";
+      const nextAction = accountSummary.owner_next_step || portfolioSummary.owner_next_step || customerSummary.owner_next_step || successSummary.owner_next_step || businessSummary.next_best_action || "Review delivery proof and package readiness.";
+      const reportReady = Boolean(weekly.email_ready && weekly.pdf_ready);
+      const consentReady = Boolean(consent.monitoring_visible || consent.data_export_ready || consent.delete_request_ready);
+      const privacy = account.privacy_boundary || portfolio.privacy_boundary || customer.privacy_boundary || "metadata-only product overview";
+
+      document.getElementById("monetisation-overview-status").outerHTML =
+        badge(status).replace("<span", '<span id="monetisation-overview-status"');
+      setText("monetisation-overview-headline", overview ? `${packageName}: ${paidScore}% paid readiness` : "No tenant loaded");
+      setText("monetisation-overview-detail", overview
+        ? `${tenantCount || 1} tenant${tenantCount === 1 ? "" : "s"}, ${hostCount} host${hostCount === 1 ? "" : "s"}, ${openAlerts} open alerts, ${deliveryScore}% notification proof, ${archivePending} archive batches pending.`
+        : "Waiting for account, host, anomaly, mail, push, report, archive, package, and privacy proof.");
+      setText("monetisation-overview-score", `${paidScore}%`);
+      document.getElementById("monetisation-overview-score-bar").style.width = Math.max(0, Math.min(100, paidScore)) + "%";
+      setText("monetisation-overview-package", packageName);
+      setText("monetisation-overview-audience", audience);
+      setText("monetisation-overview-next", nextAction);
+      setText("monetisation-overview-privacy", privacy.includes("metadata-only") ? "metadata-only" : "privacy pending");
+
+      setText("monetisation-proof-accounts", tenantCount || "-");
+      setText("monetisation-proof-accounts-sub", tenantCount > 0 ? `${tenantCount} tenant row${tenantCount === 1 ? "" : "s"} visible` : "No account proof");
+      setText("monetisation-proof-hosts", hostCount || "-");
+      setText("monetisation-proof-hosts-sub", `${operations.hosts_attention || portfolioSummary.hosts_attention || 0} need attention`);
+      setText("monetisation-proof-anomalies", `${openAlerts} open`);
+      setText("monetisation-proof-anomalies-sub", topEvent ? `${topEvent.severity} ${topEvent.category}` : "No top anomaly selected");
+      setText("monetisation-proof-mail", email ? email.status : `${accountSummary.mail_delivered || portfolioSummary.mail_delivered || 0} sent`);
+      setText("monetisation-proof-mail-sub", email ? `${email.recipient || "recipient"} via ${email.provider || "provider"}` : "Mail delivery proof pending");
+      setText("monetisation-proof-push", push ? push.status : `${accountSummary.push_delivered || portfolioSummary.push_delivered || 0} pushed`);
+      setText("monetisation-proof-push-sub", push ? `${push.recipient || "recipient"} via ${push.provider || "provider"}` : "Push notification proof pending");
+      setText("monetisation-proof-report", reportReady ? "mail ready" : weekly.generated ? "generated" : "pending");
+      setText("monetisation-proof-report-sub", weekly.email_preview || weekly.generated_note || "Weekly report proof pending");
+      setText("monetisation-proof-archive", archivePending === 0 ? "current" : `${archivePending} pending`);
+      setText("monetisation-proof-archive-sub", `${archiveProvider} archive posture`);
+      setText("monetisation-proof-trust", trust > 0 ? `${trust}%` : consentReady ? "audit ready" : "pending");
+      setText("monetisation-proof-trust-sub", consentReady ? "Consent/data-rights proof visible" : "Privacy and trust proof pending");
+
+      const notificationProof = [
+        topEvent && {
+          title: `${capitalize(topEvent.type || "risk")} - ${rowDetail(topEvent)}`,
+          detail: topEvent.recommendation || topEvent.reason || "Review highest priority signal.",
+          badges: [topEvent.severity, topEvent.category, topEvent.status],
+          observedAt: topEvent.observed_at
+        },
+        email && {
+          title: `Email ${email.status}`,
+          detail: `${email.recipient || "recipient"} via ${email.provider || "provider"}; ${email.summary || "mail route proof"}`,
+          badges: [CHANNEL.email, email.status, `${email.attempts || 0} attempts`],
+          observedAt: email.last_attempt_at
+        },
+        push && {
+          title: `Push ${push.status}`,
+          detail: `${push.recipient || "recipient"} via ${push.provider || "provider"}; ${push.summary || "push route proof"}`,
+          badges: [CHANNEL.push, push.status, `${push.attempts || 0} attempts`],
+          observedAt: push.last_attempt_at
+        },
+        dashboard && {
+          title: `Dashboard ${dashboard.status}`,
+          detail: `${dashboard.provider || "local dashboard"}; ${dashboard.summary || "inbox fallback proof"}`,
+          badges: [CHANNEL.dashboard, dashboard.status],
+          observedAt: dashboard.last_attempt_at
+        },
+        weekly.generated && {
+          title: reportReady ? "Weekly report mail ready" : "Weekly report generated",
+          detail: weekly.email_preview || weekly.generated_note || "Weekly report packaging is visible.",
+          badges: ["weekly report", weekly.pdf_ready ? "pdf ready" : "pdf pending"],
+          observedAt: weekly.generated_at
+        }
+      ].filter(Boolean);
+
+      const packageProof = [
+        { title: packageName, detail: `${audience} package with ${hostCount} host${hostCount === 1 ? "" : "s"} and ${tenantCount || 1} tenant view.`, badges: ["package", monetization.conversion_stage || operations.customer_health || status] },
+        { title: "Notification monetisation", detail: `${deliveryScore}% notification score with email, push, dashboard, report, and retry evidence.`, badges: ["notification", `${deliveryScore}%`] },
+        { title: "Archive and report value", detail: `${archiveProvider} archive with ${archivePending} pending batches; weekly report ${reportReady ? "mail ready" : "pending"}.`, badges: ["archive", reportReady ? "report ready" : "report pending"] },
+        { title: "Account coverage", detail: `${tenantCount || 1} tenant${tenantCount === 1 ? "" : "s"} and ${hostCount} host${hostCount === 1 ? "" : "s"} visible for owner/admin filtering.`, badges: ["account", "host filter"] }
+      ];
+
+      const actionPool = []
+        .concat(account.actions || [])
+        .concat(portfolio.actions || [])
+        .concat(customer.actions || [])
+        .concat(success.actions || [])
+        .concat(business.actions || [])
+        .concat(monetization.conversion_actions || [])
+        .concat(operations.priority_signals || [])
+        .filter(Boolean);
+      const actionItems = actionPool.length > 0 ? actionPool.slice(0, 6).map((item) => ({
+        title: item.title || item.name || item.action || nextAction,
+        detail: item.detail || item.evidence || item.next_action || "Review owner action.",
+        badges: [item.severity || item.priority || "owner", item.status || item.channel || "dashboard", item.paid_tier || item.owner || packageName],
+        observedAt: item.observed_at || item.generated_at
+      })) : [{
+        title: nextAction,
+        detail: "Use the notification proof, mail delivery, push reach, archive posture, package value, and privacy guard for the next owner review.",
+        badges: ["owner", status, packageName],
+        observedAt: new Date().toISOString()
+      }];
+
+      const trustItems = [
+        { title: "Privacy boundary", detail: privacy, badges: ["metadata-only", "no sensitive payloads"] },
+        { title: "Delivery route proof", detail: `${delivered}/${deliveryItems.length} delivery events completed; ${accountSummary.route_proof_gaps || portfolioSummary.route_proof_gaps || 0} route proof gaps.`, badges: ["mail", "push", "dashboard"] },
+        { title: "Archive posture", detail: `${archiveProvider} archive has ${archivePending} pending batch${archivePending === 1 ? "" : "es"}.`, badges: ["archive", archivePending === 0 ? "current" : "backlog"] },
+        { title: "Consent and audit", detail: consentReady ? "Monitoring visibility, exports, or delete request proof is present." : "Consent and data-rights proof should be completed before paid rollout.", badges: ["trust", consentReady ? "ready" : "attention"] }
+      ];
+
+      renderMonetisationOverviewList("monetisation-notification-list", "monetisation-notification-count", notificationProof, "proof", "No notification proof yet.");
+      renderMonetisationOverviewList("monetisation-package-list", "monetisation-package-count", packageProof, "lever", "No package proof yet.");
+      renderMonetisationOverviewList("monetisation-action-list", "monetisation-action-count", actionItems, "action", "No owner actions yet.");
+      renderMonetisationOverviewList("monetisation-trust-list", "monetisation-trust-count", trustItems, "guardrail", "No trust guardrails yet.");
+    }
+
+    function renderMonetisationOverviewList(listID, countID, items, noun, emptyText) {
+      const target = document.getElementById(listID);
+      setText(countID, `${items.length} ${noun}${items.length === 1 ? "" : "s"}`);
+      if (items.length === 0) {
+        target.innerHTML = `<div class="empty">${escapeHTML(emptyText)}</div>`;
+        return;
+      }
+      target.innerHTML = items.slice(0, 6).map((item) => `
+        <div class="monetisation-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${(item.badges || []).filter(Boolean).map((entry) => badge(entry)).join(" ")}
+            ${item.observedAt ? `<span class="pill">${escapeHTML(formatAge(item.observedAt))}</span>` : ""}
+          </div>
+        </div>
+      `).join("");
+    }
+
     function renderMonetizationSummary(summary) {
       const model = summary || {};
       const health = model.revenue_health || "pending";
@@ -8827,6 +9176,7 @@
       setText("host-profile", "-");
       setText("host-os", "-");
       setText("host-last-seen", "-");
+      renderMonetisationOverview(null, {}, [], [], {});
       renderCustomerControlRoom(null);
       renderCustomerSuccessPacket(null);
       renderPushActivationCenter(null);

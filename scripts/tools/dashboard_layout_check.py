@@ -13,6 +13,13 @@ VIEWPORTS = (
 )
 
 REQUIRED_IDS = (
+    "monetisation-overview-section",
+    "monetisation-overview-status",
+    "monetisation-overview-headline",
+    "monetisation-notification-list",
+    "monetisation-package-list",
+    "monetisation-action-list",
+    "monetisation-trust-list",
     "executive-console-section",
     "executive-console-status",
     "executive-console-headline",

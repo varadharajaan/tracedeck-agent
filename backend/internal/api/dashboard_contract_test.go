@@ -43,6 +43,11 @@ func TestDashboardDOMContract(t *testing.T) {
 	}
 
 	for _, marker := range []string{
+		"Monetisation Overview",
+		"Anomaly Notification Proof",
+		"Package And Revenue Fit",
+		"Owner Action Queue",
+		"Trust And Delivery Guard",
 		"Command Navigation",
 		"Customer Control Room",
 		"Customer Value Tiles",

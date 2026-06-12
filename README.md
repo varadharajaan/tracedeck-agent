@@ -294,3 +294,12 @@ API sessions see only their allowed tenant. It is metadata-only and does not
 collect passwords, screenshots, raw URLs, page titles, alert bodies, provider
 secrets, push endpoints, endpoint payloads, private content, invoices, payment
 card data, tokens, cookies, or raw provider payloads.
+
+Phase 62 adds a Monetisation Overview as the first dashboard surface. It pulls
+existing typed metadata into one buyer-grade opening view: account coverage,
+host coverage, anomaly pressure, mail delivery, push reach, weekly report
+readiness, archive posture, package fit, owner actions, and trust guardrails.
+It does not add collectors; it remains metadata-only and avoids passwords,
+screenshots, raw URLs, page titles, alert bodies, provider secrets, push
+endpoints, endpoint payloads, private content, invoices, payment card data,
+tokens, cookies, or raw provider payloads.

@@ -771,6 +771,15 @@ contract. Newman runs
 `postman/tracedeck-backend-phase61.postman_collection.json` against the same
 live demo and covers dashboard markers plus typed account portfolio proof.
 
+The Phase 62 smoke live-boots the seeded dashboard, verifies Monetisation
+Overview, Anomaly Notification Proof, Package And Revenue Fit, Owner Action
+Queue, Trust And Delivery Guard, and mail/push/archive proof markers, checks
+the account `account-portfolio-index` API that powers the overview, verifies
+strict privacy/forbidden markers, and reruns the screenshot-free dashboard
+layout contract. Newman runs
+`postman/tracedeck-backend-phase62.postman_collection.json` against the same
+live demo and covers dashboard markers plus typed account proof.
+
 Phase 13 adds:
 
 ```powershell
