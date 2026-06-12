@@ -321,6 +321,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantCustomerControlRoom(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentSuccessPacket && r.Method == http.MethodGet:
 		s.handleTenantCustomerSuccessPacket(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentPushActivation && r.Method == http.MethodGet:
+		s.handleTenantPushActivationCenter(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentExecutiveConsole && r.Method == http.MethodGet:
 		s.handleTenantExecutiveConsole(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentNotificationRev && r.Method == http.MethodGet:
@@ -683,6 +685,23 @@ func (s *Server) handleTenantCustomerSuccessPacket(w http.ResponseWriter, r *htt
 		return
 	}
 	writeJSON(w, http.StatusOK, packet)
+}
+
+func (s *Server) handleTenantPushActivationCenter(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	center, err := s.store.TenantPushActivationCenter(r.Context(), tenantID)
+	if err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant push activation center lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, center)
 }
 
 func (s *Server) handleTenantNotificationRevenueCockpit(w http.ResponseWriter, r *http.Request, tenantID string) {

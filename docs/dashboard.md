@@ -395,6 +395,15 @@ delivery/trust promise. The dashboard shows anomaly proof, mail delivery, push
 notification reach, report/archive posture, package fit, provider readiness,
 role readiness, and privacy proof without exposing sensitive payloads.
 
+Phase 59 adds the Push Activation Center after the Customer Success Packet. It
+renders the typed `push-activation-center` API as a paid notification
+reliability surface: push delivered/retrying state, mail fallback, dashboard
+fallback, push route proof, anomaly push/mail scenarios, owner actions,
+preference and escalation readiness, provider-safe simulation readiness, and a
+privacy guard. The command navigation includes a Push jump target so a demo can
+answer "will I actually get notified?" without exposing raw endpoints, alert
+bodies, screenshots, page titles, URLs, passwords, or provider secrets.
+
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
 paid customer onboarding workflows.

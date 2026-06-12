@@ -742,6 +742,15 @@ reruns the screenshot-free dashboard layout contract. Newman runs
 `postman/tracedeck-backend-phase58.postman_collection.json` against the same
 live demo and covers dashboard markers plus typed customer success proof.
 
+The Phase 59 smoke live-boots the seeded dashboard, verifies Push Activation
+Center, Push Route Proof, Anomaly Push And Mail Scenarios, Push Owner Actions,
+and Push Privacy Guard markers, checks the tenant `push-activation-center` API,
+verifies activation score, notification score, mail fallback, dashboard
+fallback, push routes, scenarios, actions, and strict privacy/forbidden
+markers, and reruns the screenshot-free dashboard layout contract. Newman runs
+`postman/tracedeck-backend-phase59.postman_collection.json` against the same
+live demo and covers dashboard markers plus typed push activation proof.
+
 Phase 13 adds:
 
 ```powershell

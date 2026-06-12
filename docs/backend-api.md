@@ -368,6 +368,19 @@ strict metadata-only privacy boundary. It does not collect or store passwords,
 screenshots, raw URLs, page titles, alert bodies, provider secrets, push
 endpoints, endpoint payloads, invoices, private content, or payment card data.
 
+Phase 59 adds `GET /api/v1/tenants/{tenantId}/push-activation-center`. It
+composes operations, notification preferences, delivery drilldown, provider
+simulation, delivery remediation, alert inbox, push delivery timeline, and
+package billing metadata into a typed push activation contract. The response
+includes activation and notification scores; mail fallback and dashboard
+fallback counts; delivered/retrying/failed/pending push counts; route proof
+readiness; rules and alert counts using push; preference, escalation, quiet
+hours, and simulation readiness; push route rows; anomaly notification
+scenarios; owner actions; and a strict metadata-only privacy boundary. It does
+not collect or store passwords, screenshots, raw URLs, page titles, alert
+bodies, provider secrets, push endpoints, endpoint payloads, private content,
+invoices, tokens, cookies, payment card data, or raw provider payloads.
+
 Phase 31 adds `GET /api/v1/tenants/{tenantId}/sync-health` for buyer and admin
 proof that backend-visible telemetry is arriving per host. It returns reporting
 host counts, stored metadata event totals, the highest stable `local-event-*`

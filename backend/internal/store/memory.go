@@ -644,6 +644,49 @@ func (m *Memory) TenantCustomerSuccessPacket(ctx context.Context, tenantID strin
 	return buildTenantCustomerSuccessPacket(controlRoom, packageBilling, provider, roles, generatedAt), nil
 }
 
+func (m *Memory) TenantPushActivationCenter(ctx context.Context, tenantID string) (model.TenantPushActivationCenter, error) {
+	generatedAt := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	operations, err := m.TenantOperationsSummary(ctx, tenantID)
+	if err != nil {
+		return model.TenantPushActivationCenter{}, err
+	}
+	preferences, err := m.TenantNotificationPreferences(ctx, tenantID)
+	if err != nil {
+		return model.TenantPushActivationCenter{}, err
+	}
+	drilldown, err := m.TenantDeliveryDrilldown(ctx, tenantID)
+	if err != nil {
+		return model.TenantPushActivationCenter{}, err
+	}
+	provider, err := m.TenantProviderSimulationLab(ctx, tenantID)
+	if err != nil {
+		return model.TenantPushActivationCenter{}, err
+	}
+	remediation, err := m.TenantDeliveryRemediation(ctx, tenantID)
+	if err != nil {
+		return model.TenantPushActivationCenter{}, err
+	}
+	inbox, err := m.TenantAlertInbox(ctx, tenantID)
+	if err != nil {
+		return model.TenantPushActivationCenter{}, err
+	}
+	timeline, err := m.TenantDeliveryTimeline(ctx, tenantID, model.TenantDeliveryTimelineFilter{
+		Channel: constants.DeliveryChannelPush,
+		Limit:   20,
+	})
+	if err != nil {
+		return model.TenantPushActivationCenter{}, err
+	}
+	packageBilling, err := m.TenantPackageBillingReadiness(ctx, tenantID)
+	if err != nil {
+		return model.TenantPushActivationCenter{}, err
+	}
+
+	return buildTenantPushActivationCenter(operations, preferences, drilldown, provider, remediation, inbox, timeline, packageBilling, generatedAt), nil
+}
+
 func (m *Memory) deliveriesForTenantLocked(tenantID string) []model.AlertDelivery {
 	deliveries := make([]model.AlertDelivery, 0)
 	for _, device := range m.devices {
@@ -5840,6 +5883,332 @@ func customerSuccessPacketActions(controlActions []model.TenantCustomerControlAc
 		})
 	}
 	return actions
+}
+
+func buildTenantPushActivationCenter(
+	operations model.TenantOperationsSummary,
+	preferences model.NotificationPreferenceCenter,
+	drilldown model.TenantDeliveryDrilldown,
+	provider model.TenantProviderSimulationLab,
+	remediation model.TenantDeliveryRemediation,
+	inbox model.TenantAlertInbox,
+	timeline model.TenantDeliveryTimeline,
+	packageBilling model.TenantPackageBillingReadiness,
+	generatedAt time.Time,
+) model.TenantPushActivationCenter {
+	routes := pushActivationRoutes(drilldown.Routes, provider.Routes, remediation.Actions)
+	summary := pushActivationSummary(operations, preferences, drilldown, provider, remediation, inbox, timeline, packageBilling, routes)
+	summary.Status = pushActivationStatus(summary)
+	summary.Headline = pushActivationHeadline(summary)
+	summary.Detail = pushActivationDetail(summary)
+	summary.OwnerNextStep = pushActivationNextStep(summary)
+
+	return model.TenantPushActivationCenter{
+		TenantID:        operations.TenantID,
+		TenantName:      operations.TenantName,
+		PlanID:          operations.PlanID,
+		PlanName:        operations.PlanName,
+		Audience:        firstNonEmpty(packageBilling.Audience, preferences.Audience, constants.PlanFamilyPro),
+		Summary:         summary,
+		Routes:          routes,
+		Scenarios:       pushActivationScenarios(summary),
+		Actions:         pushActivationActions(summary, routes, generatedAt),
+		PrivacyBoundary: constants.PushActivationPrivacyNote,
+		GeneratedAt:     generatedAt,
+	}
+}
+
+func pushActivationSummary(
+	operations model.TenantOperationsSummary,
+	preferences model.NotificationPreferenceCenter,
+	drilldown model.TenantDeliveryDrilldown,
+	provider model.TenantProviderSimulationLab,
+	remediation model.TenantDeliveryRemediation,
+	inbox model.TenantAlertInbox,
+	timeline model.TenantDeliveryTimeline,
+	packageBilling model.TenantPackageBillingReadiness,
+	routes []model.TenantPushActivationRoute,
+) model.TenantPushActivationSummary {
+	summary := model.TenantPushActivationSummary{
+		NotificationScore:      operations.NotificationScore,
+		MailDelivered:          operations.EmailDelivered,
+		DashboardDelivered:     operations.DashboardDelivered,
+		PushPreferenceEnabled:  preferences.Summary.PushEnabled,
+		PushEscalationEnabled:  stringSliceHas(preferences.Escalation.Channels, constants.DeliveryChannelPush),
+		QuietHoursProtected:    preferences.Summary.QuietHoursEnabled,
+		PushSimulationReady:    provider.Summary.PushReady,
+		AlertRulesUsingPush:    pushPreferenceRules(preferences.Rules),
+		AlertsWithPush:         inbox.Summary.WithPush,
+		RecommendedPaidPackage: firstNonEmpty(packageBilling.Summary.RecommendedPackage, provider.Summary.RecommendedPaidPackage, operations.PlanName, constants.PlanFamilyPro),
+	}
+	for _, item := range timeline.Items {
+		switch item.Status {
+		case constants.DeliveryStatusDelivered:
+			summary.PushDelivered++
+		case constants.DeliveryStatusRetrying:
+			summary.PushRetrying++
+		case constants.DeliveryStatusFailed:
+			summary.PushFailed++
+		case constants.DeliveryStatusPending:
+			summary.PushPending++
+		}
+	}
+	for _, route := range routes {
+		summary.PushRoutesTotal++
+		if route.ProofState == constants.DeliveryProofStateCustomer || route.ProofState == constants.DeliveryProofStateRehearsed || route.SimulationStatus == constants.StatusHealthy {
+			summary.PushRoutesReady++
+		} else {
+			summary.PushRoutesNeedingProof++
+		}
+	}
+	if summary.PushRoutesTotal == 0 {
+		for _, route := range drilldown.Routes {
+			if route.Channel == constants.DeliveryChannelPush {
+				summary.PushRoutesTotal++
+				summary.PushRoutesNeedingProof++
+			}
+		}
+	}
+	routeScore := 0
+	if summary.PushRoutesTotal > 0 {
+		routeScore = (summary.PushRoutesReady * 100) / summary.PushRoutesTotal
+	}
+	deliveryScore := deliveryValueScore(summary.PushDelivered)
+	if summary.PushDelivered == 0 && summary.PushRetrying > 0 {
+		deliveryScore = 55
+	}
+	summary.ActivationScore = averageScore(
+		operations.NotificationScore,
+		routeScore,
+		deliveryScore,
+		scoreFromBool(summary.PushPreferenceEnabled),
+		scoreFromBool(summary.PushEscalationEnabled),
+		scoreFromBool(summary.PushSimulationReady),
+		scoreFromBool(remediation.Summary.PushProtected),
+	)
+	return summary
+}
+
+func pushActivationRoutes(drillRoutes []model.TenantDeliveryDrilldownRoute, providerRoutes []model.TenantProviderSimulationRoute, remediationActions []model.TenantDeliveryRemediationAction) []model.TenantPushActivationRoute {
+	providerByRoute := make(map[string]model.TenantProviderSimulationRoute)
+	for _, route := range providerRoutes {
+		if route.Channel == constants.DeliveryChannelPush {
+			providerByRoute[route.RouteID] = route
+		}
+	}
+	remediationByRoute := make(map[string]model.TenantDeliveryRemediationAction)
+	for _, action := range remediationActions {
+		if action.Channel == constants.DeliveryChannelPush {
+			remediationByRoute[action.RouteID] = action
+		}
+	}
+	routes := make([]model.TenantPushActivationRoute, 0)
+	for _, route := range drillRoutes {
+		if route.Channel != constants.DeliveryChannelPush {
+			continue
+		}
+		providerRoute := providerByRoute[route.RouteID]
+		remediation := remediationByRoute[route.RouteID]
+		routes = append(routes, model.TenantPushActivationRoute{
+			RouteID:              route.RouteID,
+			Provider:             route.Provider,
+			SubscriptionLabel:    route.RecipientLabel,
+			Status:               route.RouteStatus,
+			ProofState:           route.ProofState,
+			LatestDeliveryStatus: route.LatestDeliveryStatus,
+			LatestDeliveryAt:     route.LatestDeliveryAt,
+			Attempts:             route.Attempts,
+			NextRetryAt:          remediation.NextRetryAt,
+			SimulationStatus:     firstNonEmpty(providerRoute.SimulationStatus, route.RouteStatus),
+			SLATarget:            firstNonEmpty(providerRoute.SLATarget, route.SLA, "push proof within 60 seconds"),
+			EndpointStorage:      "subscription label only; raw push endpoint is not stored in TraceDeck evidence",
+			Evidence:             firstNonEmpty(providerRoute.Evidence, route.Evidence, route.RehearsalResult),
+			NextAction:           firstNonEmpty(remediation.Plan, providerRoute.NextAction, route.NextAction),
+			PaidTier:             firstNonEmpty(providerRoute.PaidTier, constants.PlanFamilyPro),
+		})
+	}
+	return routes
+}
+
+func pushActivationStatus(summary model.TenantPushActivationSummary) string {
+	switch {
+	case summary.PushFailed > 0:
+		return constants.StatusAttention
+	case summary.PushRetrying > 0 || summary.PushRoutesNeedingProof > 0 || !summary.PushPreferenceEnabled || !summary.PushEscalationEnabled:
+		return constants.StatusWatch
+	case summary.ActivationScore >= 80:
+		return constants.StatusHealthy
+	default:
+		return constants.StatusPending
+	}
+}
+
+func pushActivationHeadline(summary model.TenantPushActivationSummary) string {
+	switch {
+	case summary.PushFailed > 0:
+		return fmt.Sprintf("%d push delivery failure%s need provider-safe remediation", summary.PushFailed, pluralSuffix(summary.PushFailed))
+	case summary.PushRetrying > 0:
+		return fmt.Sprintf("%d push delivery%s are retrying with setup evidence visible", summary.PushRetrying, pluralSuffix(summary.PushRetrying))
+	case summary.PushRoutesNeedingProof > 0:
+		return fmt.Sprintf("%d push route%s need proof before the buyer demo", summary.PushRoutesNeedingProof, pluralSuffix(summary.PushRoutesNeedingProof))
+	case summary.PushDelivered > 0:
+		return fmt.Sprintf("%d push delivery proof row%s support immediate anomaly notifications", summary.PushDelivered, pluralSuffix(summary.PushDelivered))
+	default:
+		return "Push activation is configured and ready for rehearsal"
+	}
+}
+
+func pushActivationDetail(summary model.TenantPushActivationSummary) string {
+	return fmt.Sprintf("%d delivered, %d retrying, %d failed, %d/%d routes ready, %d push rules, %d alerts with push, preference %s, escalation %s, simulation %s.",
+		summary.PushDelivered,
+		summary.PushRetrying,
+		summary.PushFailed,
+		summary.PushRoutesReady,
+		summary.PushRoutesTotal,
+		summary.AlertRulesUsingPush,
+		summary.AlertsWithPush,
+		boolReady(summary.PushPreferenceEnabled),
+		boolReady(summary.PushEscalationEnabled),
+		boolReady(summary.PushSimulationReady),
+	)
+}
+
+func pushActivationNextStep(summary model.TenantPushActivationSummary) string {
+	switch {
+	case summary.PushRetrying > 0:
+		return "Run provider-safe push retry rehearsal and keep dashboard fallback visible."
+	case summary.PushFailed > 0:
+		return "Plan push remediation before promising immediate anomaly notification."
+	case summary.PushRoutesNeedingProof > 0:
+		return "Run push dry-run simulation and attach the metadata-only proof to the customer packet."
+	case !summary.PushPreferenceEnabled:
+		return "Enable push in the notification preference center for high and critical anomaly rules."
+	case !summary.PushEscalationEnabled:
+		return "Add push to escalation channels so urgent anomalies do not wait for weekly review."
+	default:
+		return "Use push activation proof in the Family Pro and school onboarding demo."
+	}
+}
+
+func pushActivationScenarios(summary model.TenantPushActivationSummary) []model.TenantPushActivationScenario {
+	status := constants.StatusHealthy
+	if summary.PushRetrying > 0 || summary.PushRoutesNeedingProof > 0 {
+		status = constants.StatusWatch
+	}
+	return []model.TenantPushActivationScenario{
+		{
+			ID:         "non-study-youtube-push",
+			Title:      "Non-study YouTube push",
+			Trigger:    "non-study YouTube crosses the configured threshold",
+			Channels:   []string{constants.DeliveryChannelPush, constants.DeliveryChannelDashboard},
+			Status:     status,
+			BuyerValue: "Shows parents immediate awareness without alert bodies, raw URLs, or video titles.",
+			StudySafe:  true,
+			PaidTier:   constants.PlanFamilyPro,
+		},
+		{
+			ID:         "media-playback-push",
+			Title:      "Media playback push",
+			Trigger:    "VLC or media playback appears during protected study hours",
+			Channels:   []string{constants.DeliveryChannelPush, constants.DeliveryChannelEmail, constants.DeliveryChannelDashboard},
+			Status:     status,
+			BuyerValue: "Turns movie-player anomalies into visible owner action without collecting screenshots.",
+			StudySafe:  true,
+			PaidTier:   constants.PlanFamilyPro,
+		},
+		{
+			ID:         "tamper-fallback-push",
+			Title:      "Tamper fallback push",
+			Trigger:    "agent, archive, route, or sync trust signal needs attention",
+			Channels:   []string{constants.DeliveryChannelPush, constants.DeliveryChannelDashboard},
+			Status:     status,
+			BuyerValue: "Keeps trust and archive posture visible even when a provider route retries.",
+			StudySafe:  true,
+			PaidTier:   constants.PlanSchool,
+		},
+	}
+}
+
+func pushActivationActions(summary model.TenantPushActivationSummary, routes []model.TenantPushActivationRoute, generatedAt time.Time) []model.TenantPushActivationAction {
+	actions := make([]model.TenantPushActivationAction, 0, 6)
+	for _, route := range routes {
+		if len(actions) >= 3 {
+			break
+		}
+		if route.ProofState == constants.DeliveryProofStateCustomer && route.LatestDeliveryStatus == constants.DeliveryStatusDelivered {
+			continue
+		}
+		actions = append(actions, model.TenantPushActivationAction{
+			Title:      "Close push route proof",
+			Detail:     firstNonEmpty(route.NextAction, "Run provider-safe push simulation and verify retry timing."),
+			Owner:      firstNonEmpty(route.SubscriptionLabel, constants.RoleParent),
+			Status:     route.Status,
+			Severity:   constants.SeverityMedium,
+			SLA:        firstNonEmpty(route.SLATarget, "push proof within 60 seconds"),
+			PaidTier:   firstNonEmpty(route.PaidTier, constants.PlanFamilyPro),
+			Source:     "push activation route",
+			ObservedAt: generatedAt,
+		})
+	}
+	if !summary.PushPreferenceEnabled {
+		actions = append(actions, model.TenantPushActivationAction{
+			Title:      "Enable push preferences",
+			Detail:     "High and critical anomaly rules should include push plus dashboard fallback.",
+			Owner:      constants.RoleBusinessManager,
+			Status:     constants.StatusWatch,
+			Severity:   constants.SeverityMedium,
+			SLA:        "before paid demo",
+			PaidTier:   constants.PlanFamilyPro,
+			Source:     "notification preference center",
+			ObservedAt: generatedAt,
+		})
+	}
+	if !summary.PushEscalationEnabled {
+		actions = append(actions, model.TenantPushActivationAction{
+			Title:      "Add push escalation",
+			Detail:     "Escalation should include push for urgent anomaly awareness with dashboard fallback.",
+			Owner:      constants.RoleParent,
+			Status:     constants.StatusWatch,
+			Severity:   constants.SeverityMedium,
+			SLA:        "before onboarding",
+			PaidTier:   constants.PlanFamilyPro,
+			Source:     "notification escalation policy",
+			ObservedAt: generatedAt,
+		})
+	}
+	if len(actions) == 0 {
+		actions = append(actions, model.TenantPushActivationAction{
+			Title:      "Use push activation proof",
+			Detail:     "Show route, preference, escalation, simulation, and retry metadata in the next customer review.",
+			Owner:      constants.RoleBusinessManager,
+			Status:     constants.StatusHealthy,
+			Severity:   constants.SeverityInfo,
+			SLA:        "weekly review",
+			PaidTier:   firstNonEmpty(summary.RecommendedPaidPackage, constants.PlanFamilyPro),
+			Source:     "push activation center",
+			ObservedAt: generatedAt,
+		})
+	}
+	return actions
+}
+
+func pushPreferenceRules(rules []model.NotificationPreferenceRule) int {
+	count := 0
+	for _, rule := range rules {
+		if stringSliceHas(rule.Channels, constants.DeliveryChannelPush) {
+			count++
+		}
+	}
+	return count
+}
+
+func stringSliceHas(values []string, expected string) bool {
+	for _, value := range values {
+		if strings.EqualFold(strings.TrimSpace(value), expected) {
+			return true
+		}
+	}
+	return false
 }
 
 func pluralSuffix(count int) string {

@@ -738,6 +738,86 @@ type TenantCustomerSuccessPacket struct {
 	GeneratedAt     time.Time                              `json:"generated_at"`
 }
 
+type TenantPushActivationSummary struct {
+	Status                 string `json:"status"`
+	Headline               string `json:"headline"`
+	Detail                 string `json:"detail"`
+	ActivationScore        int    `json:"activation_score"`
+	NotificationScore      int    `json:"notification_score"`
+	MailDelivered          int    `json:"mail_delivered"`
+	DashboardDelivered     int    `json:"dashboard_delivered"`
+	PushDelivered          int    `json:"push_delivered"`
+	PushRetrying           int    `json:"push_retrying"`
+	PushFailed             int    `json:"push_failed"`
+	PushPending            int    `json:"push_pending"`
+	PushRoutesTotal        int    `json:"push_routes_total"`
+	PushRoutesReady        int    `json:"push_routes_ready"`
+	PushRoutesNeedingProof int    `json:"push_routes_needing_proof"`
+	AlertRulesUsingPush    int    `json:"alert_rules_using_push"`
+	AlertsWithPush         int    `json:"alerts_with_push"`
+	PushPreferenceEnabled  bool   `json:"push_preference_enabled"`
+	PushEscalationEnabled  bool   `json:"push_escalation_enabled"`
+	QuietHoursProtected    bool   `json:"quiet_hours_protected"`
+	PushSimulationReady    bool   `json:"push_simulation_ready"`
+	RecommendedPaidPackage string `json:"recommended_paid_package"`
+	OwnerNextStep          string `json:"owner_next_step"`
+}
+
+type TenantPushActivationRoute struct {
+	RouteID              string     `json:"route_id"`
+	Provider             string     `json:"provider"`
+	SubscriptionLabel    string     `json:"subscription_label"`
+	Status               string     `json:"status"`
+	ProofState           string     `json:"proof_state"`
+	LatestDeliveryStatus string     `json:"latest_delivery_status"`
+	LatestDeliveryAt     *time.Time `json:"latest_delivery_at,omitempty"`
+	Attempts             int        `json:"attempts"`
+	NextRetryAt          *time.Time `json:"next_retry_at,omitempty"`
+	SimulationStatus     string     `json:"simulation_status"`
+	SLATarget            string     `json:"sla_target"`
+	EndpointStorage      string     `json:"endpoint_storage"`
+	Evidence             string     `json:"evidence"`
+	NextAction           string     `json:"next_action"`
+	PaidTier             string     `json:"paid_tier"`
+}
+
+type TenantPushActivationScenario struct {
+	ID         string   `json:"id"`
+	Title      string   `json:"title"`
+	Trigger    string   `json:"trigger"`
+	Channels   []string `json:"channels"`
+	Status     string   `json:"status"`
+	BuyerValue string   `json:"buyer_value"`
+	StudySafe  bool     `json:"study_safe"`
+	PaidTier   string   `json:"paid_tier"`
+}
+
+type TenantPushActivationAction struct {
+	Title      string    `json:"title"`
+	Detail     string    `json:"detail"`
+	Owner      string    `json:"owner"`
+	Status     string    `json:"status"`
+	Severity   string    `json:"severity"`
+	SLA        string    `json:"sla"`
+	PaidTier   string    `json:"paid_tier"`
+	Source     string    `json:"source"`
+	ObservedAt time.Time `json:"observed_at"`
+}
+
+type TenantPushActivationCenter struct {
+	TenantID        string                         `json:"tenant_id"`
+	TenantName      string                         `json:"tenant_name"`
+	PlanID          string                         `json:"plan_id"`
+	PlanName        string                         `json:"plan_name"`
+	Audience        string                         `json:"audience"`
+	Summary         TenantPushActivationSummary    `json:"summary"`
+	Routes          []TenantPushActivationRoute    `json:"routes"`
+	Scenarios       []TenantPushActivationScenario `json:"scenarios"`
+	Actions         []TenantPushActivationAction   `json:"actions"`
+	PrivacyBoundary string                         `json:"privacy_boundary"`
+	GeneratedAt     time.Time                      `json:"generated_at"`
+}
+
 type TenantActivityView struct {
 	ID          string                   `json:"id"`
 	TenantID    string                   `json:"tenant_id"`

@@ -117,3 +117,13 @@ readiness, privacy assurances, buyer objection answers, and owner actions. It
 does not add collectors and does not store passwords, screenshots, raw URLs,
 page titles, alert bodies, provider secrets, push endpoints, endpoint payloads,
 private content, invoices, tokens, cookies, or payment card data.
+
+Phase 59 push activation center is metadata-only. It exposes push route labels,
+subscription labels, proof state, retry posture, push delivery status, mail
+fallback count, dashboard fallback count, notification preference coverage,
+escalation coverage, quiet-hours status, provider-safe simulation status,
+scenario labels, paid-tier labels, and owner actions. It does not add
+collectors and does not store passwords, screenshots, raw URLs, page titles,
+alert bodies, provider secrets, push endpoints, endpoint payloads, private
+content, invoices, tokens, cookies, payment card data, or raw provider
+payloads.
