@@ -24,8 +24,10 @@ Phase 9 expands the dashboard into a host-level command center for productivity,
 risk, archive, and alert-delivery visibility. Phase 12 upgrades the same
 embedded surface into a richer monetisation-ready operations dashboard with
 device health, notification operations, product packaging, policy marketplace,
-and retention plan panels. It remains a lightweight static HTML/CSS/JavaScript
-asset embedded into the backend binary.
+and retention plan panels. Phase 16 adds an explicit buyer-facing operations
+layer for anomaly notification inbox, mail delivery center, push routing, alert
+route SLA details, and paid packaging cues. It remains a lightweight static
+HTML/CSS/JavaScript asset embedded into the backend binary.
 
 The dashboard reads the base backend endpoints:
 
@@ -57,8 +59,15 @@ Current panels:
 - S3 archive health and backlog
 - device health score, CPU, memory, disk, heartbeat, and recommendation
 - plan readiness and tenant packaging
+- anomaly notification inbox with email, push, and dashboard route badges
+- mail delivery center with recipient, subject, preview, PDF readiness, and
+  last-send status
 - notification operations for email, push, dashboard feed, and retry queue
+- route-level email SLA, push routing, dashboard feed provider, attempts,
+  retry, and error visibility
 - product packaging for weekly report, policy marketplace, roles, and audit
+- paid trigger and upgrade-path cues for Family Pro, school, and business
+  packaging
 - weekly report email/PDF readiness
 - risk timeline
 - policy violation table
