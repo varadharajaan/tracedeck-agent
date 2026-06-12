@@ -22,3 +22,19 @@ Phase 6 adds the first backend representation for monetizable packaging:
 The initial storage is in-memory and does not perform billing. It creates the
 typed API contract needed before Stripe, Paddle, SSO, durable tenant storage, or
 remote admin dashboards are added.
+
+Phase 16 makes the embedded dashboard itself more sellable. The host view now
+surfaces:
+
+- anomaly notification inbox with routed delivery badges
+- mail delivery center for weekly report subject, preview, PDF readiness, and
+  last-send status
+- push notification routing with provider, retry, attempts, and last error
+- email SLA and local dashboard feed route health
+- paid trigger and upgrade-path cues for Family Pro, school, and business
+  packaging
+
+This still uses the existing privacy-aware API data: typed risk categories,
+delivery routes, report readiness, health, archive, role, retention, and policy
+template metadata. It does not add credential, keylog, private-message, raw URL,
+page-title, camera, microphone, or covert screen collection.

@@ -23,6 +23,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase12.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase13.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase14.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase16.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
@@ -144,6 +145,22 @@ verifies generated weekly report JSON, verifies the PDF endpoint returns
 `application/pdf`, confirms the dashboard weekly report panel still renders,
 and stops the backend. Newman runs
 `postman/tracedeck-backend-phase14.postman_collection.json` against a live
+API-key-protected backend.
+
+Phase 16 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase16.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase16.ps1
+```
+
+The Phase 16 smoke builds and boots the backend on localhost, creates a tenant,
+enrolls a host, verifies policy/anomaly/tamper signals, confirms email, push,
+and dashboard alert delivery routes, checks weekly report email/PDF readiness,
+and asserts the embedded dashboard contains the anomaly notification inbox, mail
+delivery center, push routing, route SLA, paid trigger, marketplace, and
+retention panels. Newman runs
+`postman/tracedeck-backend-phase16.postman_collection.json` against a live
 API-key-protected backend.
 
 Phase 13 adds:

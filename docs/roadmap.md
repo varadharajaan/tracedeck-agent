@@ -42,3 +42,7 @@
     JSON from host overview, email subject/preview readiness, lightweight PDF
     endpoint, dashboard readiness visibility, docs, Postman/Newman coverage,
     and local verification.
+18. Phase 16: monetisation dashboard upgrade. Embedded dashboard panels for
+    anomaly notification inbox, mail delivery center, push routing, alert route
+    SLA visibility, paid trigger, upgrade path, docs, Postman/Newman coverage,
+    and local verification.

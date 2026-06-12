@@ -243,6 +243,50 @@
       font-weight: 700;
       overflow-wrap: anywhere;
     }
+    .route-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .route-lane {
+      min-height: 112px;
+      display: grid;
+      gap: 8px;
+      align-content: start;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+    }
+    .route-lane strong, .route-lane span {
+      overflow-wrap: anywhere;
+    }
+    .route-lane strong {
+      font-size: 16px;
+      line-height: 1.25;
+    }
+    .route-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .summary-list {
+      display: grid;
+      gap: 8px;
+    }
+    .summary-line {
+      display: grid;
+      grid-template-columns: 126px minmax(0, 1fr);
+      gap: 8px;
+      align-items: baseline;
+    }
+    .summary-line span:first-child {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
     .score-row {
       display: grid;
       gap: 7px;
@@ -352,6 +396,8 @@
       select, button { width: 100%; }
       .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .signal-grid { grid-template-columns: 1fr; }
+      .route-grid { grid-template-columns: 1fr; }
+      .summary-line { grid-template-columns: 1fr; }
       .kv div { grid-template-columns: 1fr; }
       main { width: min(100vw - 20px, 1400px); }
     }
@@ -492,6 +538,35 @@
           <div class="panel">
             <div class="section-head">
               <div>
+                <h2>Anomaly Notification Inbox</h2>
+                <p class="muted">Actionable policy, anomaly, and tamper alerts with routed delivery state</p>
+              </div>
+              <span id="inbox-count" class="pill">0 alerts</span>
+            </div>
+            <div id="alert-inbox" class="timeline"><div class="empty">No alert inbox items yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Mail Delivery Center</h2>
+                <p class="muted">Weekly report packaging and critical alert email readiness</p>
+              </div>
+              <span id="mail-status" class="badge pending">pending</span>
+            </div>
+            <div class="summary-list">
+              <div class="summary-line"><span>Recipient</span><strong id="mail-recipient">-</strong></div>
+              <div class="summary-line"><span>Subject</span><strong id="mail-subject">-</strong></div>
+              <div class="summary-line"><span>Preview</span><strong id="mail-preview">-</strong></div>
+              <div class="summary-line"><span>PDF</span><strong id="mail-pdf">-</strong></div>
+              <div class="summary-line"><span>Last Send</span><strong id="mail-last-send">-</strong></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-grid">
+          <div class="panel">
+            <div class="section-head">
+              <div>
                 <h2>Notification Operations</h2>
                 <p class="muted">Mail, push, dashboard feed, and retries</p>
               </div>
@@ -502,6 +577,23 @@
               <div class="signal"><small>Push</small><strong id="notify-push">-</strong><span id="notify-push-sub" class="muted">No route</span></div>
               <div class="signal"><small>Dashboard Feed</small><strong id="notify-dashboard">-</strong><span id="notify-dashboard-sub" class="muted">No route</span></div>
               <div class="signal"><small>Retry Queue</small><strong id="notify-retry">-</strong><span id="notify-retry-sub" class="muted">No retries</span></div>
+            </div>
+            <div class="route-grid" style="margin-top: 12px;">
+              <div class="route-lane">
+                <span class="muted">Email SLA</span>
+                <strong id="email-sla">-</strong>
+                <div id="email-sla-meta" class="route-meta"><span class="pill">no route</span></div>
+              </div>
+              <div class="route-lane">
+                <span class="muted">Push Routing</span>
+                <strong id="push-route">-</strong>
+                <div id="push-route-meta" class="route-meta"><span class="pill">no route</span></div>
+              </div>
+              <div class="route-lane">
+                <span class="muted">Dashboard Feed</span>
+                <strong id="dashboard-route">-</strong>
+                <div id="dashboard-route-meta" class="route-meta"><span class="pill">no route</span></div>
+              </div>
             </div>
           </div>
           <div class="panel">
@@ -517,6 +609,11 @@
               <div class="signal"><small>Policy Marketplace</small><strong id="template-count">-</strong><span id="template-sub" class="muted">Templates</span></div>
               <div class="signal"><small>Role Views</small><strong id="role-count">-</strong><span id="role-sub" class="muted">Dashboards</span></div>
               <div class="signal"><small>Audit Center</small><strong id="audit-count">-</strong><span id="audit-sub" class="muted">Changes</span></div>
+            </div>
+            <div class="summary-list" style="margin-top: 12px;">
+              <div class="summary-line"><span>Positioning</span><strong>Endpoint productivity and risk observability</strong></div>
+              <div class="summary-line"><span>Paid Trigger</span><strong id="paid-trigger">-</strong></div>
+              <div class="summary-line"><span>Upgrade Path</span><strong id="upgrade-path">-</strong></div>
             </div>
           </div>
         </section>
@@ -769,7 +866,8 @@
       renderDeviceHealth(healthModel);
       renderTenantPlan(device, context);
       renderNotificationOperations(deliveries.items);
-      renderProductPackaging(context);
+      renderAlertInbox(policy.items.concat(anomalies.items, tamper.items), deliveries.items);
+      renderProductPackaging({ ...context, deliveries: deliveries.items });
       renderMarketplace(context.templates);
       renderRetentionTiers(context.retentionTiers);
       renderTimeline(policy.items.concat(anomalies.items, tamper.items));
@@ -827,12 +925,27 @@
       };
     }
 
+    function latestDelivery(items) {
+      if (items.length === 0) return null;
+      return items.slice().sort((left, right) => new Date(right.last_attempt_at) - new Date(left.last_attempt_at))[0];
+    }
+
+    function routeMeta(item) {
+      if (!item) return '<span class="pill">no route</span>';
+      const retry = item.next_retry_at ? `<span class="pill">retry ${escapeHTML(formatDate(item.next_retry_at))}</span>` : "";
+      const error = item.last_error ? `<span class="pill">${escapeHTML(item.last_error)}</span>` : "";
+      return `${badge(item.status)} <span class="pill">${escapeHTML(item.provider)}</span> <span class="pill">${escapeHTML(item.attempts)} attempt${item.attempts === 1 ? "" : "s"}</span> ${retry} ${error}`;
+    }
+
     function renderNotificationOperations(items) {
       const email = deliverySummary(deliveryByChannel(items, CHANNEL.email));
       const push = deliverySummary(deliveryByChannel(items, CHANNEL.push));
       const dashboard = deliverySummary(deliveryByChannel(items, CHANNEL.dashboard));
       const retrying = items.filter((item) => item.status === DELIVERY_STATUS.retrying || item.status === DELIVERY_STATUS.failed || item.status === DELIVERY_STATUS.pending);
       const problemCount = retrying.length;
+      const emailLatest = latestDelivery(deliveryByChannel(items, CHANNEL.email));
+      const pushLatest = latestDelivery(deliveryByChannel(items, CHANNEL.push));
+      const dashboardLatest = latestDelivery(deliveryByChannel(items, CHANNEL.dashboard));
 
       setText("notify-email", email.label);
       setText("notify-email-sub", email.detail);
@@ -844,6 +957,12 @@
       setText("notify-retry-sub", problemCount > 0 ? "Retry or failure needs attention" : "No retries");
       document.getElementById("notification-health").outerHTML =
         badge(problemCount === 0 ? "healthy" : "watch").replace("<span", '<span id="notification-health"');
+      setText("email-sla", emailLatest ? emailLatest.recipient : "No email route");
+      document.getElementById("email-sla-meta").innerHTML = routeMeta(emailLatest);
+      setText("push-route", pushLatest ? pushLatest.recipient : "No push route");
+      document.getElementById("push-route-meta").innerHTML = routeMeta(pushLatest);
+      setText("dashboard-route", dashboardLatest ? dashboardLatest.recipient : "No dashboard route");
+      document.getElementById("dashboard-route-meta").innerHTML = routeMeta(dashboardLatest);
     }
 
     function renderProductPackaging(context) {
@@ -862,6 +981,52 @@
       setText("audit-count", auditCount);
       setText("audit-sub", "tenant and policy history");
       setText("catalog-count", `${templateCount} templates`);
+      setText("paid-trigger", reportReady ? "weekly report, email, archive, and role dashboard ready" : "finish report delivery checks");
+      setText("upgrade-path", templateCount > 2 ? "Family Pro to School/Business packaging" : "add more policy templates");
+      renderMailDelivery(weekly, context.deliveries || []);
+    }
+
+    function renderMailDelivery(weekly, deliveries) {
+      const latestEmail = latestDelivery(deliveryByChannel(deliveries, CHANNEL.email));
+      const mailReady = weekly.email_ready && (latestEmail ? latestEmail.status === DELIVERY_STATUS.delivered : true);
+      document.getElementById("mail-status").outerHTML =
+        badge(mailReady ? "delivered" : "watch").replace("<span", '<span id="mail-status"');
+      setText("mail-recipient", latestEmail ? latestEmail.recipient : "configured report recipients");
+      setText("mail-subject", weekly.email_subject || "TraceDeck weekly report");
+      setText("mail-preview", weekly.email_preview || weekly.generated_note || "No preview available");
+      setText("mail-pdf", weekly.pdf_ready ? "PDF ready for email attachment" : "PDF pending");
+      setText("mail-last-send", latestEmail ? formatDate(latestEmail.last_attempt_at) : "report not sent yet");
+    }
+
+    function renderAlertInbox(events, deliveries) {
+      const deliveryByEvent = deliveries.reduce((index, delivery) => {
+        if (!index[delivery.event_id]) index[delivery.event_id] = [];
+        index[delivery.event_id].push(delivery);
+        return index;
+      }, {});
+      const sorted = events.slice().sort((left, right) => new Date(right.observed_at) - new Date(left.observed_at)).slice(0, 6);
+      setText("inbox-count", `${sorted.length} alerts`);
+      const target = document.getElementById("alert-inbox");
+      if (sorted.length === 0) {
+        target.innerHTML = '<div class="empty">No alert inbox items yet.</div>';
+        return;
+      }
+      target.innerHTML = sorted.map((event) => {
+        const routes = deliveryByEvent[event.id] || [];
+        const routeBadges = routes.length === 0
+          ? '<span class="pill">no delivery route</span>'
+          : routes.map((route) => `${badge(route.channel)} ${badge(route.status)}`).join(" ");
+        return `
+          <div class="timeline-item">
+            <span class="dot ${escapeHTML(event.severity)}"></span>
+            <div>
+              <h3>${escapeHTML(rowDetail(event))}</h3>
+              <p class="muted">${escapeHTML(event.reason)}</p>
+              <p>${badge(event.severity)} ${badge(event.category)} ${routeBadges}</p>
+            </div>
+          </div>
+        `;
+      }).join("");
     }
 
     function renderMarketplace(templates) {
