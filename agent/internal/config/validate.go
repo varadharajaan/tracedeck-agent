@@ -62,6 +62,9 @@ func (p Policy) Validate() error {
 		if p.Alerts.Email.Provider == EmailProvider(constants.EmailProviderNone) {
 			errs = append(errs, fieldError(constants.ConfigFieldEmailProvider, constants.ConfigErrorEmailProviderRequired))
 		}
+		if strings.TrimSpace(p.Alerts.Email.From) == "" {
+			errs = append(errs, fieldError(constants.ConfigFieldEmailFrom, constants.ConfigErrorEmailSenderRequired))
+		}
 		if len(p.Alerts.Email.To) == 0 {
 			errs = append(errs, fieldError(constants.ConfigFieldEmailTo, constants.ConfigErrorEmailRecipientRequired))
 		}

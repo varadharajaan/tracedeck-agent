@@ -132,6 +132,10 @@
             "smtp"
           ]
         },
+        "from": {
+          "type": "string",
+          "format": "email"
+        },
         "to": {
           "items": {
             "type": "string"
@@ -156,6 +160,7 @@
       "type": "object",
       "required": [
         "provider",
+        "from",
         "to",
         "min_severity",
         "cooldown_minutes"

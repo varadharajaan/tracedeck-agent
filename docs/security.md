@@ -24,3 +24,10 @@ Phase 8 Windows scheduled-task registration is explicit and may request UAC
 approval. The task avoids console-window flicker by launching the agent
 executable in the background, but it is not a covert monitoring mechanism.
 TraceDeck remains transparent and consent-based.
+
+Phase 17 provider-backed email keeps provider secrets out of policy files.
+SMTP credentials are read from `TRACEDECK_SMTP_*` environment variables, and
+SES credentials come from the AWS SDK default credential chain. Alert payloads
+must not include SMTP passwords, AWS credentials, raw browser URLs, cookies,
+tokens, passwords, keystrokes, private messages, camera, microphone, or hidden
+screen content.

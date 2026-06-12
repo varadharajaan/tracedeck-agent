@@ -74,6 +74,34 @@ const (
 )
 
 const (
+	EmailEnvSMTPHost      = "TRACEDECK_SMTP_HOST"
+	EmailEnvSMTPPort      = "TRACEDECK_SMTP_PORT"
+	EmailEnvSMTPUsername  = "TRACEDECK_SMTP_USERNAME"
+	EmailEnvSMTPPassword  = "TRACEDECK_SMTP_PASSWORD"
+	EmailEnvSMTPServerTLS = "TRACEDECK_SMTP_SERVER_TLS"
+	EmailEnvAWSRegion     = "AWS_REGION"
+)
+
+const (
+	DefaultSMTPPort = "25"
+	SMTPServerTLS   = "true"
+	SMTPNoTLS       = "false"
+)
+
+const (
+	EmailHeaderFrom        = "From"
+	EmailHeaderTo          = "To"
+	EmailHeaderSubject     = "Subject"
+	EmailHeaderMIMEVersion = "MIME-Version"
+	EmailHeaderContentType = "Content-Type"
+)
+
+const (
+	EmailContentTypeTextPlain = "text/plain; charset=UTF-8"
+	EmailMIMEVersion          = "1.0"
+)
+
+const (
 	DefaultLocalTTLDays      = 90
 	DefaultMaxLocalStorageMB = 2048
 	DefaultUploadInterval    = "1h"

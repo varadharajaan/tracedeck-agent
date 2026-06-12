@@ -41,6 +41,7 @@ alerts:
   enabled: true
   email:
     provider: ses
+    from: varathu09@gmail.com
     to:
       - varathu09@gmail.com
     min_severity: medium

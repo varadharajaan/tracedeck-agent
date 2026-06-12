@@ -48,6 +48,7 @@ type RunResult struct {
 	ArchiveUploaded bool
 	AlertsRaised    int
 	AlertOutboxPath string
+	AlertDelivered  bool
 	BrowserEvents   int
 	HealthEvents    int
 }
@@ -240,17 +241,20 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 		alerts := alert.NewEvaluator().Evaluate(ctx, r.policy, events)
 		result.AlertsRaised = len(alerts)
 		if len(alerts) > 0 {
-			if !r.opts.AlertDryRun {
-				return RunResult{}, fmt.Errorf("email provider delivery is not enabled in this phase; rerun with alert dry-run")
-			}
-			outboxPath, err := alert.NewLocalNotifier(r.opts.OutboxDir).Notify(ctx, r.policy, alerts)
+			notifier, deliveryMode, err := r.alertNotifier()
 			if err != nil {
 				return RunResult{}, err
 			}
-			result.AlertOutboxPath = outboxPath
+			deliveryRef, err := notifier.Notify(ctx, r.policy, alerts)
+			if err != nil {
+				return RunResult{}, err
+			}
+			result.AlertOutboxPath = deliveryRef
+			result.AlertDelivered = !r.opts.AlertDryRun
 			r.logger.Warn("alert notification staged",
 				"alert_count", len(alerts),
-				"outbox_path", outboxPath,
+				"delivery_ref", deliveryRef,
+				"delivery_mode", deliveryMode,
 				"dry_run", r.opts.AlertDryRun,
 			)
 		}
@@ -270,6 +274,17 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 	return result, nil
 }
 
+func (r *cycleRunner) alertNotifier() (alert.Notifier, string, error) {
+	if r.opts.AlertDryRun {
+		return alert.NewLocalNotifier(r.opts.OutboxDir), "local_outbox", nil
+	}
+	notifier, err := alert.NewProviderNotifier(r.policy)
+	if err != nil {
+		return nil, "", err
+	}
+	return notifier, string(r.policy.Alerts.Email.Provider), nil
+}
+
 func (r *RunResult) merge(next RunResult) {
 	r.Cycles += next.Cycles
 	r.CollectedEvents += next.CollectedEvents
@@ -284,6 +299,7 @@ func (r *RunResult) merge(next RunResult) {
 	if next.AlertOutboxPath != "" {
 		r.AlertOutboxPath = next.AlertOutboxPath
 	}
+	r.AlertDelivered = r.AlertDelivered || next.AlertDelivered
 }
 
 func parseDurationOrDefault(value string, fallback string) (time.Duration, error) {
@@ -299,7 +315,7 @@ func parseDurationOrDefault(value string, fallback string) (time.Duration, error
 
 func FormatRunResult(result RunResult) string {
 	return fmt.Sprintf(
-		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d browser_events=%d health_events=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_outbox=%s",
+		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d browser_events=%d health_events=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_delivery=%s alert_delivered=%t",
 		result.Cycles,
 		result.CollectedEvents,
 		result.StoredEvents,
@@ -309,5 +325,6 @@ func FormatRunResult(result RunResult) string {
 		result.ArchiveUploaded,
 		result.AlertsRaised,
 		result.AlertOutboxPath,
+		result.AlertDelivered,
 	)
 }
