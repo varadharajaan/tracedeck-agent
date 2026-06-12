@@ -36,3 +36,8 @@ Phase 20 consent and alert-operations panels expose trust evidence from existing
 typed backend data: alert delivery rows, audit events, collection disclosures,
 and tenant metadata. They do not add password, screenshot, private-message,
 camera, microphone, cookie, token, keylog, raw URL, or page-title collection.
+
+Phase 21 device groups and policy assignments are administrative metadata for
+managed rollout. They do not change collector permissions, do not grant remote
+access, and do not add sensitive data collection. Hosted multi-tenant rollout
+still requires explicit authentication and authorization work.

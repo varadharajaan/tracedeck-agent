@@ -242,6 +242,21 @@ API-key-protected backend, enrolls a host, checks anomaly plus email, push, and
 dashboard delivery routes, checks the consent center, and checks the dashboard
 shell.
 
+Phase 21 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase21.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase21.ps1
+```
+
+The Phase 21 smoke builds and boots the backend on localhost, creates a Family
+Pro tenant, enrolls a host, verifies seeded device groups and policy
+assignments, creates an Exam Mode device group, creates an active assignment,
+checks audit events, and asserts the dashboard contains Device Groups and Policy
+Assignments panels. Newman runs
+`postman/tracedeck-backend-phase21.postman_collection.json` against a live
+API-key-protected backend and checks the same managed rollout contract.
+
 Phase 13 adds:
 
 ```powershell

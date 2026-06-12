@@ -65,6 +65,33 @@ func TestPersistentStoreSurvivesRestart(t *testing.T) {
 	if rule.ID == "" {
 		t.Fatalf("expected alert rule id: %+v", rule)
 	}
+	group, err := first.CreateDeviceGroup(ctx, "family-varadha", model.CreateDeviceGroupRequest{
+		Name:             "Persistent exam devices",
+		Description:      "Devices assigned to exam mode",
+		Profile:          "school-laptop",
+		DeviceIDs:        []string{"persistent-device"},
+		PolicyTemplateID: "school-laptop",
+	})
+	if err != nil {
+		t.Fatalf("create device group: %v", err)
+	}
+	if group.ID == "" {
+		t.Fatalf("expected device group id: %+v", group)
+	}
+	assignment, err := first.CreatePolicyAssignment(ctx, "family-varadha", model.CreatePolicyAssignmentRequest{
+		Name:             "Persistent exam rollout",
+		TargetType:       constants.PolicyAssignmentTargetDeviceGroup,
+		TargetID:         group.ID,
+		PolicyTemplateID: "school-laptop",
+		AlertRuleIDs:     []string{rule.ID},
+		Mode:             constants.PolicyAssignmentModeActive,
+	})
+	if err != nil {
+		t.Fatalf("create policy assignment: %v", err)
+	}
+	if assignment.ID == "" {
+		t.Fatalf("expected policy assignment id: %+v", assignment)
+	}
 
 	second, err := NewPersistent(statePath)
 	if err != nil {
@@ -94,5 +121,13 @@ func TestPersistentStoreSurvivesRestart(t *testing.T) {
 	rules := second.ListAlertRules(ctx, "family-varadha")
 	if len(rules) < 3 {
 		t.Fatalf("expected seeded and custom alert rules after restart: %+v", rules)
+	}
+	groups := second.ListDeviceGroups(ctx, "family-varadha")
+	if len(groups) < 2 {
+		t.Fatalf("expected seeded and custom device groups after restart: %+v", groups)
+	}
+	assignments := second.ListPolicyAssignments(ctx, "family-varadha")
+	if len(assignments) < 2 {
+		t.Fatalf("expected seeded and custom policy assignments after restart: %+v", assignments)
 	}
 }

@@ -425,6 +425,97 @@ func TestConsentCenterEndpoint(t *testing.T) {
 	}
 }
 
+func TestDeviceGroupAndPolicyAssignmentEndpoints(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	seededGroups := httptest.NewRecorder()
+	handler.ServeHTTP(seededGroups, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentDeviceGroups, nil))
+	if seededGroups.Code != http.StatusOK {
+		t.Fatalf("expected seeded groups 200, got %d", seededGroups.Code)
+	}
+	var groups model.ListResponse[model.DeviceGroup]
+	if err := json.Unmarshal(seededGroups.Body.Bytes(), &groups); err != nil {
+		t.Fatalf("decode groups: %v", err)
+	}
+	if groups.Count < 1 || groups.Items[0].PolicyTemplateID != "ai-btech-student" {
+		t.Fatalf("expected seeded device group: %+v", groups)
+	}
+
+	groupBody := []byte(`{
+		"name": "Exam Mode Devices",
+		"description": "Managed exam preparation laptops",
+		"profile": "school-laptop",
+		"device_ids": ["phase21-device-a", "phase21-device-b"],
+		"policy_template_id": "school-laptop"
+	}`)
+	createGroup := httptest.NewRecorder()
+	handler.ServeHTTP(createGroup, httptest.NewRequest(http.MethodPost, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentDeviceGroups, bytes.NewReader(groupBody)))
+	if createGroup.Code != http.StatusCreated {
+		t.Fatalf("expected group create 201, got %d: %s", createGroup.Code, createGroup.Body.String())
+	}
+	var group model.DeviceGroup
+	if err := json.Unmarshal(createGroup.Body.Bytes(), &group); err != nil {
+		t.Fatalf("decode created group: %v", err)
+	}
+	if group.ID == "" || group.PolicyTemplateID != "school-laptop" || len(group.DeviceIDs) != 2 {
+		t.Fatalf("unexpected created group: %+v", group)
+	}
+
+	seededAssignments := httptest.NewRecorder()
+	handler.ServeHTTP(seededAssignments, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentPolicyAssign, nil))
+	if seededAssignments.Code != http.StatusOK {
+		t.Fatalf("expected seeded assignments 200, got %d", seededAssignments.Code)
+	}
+	var assignments model.ListResponse[model.PolicyAssignment]
+	if err := json.Unmarshal(seededAssignments.Body.Bytes(), &assignments); err != nil {
+		t.Fatalf("decode assignments: %v", err)
+	}
+	if assignments.Count < 1 || assignments.Items[0].TargetType != constants.PolicyAssignmentTargetDeviceGroup {
+		t.Fatalf("expected seeded policy assignment: %+v", assignments)
+	}
+
+	assignmentBody := []byte(`{
+		"name": "Exam mode rollout",
+		"target_type": "device_group",
+		"target_id": "` + group.ID + `",
+		"policy_template_id": "school-laptop",
+		"alert_rule_ids": ["manual-rule-001"],
+		"mode": "active"
+	}`)
+	createAssignment := httptest.NewRecorder()
+	handler.ServeHTTP(createAssignment, httptest.NewRequest(http.MethodPost, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentPolicyAssign, bytes.NewReader(assignmentBody)))
+	if createAssignment.Code != http.StatusCreated {
+		t.Fatalf("expected assignment create 201, got %d: %s", createAssignment.Code, createAssignment.Body.String())
+	}
+	if !strings.Contains(createAssignment.Body.String(), "Exam mode rollout") || !strings.Contains(createAssignment.Body.String(), constants.PolicyAssignmentStatusActive) {
+		t.Fatalf("expected created assignment body, got %s", createAssignment.Body.String())
+	}
+
+	audit := httptest.NewRecorder()
+	handler.ServeHTTP(audit, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentAuditEvents, nil))
+	if audit.Code != http.StatusOK {
+		t.Fatalf("expected audit 200, got %d", audit.Code)
+	}
+	if !strings.Contains(audit.Body.String(), constants.AuditActionDeviceGroupCreated) || !strings.Contains(audit.Body.String(), constants.AuditActionPolicyAssigned) {
+		t.Fatalf("expected group and assignment audit events, got %s", audit.Body.String())
+	}
+}
+
 func TestTenantValidation(t *testing.T) {
 	t.Parallel()
 

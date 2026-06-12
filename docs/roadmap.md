@@ -64,3 +64,6 @@
     center API, dashboard consent/audit panels, alert revenue operations, push
     notification center, denied sensitive collection disclosures,
     Postman/Newman coverage, and local verification.
+24. Phase 21: device groups and policy assignments. Tenant-scoped managed
+    rollout APIs, seeded primary group/assignment, assignment audit events,
+    dashboard rollout panels, Postman/Newman coverage, and local verification.
