@@ -171,3 +171,18 @@ Phase 46 turns route failures into a monetisable trust workflow:
 This supports Family Pro, school, and small-business packaging because buyers
 pay for reliable alerting, owned recovery, and proof that mail/push routes are
 working or being repaired.
+
+Phase 47 adds a premium notification command center:
+
+- typed `notification-command-center` API for a single buyer-facing alert and
+  delivery contract
+- alert funnel for anomaly, policy, and tamper urgency
+- mail and push delivery proof with provider-safe route evidence
+- route assurance state from delivery drilldown and remediation
+- customer action SLAs with owner, severity, channel, paid tier, and next step
+- dashboard jump target for Notify Pro so notification value is visible as a
+  paid product surface, not a background technical table
+
+This makes notification reliability easier to monetise for Family Pro, school,
+coaching center, and business packaging while preserving the metadata-only
+privacy boundary.

@@ -117,6 +117,7 @@
     .commercial-room,
     .launch-deck,
     .revenue-suite,
+    .premium-notification-suite,
     .content-grid,
     .shell,
     .stack,
@@ -218,7 +219,7 @@
     }
     .command-nav-grid {
       display: grid;
-      grid-template-columns: repeat(7, minmax(86px, 1fr));
+      grid-template-columns: repeat(8, minmax(82px, 1fr));
       gap: 8px;
     }
     .command-jump {
@@ -687,6 +688,11 @@
       grid-template-columns: minmax(300px, 0.95fr) minmax(0, 2.05fr);
       gap: 16px;
     }
+    .premium-notification-suite {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.86fr) minmax(0, 2.14fr);
+      gap: 16px;
+    }
     .suite-focus {
       min-height: 300px;
       display: grid;
@@ -1152,6 +1158,7 @@
       .cockpit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .revenue-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .revenue-suite { grid-template-columns: 1fr; }
+      .premium-notification-suite { grid-template-columns: 1fr; }
       .suite-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .proof-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .paid-ops-console { grid-template-columns: 1fr; }
@@ -1255,6 +1262,7 @@
       <nav class="command-nav-grid" aria-label="dashboard sections">
         <button class="command-jump is-active" type="button" data-jump-target="paid-ops-section">Paid Ops<span id="nav-paid-ops-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="revenue-section">Revenue<span id="nav-revenue-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="premium-notification-section">Notify Pro<span id="nav-premium-notification-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="notification-proof-section">Notifications<span id="nav-notification-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="mail-report-section">Reports<span id="nav-report-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="archive-proof-section">Archive<span id="nav-archive-meta">waiting</span></button>
@@ -1361,6 +1369,88 @@
               <span id="command-center-action-count" class="pill">0 actions</span>
             </div>
             <div id="command-center-action-list" class="command-center-list"><div class="empty">No command-center actions yet.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="premium-notification-section" class="premium-notification-suite" aria-label="premium notification command center">
+      <div class="panel suite-focus">
+        <div class="section-head">
+          <div>
+            <h2>Premium Notification Command Center</h2>
+            <p class="muted">Paid-grade anomaly, email, push, dashboard, and owner SLA assurance.</p>
+          </div>
+          <span id="premium-notification-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Customer promise</span>
+          <strong id="premium-notification-headline">No tenant loaded</strong>
+          <p id="premium-notification-detail">Waiting for notification command-center proof.</p>
+        </div>
+        <div class="buyer-ops-score">
+          <div class="score-meta"><span>Notification score</span><span id="premium-notification-score">0%</span></div>
+          <div class="buyer-ops-track"><div id="premium-notification-score-bar" class="buyer-ops-fill"></div></div>
+        </div>
+        <div class="action-meta">
+          <span id="premium-notification-package" class="pill">package pending</span>
+          <span id="premium-notification-routes" class="pill">routes pending</span>
+          <span id="premium-notification-remediation" class="pill">SLA pending</span>
+        </div>
+      </div>
+      <div>
+        <div class="suite-grid">
+          <div class="suite-tile">
+            <small>Alert Funnel</small>
+            <strong id="premium-notification-alerts">-</strong>
+            <span id="premium-notification-alerts-sub" class="muted">No alert proof</span>
+          </div>
+          <div class="suite-tile">
+            <small>Email Delivery</small>
+            <strong id="premium-notification-email">-</strong>
+            <span id="premium-notification-email-sub" class="muted">No email proof</span>
+          </div>
+          <div class="suite-tile">
+            <small>Push Reach</small>
+            <strong id="premium-notification-push">-</strong>
+            <span id="premium-notification-push-sub" class="muted">No push proof</span>
+          </div>
+          <div class="suite-tile">
+            <small>Route Assurance</small>
+            <strong id="premium-notification-assurance">-</strong>
+            <span id="premium-notification-assurance-sub" class="muted">No route proof</span>
+          </div>
+        </div>
+        <div class="command-center-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Notification Assurance Funnel</h2>
+                <p class="muted">Open anomaly, policy, tamper, email, push, and dashboard state in one buyer-facing queue.</p>
+              </div>
+              <span id="premium-alert-funnel-count" class="pill">0 alerts</span>
+            </div>
+            <div id="premium-alert-funnel-list" class="command-center-list"><div class="empty">No premium alert funnel yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Mail And Push Delivery Proof</h2>
+                <p class="muted">Provider-safe channel proof with no secrets or alert bodies stored.</p>
+              </div>
+              <span id="premium-delivery-proof-count" class="pill">0 routes</span>
+            </div>
+            <div id="premium-delivery-proof-list" class="command-center-list"><div class="empty">No premium delivery proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Customer Action SLAs</h2>
+                <p class="muted">Parent, school, or business owner actions tied to urgency, route proof, and paid tier.</p>
+              </div>
+              <span id="premium-action-sla-count" class="pill">0 actions</span>
+            </div>
+            <div id="premium-action-sla-list" class="command-center-list"><div class="empty">No premium action SLA yet.</div></div>
           </div>
         </div>
       </div>
@@ -3027,6 +3117,7 @@
       renderConsentCenter(context.consentCenter);
       renderTenantOperations(context.tenantOperations);
       renderMonetizationSummary(context.monetizationSummary);
+      renderPremiumNotificationCommandCenter(context.notificationCommandCenter);
       renderCommercialControlRoom(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderBuyerMonetizationConsole(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderDeliveryDrilldown(context.deliveryDrilldown);
@@ -3068,6 +3159,7 @@
       setText("command-nav-archive", "archive pending");
       setText("nav-paid-ops-meta", "waiting");
       setText("nav-revenue-meta", "waiting");
+      setText("nav-premium-notification-meta", "waiting");
       setText("nav-notification-meta", "waiting");
       setText("nav-report-meta", "waiting");
       setText("nav-archive-meta", "waiting");
@@ -3089,6 +3181,8 @@
       const tenant = context.tenant || {};
       const monetization = context.monetizationSummary || {};
       const operations = context.tenantOperations || {};
+      const notificationCommand = context.notificationCommandCenter || {};
+      const notificationSummary = notificationCommand.summary || {};
       const weekly = context.weeklyReport || {};
       const alertInbox = context.alertInbox || {};
       const inboxSummary = alertInbox.summary || {};
@@ -3113,6 +3207,7 @@
       setText("command-nav-archive", archiveProvider === "s3" ? `${archivePending} archive pending` : `${archiveProvider} pending`);
       setText("nav-paid-ops-meta", `${readiness}% ready`);
       setText("nav-revenue-meta", monetization.conversion_stage || operations.customer_health || "pilot");
+      setText("nav-premium-notification-meta", notificationSummary.status || `${openAlerts} alerts`);
       setText("nav-notification-meta", `${deliveryScore}% delivery`);
       setText("nav-report-meta", reportReady ? "email + PDF" : weekly.email_ready ? "email ready" : "pending");
       setText("nav-archive-meta", archiveProvider === "s3" ? `${archivePending} pending` : archiveProvider);
@@ -4459,6 +4554,110 @@
       renderConversionActions(model.conversion_actions || []);
     }
 
+    function renderPremiumNotificationCommandCenter(commandCenter) {
+      const model = commandCenter || {};
+      const summary = model.summary || {};
+      const channels = model.channels || [];
+      const alerts = model.alerts || [];
+      const actions = model.actions || [];
+      const status = summary.status || "pending";
+      const email = channels.find((item) => item.channel === CHANNEL.email) || {};
+      const push = channels.find((item) => item.channel === CHANNEL.push) || {};
+      const deliveredRoutes = channels.filter((item) => item.latest_delivery_status === DELIVERY_STATUS.delivered || item.route_status === "healthy").length;
+
+      document.getElementById("premium-notification-status").outerHTML =
+        badge(status).replace("<span", '<span id="premium-notification-status"');
+      setText("premium-notification-headline", summary.headline || "Notification command center pending");
+      setText("premium-notification-detail", `${summary.recommended_paid_package || model.plan_name || "Paid package"}: ${summary.open_alerts || 0} open alerts, ${summary.delivery_failed || 0} failed, ${summary.delivery_retrying || 0} retrying.`);
+      setText("premium-notification-score", `${summary.notification_score || 0}%`);
+      setPercentBar("premium-notification-score-bar", summary.notification_score || 0);
+      setText("premium-notification-package", summary.recommended_paid_package || model.plan_name || "package pending");
+      setText("premium-notification-routes", `${deliveredRoutes}/${summary.routes_total || channels.length || 0} routes proven`);
+      setText("premium-notification-remediation", `${summary.remediation_open || 0} open SLA`);
+
+      setText("premium-notification-alerts", `${summary.open_alerts || alerts.length} open`);
+      setText("premium-notification-alerts-sub", `${summary.high_priority_alerts || 0} high priority, ${summary.tamper_signals || 0} tamper`);
+      setText("premium-notification-email", email.latest_delivery_status || email.route_status || "pending");
+      setText("premium-notification-email-sub", email.recipient ? `${email.recipient} via ${email.provider}` : "email route proof pending");
+      setText("premium-notification-push", push.latest_delivery_status || push.route_status || "pending");
+      setText("premium-notification-push-sub", push.recipient ? `${push.recipient} via ${push.provider}` : "push route proof pending");
+      setText("premium-notification-assurance", `${summary.routes_needing_proof || 0} need proof`);
+      setText("premium-notification-assurance-sub", `${summary.remediation_planned || 0} planned, ${summary.remediation_sla_watch || 0} SLA watch`);
+
+      renderPremiumAlertFunnel(alerts);
+      renderPremiumDeliveryProof(channels);
+      renderPremiumActionSLAs(actions);
+    }
+
+    function renderPremiumAlertFunnel(alerts) {
+      setText("premium-alert-funnel-count", `${alerts.length} alert${alerts.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("premium-alert-funnel-list");
+      if (alerts.length === 0) {
+        target.innerHTML = '<div class="empty">No premium alert funnel yet.</div>';
+        return;
+      }
+      target.innerHTML = alerts.slice(0, 5).map((item) => `
+        <div class="action-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.host_name)} - ${escapeHTML(item.detail || item.recommendation)}</span>
+          <div class="action-meta">
+            ${badge(item.severity)}
+            ${badge(item.delivery_state)}
+            <span class="pill">email ${escapeHTML(item.email_status)}</span>
+            <span class="pill">push ${escapeHTML(item.push_status)}</span>
+            <span class="pill">${escapeHTML(item.paid_tier)}</span>
+            <span class="pill">${escapeHTML(formatAge(item.observed_at))}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderPremiumDeliveryProof(channels) {
+      setText("premium-delivery-proof-count", `${channels.length} route${channels.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("premium-delivery-proof-list");
+      if (channels.length === 0) {
+        target.innerHTML = '<div class="empty">No premium delivery proof yet.</div>';
+        return;
+      }
+      target.innerHTML = channels.map((item) => `
+        <div class="action-item">
+          <strong>${escapeHTML(capitalize(item.channel))} ${escapeHTML(item.latest_delivery_status || item.route_status || "pending")}</strong>
+          <span class="muted">${escapeHTML(item.recipient || "recipient pending")} via ${escapeHTML(item.provider || "provider pending")}</span>
+          <div class="action-meta">
+            ${badge(item.route_status || "pending")}
+            ${badge(item.proof_state || "needs_proof")}
+            <span class="pill">${escapeHTML(item.attempts || 0)} attempts</span>
+            <span class="pill">${escapeHTML(item.sla || "SLA pending")}</span>
+            <span class="pill">${escapeHTML(item.paid_tier)}</span>
+          </div>
+          <span class="muted">${escapeHTML(item.next_action || item.evidence || "Keep provider-safe proof current.")}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderPremiumActionSLAs(actions) {
+      setText("premium-action-sla-count", `${actions.length} action${actions.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("premium-action-sla-list");
+      if (actions.length === 0) {
+        target.innerHTML = '<div class="empty">No premium action SLA yet.</div>';
+        return;
+      }
+      target.innerHTML = actions.slice(0, 6).map((item) => `
+        <div class="action-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.severity || "info")}
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.channel || "dashboard")}</span>
+            <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+            <span class="pill">${escapeHTML(item.sla || "SLA pending")}</span>
+            <span class="pill">${escapeHTML(item.paid_tier || "paid")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
     function renderBuyerMonetizationConsole(overview, health, events, deliveries, context) {
       const monetization = context.monetizationSummary || {};
       const operations = context.tenantOperations || {};
@@ -5411,6 +5610,7 @@
       const alertInbox = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/alert-inbox`) : null;
       const tenantOperations = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/operations-summary`) : null;
       const monetizationSummary = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/monetization-summary`) : null;
+      const notificationCommandCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-command-center`) : null;
       const syncHealth = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/sync-health`) : null;
       const activityFeed = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/activity-feed?device_id=${encodeURIComponent(overview.device.device_id)}&limit=10`) : null;
       const activityViews = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/activity-views`) : null;
@@ -5434,6 +5634,7 @@
         alertInbox,
         tenantOperations,
         monetizationSummary,
+        notificationCommandCenter,
         syncHealth,
         activityFeed,
         activityViews,

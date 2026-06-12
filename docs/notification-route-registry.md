@@ -68,6 +68,20 @@ Remediation is planning and audit proof only. It does not send live mail or push
 payloads, and it does not store provider secrets, SMTP passwords, push endpoint
 secrets, alert bodies, screenshots, tokens, cookies, or raw URLs.
 
+Phase 47 adds a premium command aggregate on top of the registry, drilldown,
+remediation, and alert inbox:
+
+```text
+GET /api/v1/tenants/{tenantId}/notification-command-center
+```
+
+The response packages open alert counts, high-priority alert counts, per-channel
+email/push/dashboard proof, route proof state, remediation SLA counts,
+paid-tier labels, and owner actions. It is designed for the dashboard Notify Pro
+view and remains metadata-only: no provider secrets, SMTP passwords, push
+endpoint secrets, alert bodies, screenshots, tokens, cookies, raw URLs, page
+titles, or private content are stored.
+
 ## Verification
 
 ```powershell
@@ -77,4 +91,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase46.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase46.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase46.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase47.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase47.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase47.ps1
 ```
