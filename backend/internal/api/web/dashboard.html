@@ -527,14 +527,26 @@
     .notification-revenue-board > .panel {
       min-width: 0;
     }
+    .provider-simulation-lab {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.95fr) minmax(0, 2.05fr);
+      gap: 16px;
+      min-width: 0;
+    }
+    .provider-simulation-lab > .panel {
+      min-width: 0;
+    }
     .notification-revenue-list {
       display: grid;
       gap: 8px;
       min-width: 0;
+      max-width: 100%;
     }
     .notification-revenue-item {
       display: grid;
       gap: 7px;
+      min-width: 0;
+      max-width: 100%;
       padding: 11px;
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -542,6 +554,8 @@
     }
     .notification-revenue-item strong,
     .notification-revenue-item span {
+      min-width: 0;
+      max-width: 100%;
       overflow-wrap: anywhere;
     }
     .business-list {
@@ -1198,6 +1212,8 @@
       flex-wrap: wrap;
       gap: 6px;
       align-items: center;
+      min-width: 0;
+      max-width: 100%;
     }
     .brief-grid {
       display: grid;
@@ -1572,6 +1588,7 @@
       .notification-revenue-cockpit { grid-template-columns: 1fr; }
       .notification-revenue-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .notification-revenue-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .provider-simulation-lab { grid-template-columns: 1fr; }
       .monetization-command-center { grid-template-columns: 1fr; }
       .command-center-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .command-center-board { grid-template-columns: 1fr; }
@@ -1614,6 +1631,7 @@
       .executive-board { grid-template-columns: 1fr; }
       .notification-revenue-kpis { grid-template-columns: 1fr; }
       .notification-revenue-board { grid-template-columns: 1fr; }
+      .provider-simulation-lab { grid-template-columns: 1fr; }
       .notification-revenue-focus { min-height: auto; padding: 12px; }
       .notification-revenue-focus .section-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
       .notification-revenue-focus .badge { justify-self: start; }
@@ -1832,6 +1850,74 @@
               <span id="notification-revenue-action-count" class="pill">0 actions</span>
             </div>
             <div id="notification-revenue-action-list" class="notification-revenue-list"><div class="empty">No upgrade action levers yet.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="provider-simulation-section" class="provider-simulation-lab" aria-label="provider simulation lab">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Provider Simulation Lab</h2>
+            <p class="muted">Metadata-only email, push, and dashboard dry-run proof for buyer demos without provider secrets, payloads, or alert bodies.</p>
+          </div>
+          <span id="provider-simulation-status" class="badge pending">pending</span>
+        </div>
+        <div class="brief-grid">
+          <div class="brief-item"><small>Readiness</small><strong id="provider-simulation-readiness">-</strong><span id="provider-simulation-readiness-sub" class="muted">No provider simulation</span></div>
+          <div class="brief-item"><small>Email</small><strong id="provider-simulation-email">-</strong><span id="provider-simulation-email-sub" class="muted">No email proof</span></div>
+          <div class="brief-item"><small>Push</small><strong id="provider-simulation-push">-</strong><span id="provider-simulation-push-sub" class="muted">No push proof</span></div>
+          <div class="brief-item"><small>Dashboard</small><strong id="provider-simulation-dashboard">-</strong><span id="provider-simulation-dashboard-sub" class="muted">No dashboard proof</span></div>
+        </div>
+        <div style="margin-top: 12px;">
+          <div class="summary-line"><span>Headline</span><strong id="provider-simulation-headline">No tenant loaded</strong></div>
+          <div class="summary-line"><span>Next Action</span><strong id="provider-simulation-next">action pending</strong></div>
+          <div class="summary-line"><span>Package</span><strong id="provider-simulation-package">package pending</strong></div>
+          <div class="summary-line"><span>Boundary</span><strong id="provider-simulation-boundary">metadata-only</strong></div>
+        </div>
+      </div>
+      <div>
+        <div class="notification-revenue-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Simulation Route Proof</h2>
+                <p class="muted">Email, push, and dashboard provider rehearsal state with SLA, evidence, and buyer value.</p>
+              </div>
+              <span id="provider-simulation-route-count" class="pill">0 routes</span>
+            </div>
+            <div id="provider-simulation-route-list" class="notification-revenue-list"><div class="empty">No provider simulation routes yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Simulation Scenarios</h2>
+                <p class="muted">Paid demo workflows for urgent push, critical mail, dashboard fallback, and weekly report proof.</p>
+              </div>
+              <span id="provider-simulation-scenario-count" class="pill">0 scenarios</span>
+            </div>
+            <div id="provider-simulation-scenario-list" class="notification-revenue-list"><div class="empty">No provider simulation scenarios yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Simulation Action Queue</h2>
+                <p class="muted">Owner actions that convert provider route readiness into Family Pro, school, and business value.</p>
+              </div>
+              <span id="provider-simulation-action-count" class="pill">0 actions</span>
+            </div>
+            <div id="provider-simulation-action-list" class="notification-revenue-list"><div class="empty">No provider simulation actions yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Provider Privacy Proof</h2>
+                <p class="muted">Strict assurance that simulation stores route metadata only, not messages or provider secrets.</p>
+              </div>
+              <span id="provider-simulation-risk-count" class="pill">0 risks</span>
+            </div>
+            <div id="provider-simulation-privacy-list" class="notification-revenue-list"><div class="empty">No provider privacy proof yet.</div></div>
           </div>
         </div>
       </div>
@@ -2131,6 +2217,7 @@
       <nav class="command-nav-grid" aria-label="dashboard sections">
         <button class="command-jump is-active" type="button" data-jump-target="executive-console-section">Executive<span id="nav-executive-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="notification-revenue-section">Notif Rev<span id="nav-notification-revenue-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="provider-simulation-section">Provider<span id="nav-provider-simulation-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="paid-ops-section">Paid Ops<span id="nav-paid-ops-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="revenue-section">Revenue<span id="nav-revenue-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="premium-notification-section">Notify Pro<span id="nav-premium-notification-meta">waiting</span></button>
@@ -4005,6 +4092,7 @@
       renderTenantPlan(device, context);
       renderExecutiveConsole(context.executiveConsole);
       renderNotificationRevenueCockpit(context.notificationRevenueCockpit);
+      renderProviderSimulationLab(context.providerSimulationLab);
       renderBusinessDashboard(context.businessDashboard);
       renderGrowthCockpit(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderNotificationPreferenceCenter(context.notificationPreferences);
@@ -4072,6 +4160,7 @@
       setText("command-nav-archive", "archive pending");
       setText("nav-executive-meta", "waiting");
       setText("nav-notification-revenue-meta", "waiting");
+      setText("nav-provider-simulation-meta", "waiting");
       setText("nav-paid-ops-meta", "waiting");
       setText("nav-revenue-meta", "waiting");
       setText("nav-premium-notification-meta", "waiting");
@@ -4122,6 +4211,8 @@
       const executiveSummary = executive.summary || {};
       const notificationRevenue = context.notificationRevenueCockpit || {};
       const notificationRevenueSummary = notificationRevenue.summary || {};
+      const providerSimulation = context.providerSimulationLab || {};
+      const providerSimulationSummary = providerSimulation.summary || {};
       const weekly = context.weeklyReport || {};
       const alertInbox = context.alertInbox || {};
       const inboxSummary = alertInbox.summary || {};
@@ -4146,6 +4237,7 @@
       setText("command-nav-archive", archiveProvider === "s3" ? `${archivePending} archive pending` : `${archiveProvider} pending`);
       setText("nav-executive-meta", executiveSummary.readiness_score ? `${executiveSummary.readiness_score}% ready` : `${readiness}% ready`);
       setText("nav-notification-revenue-meta", notificationRevenueSummary.revenue_readiness ? `${notificationRevenueSummary.revenue_readiness}% rev` : `${deliveryScore}% proof`);
+      setText("nav-provider-simulation-meta", providerSimulationSummary.readiness_score ? `${providerSimulationSummary.readiness_score}% sim` : `${routes.length || 0} routes`);
       setText("nav-paid-ops-meta", `${readiness}% ready`);
       setText("nav-revenue-meta", monetization.conversion_stage || operations.customer_health || "pilot");
       setText("nav-premium-notification-meta", notificationSummary.status || `${openAlerts} alerts`);
@@ -4703,6 +4795,104 @@
           </div>
         `).join("");
       }
+    }
+
+    function renderProviderSimulationLab(lab) {
+      const model = lab || {};
+      const summary = model.summary || {};
+      const routes = model.routes || [];
+      const scenarios = model.scenarios || [];
+      const actions = model.actions || [];
+
+      document.getElementById("provider-simulation-status").outerHTML =
+        badge(summary.status || "pending").replace("<span", '<span id="provider-simulation-status"');
+      setText("provider-simulation-readiness", summary.readiness_score ? `${summary.readiness_score}%` : "-");
+      setText("provider-simulation-readiness-sub", `${summary.simulated_routes || 0}/${summary.routes_total || 0} routes simulated, ${summary.routes_needing_proof || 0} need proof`);
+      setText("provider-simulation-email", summary.email_ready ? "ready" : "needs proof");
+      setText("provider-simulation-email-sub", "critical mail route simulation");
+      setText("provider-simulation-push", summary.push_ready ? "ready" : "needs proof");
+      setText("provider-simulation-push-sub", "urgent push route simulation");
+      setText("provider-simulation-dashboard", summary.dashboard_ready ? "ready" : "needs proof");
+      setText("provider-simulation-dashboard-sub", "dashboard fallback simulation");
+      setText("provider-simulation-headline", summary.headline || "Provider simulation pending");
+      setText("provider-simulation-next", summary.next_best_action || "Run provider-safe simulation.");
+      setText("provider-simulation-package", summary.recommended_paid_package || model.plan_name || "package pending");
+      setText("provider-simulation-boundary", model.privacy_boundary ? "metadata-only provider simulation" : "metadata-only");
+      setText("provider-simulation-risk-count", `${summary.provider_risks || 0} risk${summary.provider_risks === 1 ? "" : "s"}`);
+
+      setText("provider-simulation-route-count", `${routes.length} route${routes.length === 1 ? "" : "s"}`);
+      const routeTarget = document.getElementById("provider-simulation-route-list");
+      if (routes.length === 0) {
+        routeTarget.innerHTML = '<div class="empty">No provider simulation routes yet.</div>';
+      } else {
+        routeTarget.innerHTML = routes.map((route) => `
+          <div class="notification-revenue-item">
+            <strong>${escapeHTML(capitalize(route.channel))} - ${escapeHTML(route.provider || "provider pending")}</strong>
+            <span class="muted">${escapeHTML(route.business_value || route.evidence || "Provider-safe route proof pending.")}</span>
+            <div class="action-meta">
+              ${badge(route.simulation_status || "pending")}
+              ${badge(route.proof_state || "needs_delivery_proof")}
+              <span class="pill">${escapeHTML(route.recipient_label || "recipient pending")}</span>
+              <span class="pill">${escapeHTML(route.sla_target || "SLA pending")}</span>
+              <span class="pill">${escapeHTML(route.simulated_latency || "latency pending")}</span>
+            </div>
+            <span class="muted">${escapeHTML(route.next_action || "Run simulation before a buyer demo.")}</span>
+          </div>
+        `).join("");
+      }
+
+      setText("provider-simulation-scenario-count", `${scenarios.length} scenario${scenarios.length === 1 ? "" : "s"}`);
+      const scenarioTarget = document.getElementById("provider-simulation-scenario-list");
+      if (scenarios.length === 0) {
+        scenarioTarget.innerHTML = '<div class="empty">No provider simulation scenarios yet.</div>';
+      } else {
+        scenarioTarget.innerHTML = scenarios.map((scenario) => `
+          <div class="notification-revenue-item">
+            <strong>${escapeHTML(scenario.name)}</strong>
+            <span class="muted">${escapeHTML(scenario.buyer_value || scenario.outcome || "Buyer value pending.")}</span>
+            <div class="action-meta">
+              ${badge(scenario.severity || "info")}
+              <span class="pill">${escapeHTML(scenario.trigger || "trigger pending")}</span>
+              <span class="pill">${escapeHTML((scenario.channels || []).join(" + ") || "channels pending")}</span>
+              <span class="pill">${escapeHTML(scenario.paid_tier || "paid")}</span>
+            </div>
+            <span class="muted">${escapeHTML(scenario.outcome || "Outcome pending.")}</span>
+          </div>
+        `).join("");
+      }
+
+      setText("provider-simulation-action-count", `${actions.length} action${actions.length === 1 ? "" : "s"}`);
+      const actionTarget = document.getElementById("provider-simulation-action-list");
+      if (actions.length === 0) {
+        actionTarget.innerHTML = '<div class="empty">No provider simulation actions yet.</div>';
+      } else {
+        actionTarget.innerHTML = actions.slice(0, 8).map((action) => `
+          <div class="notification-revenue-item">
+            <strong>${escapeHTML(action.title)}</strong>
+            <span class="muted">${escapeHTML(action.detail || action.conversion_lever || "Action pending.")}</span>
+            <div class="action-meta">
+              ${badge(action.status || "pending")}
+              <span class="pill">${escapeHTML(action.owner || "owner pending")}</span>
+              <span class="pill">${escapeHTML(action.channel || "dashboard")}</span>
+              <span class="pill">${escapeHTML(action.sla || "SLA pending")}</span>
+              <span class="pill">${escapeHTML(action.paid_tier || "paid")}</span>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      const privacyTarget = document.getElementById("provider-simulation-privacy-list");
+      privacyTarget.innerHTML = `
+        <div class="notification-revenue-item">
+          <strong>Metadata-only provider proof</strong>
+          <span class="muted">${escapeHTML(model.privacy_boundary || "Provider simulation stores route labels, channel status, SLA state, and buyer value only.")}</span>
+          <div class="action-meta">
+            ${badge(summary.sla_ready ? "healthy" : "watch")}
+            <span class="pill">${escapeHTML(summary.recommended_paid_package || "paid")}</span>
+            <span class="pill">${summary.provider_risks || 0} provider risk${summary.provider_risks === 1 ? "" : "s"}</span>
+          </div>
+        </div>
+      `;
     }
 
     function renderBusinessDashboard(dashboard) {
@@ -7368,6 +7558,7 @@
       setText("host-last-seen", "-");
       renderExecutiveConsole(null);
       renderNotificationRevenueCockpit(null);
+      renderProviderSimulationLab(null);
       renderBusinessDashboard(null);
       renderCommandNavigationEmpty();
     }
@@ -7426,6 +7617,7 @@
       const roleExperience = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/role-experiences`) : null;
       const executiveConsole = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/executive-console`) : null;
       const notificationRevenueCockpit = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-revenue-cockpit`) : null;
+      const providerSimulationLab = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/provider-simulation-lab`) : null;
       const notificationCommandCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-command-center`) : null;
       const deliveryTimeline = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delivery-timeline?device_id=${encodeURIComponent(overview.device.device_id)}&limit=8`) : null;
       const syncHealth = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/sync-health`) : null;
@@ -7456,6 +7648,7 @@
         roleExperience,
         executiveConsole,
         notificationRevenueCockpit,
+        providerSimulationLab,
         notificationCommandCenter,
         deliveryTimeline,
         syncHealth,

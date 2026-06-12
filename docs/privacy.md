@@ -87,3 +87,11 @@ escalation state, scenario labels, channel value, paid-package levers, and
 owner actions. It does not add collectors and does not store SMTP passwords,
 push endpoint secrets, provider credentials, alert bodies, screenshots, raw
 URLs, page titles, cookies, tokens, private content, or endpoint payloads.
+
+Phase 55 provider simulation lab is metadata-only. It exposes route labels,
+channel, provider type, delivery status, SLA result, retry posture, scenario
+templates, buyer value, and owner actions. Dry-run simulation records audit
+proof only and does not send live provider payloads. It does not store SMTP
+passwords, push endpoint secrets, provider credentials, alert bodies,
+screenshots, raw URLs, page titles, cookies, tokens, private content, or
+endpoint payloads.

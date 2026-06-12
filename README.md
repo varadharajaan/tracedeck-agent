@@ -130,6 +130,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase54.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase54.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase54.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase55.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase55.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase55.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase49.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase49.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase49.ps1
@@ -218,3 +221,11 @@ proof, dashboard delivery, weekly report readiness, escalation policy,
 scenario templates, channel value, and upgrade action levers. It remains
 metadata-only and does not add password, screenshot, raw URL, page title, alert
 body, provider secret, token, cookie, or private-content collection.
+
+Phase 55 adds a typed Provider Simulation Lab at
+`/api/v1/tenants/{tenantId}/provider-simulation-lab`. It shows metadata-only
+email, push, and dashboard dry-run proof, route SLA state, simulation
+scenarios, provider action queue, audit proof, and privacy proof for paid
+demos. It does not send live provider payloads or store SMTP passwords, push
+endpoint payloads, alert bodies, screenshots, raw URLs, provider secrets,
+tokens, cookies, or private content.

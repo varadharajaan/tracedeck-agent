@@ -92,6 +92,11 @@ notification-revenue-cockpit API. It adds a buyer-ready notification
 monetisation layer for anomaly SLA, mail proof, push proof, dashboard delivery,
 weekly report readiness, escalation policy, scenario templates, channel proof
 matrix, and upgrade action levers.
+Phase 55 adds a Provider Simulation Lab backed by the typed
+provider-simulation-lab API. It shows metadata-only email, push, and dashboard
+dry-run proof, route SLA state, simulation scenarios, provider action queue,
+privacy proof, and command navigation so paid demos can prove notification
+readiness without provider secrets or alert payloads.
 
 The dashboard reads the base backend endpoints:
 
@@ -112,6 +117,7 @@ For the selected host it reads:
 - `/api/v1/tenants/{tenantId}/role-experiences`
 - `/api/v1/tenants/{tenantId}/executive-console`
 - `/api/v1/tenants/{tenantId}/notification-revenue-cockpit`
+- `/api/v1/tenants/{tenantId}/provider-simulation-lab`
 - `/api/v1/tenants/{tenantId}`
 - `/api/v1/plans`
 - `/api/v1/roles`
@@ -142,6 +148,8 @@ Current panels:
   delivery proof, dashboard delivery, weekly report readiness, escalation
   policy, anomaly delivery scenarios, channel proof matrix, and upgrade action
   levers
+- provider simulation lab for metadata-only email, push, and dashboard dry-run
+  proof, route SLA state, simulation scenarios, action queue, and privacy proof
 - host filter and host identity
 - monetisation launch deck for customer package, readiness, notification score,
   trust score, and conversion stage

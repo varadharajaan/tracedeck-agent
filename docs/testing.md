@@ -703,6 +703,16 @@ screenshot-free dashboard layout contract. Newman runs
 live demo and covers dashboard markers plus typed notification revenue
 packaging.
 
+The Phase 55 smoke live-boots the seeded dashboard, verifies Provider
+Simulation Lab, Simulation Route Proof, Simulation Scenarios, Simulation Action
+Queue, and Provider Privacy Proof markers, checks the tenant
+`provider-simulation-lab` API, runs a push `dry_run` simulation, verifies audit
+proof, checks strict privacy/forbidden markers, and reruns the screenshot-free
+dashboard layout contract. Newman runs
+`postman/tracedeck-backend-phase55.postman_collection.json` against the same
+live demo and covers dashboard markers plus typed provider simulation GET/POST
+workflows.
+
 Phase 13 adds:
 
 ```powershell

@@ -492,6 +492,71 @@ func (m *Memory) RunTenantDeliveryRemediation(_ context.Context, tenantID string
 	), nil
 }
 
+func (m *Memory) TenantProviderSimulationLab(ctx context.Context, tenantID string) (model.TenantProviderSimulationLab, error) {
+	generatedAt := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	operations, err := m.TenantOperationsSummary(ctx, tenantID)
+	if err != nil {
+		return model.TenantProviderSimulationLab{}, err
+	}
+	monetization, err := m.TenantMonetizationSummary(ctx, tenantID)
+	if err != nil {
+		return model.TenantProviderSimulationLab{}, err
+	}
+	revenue, err := m.TenantNotificationRevenueCockpit(ctx, tenantID)
+	if err != nil {
+		return model.TenantProviderSimulationLab{}, err
+	}
+	drilldown, err := m.TenantDeliveryDrilldown(ctx, tenantID)
+	if err != nil {
+		return model.TenantProviderSimulationLab{}, err
+	}
+	remediation, err := m.TenantDeliveryRemediation(ctx, tenantID)
+	if err != nil {
+		return model.TenantProviderSimulationLab{}, err
+	}
+
+	return buildTenantProviderSimulationLab(operations, monetization, revenue, drilldown, remediation, generatedAt), nil
+}
+
+func (m *Memory) RunTenantProviderSimulation(ctx context.Context, tenantID string, req model.RunProviderSimulationRequest) (model.TenantProviderSimulationLab, error) {
+	tenantID = strings.TrimSpace(tenantID)
+	channel := strings.TrimSpace(req.Channel)
+	_, err := m.RunTenantDeliveryDrilldown(ctx, tenantID, model.RunDeliveryDrilldownRequest{
+		Mode:    constants.DeliveryDrillModeDryRun,
+		Channel: channel,
+		Reason:  firstNonEmpty(strings.TrimSpace(req.Reason), strings.TrimSpace(req.Scenario), "provider simulation lab dry run"),
+	})
+	if err != nil {
+		return model.TenantProviderSimulationLab{}, err
+	}
+
+	now := time.Now().UTC()
+	m.mu.Lock()
+	if _, ok := m.tenants[tenantID]; !ok {
+		m.mu.Unlock()
+		return model.TenantProviderSimulationLab{}, ErrTenantNotFound
+	}
+	m.auditEvents = append(m.auditEvents, model.AuditEvent{
+		ID:        auditID(tenantID, len(m.auditEvents)+1, now),
+		TenantID:  tenantID,
+		Category:  constants.AuditCategorySystem,
+		Action:    constants.AuditActionProviderSimulation,
+		Actor:     constants.AuditActorLocalAPI,
+		ActorRole: constants.RoleBusinessManager,
+		Summary:   fmt.Sprintf("provider simulation dry-run completed for %s routes", firstNonEmpty(channel, "all")),
+		CreatedAt: now,
+	})
+	if err := m.persistLocked(); err != nil {
+		m.mu.Unlock()
+		return model.TenantProviderSimulationLab{}, err
+	}
+	m.mu.Unlock()
+
+	return m.TenantProviderSimulationLab(ctx, tenantID)
+}
+
 func (m *Memory) deliveriesForTenantLocked(tenantID string) []model.AlertDelivery {
 	deliveries := make([]model.AlertDelivery, 0)
 	for _, device := range m.devices {
@@ -6043,6 +6108,251 @@ func deliveryRemediationNextRetry(channel string, generatedAt time.Time) time.Ti
 	default:
 		return generatedAt.Add(15 * time.Minute)
 	}
+}
+
+func buildTenantProviderSimulationLab(operations model.TenantOperationsSummary, monetization model.TenantMonetizationSummary, revenue model.TenantNotificationRevenueCockpit, drilldown model.TenantDeliveryDrilldown, remediation model.TenantDeliveryRemediation, generatedAt time.Time) model.TenantProviderSimulationLab {
+	routes := providerSimulationRoutes(drilldown.Routes)
+	scenarios := providerSimulationScenarios()
+	simulated := 0
+	providerRisks := 0
+	for _, route := range routes {
+		if route.ProofState == constants.DeliveryProofStateCustomer || route.ProofState == constants.DeliveryProofStateRehearsed {
+			simulated++
+		}
+		if route.ProofState == constants.DeliveryProofStateNeedsProvider || route.ProofState == constants.DeliveryProofStateMismatch || route.ProofState == constants.DeliveryProofStateDisabled {
+			providerRisks++
+		}
+	}
+	readiness := averageScore(revenue.Summary.RevenueReadiness, drilldown.Summary.DeliveryScore, remediation.Summary.RemediationScore, operations.NotificationScore)
+	summary := model.TenantProviderSimulationSummary{
+		ReadinessScore:         readiness,
+		SimulationScore:        drilldown.Summary.DeliveryScore,
+		RoutesTotal:            drilldown.Summary.RoutesTotal,
+		SimulatedRoutes:        simulated,
+		RoutesNeedingProof:     drilldown.Summary.RoutesNeedingProof,
+		ProviderRisks:          providerRisks + remediation.Summary.ProblemsOpen,
+		EmailReady:             drilldown.Summary.EmailReady,
+		PushReady:              drilldown.Summary.PushReady,
+		DashboardReady:         drilldown.Summary.DashboardReady,
+		SLAReady:               drilldown.Summary.EmailReady && drilldown.Summary.PushReady && drilldown.Summary.DashboardReady,
+		RecommendedPaidPackage: firstNonEmpty(revenue.Summary.RecommendedPaidPackage, monetization.PlanName),
+	}
+	summary.Status = providerSimulationStatus(summary)
+	summary.Headline, summary.Detail = providerSimulationNarrative(summary, revenue)
+	summary.NextBestAction = providerSimulationNextAction(summary, remediation)
+
+	return model.TenantProviderSimulationLab{
+		TenantID:        operations.TenantID,
+		TenantName:      operations.TenantName,
+		PlanID:          operations.PlanID,
+		PlanName:        operations.PlanName,
+		Audience:        monetization.Audience,
+		Summary:         summary,
+		Routes:          routes,
+		Scenarios:       scenarios,
+		Actions:         providerSimulationActions(summary, routes, generatedAt),
+		PrivacyBoundary: constants.ProviderSimulationPrivacyNote,
+		GeneratedAt:     generatedAt,
+	}
+}
+
+func providerSimulationStatus(summary model.TenantProviderSimulationSummary) string {
+	switch {
+	case summary.ProviderRisks > 0 || summary.RoutesNeedingProof > 2:
+		return constants.StatusAttention
+	case summary.ReadinessScore >= 80 && summary.SLAReady:
+		return constants.StatusHealthy
+	case summary.ReadinessScore >= 55 || summary.SimulatedRoutes > 0:
+		return constants.StatusWatch
+	default:
+		return constants.StatusPending
+	}
+}
+
+func providerSimulationNarrative(summary model.TenantProviderSimulationSummary, revenue model.TenantNotificationRevenueCockpit) (string, string) {
+	switch {
+	case summary.SLAReady:
+		return "Provider simulation is buyer-ready", fmt.Sprintf("%d/%d routes have metadata-safe simulation or customer proof for %s.", summary.SimulatedRoutes, summary.RoutesTotal, firstNonEmpty(summary.RecommendedPaidPackage, revenue.PlanName))
+	case summary.PushReady && summary.EmailReady:
+		return "Push and mail simulation proof is ready", "Dashboard delivery still needs simulation proof before a full buyer SLA demo."
+	case summary.ProviderRisks > 0:
+		return "Provider simulation needs attention", fmt.Sprintf("%d provider risk signals need route proof, retry planning, or owner acknowledgement.", summary.ProviderRisks)
+	default:
+		return "Provider simulation lab is ready to rehearse", "Run a dry-run simulation for email, push, and dashboard routes before the paid demo."
+	}
+}
+
+func providerSimulationNextAction(summary model.TenantProviderSimulationSummary, remediation model.TenantDeliveryRemediation) string {
+	switch {
+	case !summary.PushReady:
+		return "Run push dry-run simulation and attach the provider-safe result to the buyer demo."
+	case !summary.EmailReady:
+		return "Run email dry-run simulation before promising critical alert SLA."
+	case !summary.DashboardReady:
+		return "Run dashboard inbox simulation so every anomaly has visible fallback proof."
+	case remediation.Summary.ProblemsOpen > 0:
+		return "Close remediation actions and keep provider simulation proof current."
+	default:
+		return "Use provider simulation proof in the Family Pro, school, and business upgrade narrative."
+	}
+}
+
+func providerSimulationRoutes(routes []model.TenantDeliveryDrilldownRoute) []model.TenantProviderSimulationRoute {
+	items := make([]model.TenantProviderSimulationRoute, 0, len(routes))
+	for _, route := range routes {
+		items = append(items, model.TenantProviderSimulationRoute{
+			RouteID:              route.RouteID,
+			Channel:              route.Channel,
+			Provider:             route.Provider,
+			RecipientLabel:       route.RecipientLabel,
+			SimulationStatus:     providerSimulationRouteStatus(route),
+			ProofState:           route.ProofState,
+			Scenario:             providerSimulationScenarioForChannel(route.Channel),
+			SLATarget:            route.SLA,
+			SimulatedLatency:     providerSimulationLatency(route.Channel),
+			LatestDeliveryStatus: route.LatestDeliveryStatus,
+			LastSimulatedAt:      route.LastVerifiedAt,
+			BusinessValue:        providerSimulationBusinessValue(route.Channel),
+			Evidence:             firstNonEmpty(route.Evidence, route.RehearsalResult, "Provider-safe simulation proof pending."),
+			NextAction:           providerSimulationRouteNextAction(route),
+			PaidTier:             notificationCommandChannelTier(route.Channel),
+		})
+	}
+	return items
+}
+
+func providerSimulationRouteStatus(route model.TenantDeliveryDrilldownRoute) string {
+	switch route.ProofState {
+	case constants.DeliveryProofStateCustomer, constants.DeliveryProofStateRehearsed:
+		return constants.StatusHealthy
+	case constants.DeliveryProofStateNeedsProvider, constants.DeliveryProofStateMismatch:
+		return constants.StatusAttention
+	default:
+		return constants.StatusWatch
+	}
+}
+
+func providerSimulationScenarioForChannel(channel string) string {
+	switch channel {
+	case constants.DeliveryChannelEmail:
+		return "critical-alert-mail"
+	case constants.DeliveryChannelPush:
+		return "urgent-anomaly-push"
+	case constants.DeliveryChannelDashboard:
+		return "dashboard-fallback-proof"
+	default:
+		return "provider-route-proof"
+	}
+}
+
+func providerSimulationLatency(channel string) string {
+	switch channel {
+	case constants.DeliveryChannelPush:
+		return "under 60 seconds"
+	case constants.DeliveryChannelEmail:
+		return "under 5 minutes"
+	case constants.DeliveryChannelDashboard:
+		return "immediate local dashboard"
+	default:
+		return "SLA pending"
+	}
+}
+
+func providerSimulationBusinessValue(channel string) string {
+	switch channel {
+	case constants.DeliveryChannelEmail:
+		return "Proves critical anomaly mail delivery without exposing SMTP passwords or alert bodies."
+	case constants.DeliveryChannelPush:
+		return "Proves urgent push readiness for non-study video, media, tamper, and risky software alerts."
+	case constants.DeliveryChannelDashboard:
+		return "Proves every alert still lands in the dashboard when provider routes retry."
+	default:
+		return "Proves notification route readiness with metadata-only evidence."
+	}
+}
+
+func providerSimulationRouteNextAction(route model.TenantDeliveryDrilldownRoute) string {
+	switch route.ProofState {
+	case constants.DeliveryProofStateCustomer:
+		return "Use delivered metadata as customer proof and keep simulation current."
+	case constants.DeliveryProofStateRehearsed:
+		return "Keep dry-run proof current until production provider credentials are configured."
+	case constants.DeliveryProofStateNeedsProvider:
+		return "Plan retry or provider verification before promising live notification SLA."
+	default:
+		return firstNonEmpty(route.NextAction, "Run provider-safe simulation before a buyer demo.")
+	}
+}
+
+func providerSimulationScenarios() []model.TenantProviderSimulationScenario {
+	return []model.TenantProviderSimulationScenario{
+		{
+			ID:         "urgent-anomaly-push",
+			Name:       "Urgent anomaly push",
+			Trigger:    "non-study YouTube, VLC, media player, tamper, or risky software alert",
+			Channels:   []string{constants.DeliveryChannelPush, constants.DeliveryChannelDashboard},
+			Severity:   constants.SeverityHigh,
+			Outcome:    "Parent or manager sees push readiness and dashboard fallback proof.",
+			BuyerValue: "Immediate anomaly notification is packaged as Family Pro value.",
+			PaidTier:   constants.PlanFamilyPro,
+			StudySafe:  true,
+		},
+		{
+			ID:         "critical-alert-mail",
+			Name:       "Critical alert mail",
+			Trigger:    "high-severity policy, tamper, archive, or software risk",
+			Channels:   []string{constants.DeliveryChannelEmail, constants.DeliveryChannelDashboard},
+			Severity:   constants.SeverityHigh,
+			Outcome:    "Mail route has provider-safe proof without SMTP secrets or message bodies.",
+			BuyerValue: "Email evidence supports school and business audit reviews.",
+			PaidTier:   constants.PlanSchool,
+			StudySafe:  true,
+		},
+		{
+			ID:         "weekly-report-delivery",
+			Name:       "Weekly report delivery",
+			Trigger:    "weekly report generated with anomaly and study-hour summary",
+			Channels:   []string{constants.DeliveryChannelEmail, constants.DeliveryChannelDashboard},
+			Severity:   constants.SeverityMedium,
+			Outcome:    "Report mail readiness and dashboard fallback are visible to the owner.",
+			BuyerValue: "Report proof increases retention for family, school, and coaching buyers.",
+			PaidTier:   constants.PlanFamilyPro,
+			StudySafe:  true,
+		},
+	}
+}
+
+func providerSimulationActions(summary model.TenantProviderSimulationSummary, routes []model.TenantProviderSimulationRoute, generatedAt time.Time) []model.TenantProviderSimulationAction {
+	_ = generatedAt
+	actions := make([]model.TenantProviderSimulationAction, 0, len(routes)+1)
+	for _, route := range routes {
+		if route.SimulationStatus == constants.StatusHealthy {
+			continue
+		}
+		actions = append(actions, model.TenantProviderSimulationAction{
+			Title:           titleWord(route.Channel) + " simulation proof",
+			Detail:          route.NextAction,
+			Owner:           firstNonEmpty(route.RecipientLabel, constants.RoleBusinessManager),
+			Channel:         route.Channel,
+			Status:          route.SimulationStatus,
+			SLA:             route.SLATarget,
+			ConversionLever: route.BusinessValue,
+			PaidTier:        route.PaidTier,
+		})
+	}
+	if len(actions) == 0 {
+		actions = append(actions, model.TenantProviderSimulationAction{
+			Title:           "Provider simulation buyer proof",
+			Detail:          firstNonEmpty(summary.NextBestAction, "Use simulation proof in the next paid demo."),
+			Owner:           constants.RoleBusinessManager,
+			Channel:         constants.DeliveryChannelDashboard,
+			Status:          constants.StatusHealthy,
+			SLA:             "all simulation routes ready",
+			ConversionLever: "Provider-safe notification proof supports Family Pro, school, and business packaging.",
+			PaidTier:        firstNonEmpty(summary.RecommendedPaidPackage, constants.PlanFamilyPro),
+		})
+	}
+	return actions
 }
 
 func topTenantRiskEvents(events []model.RiskEvent, limit int) []model.RiskEvent {
