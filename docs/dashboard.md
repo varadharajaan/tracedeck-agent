@@ -199,6 +199,10 @@ Current panels:
   rights, and saved-view readiness
 - command navigation for paid ops, revenue, notifications, reports, archive,
   trust, and hosts with KPI summaries backed by existing typed APIs
+- buyer operations brief for monetisation demos with anomaly alerting, mail
+  delivery proof, push notification dispatch, weekly report delivery, archive
+  retention, trust/audit, delivery command, packaging snapshot, and next
+  commercial action surfaced before the deeper panels
 
 API-provided text is escaped before rendering.
 
@@ -240,6 +244,14 @@ Phase 42 adds a sticky command navigation strip so paid demos can jump directly
 to paid ops, revenue, notification proof, reports, archive, trust, and host
 details. The strip summarizes alert, route, report, archive, readiness, and
 trust state from the same typed APIs used by the rest of the dashboard.
+
+Phase 43 adds a Buyer Operations Brief immediately after command navigation so
+the paid demo opens with anomaly alerting, email proof, push notification
+dispatch, weekly report readiness, S3 archive retention, trust/audit, delivery
+routes, package fit, and next customer action in one surface. The phase also
+adds a Playwright layout contract that checks desktop, tablet, and mobile
+metrics only. It does not capture screenshots, video, credentials, or page
+content.
 
 A future frontend phase can move this surface to a richer application shell with
 role-specific onboarding, no-code alert rule editing, weekly report drilldowns,

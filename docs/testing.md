@@ -533,6 +533,27 @@ weekly report email/PDF readiness. Newman runs
 `postman/tracedeck-backend-phase42.postman_collection.json` against the same
 live demo.
 
+Phase 43 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/setup/install-playwright-python.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-layout.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase43.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase43.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase43.ps1
+```
+
+The Phase 43 smoke live-boots the seeded dashboard, verifies the Buyer
+Operations Brief markers for anomaly alerting, mail delivery proof, push
+notification dispatch, weekly report delivery, archive retention, trust/audit,
+delivery command, package snapshot, and action/SLA state, then runs the
+screenshot-free Playwright layout contract across desktop, tablet, and mobile
+viewports. The layout report is metrics only and is written under
+`data/local/dashboard-layout/`; it does not capture screenshots, video,
+credentials, or page content. Newman runs
+`postman/tracedeck-backend-phase43.postman_collection.json` against the same
+live demo.
+
 Phase 13 adds:
 
 ```powershell

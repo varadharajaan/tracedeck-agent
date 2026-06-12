@@ -23,3 +23,9 @@ and dashboard mark application usage metadata, browser domain/category activity,
 device health, and archive health as collected or derived metadata. Passwords,
 credentials, screenshots, private messages, cookies, tokens, camera, and
 microphone are shown as denied collection categories.
+
+Phase 43 dashboard layout verification uses browser layout metrics only. The
+Playwright helper checks viewport overflow, required panel visibility, command
+navigation targets, and text fit, then writes a JSON report under
+`data/local/dashboard-layout/`. It does not capture screenshots, videos,
+credentials, raw page content, browser history, or personal data.
