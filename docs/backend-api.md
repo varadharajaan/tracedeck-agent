@@ -65,6 +65,7 @@ GET  /api/v1/devices/{deviceId}/overview
 GET  /api/v1/devices/{deviceId}/health
 GET  /api/v1/devices/{deviceId}/summary/daily
 GET  /api/v1/devices/{deviceId}/reports/weekly
+GET  /api/v1/devices/{deviceId}/reports/weekly/pdf
 GET  /api/v1/devices/{deviceId}/policy-violations
 GET  /api/v1/devices/{deviceId}/anomalies
 GET  /api/v1/devices/{deviceId}/tamper-events
@@ -122,6 +123,10 @@ Phase 12 adds `GET /api/v1/devices/{deviceId}/health` and includes the same
 typed `DeviceHealth` payload inside host overview. The score is an aggregate
 endpoint-health model for CPU, memory, disk, heartbeat, and operational
 recommendations.
+
+Phase 14 turns the weekly report route into a generated report from host
+overview data and adds a PDF packaging endpoint at
+`GET /api/v1/devices/{deviceId}/reports/weekly/pdf`.
 
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.

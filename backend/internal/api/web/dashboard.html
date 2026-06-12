@@ -851,9 +851,10 @@
       const templateCount = context.templates.count || 0;
       const roleCount = context.roles.count || 0;
       const auditCount = context.auditEvents.count || 0;
+      const reportReady = weekly.email_ready && weekly.pdf_ready;
 
       setText("weekly-report", weekly.generated ? "generated" : "ready");
-      setText("weekly-report-sub", weekly.generated_note || "Weekly AI report phase reserved");
+      setText("weekly-report-sub", reportReady ? "email and PDF ready" : weekly.generated_note || "Weekly report pending");
       setText("template-count", templateCount);
       setText("template-sub", "marketplace policies");
       setText("role-count", roleCount);

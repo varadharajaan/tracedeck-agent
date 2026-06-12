@@ -38,3 +38,7 @@
     torrent clients, VPN/proxy tools, game launchers, non-standard browsers,
     downloads installers, alert evaluator rule, dashboard watchlist, docs,
     Postman/Newman coverage, and local verification.
+17. Phase 14: weekly report generation and packaging. Generated weekly report
+    JSON from host overview, email subject/preview readiness, lightweight PDF
+    endpoint, dashboard readiness visibility, docs, Postman/Newman coverage,
+    and local verification.

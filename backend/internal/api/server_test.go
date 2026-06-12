@@ -147,6 +147,31 @@ func TestHostDashboardRiskEndpoints(t *testing.T) {
 	if !strings.Contains(deliveries.Body.String(), constants.DeliveryChannelEmail) {
 		t.Fatalf("expected email delivery visibility, got %s", deliveries.Body.String())
 	}
+
+	weekly := httptest.NewRecorder()
+	handler.ServeHTTP(weekly, httptest.NewRequest(http.MethodGet, constants.RouteDevices+"/laptop-cousin-001/"+constants.RouteSegmentReports+"/"+constants.RouteSegmentWeekly, nil))
+	if weekly.Code != http.StatusOK {
+		t.Fatalf("expected weekly report 200, got %d", weekly.Code)
+	}
+	var report model.WeeklyReport
+	if err := json.Unmarshal(weekly.Body.Bytes(), &report); err != nil {
+		t.Fatalf("decode weekly report: %v", err)
+	}
+	if !report.Generated || !report.EmailReady || !report.PDFReady {
+		t.Fatalf("expected generated weekly report: %+v", report)
+	}
+
+	pdf := httptest.NewRecorder()
+	handler.ServeHTTP(pdf, httptest.NewRequest(http.MethodGet, constants.RouteDevices+"/laptop-cousin-001/"+constants.RouteSegmentReports+"/"+constants.RouteSegmentWeekly+"/"+constants.RouteSegmentPDF, nil))
+	if pdf.Code != http.StatusOK {
+		t.Fatalf("expected weekly report pdf 200, got %d", pdf.Code)
+	}
+	if pdf.Header().Get("Content-Type") != constants.ContentTypePDF {
+		t.Fatalf("expected pdf content type, got %s", pdf.Header().Get("Content-Type"))
+	}
+	if !bytes.HasPrefix(pdf.Body.Bytes(), []byte("%PDF-1.4")) {
+		t.Fatalf("expected pdf body, got %q", pdf.Body.String())
+	}
 }
 
 func TestHostDashboardRiskEndpointNotFound(t *testing.T) {

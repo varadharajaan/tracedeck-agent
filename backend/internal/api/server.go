@@ -214,6 +214,11 @@ func (s *Server) handleDeviceRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleDevice(w, r, deviceID)
 	case len(parts) == 3 && parts[1] == constants.RouteSegmentSummary && parts[2] == constants.RouteSegmentDaily && r.Method == http.MethodGet:
 		s.handleDailySummary(w, r, deviceID)
+	case len(parts) == 4 && parts[1] == constants.RouteSegmentReports && parts[2] == constants.RouteSegmentWeekly && parts[3] == constants.RouteSegmentPDF && r.Method == http.MethodGet:
+		if !s.deviceAllowed(w, r, deviceID) {
+			return
+		}
+		s.handleWeeklyReportPDF(w, r, deviceID)
 	case len(parts) == 3 && parts[1] == constants.RouteSegmentReports && parts[2] == constants.RouteSegmentWeekly && r.Method == http.MethodGet:
 		if !s.deviceAllowed(w, r, deviceID) {
 			return
@@ -460,8 +465,35 @@ func (s *Server) handleAlertDeliveries(w http.ResponseWriter, r *http.Request, d
 	writeJSON(w, http.StatusOK, model.ListResponse[model.AlertDelivery]{Items: deliveries, Count: len(deliveries)})
 }
 
-func (s *Server) handleWeeklyReport(w http.ResponseWriter, _ *http.Request, deviceID string) {
-	writeJSON(w, http.StatusOK, store.WeeklyReport(deviceID))
+func (s *Server) handleWeeklyReport(w http.ResponseWriter, r *http.Request, deviceID string) {
+	overview, err := s.store.HostOverview(r.Context(), deviceID)
+	if err != nil {
+		if errors.Is(err, store.ErrDeviceNotFound) {
+			writeError(w, http.StatusNotFound, "device not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "weekly report lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, store.WeeklyReport(overview))
+}
+
+func (s *Server) handleWeeklyReportPDF(w http.ResponseWriter, r *http.Request, deviceID string) {
+	overview, err := s.store.HostOverview(r.Context(), deviceID)
+	if err != nil {
+		if errors.Is(err, store.ErrDeviceNotFound) {
+			writeError(w, http.StatusNotFound, "device not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "weekly report pdf lookup failed")
+		return
+	}
+	report := store.WeeklyReport(overview)
+	data := store.WeeklyReportPDF(report)
+	w.Header().Set("Content-Type", constants.ContentTypePDF)
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"tracedeck-weekly-%s.pdf\"", report.DeviceID))
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(data)
 }
 
 func (s *Server) handlePolicyTemplates(w http.ResponseWriter, r *http.Request) {

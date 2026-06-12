@@ -129,12 +129,18 @@ type DeviceHealth struct {
 }
 
 type WeeklyReport struct {
-	DeviceID      string   `json:"device_id"`
-	Week          string   `json:"week"`
-	Highlights    []string `json:"highlights"`
-	Risks         []string `json:"risks"`
-	Generated     bool     `json:"generated"`
-	GeneratedNote string   `json:"generated_note"`
+	DeviceID      string    `json:"device_id"`
+	Week          string    `json:"week"`
+	Summary       string    `json:"summary"`
+	Highlights    []string  `json:"highlights"`
+	Risks         []string  `json:"risks"`
+	Generated     bool      `json:"generated"`
+	GeneratedNote string    `json:"generated_note"`
+	EmailReady    bool      `json:"email_ready"`
+	EmailSubject  string    `json:"email_subject"`
+	EmailPreview  string    `json:"email_preview"`
+	PDFReady      bool      `json:"pdf_ready"`
+	GeneratedAt   time.Time `json:"generated_at"`
 }
 
 type PolicyTemplate struct {
