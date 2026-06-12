@@ -911,6 +911,86 @@ type TenantDeliveryRemediation struct {
 	RecentPlans     []TenantDeliveryRemediationAction `json:"recent_plans"`
 }
 
+type RunProviderSimulationRequest struct {
+	Mode     string `json:"mode"`
+	Channel  string `json:"channel"`
+	Scenario string `json:"scenario"`
+	Reason   string `json:"reason"`
+}
+
+type TenantProviderSimulationSummary struct {
+	Status                 string `json:"status"`
+	Headline               string `json:"headline"`
+	Detail                 string `json:"detail"`
+	ReadinessScore         int    `json:"readiness_score"`
+	SimulationScore        int    `json:"simulation_score"`
+	RoutesTotal            int    `json:"routes_total"`
+	SimulatedRoutes        int    `json:"simulated_routes"`
+	RoutesNeedingProof     int    `json:"routes_needing_proof"`
+	ProviderRisks          int    `json:"provider_risks"`
+	EmailReady             bool   `json:"email_ready"`
+	PushReady              bool   `json:"push_ready"`
+	DashboardReady         bool   `json:"dashboard_ready"`
+	SLAReady               bool   `json:"sla_ready"`
+	RecommendedPaidPackage string `json:"recommended_paid_package"`
+	NextBestAction         string `json:"next_best_action"`
+}
+
+type TenantProviderSimulationRoute struct {
+	RouteID              string     `json:"route_id"`
+	Channel              string     `json:"channel"`
+	Provider             string     `json:"provider"`
+	RecipientLabel       string     `json:"recipient_label"`
+	SimulationStatus     string     `json:"simulation_status"`
+	ProofState           string     `json:"proof_state"`
+	Scenario             string     `json:"scenario"`
+	SLATarget            string     `json:"sla_target"`
+	SimulatedLatency     string     `json:"simulated_latency"`
+	LatestDeliveryStatus string     `json:"latest_delivery_status"`
+	LastSimulatedAt      *time.Time `json:"last_simulated_at,omitempty"`
+	BusinessValue        string     `json:"business_value"`
+	Evidence             string     `json:"evidence"`
+	NextAction           string     `json:"next_action"`
+	PaidTier             string     `json:"paid_tier"`
+}
+
+type TenantProviderSimulationScenario struct {
+	ID         string   `json:"id"`
+	Name       string   `json:"name"`
+	Trigger    string   `json:"trigger"`
+	Channels   []string `json:"channels"`
+	Severity   string   `json:"severity"`
+	Outcome    string   `json:"outcome"`
+	BuyerValue string   `json:"buyer_value"`
+	PaidTier   string   `json:"paid_tier"`
+	StudySafe  bool     `json:"study_safe"`
+}
+
+type TenantProviderSimulationAction struct {
+	Title           string `json:"title"`
+	Detail          string `json:"detail"`
+	Owner           string `json:"owner"`
+	Channel         string `json:"channel"`
+	Status          string `json:"status"`
+	SLA             string `json:"sla"`
+	ConversionLever string `json:"conversion_lever"`
+	PaidTier        string `json:"paid_tier"`
+}
+
+type TenantProviderSimulationLab struct {
+	TenantID        string                             `json:"tenant_id"`
+	TenantName      string                             `json:"tenant_name"`
+	PlanID          string                             `json:"plan_id"`
+	PlanName        string                             `json:"plan_name"`
+	Audience        string                             `json:"audience"`
+	Summary         TenantProviderSimulationSummary    `json:"summary"`
+	Routes          []TenantProviderSimulationRoute    `json:"routes"`
+	Scenarios       []TenantProviderSimulationScenario `json:"scenarios"`
+	Actions         []TenantProviderSimulationAction   `json:"actions"`
+	PrivacyBoundary string                             `json:"privacy_boundary"`
+	GeneratedAt     time.Time                          `json:"generated_at"`
+}
+
 type ConsentCollectionItem struct {
 	Name        string `json:"name"`
 	Status      string `json:"status"`

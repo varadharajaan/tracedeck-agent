@@ -71,6 +71,8 @@ GET  /api/v1/tenants/{tenantId}/business-dashboard
 GET  /api/v1/tenants/{tenantId}/role-experiences
 GET  /api/v1/tenants/{tenantId}/executive-console
 GET  /api/v1/tenants/{tenantId}/notification-revenue-cockpit
+GET  /api/v1/tenants/{tenantId}/provider-simulation-lab
+POST /api/v1/tenants/{tenantId}/provider-simulation-lab
 GET  /api/v1/tenants/{tenantId}/notification-command-center
 GET  /api/v1/tenants/{tenantId}/delivery-timeline
 GET  /api/v1/tenants/{tenantId}/sync-health
@@ -319,6 +321,16 @@ matrix, anomaly delivery scenarios, upgrade action levers, and a strict
 metadata-only privacy boundary. It does not store provider secrets, alert
 bodies, screenshots, passwords, tokens, cookies, raw URLs, page titles,
 private content, or endpoint payloads.
+
+Phase 55 adds `GET /api/v1/tenants/{tenantId}/provider-simulation-lab` and
+`POST /api/v1/tenants/{tenantId}/provider-simulation-lab`. The GET response
+packages provider-safe email, push, and dashboard simulation readiness with
+route proof, SLA state, scenario templates, action levers, paid package value,
+and strict metadata-only privacy proof. The POST endpoint accepts typed
+`dry_run` simulations by channel and records audit proof; live send modes are
+rejected. It does not store provider secrets, SMTP passwords, push endpoint
+payloads, alert bodies, screenshots, passwords, tokens, cookies, raw URLs, page
+titles, private content, or endpoint payloads.
 
 Phase 31 adds `GET /api/v1/tenants/{tenantId}/sync-health` for buyer and admin
 proof that backend-visible telemetry is arriving per host. It returns reporting

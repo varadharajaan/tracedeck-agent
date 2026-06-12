@@ -1635,6 +1635,102 @@ func TestTenantNotificationRevenueCockpitEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantProviderSimulationLabEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "provider-simulation-device-001",
+		"host_name": "provider-simulation-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentProviderSim, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected provider simulation lab 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var lab model.TenantProviderSimulationLab
+	if err := json.Unmarshal(response.Body.Bytes(), &lab); err != nil {
+		t.Fatalf("decode provider simulation lab: %v", err)
+	}
+	if lab.Summary.RoutesTotal != 3 || len(lab.Routes) != 3 || len(lab.Scenarios) < 3 || len(lab.Actions) == 0 {
+		t.Fatalf("expected provider simulation routes, scenarios, and actions: %+v", lab)
+	}
+	if lab.Summary.ReadinessScore == 0 || lab.Summary.RecommendedPaidPackage == "" || lab.Summary.NextBestAction == "" {
+		t.Fatalf("expected scored provider simulation summary: %+v", lab.Summary)
+	}
+	if !strings.Contains(lab.PrivacyBoundary, "metadata-only") || !strings.Contains(lab.PrivacyBoundary, "no provider secrets") {
+		t.Fatalf("expected strict provider simulation privacy boundary, got %q", lab.PrivacyBoundary)
+	}
+
+	run := httptest.NewRecorder()
+	runBody := []byte(`{"mode":"dry_run","channel":"push","scenario":"urgent-anomaly-push","reason":"paid buyer push simulation"}`)
+	handler.ServeHTTP(run, httptest.NewRequest(http.MethodPost, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentProviderSim, bytes.NewReader(runBody)))
+	if run.Code != http.StatusAccepted {
+		t.Fatalf("expected provider simulation 202, got %d: %s", run.Code, run.Body.String())
+	}
+	var simulated model.TenantProviderSimulationLab
+	if err := json.Unmarshal(run.Body.Bytes(), &simulated); err != nil {
+		t.Fatalf("decode simulated provider lab: %v", err)
+	}
+	if !simulated.Summary.PushReady || simulated.Summary.SimulatedRoutes == 0 {
+		t.Fatalf("expected push simulation proof: %+v", simulated.Summary)
+	}
+	hasPush := false
+	for _, route := range simulated.Routes {
+		if route.Channel == constants.DeliveryChannelPush && route.SimulationStatus == constants.StatusHealthy && route.LastSimulatedAt != nil && route.BusinessValue != "" {
+			hasPush = true
+		}
+	}
+	if !hasPush {
+		t.Fatalf("expected provider-safe push route simulation proof: %+v", simulated.Routes)
+	}
+
+	invalid := httptest.NewRecorder()
+	handler.ServeHTTP(invalid, httptest.NewRequest(http.MethodPost, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentProviderSim, strings.NewReader(`{"mode":"send_live"}`)))
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("expected invalid provider simulation mode 400, got %d: %s", invalid.Code, invalid.Body.String())
+	}
+
+	audit := httptest.NewRecorder()
+	handler.ServeHTTP(audit, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentAuditEvents, nil))
+	if audit.Code != http.StatusOK {
+		t.Fatalf("expected audit events 200, got %d", audit.Code)
+	}
+	if !strings.Contains(audit.Body.String(), constants.AuditActionProviderSimulation) {
+		t.Fatalf("expected provider simulation audit event, got %s", audit.Body.String())
+	}
+
+	serialized := strings.ToLower(run.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "push_endpoint", "screenshot_bytes", "raw_url", "page_title", "alert_body"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("provider simulation lab leaked forbidden marker %q: %s", forbidden, run.Body.String())
+		}
+	}
+}
+
 func TestDeviceGroupAndPolicyAssignmentEndpoints(t *testing.T) {
 	t.Parallel()
 

@@ -21,6 +21,8 @@ type Repository interface {
 	RunTenantDeliveryDrilldown(context.Context, string, model.RunDeliveryDrilldownRequest) (model.TenantDeliveryDrilldown, error)
 	TenantDeliveryRemediation(context.Context, string) (model.TenantDeliveryRemediation, error)
 	RunTenantDeliveryRemediation(context.Context, string, model.RunDeliveryRemediationRequest) (model.TenantDeliveryRemediation, error)
+	TenantProviderSimulationLab(context.Context, string) (model.TenantProviderSimulationLab, error)
+	RunTenantProviderSimulation(context.Context, string, model.RunProviderSimulationRequest) (model.TenantProviderSimulationLab, error)
 	TenantOperationsSummary(context.Context, string) (model.TenantOperationsSummary, error)
 	TenantMonetizationSummary(context.Context, string) (model.TenantMonetizationSummary, error)
 	TenantBusinessDashboard(context.Context, string) (model.TenantBusinessDashboard, error)

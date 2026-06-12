@@ -321,6 +321,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantExecutiveConsole(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentNotificationRev && r.Method == http.MethodGet:
 		s.handleTenantNotificationRevenueCockpit(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentProviderSim:
+		s.handleTenantProviderSimulationLab(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentNotificationCmd && r.Method == http.MethodGet:
 		s.handleTenantNotificationCommandCenter(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentDeliveryTimeline && r.Method == http.MethodGet:
@@ -886,6 +888,49 @@ func activityFeedFilterFromQuery(r *http.Request) model.TenantActivityFeedFilter
 		Status:   strings.TrimSpace(query.Get("status")),
 		Query:    strings.TrimSpace(query.Get("q")),
 		Limit:    limit,
+	}
+}
+
+func (s *Server) handleTenantProviderSimulationLab(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		lab, err := s.store.TenantProviderSimulationLab(r.Context(), tenantID)
+		if err != nil {
+			if errors.Is(err, store.ErrTenantNotFound) {
+				writeError(w, http.StatusNotFound, "tenant not found")
+				return
+			}
+			writeError(w, http.StatusInternalServerError, "tenant provider simulation lookup failed")
+			return
+		}
+		writeJSON(w, http.StatusOK, lab)
+	case http.MethodPost:
+		var req model.RunProviderSimulationRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid provider simulation json")
+			return
+		}
+		if err := validateRunProviderSimulationRequest(req); err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		lab, err := s.store.RunTenantProviderSimulation(r.Context(), tenantID, req)
+		if err != nil {
+			if errors.Is(err, store.ErrTenantNotFound) {
+				writeError(w, http.StatusNotFound, "tenant not found")
+				return
+			}
+			writeError(w, http.StatusInternalServerError, "tenant provider simulation failed")
+			return
+		}
+		writeJSON(w, http.StatusAccepted, lab)
+	default:
+		writeMethodNotAllowed(w)
 	}
 }
 
@@ -1573,6 +1618,21 @@ func validateRunDeliveryRemediationRequest(req model.RunDeliveryRemediationReque
 	}
 }
 
+func validateRunProviderSimulationRequest(req model.RunProviderSimulationRequest) error {
+	mode := strings.TrimSpace(req.Mode)
+	channel := strings.TrimSpace(req.Channel)
+	switch {
+	case mode == "":
+		return errors.New("mode is required")
+	case !knownProviderSimulationMode(mode):
+		return errors.New("mode is unknown")
+	case channel != "" && !knownChannels([]string{channel}):
+		return errors.New("channel is unknown")
+	default:
+		return nil
+	}
+}
+
 func validateCreateTenantActivityViewRequest(req model.CreateTenantActivityViewRequest) error {
 	filter := req.Filter
 	switch {
@@ -1803,6 +1863,10 @@ func providerAllowedForChannel(provider string, channel string) bool {
 
 func knownDeliveryDrillMode(mode string) bool {
 	return strings.TrimSpace(mode) == constants.DeliveryDrillModeDryRun
+}
+
+func knownProviderSimulationMode(mode string) bool {
+	return strings.TrimSpace(mode) == constants.ProviderSimulationModeDryRun
 }
 
 func knownDeliveryRemediationMode(mode string) bool {

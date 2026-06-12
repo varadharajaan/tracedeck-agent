@@ -1,0 +1,139 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 55",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Has Provider Simulation Lab",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('dashboard contains provider simulation markers', function () {",
+              "  pm.response.to.have.status(200);",
+              "  var body = pm.response.text();",
+              "  ['Provider Simulation Lab', 'provider-simulation-section', 'Simulation Route Proof', 'Simulation Scenarios', 'Simulation Action Queue', 'Provider Privacy Proof', 'data-jump-target=\"provider-simulation-section\"'].forEach(function (marker) {",
+              "    pm.expect(body).to.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Provider Simulation Lab",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/provider-simulation-lab"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('provider simulation lab exposes typed route proof', function () {",
+              "  pm.response.to.have.status(200);",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.summary.readiness_score).to.be.above(0);",
+              "  pm.expect(json.summary.routes_total).to.be.at.least(3);",
+              "  pm.expect(json.summary.recommended_paid_package).to.be.a('string').and.not.empty;",
+              "  pm.expect(json.summary.next_best_action).to.be.a('string').and.not.empty;",
+              "  pm.expect(json.routes.length).to.be.at.least(3);",
+              "  pm.expect(json.scenarios.length).to.be.at.least(3);",
+              "  pm.expect(json.actions.length).to.be.at.least(1);",
+              "  pm.expect(json.routes.some(function (item) { return item.channel === 'push' && item.business_value && item.paid_tier; })).to.eql(true);",
+              "  pm.expect(json.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(json.privacy_boundary).to.include('no provider secrets');",
+              "  var serialized = JSON.stringify(json).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'push_endpoint', 'screenshot_bytes', 'raw_url', 'page_title', 'alert_body'].forEach(function (marker) {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Run Push Provider Simulation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"mode\":\"dry_run\",\"channel\":\"push\",\"scenario\":\"urgent-anomaly-push\",\"reason\":\"newman push simulation\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/provider-simulation-lab"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('push provider simulation dry run succeeds', function () {",
+              "  pm.response.to.have.status(202);",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.summary.push_ready).to.eql(true);",
+              "  pm.expect(json.summary.simulated_routes).to.be.above(0);",
+              "  pm.expect(json.routes.some(function (item) { return item.channel === 'push' && item.simulation_status === 'healthy' && item.last_simulated_at; })).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Audit Has Provider Simulation",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/audit-events"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('provider simulation audit event exists', function () {",
+              "  pm.response.to.have.status(200);",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.items.some(function (item) { return item.action === 'provider_simulation.rehearsed'; })).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -46,6 +46,7 @@ const (
 	RouteSegmentRoleExperience   = "role-experiences"
 	RouteSegmentExecutiveConsole = "executive-console"
 	RouteSegmentNotificationRev  = "notification-revenue-cockpit"
+	RouteSegmentProviderSim      = "provider-simulation-lab"
 	RouteSegmentNotificationCmd  = "notification-command-center"
 	RouteSegmentDeliveryTimeline = "delivery-timeline"
 	RouteSegmentDeliveryDrill    = "delivery-drilldown"
@@ -121,6 +122,7 @@ const (
 	AuditActionNotificationPref     = "notification_preferences.updated"
 	AuditActionDeliveryDrillRun     = "delivery_drilldown.rehearsed"
 	AuditActionDeliveryRemediation  = "delivery_remediation.planned"
+	AuditActionProviderSimulation   = "provider_simulation.rehearsed"
 	AuditActionActivityViewCreated  = "activity_view.created"
 	AuditActionDeviceGroupCreated   = "device_group.created"
 	AuditActionDataExportCreated    = "data_export.created"
@@ -254,6 +256,11 @@ const (
 const (
 	DeliveryDrillModeDryRun  = "dry_run"
 	DeliveryDrillPrivacyNote = "metadata-only dry run: no provider secrets, alert bodies, screenshots, tokens, cookies, passwords, or endpoint payloads are collected or stored"
+)
+
+const (
+	ProviderSimulationModeDryRun  = "dry_run"
+	ProviderSimulationPrivacyNote = "metadata-only provider simulation: route labels, channel, provider type, delivery status, SLA result, retry posture, and buyer value only; no provider secrets, SMTP passwords, push endpoint payloads, alert bodies, screenshots, raw URLs, tokens, cookies, private content, or endpoint payloads are collected or stored"
 )
 
 const (
