@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/alert"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/archive"
@@ -16,20 +17,23 @@ import (
 )
 
 type RunOptions struct {
-	ConfigPath    string
-	DataDir       string
-	LogDir        string
-	LogLevel      string
-	OutboxDir     string
-	Once          bool
-	ProcessLimit  int
-	ArchiveOnce   bool
-	ArchiveDryRun bool
-	AlertOnce     bool
-	AlertDryRun   bool
+	ConfigPath         string
+	DataDir            string
+	LogDir             string
+	LogLevel           string
+	OutboxDir          string
+	Once               bool
+	ProcessLimit       int
+	ArchiveOnce        bool
+	ArchiveDryRun      bool
+	AlertOnce          bool
+	AlertDryRun        bool
+	CollectionInterval string
+	MaxCycles          int
 }
 
 type RunResult struct {
+	Cycles          int
 	CollectedEvents int
 	StoredEvents    int
 	ArchiveBatch    string
@@ -68,93 +72,191 @@ func Run(ctx context.Context, opts RunOptions) (RunResult, error) {
 		}
 	}()
 
-	if err := store.EnforceRetention(ctx, policy.Retention.LocalTTLDays); err != nil {
+	runner := &cycleRunner{
+		opts:   opts,
+		policy: policy,
+		logger: logger,
+		store:  store,
+	}
+
+	if opts.Once {
+		return runner.runCycle(ctx, opts.ArchiveOnce && policy.Archive.Enabled, opts.AlertOnce && policy.Alerts.Enabled)
+	}
+
+	return runner.runContinuous(ctx)
+}
+
+type cycleRunner struct {
+	opts   RunOptions
+	policy *config.Policy
+	logger *slog.Logger
+	store  *sqlite.Store
+}
+
+func (r *cycleRunner) runContinuous(ctx context.Context) (RunResult, error) {
+	collectionInterval, err := parseDurationOrDefault(r.opts.CollectionInterval, constants.DefaultCollectionInterval)
+	if err != nil {
+		return RunResult{}, err
+	}
+	archiveInterval, err := parseDurationOrDefault(r.policy.Archive.UploadInterval, constants.DefaultUploadInterval)
+	if err != nil {
+		return RunResult{}, err
+	}
+
+	maxCycles := r.opts.MaxCycles
+	if maxCycles < 0 {
+		maxCycles = constants.DefaultMaxCycles
+	}
+
+	r.logger.Info("continuous agent loop started",
+		"collection_interval", collectionInterval.String(),
+		"archive_interval", archiveInterval.String(),
+		"max_cycles", maxCycles,
+	)
+
+	var aggregate RunResult
+	var lastArchiveAt time.Time
+
+	for {
+		if maxCycles > 0 && aggregate.Cycles >= maxCycles {
+			return aggregate, nil
+		}
+
+		archiveDue := r.policy.Archive.Enabled && (lastArchiveAt.IsZero() || time.Since(lastArchiveAt) >= archiveInterval)
+		cycle, err := r.runCycle(ctx, archiveDue, r.policy.Alerts.Enabled)
+		if err != nil {
+			return RunResult{}, err
+		}
+		aggregate.merge(cycle)
+		if archiveDue && cycle.ArchiveBatch != "" {
+			lastArchiveAt = time.Now()
+		}
+
+		if maxCycles > 0 && aggregate.Cycles >= maxCycles {
+			return aggregate, nil
+		}
+
+		timer := time.NewTimer(collectionInterval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			r.logger.Info("continuous agent loop stopped", "reason", ctx.Err())
+			return aggregate, nil
+		case <-timer.C:
+		}
+	}
+}
+
+func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEnabled bool) (RunResult, error) {
+	if err := r.store.EnforceRetention(ctx, r.policy.Retention.LocalTTLDays); err != nil {
 		return RunResult{}, err
 	}
 
 	platformAdapter := platform.Current()
-	collector := processcollector.New(opts.ProcessLimit, platformAdapter)
-	events, err := collector.Collect(ctx, policy)
+	collector := processcollector.New(r.opts.ProcessLimit, platformAdapter)
+	events, err := collector.Collect(ctx, r.policy)
 	if err != nil {
 		return RunResult{}, err
 	}
 
 	for _, evt := range events {
-		if err := store.SaveEvent(ctx, evt); err != nil {
+		if err := r.store.SaveEvent(ctx, evt); err != nil {
 			return RunResult{}, err
 		}
 	}
 
-	total, err := store.CountEvents(ctx)
+	total, err := r.store.CountEvents(ctx)
 	if err != nil {
 		return RunResult{}, err
 	}
 
-	result := RunResult{CollectedEvents: len(events), StoredEvents: total}
+	result := RunResult{Cycles: 1, CollectedEvents: len(events), StoredEvents: total}
 
-	if opts.ArchiveOnce && policy.Archive.Enabled {
-		batch, err := archive.NewWriter(opts.OutboxDir).WriteBatch(ctx, policy, events)
+	if archiveEnabled {
+		batch, err := archive.NewWriter(r.opts.OutboxDir).WriteBatch(ctx, r.policy, events)
 		if err != nil {
 			return RunResult{}, err
 		}
 		result.ArchiveBatch = batch.LocalPath
-		logger.Info("archive batch staged",
-			"bucket", policy.Archive.Bucket,
+		r.logger.Info("archive batch staged",
+			"bucket", r.policy.Archive.Bucket,
 			"s3_key", batch.S3Key,
 			"local_path", batch.LocalPath,
 			"event_count", batch.Count,
-			"dry_run", opts.ArchiveDryRun,
+			"dry_run", r.opts.ArchiveDryRun,
 		)
-		if !opts.ArchiveDryRun && batch.LocalPath != "" {
+		if !r.opts.ArchiveDryRun && batch.LocalPath != "" {
 			uploader, err := archive.NewS3Uploader(ctx)
 			if err != nil {
 				return RunResult{}, err
 			}
-			if err := uploader.UploadFile(ctx, policy.Archive.Bucket, batch.S3Key, batch.LocalPath); err != nil {
+			if err := uploader.UploadFile(ctx, r.policy.Archive.Bucket, batch.S3Key, batch.LocalPath); err != nil {
 				return RunResult{}, err
 			}
 			result.ArchiveUploaded = true
 		}
 	}
 
-	if opts.AlertOnce && policy.Alerts.Enabled {
-		alerts := alert.NewEvaluator().Evaluate(ctx, policy, events)
+	if alertEnabled {
+		alerts := alert.NewEvaluator().Evaluate(ctx, r.policy, events)
 		result.AlertsRaised = len(alerts)
 		if len(alerts) > 0 {
-			if !opts.AlertDryRun {
+			if !r.opts.AlertDryRun {
 				return RunResult{}, fmt.Errorf("email provider delivery is not enabled in this phase; rerun with alert dry-run")
 			}
-			outboxPath, err := alert.NewLocalNotifier(opts.OutboxDir).Notify(ctx, policy, alerts)
+			outboxPath, err := alert.NewLocalNotifier(r.opts.OutboxDir).Notify(ctx, r.policy, alerts)
 			if err != nil {
 				return RunResult{}, err
 			}
 			result.AlertOutboxPath = outboxPath
-			logger.Warn("alert notification staged",
+			r.logger.Warn("alert notification staged",
 				"alert_count", len(alerts),
 				"outbox_path", outboxPath,
-				"dry_run", opts.AlertDryRun,
+				"dry_run", r.opts.AlertDryRun,
 			)
 		}
 	}
 
-	logger.Info("process snapshot collected",
-		"tenant_id", policy.TenantID,
-		"device_id", policy.DeviceID,
+	r.logger.Info("process snapshot collected",
+		"tenant_id", r.policy.TenantID,
+		"device_id", r.policy.DeviceID,
 		"operating_system", platformAdapter.Name(),
 		"collected_events", len(events),
 		"stored_events", total,
 	)
 
-	if !opts.Once {
-		logger.Warn("continuous mode is not enabled in this phase; completed one local snapshot")
-	}
-
 	return result, nil
+}
+
+func (r *RunResult) merge(next RunResult) {
+	r.Cycles += next.Cycles
+	r.CollectedEvents += next.CollectedEvents
+	r.StoredEvents = next.StoredEvents
+	if next.ArchiveBatch != "" {
+		r.ArchiveBatch = next.ArchiveBatch
+	}
+	r.ArchiveUploaded = r.ArchiveUploaded || next.ArchiveUploaded
+	r.AlertsRaised += next.AlertsRaised
+	if next.AlertOutboxPath != "" {
+		r.AlertOutboxPath = next.AlertOutboxPath
+	}
+}
+
+func parseDurationOrDefault(value string, fallback string) (time.Duration, error) {
+	if value == "" {
+		value = fallback
+	}
+	duration, err := time.ParseDuration(value)
+	if err != nil || duration <= 0 {
+		return 0, fmt.Errorf("invalid duration %q", value)
+	}
+	return duration, nil
 }
 
 func FormatRunResult(result RunResult) string {
 	return fmt.Sprintf(
-		"TraceDeck run complete: collected_events=%d stored_events=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_outbox=%s",
+		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_outbox=%s",
+		result.Cycles,
 		result.CollectedEvents,
 		result.StoredEvents,
 		result.ArchiveBatch,

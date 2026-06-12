@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/constants"
 )
@@ -46,6 +47,7 @@ func (p Policy) Validate() error {
 		requiredString(&errs, constants.ConfigFieldArchiveBucket, p.Archive.Bucket)
 		requiredString(&errs, constants.ConfigFieldArchivePrefixTemplate, p.Archive.PrefixTemplate)
 		requiredString(&errs, constants.ConfigFieldArchiveUploadInterval, p.Archive.UploadInterval)
+		validateDuration(&errs, constants.ConfigFieldArchiveUploadInterval, p.Archive.UploadInterval)
 	}
 	if p.Archive.StorageClassDays.StandardIAUntil <= p.Archive.StorageClassDays.Standard {
 		errs = append(errs, fieldError(constants.ConfigFieldArchiveStandardIAUntil, constants.ConfigErrorStandardIAAfterStandard))
@@ -125,5 +127,12 @@ func validateOptionalHourMinute(errs *[]error, fieldName, value string) {
 	}
 	if !hourMinutePattern.MatchString(value) {
 		*errs = append(*errs, fieldError(fieldName, constants.ConfigErrorTimeMustUseHourMinute))
+	}
+}
+
+func validateDuration(errs *[]error, fieldName, value string) {
+	duration, err := time.ParseDuration(value)
+	if err != nil || duration <= 0 {
+		*errs = append(*errs, fieldError(fieldName, constants.ConfigErrorDurationRequired))
 	}
 }

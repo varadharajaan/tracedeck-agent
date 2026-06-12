@@ -4,6 +4,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/varadharajaan/tracedeck-agent/agent/internal/constants"
 )
 
 func TestLoadValidSamplePolicy(t *testing.T) {
@@ -22,7 +24,7 @@ func TestLoadValidSamplePolicy(t *testing.T) {
 	if policy.TenantID != "family-varadha" {
 		t.Fatalf("unexpected tenant id: %s", policy.TenantID)
 	}
-	if policy.Collection.SensitiveCapabilities.Screenshots != "deny" {
+	if policy.Collection.SensitiveCapabilities.Screenshots != SensitiveCapabilityMode(constants.SensitiveCapabilityDeny) {
 		t.Fatalf("screenshots must remain deny-only")
 	}
 }
@@ -67,6 +69,24 @@ func TestLoadRejectsBadEnum(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "collection.browser.url_mode") {
 		t.Fatalf("expected url_mode in error, got: %v", err)
+	}
+}
+
+func TestLoadRejectsBadArchiveUploadInterval(t *testing.T) {
+	t.Parallel()
+
+	data := strings.Replace(validMinimalPolicy(), "enabled: false", "enabled: true", 1)
+	data = strings.Replace(data, "provider: none", "provider: s3", 1)
+	data = strings.Replace(data, `bucket: ""`, "bucket: test-bucket", 1)
+	data = strings.Replace(data, `prefix_template: ""`, "prefix_template: tenants/{tenant_id}/", 1)
+	data = strings.Replace(data, `upload_interval: ""`, "upload_interval: soon", 1)
+
+	_, err := Load([]byte(data))
+	if err == nil {
+		t.Fatal("expected invalid archive upload interval to be rejected")
+	}
+	if !strings.Contains(err.Error(), "archive.upload_interval") {
+		t.Fatalf("expected archive upload interval in error, got: %v", err)
 	}
 }
 

@@ -26,14 +26,14 @@ try {
         go run ./agent/cmd/tracedeck-agent run --once --config $policyPath --data-dir $smokeRoot --log-dir ./logs/local/agent --outbox-dir $outboxRoot --process-limit 512 --archive-once --archive-dry-run --alert-once --alert-dry-run
     }
 
-    $archiveFiles = Get-ChildItem -Path (Join-Path $outboxRoot "archive") -Filter "*.jsonl.gz" -File -ErrorAction SilentlyContinue
+    $archiveFiles = @(Get-ChildItem -Path (Join-Path $outboxRoot "archive") -Filter "*.jsonl.gz" -File -ErrorAction SilentlyContinue)
     if (-not $archiveFiles) {
         Write-TraceDeckLog -Level "ERROR" -Message "Expected archive outbox batch was not created."
         exit 1
     }
     Write-TraceDeckLog -Level "INFO" -Message "Archive outbox batch count: $($archiveFiles.Count)"
 
-    $alertFiles = Get-ChildItem -Path (Join-Path $outboxRoot "alerts") -Filter "*.json" -File -ErrorAction SilentlyContinue
+    $alertFiles = @(Get-ChildItem -Path (Join-Path $outboxRoot "alerts") -Filter "*.json" -File -ErrorAction SilentlyContinue)
     if (-not $alertFiles) {
         Write-TraceDeckLog -Level "ERROR" -Message "Expected alert outbox notification was not created."
         exit 1
