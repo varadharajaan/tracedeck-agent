@@ -1,6 +1,7 @@
 param(
     [string]$Addr = "127.0.0.1:18080",
     [string]$PidPath = "data/local/backend/tracedeck-backend.pid",
+    [string]$DataPath = "data/local/backend/backend-state.json",
     [switch]$StopAfterSeed
 )
 
@@ -49,6 +50,12 @@ try {
     $pidFullPath = Join-Path $script:TraceDeckRepoRoot $PidPath
     $pidDir = Split-Path -Parent $pidFullPath
     New-Item -ItemType Directory -Force -Path $pidDir | Out-Null
+    $dataFullPath = Join-Path $script:TraceDeckRepoRoot $DataPath
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dataFullPath) | Out-Null
+
+    Invoke-TraceDeckLoggedCommand -Label "Stop stale dashboard backend listener" -Command {
+        powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/stop-backend-dev.ps1 -PidPath $PidPath -Addr $Addr
+    }
 
     $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
     $stdoutPath = Join-Path $script:TraceDeckRepoRoot "logs/local/backend/dashboard-demo-$timestamp.out.log"
@@ -61,12 +68,21 @@ try {
 
     $process = Start-Process -FilePath $exePath -ArgumentList @(
         "--addr", $Addr,
-        "--log-dir", "./logs/local/backend"
+        "--log-dir", "./logs/local/backend",
+        "--data-path", "`"$dataFullPath`""
     ) -WorkingDirectory $script:TraceDeckRepoRoot -WindowStyle Hidden -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath -PassThru
 
     Set-Content -Path $pidFullPath -Value $process.Id
     Write-TraceDeckLog -Level "INFO" -Message "Started dashboard demo backend pid=$($process.Id) addr=$Addr pid_file=$pidFullPath"
     Write-TraceDeckLog -Level "INFO" -Message "stdout=$stdoutPath stderr=$stderrPath"
+    Start-Sleep -Milliseconds 500
+    if ($process.HasExited) {
+        $errorText = ""
+        if (Test-Path $stderrPath) {
+            $errorText = (Get-Content -Path $stderrPath -Raw).Trim()
+        }
+        throw "Dashboard demo backend exited during startup pid=$($process.Id): $errorText"
+    }
 
     Wait-TraceDeckBackend -BaseUrl $baseUrl
 

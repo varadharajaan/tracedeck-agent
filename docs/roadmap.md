@@ -73,3 +73,6 @@
 26. Phase 23: customer operations dashboard. Tenant-level operations summary
     API, monetisation cockpit, escalation workbench, notification delivery
     board, upgrade proof pack, Postman/Newman coverage, and local verification.
+27. Phase 24: dashboard demo lifecycle hardening. Targeted stale listener
+    cleanup, isolated demo data paths, startup exit checks, lifecycle smoke,
+    Newman coverage, and local verification.

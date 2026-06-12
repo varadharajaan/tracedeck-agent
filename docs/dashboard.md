@@ -44,6 +44,9 @@ delete request queues.
 Phase 23 adds tenant-level customer operations panels for monetisation demos:
 fleet coverage, anomaly pipeline, mail delivery proof, push reach, escalation
 signals, notification delivery score, and upgrade proof pack.
+Phase 24 hardens dashboard demo lifecycle scripts so stale TraceDeck listeners
+are stopped before live boot testing and the served dashboard is proven to come
+from the current build.
 
 The dashboard reads the base backend endpoints:
 

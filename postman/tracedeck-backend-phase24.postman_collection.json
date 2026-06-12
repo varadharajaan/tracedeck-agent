@@ -1,0 +1,45 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 24",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Contains Current Customer Operations Panels",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard is current phase build', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Customer Operations Cockpit');",
+        "  pm.expect(html).to.include('Escalation Workbench');",
+        "  pm.expect(html).to.include('Notification Delivery Board');",
+        "  pm.expect(html).to.include('Upgrade Proof Pack');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Operations Summary Seeded By Demo Launcher",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/operations-summary" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('demo launcher seeded tenant operations data', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.hosts_total).to.be.above(0);",
+        "  pm.expect(body.delivery_total).to.be.above(0);",
+        "  pm.expect(body.last_email.channel).to.eql('email');",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

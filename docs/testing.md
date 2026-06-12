@@ -32,6 +32,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase21.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase22.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase23.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase24.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
@@ -289,6 +290,19 @@ dashboard contains Customer Operations Cockpit, Escalation Workbench,
 Notification Delivery Board, and Upgrade Proof Pack panels. Newman runs
 `postman/tracedeck-backend-phase23.postman_collection.json` against a live
 API-key-protected backend.
+
+Phase 24 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase24.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase24.ps1
+```
+
+The Phase 24 smoke starts the dashboard demo twice on the same localhost port,
+verifies the stale first listener is stopped, verifies the second process owns
+the port, checks current dashboard customer operations panels, and verifies the
+seeded tenant operations API. Newman starts the dashboard through the same
+launcher and verifies health, dashboard HTML, and operations summary.
 
 Phase 13 adds:
 
