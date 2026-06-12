@@ -14,6 +14,7 @@ type Repository interface {
 	CreateAlertRule(context.Context, string, model.CreateAlertRuleRequest) (model.AlertRule, error)
 	ListAlertRules(context.Context, string) []model.AlertRule
 	TenantOperationsSummary(context.Context, string) (model.TenantOperationsSummary, error)
+	TenantMonetizationSummary(context.Context, string) (model.TenantMonetizationSummary, error)
 	CreateTenantDataExport(context.Context, string, model.CreateTenantDataExportRequest) (model.TenantDataExport, error)
 	ListTenantDataExports(context.Context, string) []model.TenantDataExport
 	CreateDeleteRequest(context.Context, string, model.CreateDeleteRequestRequest) (model.DeleteRequest, error)

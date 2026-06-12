@@ -40,6 +40,7 @@ const (
 	RouteSegmentAlertRules     = "alert-rules"
 	RouteSegmentConsentCenter  = "consent-center"
 	RouteSegmentOperations     = "operations-summary"
+	RouteSegmentMonetization   = "monetization-summary"
 	RouteSegmentDataExports    = "data-exports"
 	RouteSegmentDeleteRequests = "delete-requests"
 	RouteSegmentDeviceGroups   = "device-groups"
@@ -272,4 +273,11 @@ const (
 	ConsentCollectionPasswords      = "Passwords and credentials"
 	ConsentCollectionScreenshots    = "Screenshots"
 	ConsentCollectionPrivateContent = "Private messages, cookies, tokens, camera, and microphone"
+)
+
+const (
+	MonetizationStageProofGap        = "proof_gap"
+	MonetizationStagePilotReady      = "pilot_ready"
+	MonetizationStageConversionReady = "conversion_ready"
+	MonetizationStageExpansionReady  = "expansion_ready"
 )

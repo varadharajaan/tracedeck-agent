@@ -1,0 +1,50 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 25",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Contains Monetization Command Panels",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard has monetization panels', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Monetisation Command Center');",
+        "  pm.expect(html).to.include('Notification Guarantee');",
+        "  pm.expect(html).to.include('Paid Feature Proof');",
+        "  pm.expect(html).to.include('Conversion Action Queue');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Tenant Monetization Summary",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/monetization-summary" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('monetization summary is typed and customer-ready', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.plan_id).to.eql('family_pro');",
+        "  pm.expect(body.readiness_score).to.be.above(0);",
+        "  pm.expect(body.notification_score).to.be.above(0);",
+        "  pm.expect(body.notification_routes).to.have.length(3);",
+        "  pm.expect(body.notification_promise.email).to.include('smtp');",
+        "  pm.expect(body.value_panels.length).to.be.above(3);",
+        "  pm.expect(body.paid_capabilities.length).to.be.above(3);",
+        "  pm.expect(body.conversion_actions.length).to.be.above(0);",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

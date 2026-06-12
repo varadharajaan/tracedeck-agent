@@ -172,4 +172,11 @@ func TestPersistentStoreSurvivesRestart(t *testing.T) {
 	if loadedSummary.HostsTotal != 1 || loadedSummary.DeliveryTotal == 0 || loadedSummary.MonetizationReadiness == 0 {
 		t.Fatalf("expected loaded tenant operations summary: %+v", loadedSummary)
 	}
+	monetization, err := second.TenantMonetizationSummary(ctx, "family-varadha")
+	if err != nil {
+		t.Fatalf("load tenant monetization summary after restart: %v", err)
+	}
+	if monetization.ReadinessScore == 0 || monetization.NotificationScore == 0 || len(monetization.NotificationRoutes) != 3 {
+		t.Fatalf("expected loaded tenant monetization summary: %+v", monetization)
+	}
 }
