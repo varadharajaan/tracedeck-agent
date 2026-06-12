@@ -151,6 +151,49 @@ type PolicyTemplate struct {
 	Roles       []string `json:"roles"`
 }
 
+type AlertRuleTemplate struct {
+	ID              string   `json:"id"`
+	Name            string   `json:"name"`
+	Trigger         string   `json:"trigger"`
+	Description     string   `json:"description"`
+	DefaultSeverity string   `json:"default_severity"`
+	Channels        []string `json:"channels"`
+	Example         string   `json:"example"`
+	PaidTier        string   `json:"paid_tier"`
+}
+
+type AlertRuleCondition struct {
+	Subject       string `json:"subject"`
+	Operator      string `json:"operator"`
+	Value         string `json:"value"`
+	WindowMinutes int    `json:"window_minutes"`
+	Threshold     int    `json:"threshold"`
+}
+
+type AlertRule struct {
+	ID         string             `json:"id"`
+	TenantID   string             `json:"tenant_id"`
+	TemplateID string             `json:"template_id"`
+	Name       string             `json:"name"`
+	Trigger    string             `json:"trigger"`
+	Severity   string             `json:"severity"`
+	Channels   []string           `json:"channels"`
+	Condition  AlertRuleCondition `json:"condition"`
+	Enabled    bool               `json:"enabled"`
+	CreatedAt  time.Time          `json:"created_at"`
+	UpdatedAt  time.Time          `json:"updated_at"`
+}
+
+type CreateAlertRuleRequest struct {
+	TemplateID string             `json:"template_id"`
+	Name       string             `json:"name"`
+	Trigger    string             `json:"trigger"`
+	Severity   string             `json:"severity"`
+	Channels   []string           `json:"channels"`
+	Condition  AlertRuleCondition `json:"condition"`
+	Enabled    bool               `json:"enabled"`
+}
+
 type Plan struct {
 	ID                 string   `json:"id"`
 	Name               string   `json:"name"`

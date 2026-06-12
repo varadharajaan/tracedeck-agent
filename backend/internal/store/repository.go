@@ -11,6 +11,8 @@ type Repository interface {
 	ListTenants(context.Context) []model.Tenant
 	GetTenant(context.Context, string) (model.Tenant, error)
 	ListAuditEvents(context.Context, string) []model.AuditEvent
+	CreateAlertRule(context.Context, string, model.CreateAlertRuleRequest) (model.AlertRule, error)
+	ListAlertRules(context.Context, string) []model.AlertRule
 	EnrollDevice(context.Context, model.EnrollDeviceRequest) (model.Device, error)
 	ListDevices(context.Context) []model.Device
 	GetDevice(context.Context, string) (model.Device, error)

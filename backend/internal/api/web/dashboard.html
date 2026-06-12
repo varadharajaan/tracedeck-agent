@@ -883,6 +883,29 @@
             <div id="retention-list" class="catalog-list"><div class="empty">No retention tiers yet.</div></div>
           </div>
         </section>
+
+        <section class="content-grid">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>No-Code Alert Rules</h2>
+                <p class="muted">Saved tenant automations for mail, push, and dashboard alerts</p>
+              </div>
+              <span id="alert-rule-count" class="pill">0 rules</span>
+            </div>
+            <div id="alert-rule-list" class="catalog-list"><div class="empty">No alert rules yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Rule Builder Recipes</h2>
+                <p class="muted">Paid templates for family, school, and business policy automation</p>
+              </div>
+              <span id="alert-template-count" class="pill">0 recipes</span>
+            </div>
+            <div id="alert-template-list" class="catalog-list"><div class="empty">No alert rule recipes yet.</div></div>
+          </div>
+        </section>
       </div>
     </section>
   </main>
@@ -894,7 +917,8 @@
       roles: "/api/v1/roles",
       retentionTiers: "/api/v1/retention-tiers",
       auditEvents: "/api/v1/audit-events",
-      policyTemplates: "/api/v1/policy-templates"
+      policyTemplates: "/api/v1/policy-templates",
+      alertRuleTemplates: "/api/v1/alert-rule-templates"
     });
     const CHANNEL = Object.freeze({
       email: "email",
@@ -1075,6 +1099,8 @@
       renderNotificationActionQueue(policy.items.concat(anomalies.items, tamper.items), deliveries.items);
       renderMarketplace(context.templates);
       renderRetentionTiers(context.retentionTiers);
+      renderAlertRules(context.alertRules);
+      renderAlertRuleTemplates(context.alertRuleTemplates);
       renderTimeline(policy.items.concat(anomalies.items, tamper.items));
       renderRiskTable("policy-table", policy.items, ["severity", "category", "source", "reason", "status"]);
       renderRiskTable("anomaly-table", anomalies.items, ["severity", "category", "source", "reason"]);
@@ -1430,6 +1456,48 @@
       `).join("");
     }
 
+    function renderAlertRules(rules) {
+      const items = (rules && rules.items) || [];
+      setText("alert-rule-count", `${items.length} rule${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("alert-rule-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No alert rules yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="catalog-item">
+          <strong>${escapeHTML(item.name)}</strong>
+          <span class="muted">${escapeHTML(item.trigger)} - ${escapeHTML(item.condition.subject)} ${escapeHTML(item.condition.operator)} ${escapeHTML(item.condition.value || item.condition.threshold || "-")}</span>
+          <div class="action-meta">
+            ${badge(item.severity)}
+            ${item.channels.map((channel) => badge(channel)).join(" ")}
+            ${badge(item.enabled ? "enabled" : "disabled")}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderAlertRuleTemplates(templates) {
+      const items = (templates && templates.items) || [];
+      setText("alert-template-count", `${items.length} recipes`);
+      const target = document.getElementById("alert-template-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No alert rule recipes yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="catalog-item">
+          <strong>${escapeHTML(item.name)}</strong>
+          <span class="muted">${escapeHTML(item.description)}</span>
+          <div class="action-meta">
+            ${badge(item.default_severity)}
+            <span class="pill">${escapeHTML(item.paid_tier)}</span>
+            <span class="pill">${escapeHTML(item.channels.join(", "))}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
     function renderTimeline(events) {
       const sorted = events.slice().sort((left, right) => new Date(right.observed_at) - new Date(left.observed_at));
       setText("timeline-count", `${sorted.length} events`);
@@ -1546,7 +1614,7 @@
       }
 
       const base = `/api/v1/devices/${encodeURIComponent(state.selectedDeviceId)}`;
-      const [overview, deviceHealth, policy, anomalies, tamper, deliveries, plans, roles, retentionTiers, templates, auditEvents, weeklyReport] = await Promise.all([
+      const [overview, deviceHealth, policy, anomalies, tamper, deliveries, plans, roles, retentionTiers, templates, alertRuleTemplates, auditEvents, weeklyReport] = await Promise.all([
         loadJSON(`${base}/overview`),
         loadJSON(`${base}/health`),
         loadJSON(`${base}/policy-violations`),
@@ -1557,16 +1625,20 @@
         loadJSON(API.roles),
         loadJSON(API.retentionTiers),
         loadJSON(API.policyTemplates),
+        loadJSON(API.alertRuleTemplates),
         loadJSON(API.auditEvents),
         loadJSON(`${base}/reports/weekly`)
       ]);
       const tenant = await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}`);
+      const alertRules = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/alert-rules`) : null;
       renderOverview(overview, deviceHealth, policy, anomalies, tamper, deliveries, {
         tenant,
         plans,
         roles,
         retentionTiers,
         templates,
+        alertRuleTemplates,
+        alertRules,
         auditEvents,
         weeklyReport
       });

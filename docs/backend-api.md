@@ -58,6 +58,8 @@ POST /api/v1/tenants
 GET  /api/v1/tenants
 GET  /api/v1/tenants/{tenantId}
 GET  /api/v1/tenants/{tenantId}/audit-events
+GET  /api/v1/tenants/{tenantId}/alert-rules
+POST /api/v1/tenants/{tenantId}/alert-rules
 POST /api/v1/devices/enroll
 GET  /api/v1/devices
 GET  /api/v1/devices/{deviceId}
@@ -71,6 +73,7 @@ GET  /api/v1/devices/{deviceId}/anomalies
 GET  /api/v1/devices/{deviceId}/tamper-events
 GET  /api/v1/devices/{deviceId}/alert-deliveries
 GET  /api/v1/policy-templates
+GET  /api/v1/alert-rule-templates
 GET  /api/v1/archive/status
 GET  /
 ```
@@ -127,6 +130,16 @@ recommendations.
 Phase 14 turns the weekly report route into a generated report from host
 overview data and adds a PDF packaging endpoint at
 `GET /api/v1/devices/{deviceId}/reports/weekly/pdf`.
+
+Phase 19 adds no-code alert rule builder APIs:
+
+- `GET /api/v1/alert-rule-templates`
+- `GET /api/v1/tenants/{tenantId}/alert-rules`
+- `POST /api/v1/tenants/{tenantId}/alert-rules`
+
+Saved rules are tenant-scoped, persisted in local backend state, and include
+typed trigger, severity, delivery channels, condition, enabled flag, and
+timestamps.
 
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.

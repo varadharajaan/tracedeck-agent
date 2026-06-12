@@ -324,6 +324,69 @@ func TestTenantReadinessEndpoints(t *testing.T) {
 	}
 }
 
+func TestNoCodeAlertRuleEndpoints(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	templates := httptest.NewRecorder()
+	handler.ServeHTTP(templates, httptest.NewRequest(http.MethodGet, constants.RouteAlertRuleTemplates, nil))
+	if templates.Code != http.StatusOK {
+		t.Fatalf("expected alert rule templates 200, got %d", templates.Code)
+	}
+	if !strings.Contains(templates.Body.String(), constants.AlertRuleTemplateMediaAfterHours) {
+		t.Fatalf("expected alert rule template catalog, got %s", templates.Body.String())
+	}
+
+	initialRules := httptest.NewRecorder()
+	handler.ServeHTTP(initialRules, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentAlertRules, nil))
+	if initialRules.Code != http.StatusOK {
+		t.Fatalf("expected seeded rules 200, got %d", initialRules.Code)
+	}
+	var seeded model.ListResponse[model.AlertRule]
+	if err := json.Unmarshal(initialRules.Body.Bytes(), &seeded); err != nil {
+		t.Fatalf("decode seeded rules: %v", err)
+	}
+	if seeded.Count < 2 {
+		t.Fatalf("expected seeded alert rules, got %+v", seeded)
+	}
+
+	ruleBody := []byte(`{
+		"template_id": "risky_software_detected",
+		"name": "Email when risky software appears",
+		"trigger": "risky_software",
+		"severity": "high",
+		"channels": ["email", "dashboard"],
+		"condition": {
+			"subject": "category",
+			"operator": "equals",
+			"value": "torrent_client"
+		},
+		"enabled": true
+	}`)
+	createRule := httptest.NewRecorder()
+	handler.ServeHTTP(createRule, httptest.NewRequest(http.MethodPost, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentAlertRules, bytes.NewReader(ruleBody)))
+	if createRule.Code != http.StatusCreated {
+		t.Fatalf("expected rule create 201, got %d: %s", createRule.Code, createRule.Body.String())
+	}
+	if !strings.Contains(createRule.Body.String(), "Email when risky software appears") {
+		t.Fatalf("expected created rule body, got %s", createRule.Body.String())
+	}
+}
+
 func TestTenantValidation(t *testing.T) {
 	t.Parallel()
 

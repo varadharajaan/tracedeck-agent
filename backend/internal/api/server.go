@@ -63,6 +63,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc(constants.RouteRetentionTiers, s.handleRetentionTiers)
 	mux.HandleFunc(constants.RouteAuditEvents, s.handleAuditEvents)
 	mux.HandleFunc(constants.RoutePolicyTemplates, s.handlePolicyTemplates)
+	mux.HandleFunc(constants.RouteAlertRuleTemplates, s.handleAlertRuleTemplates)
 	mux.HandleFunc(constants.RouteArchiveStatus, s.handleArchiveStatus)
 	return requestLogger(s.logger, s.authMiddleware(mux))
 }
@@ -293,6 +294,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenant(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentAuditEvents && r.Method == http.MethodGet:
 		s.handleTenantAuditEvents(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentAlertRules:
+		s.handleTenantAlertRules(w, r, tenantID)
 	default:
 		http.NotFound(w, r)
 	}
@@ -334,6 +337,48 @@ func (s *Server) handleTenantAuditEvents(w http.ResponseWriter, r *http.Request,
 		Items: events,
 		Count: len(events),
 	})
+}
+
+func (s *Server) handleTenantAlertRules(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	if _, err := s.store.GetTenant(r.Context(), tenantID); err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant lookup failed")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		rules := s.store.ListAlertRules(r.Context(), tenantID)
+		writeJSON(w, http.StatusOK, model.ListResponse[model.AlertRule]{
+			Items: rules,
+			Count: len(rules),
+		})
+	case http.MethodPost:
+		var req model.CreateAlertRuleRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid alert rule json")
+			return
+		}
+		if err := validateCreateAlertRuleRequest(req); err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		rule, err := s.store.CreateAlertRule(r.Context(), tenantID, req)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "alert rule creation failed")
+			return
+		}
+		writeJSON(w, http.StatusCreated, rule)
+	default:
+		writeMethodNotAllowed(w)
+	}
 }
 
 func (s *Server) handleDevice(w http.ResponseWriter, r *http.Request, deviceID string) {
@@ -508,6 +553,18 @@ func (s *Server) handlePolicyTemplates(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) handleAlertRuleTemplates(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+	templates := store.AlertRuleTemplates()
+	writeJSON(w, http.StatusOK, model.ListResponse[model.AlertRuleTemplate]{
+		Items: templates,
+		Count: len(templates),
+	})
+}
+
 func (s *Server) handlePlans(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeMethodNotAllowed(w)
@@ -616,6 +673,53 @@ func validateEnrollDeviceRequest(req model.EnrollDeviceRequest) error {
 	default:
 		return nil
 	}
+}
+
+func validateCreateAlertRuleRequest(req model.CreateAlertRuleRequest) error {
+	switch {
+	case strings.TrimSpace(req.TemplateID) == "":
+		return errors.New("template_id is required")
+	case !store.KnownAlertRuleTemplateID(req.TemplateID):
+		return errors.New("template_id is unknown")
+	case strings.TrimSpace(req.Name) == "":
+		return errors.New("name is required")
+	case strings.TrimSpace(req.Trigger) == "":
+		return errors.New("trigger is required")
+	case strings.TrimSpace(req.Severity) == "":
+		return errors.New("severity is required")
+	case !knownSeverity(req.Severity):
+		return errors.New("severity is unknown")
+	case len(req.Channels) == 0:
+		return errors.New("at least one channel is required")
+	case !knownChannels(req.Channels):
+		return errors.New("channel is unknown")
+	case strings.TrimSpace(req.Condition.Subject) == "":
+		return errors.New("condition.subject is required")
+	case strings.TrimSpace(req.Condition.Operator) == "":
+		return errors.New("condition.operator is required")
+	default:
+		return nil
+	}
+}
+
+func knownSeverity(severity string) bool {
+	switch strings.TrimSpace(severity) {
+	case constants.SeverityInfo, constants.SeverityLow, constants.SeverityMedium, constants.SeverityHigh, constants.SeverityCritical:
+		return true
+	default:
+		return false
+	}
+}
+
+func knownChannels(channels []string) bool {
+	for _, channel := range channels {
+		switch strings.TrimSpace(channel) {
+		case constants.DeliveryChannelEmail, constants.DeliveryChannelPush, constants.DeliveryChannelDashboard:
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func writeJSON(w http.ResponseWriter, status int, body any) {

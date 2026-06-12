@@ -57,3 +57,6 @@
     action, notification promise, commercial readiness, trust coverage,
     executive briefing, notification action queue, Postman/Newman coverage, and
     local verification.
+22. Phase 19: no-code alert rules builder. Rule recipe catalog, tenant-scoped
+    saved rules, persisted local backend state, dashboard builder panels,
+    Postman/Newman coverage, and local verification.

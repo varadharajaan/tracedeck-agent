@@ -46,3 +46,8 @@ TRACEDECK_SMTP_SERVER_TLS
 SMTP credentials are never stored in policy YAML or alert payloads. The Phase
 17 live smoke uses `scripts/tools/fake-smtp` to capture a local `.eml` under
 `data/local/` and verify delivery without sending real email.
+
+Phase 19 adds the no-code alert rules builder API and dashboard panels. Rule
+templates and saved tenant rules describe triggers, severity, channels, and
+conditions for policy automation. This is configuration metadata only; it does
+not add new collection capabilities or store forbidden sensitive content.
