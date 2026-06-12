@@ -39,6 +39,7 @@ const (
 	RouteSegmentAuditEvents     = "audit-events"
 	RouteSegmentAlertRules      = "alert-rules"
 	RouteSegmentConsentCenter   = "consent-center"
+	RouteSegmentAlertInbox      = "alert-inbox"
 	RouteSegmentOperations      = "operations-summary"
 	RouteSegmentMonetization    = "monetization-summary"
 	RouteSegmentSyncHealth      = "sync-health"

@@ -135,3 +135,9 @@
     response, push notifications, mail delivery, weekly reports, archive
     retention, tamper trust, escalation actions, live smoke/Newman coverage,
     docs, and full local verification.
+44. Phase 41: backend alert inbox. Typed tenant alert inbox API that links
+    policy/anomaly/tamper events to email, push, and dashboard delivery proof,
+    dashboard panel, monetisation UI markers for paid ops, commercial control,
+    revenue command, notification proof, mail delivery, push notification,
+    archive retention, tamper trust, smoke/Newman coverage, docs, and full local
+    verification.

@@ -1,0 +1,83 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 41",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Has Backend Alert Inbox",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard has backend alert inbox and monetisation markers', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Backend Alert Inbox');",
+        "  pm.expect(html).to.include('tenant-alert-inbox-status');",
+        "  pm.expect(html).to.include('tenant-alert-inbox-list');",
+        "  pm.expect(html).to.include('Paid Ops Console');",
+        "  pm.expect(html).to.include('Commercial Control Room');",
+        "  pm.expect(html).to.include('Revenue Command Center');",
+        "  pm.expect(html).to.include('Notification Proof Rail');",
+        "  pm.expect(html).to.include('Buyer Demo Checklist');",
+        "  pm.expect(html).to.include('Mail Delivery Center');",
+        "  pm.expect(html).to.include('Push Notification Center');",
+        "  pm.expect(html).to.include('Archive Retention');",
+        "  pm.expect(html).to.include('Tamper Trust');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Tenant Alert Inbox Links Risk And Delivery",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/alert-inbox" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('alert inbox has typed summary, linked delivery proof, and privacy boundary', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.summary.total).to.be.above(0);",
+        "  pm.expect(body.summary.with_email).to.be.above(0);",
+        "  pm.expect(body.summary.with_push).to.be.above(0);",
+        "  pm.expect(body.summary.with_dashboard).to.be.above(0);",
+        "  pm.expect(body.summary.notification_ready).to.be.above(0);",
+        "  pm.expect(body.items.filter((item) => item.event_id && item.delivery_proof.length > 0).length).to.be.above(0);",
+        "  pm.expect(body.privacy_boundary).to.include('no passwords');",
+        "  pm.expect(body.privacy_boundary).to.include('screenshots');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Delivery Activity Feed Still Works",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/activity-feed?kind=delivery&limit=5" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('activity feed still exposes delivery proof', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.summary.delivery_items).to.be.above(0);",
+        "  pm.expect(body.items.filter((item) => item.kind === 'delivery').length).to.be.above(0);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Tenant Monetization Continuity",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/monetization-summary" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('monetization summary remains ready with notification routes', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.readiness_score).to.be.above(0);",
+        "  pm.expect(body.notification_score).to.be.above(0);",
+        "  pm.expect(body.notification_routes.length).to.eql(3);",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

@@ -352,7 +352,7 @@
     }
     .paid-ops-board {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
       margin-top: 12px;
     }
@@ -977,7 +977,7 @@
       <div>
         <div class="paid-ops-grid">
           <div class="paid-ops-tile">
-            <small>Anomaly Inbox</small>
+            <small>Backend Alert Inbox</small>
             <strong id="paid-anomaly">-</strong>
             <span id="paid-anomaly-sub" class="muted">No anomaly or policy proof</span>
           </div>
@@ -1027,6 +1027,20 @@
               <span id="paid-action-count" class="pill">0 actions</span>
             </div>
             <div id="paid-action-list" class="action-list"><div class="empty">No paid action items yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Backend Alert Inbox</h2>
+                <p class="muted">Typed tenant endpoint linking risk events to email, push, and dashboard delivery proof.</p>
+              </div>
+              <span id="tenant-alert-inbox-status" class="badge pending">pending</span>
+            </div>
+            <div class="brief-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 10px;">
+              <div class="brief-item"><small>Open</small><strong id="tenant-alert-inbox-open">-</strong><span id="tenant-alert-inbox-open-sub" class="muted">No open alerts</span></div>
+              <div class="brief-item"><small>Route Ready</small><strong id="tenant-alert-inbox-ready">-</strong><span id="tenant-alert-inbox-ready-sub" class="muted">No route proof</span></div>
+            </div>
+            <div id="tenant-alert-inbox-list" class="route-proof-list"><div class="empty">No backend alert inbox items yet.</div></div>
           </div>
         </div>
       </div>
@@ -2389,6 +2403,7 @@
       renderAlertInbox(policy.items.concat(anomalies.items, tamper.items), deliveries.items);
       renderProductPackaging({ ...context, deliveries: deliveries.items });
       renderPaidOpsConsole(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
+      renderTenantAlertInbox(context.alertInbox);
       renderCommandBoard(overview, healthModel, policy, anomalies, tamper, deliveries, context);
       renderExecutiveBrief(overview, healthModel, policy, anomalies, tamper, deliveries, context);
       renderNotificationActionQueue(policy.items.concat(anomalies.items, tamper.items), deliveries.items);
@@ -2475,6 +2490,8 @@
       const operations = context.tenantOperations || {};
       const tenant = context.tenant || {};
       const weekly = context.weeklyReport || {};
+      const alertInbox = context.alertInbox || {};
+      const inboxSummary = alertInbox.summary || {};
       const consent = context.consentCenter || {};
       const plans = (context.plans && context.plans.items) || [];
       const tiers = (context.retentionTiers && context.retentionTiers.items) || [];
@@ -2514,9 +2531,9 @@
       setText("paid-ops-stage", monetization.conversion_stage || operations.customer_health || "pilot");
       setText("paid-ops-route-sla", `${deliveryScore}% delivery`);
 
-      const activeRiskCount = events.filter((event) => event.status !== "resolved").length;
+      const activeRiskCount = Number(inboxSummary.open ?? events.filter((event) => event.status !== "resolved").length);
       setText("paid-anomaly", `${activeRiskCount} active`);
-      setText("paid-anomaly-sub", topEvent ? `${topEvent.severity} ${topEvent.category}: ${topEvent.reason}` : "No policy, anomaly, or tamper events.");
+      setText("paid-anomaly-sub", alertInbox.items && alertInbox.items.length > 0 ? `${inboxSummary.high_or_critical || 0} high/critical; ${inboxSummary.with_email || 0} email, ${inboxSummary.with_push || 0} push, ${inboxSummary.with_dashboard || 0} dashboard linked` : topEvent ? `${topEvent.severity} ${topEvent.category}: ${topEvent.reason}` : "No policy, anomaly, or tamper events.");
       setText("paid-push", push ? `${capitalize(push.status)} push` : "Push missing");
       setText("paid-push-sub", push ? `${push.recipient}; ${deliveryEventName(push, events)}; retry ${push.next_retry_at ? formatDate(push.next_retry_at) : "not scheduled"}` : "Configure web or mobile push for anomaly urgency.");
       setText("paid-mail", email ? `${capitalize(email.status)} email` : "Mail missing");
@@ -2540,6 +2557,43 @@
         trust: trustForScore,
         audience
       });
+    }
+
+    function renderTenantAlertInbox(inbox) {
+      const model = inbox || {};
+      const summary = model.summary || {};
+      const items = model.items || [];
+      document.getElementById("tenant-alert-inbox-status").outerHTML =
+        badge(summary.notification_ready >= 50 ? "healthy" : items.length > 0 ? "watch" : "pending").replace("<span", '<span id="tenant-alert-inbox-status"');
+      setText("tenant-alert-inbox-open", summary.open || 0);
+      setText("tenant-alert-inbox-open-sub", `${summary.high_or_critical || 0} high or critical; ${summary.source_host_count || 0} host${summary.source_host_count === 1 ? "" : "s"}`);
+      setText("tenant-alert-inbox-ready", `${summary.notification_ready || 0}%`);
+      setText("tenant-alert-inbox-ready-sub", `${summary.with_email || 0} email, ${summary.with_push || 0} push, ${summary.with_dashboard || 0} dashboard links`);
+
+      const target = document.getElementById("tenant-alert-inbox-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No backend alert inbox items yet.</div>';
+        return;
+      }
+      target.innerHTML = items.slice(0, 4).map((item) => {
+        const proof = item.delivery_proof || [];
+        const proofLine = proof.length > 0
+          ? proof.map((route) => `${route.channel}:${route.status}`).join(", ")
+          : "route proof pending";
+        return `
+          <div class="route-proof-item">
+            <strong>${escapeHTML(item.title)}</strong>
+            <span class="muted">${escapeHTML(item.detail)}</span>
+            <div class="action-meta">
+              ${badge(item.severity || "info")}
+              ${badge(item.delivery_state || "pending")}
+              <span class="pill">${escapeHTML(item.host_name || item.device_id)}</span>
+              <span class="pill">${escapeHTML(proofLine)}</span>
+            </div>
+            <span class="muted">${escapeHTML(item.next_action || item.recommendation || "Review alert.")}</span>
+          </div>
+        `;
+      }).join("");
     }
 
     function deliveryEventName(delivery, events) {
@@ -4148,6 +4202,7 @@
       const notificationRoutes = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-routes`) : null;
       const telemetryStatus = await loadOptionalJSON(`${base}/telemetry-status`);
       const consentCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/consent-center`) : null;
+      const alertInbox = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/alert-inbox`) : null;
       const tenantOperations = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/operations-summary`) : null;
       const monetizationSummary = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/monetization-summary`) : null;
       const syncHealth = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/sync-health`) : null;
@@ -4168,6 +4223,7 @@
         notificationRoutes,
         telemetryStatus,
         consentCenter,
+        alertInbox,
         tenantOperations,
         monetizationSummary,
         syncHealth,

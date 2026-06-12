@@ -530,6 +530,80 @@ func (m *Memory) TenantMonetizationSummary(ctx context.Context, tenantID string)
 	}, nil
 }
 
+func (m *Memory) TenantAlertInbox(_ context.Context, tenantID string) (model.TenantAlertInbox, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	tenant, ok := m.tenants[tenantID]
+	if !ok {
+		return model.TenantAlertInbox{}, ErrTenantNotFound
+	}
+
+	events := make([]model.TenantAlertInboxItem, 0)
+	sourceHosts := make(map[string]bool)
+	for _, device := range m.devices {
+		if device.TenantID != tenantID {
+			continue
+		}
+		sourceHosts[device.DeviceID] = true
+		m.seedDashboardForDeviceLocked(device)
+		deliveriesByEvent := deliveriesByEventID(m.alertDeliveries[device.DeviceID])
+		deviceEvents := make([]model.RiskEvent, 0)
+		deviceEvents = append(deviceEvents, m.policyEvents[device.DeviceID]...)
+		deviceEvents = append(deviceEvents, m.anomalyEvents[device.DeviceID]...)
+		deviceEvents = append(deviceEvents, m.tamperEvents[device.DeviceID]...)
+		for _, event := range deviceEvents {
+			proof := alertDeliveryProof(deliveriesByEvent[event.ID])
+			events = append(events, model.TenantAlertInboxItem{
+				ID:             strings.Join([]string{tenantID, device.DeviceID, event.ID}, ":"),
+				TenantID:       tenantID,
+				DeviceID:       device.DeviceID,
+				HostName:       device.HostName,
+				EventID:        event.ID,
+				Type:           event.Type,
+				Severity:       event.Severity,
+				Category:       event.Category,
+				Status:         event.Status,
+				Title:          eventTitle(event),
+				Detail:         event.Reason,
+				Recommendation: event.Recommendation,
+				Source:         event.Source,
+				DeliveryState:  alertDeliveryState(proof),
+				DeliveryProof:  proof,
+				NextAction:     alertInboxNextAction(event, proof),
+				ObservedAt:     event.ObservedAt,
+			})
+		}
+	}
+	if err := m.persistLocked(); err != nil {
+		return model.TenantAlertInbox{}, err
+	}
+
+	sort.Slice(events, func(i, j int) bool {
+		statusDelta := riskStatusRank(events[j].Status) - riskStatusRank(events[i].Status)
+		if statusDelta != 0 {
+			return statusDelta < 0
+		}
+		severityDelta := severityRank(events[j].Severity) - severityRank(events[i].Severity)
+		if severityDelta != 0 {
+			return severityDelta < 0
+		}
+		return events[i].ObservedAt.After(events[j].ObservedAt)
+	})
+
+	return model.TenantAlertInbox{
+		TenantID:        tenant.TenantID,
+		TenantName:      tenant.Name,
+		Summary:         tenantAlertInboxSummary(events, len(sourceHosts)),
+		Items:           append([]model.TenantAlertInboxItem(nil), events...),
+		GeneratedAt:     now,
+		PrivacyBoundary: constants.TelemetryPrivacyBoundary,
+	}, nil
+}
+
 func (m *Memory) TenantSyncHealth(_ context.Context, tenantID string) (model.TenantSyncHealth, error) {
 	now := time.Now().UTC()
 	tenantID = strings.TrimSpace(tenantID)
@@ -2806,6 +2880,123 @@ func notificationNextAction(delivery *model.AlertDelivery) string {
 	default:
 		return "Send a proof notification."
 	}
+}
+
+func deliveriesByEventID(deliveries []model.AlertDelivery) map[string][]model.AlertDelivery {
+	output := make(map[string][]model.AlertDelivery)
+	for _, delivery := range deliveries {
+		eventID := strings.TrimSpace(delivery.EventID)
+		if eventID == "" {
+			continue
+		}
+		output[eventID] = append(output[eventID], delivery)
+	}
+	return output
+}
+
+func alertDeliveryProof(deliveries []model.AlertDelivery) []model.TenantAlertDeliveryProof {
+	proof := make([]model.TenantAlertDeliveryProof, 0, len(deliveries))
+	sort.Slice(deliveries, func(i, j int) bool {
+		if deliveries[i].Channel != deliveries[j].Channel {
+			return deliveries[i].Channel < deliveries[j].Channel
+		}
+		return deliveries[i].LastAttemptAt.After(deliveries[j].LastAttemptAt)
+	})
+	for _, delivery := range deliveries {
+		proof = append(proof, model.TenantAlertDeliveryProof{
+			Channel:       delivery.Channel,
+			Status:        delivery.Status,
+			Provider:      delivery.Provider,
+			Recipient:     delivery.Recipient,
+			Attempts:      delivery.Attempts,
+			LastAttemptAt: delivery.LastAttemptAt,
+			NextRetryAt:   delivery.NextRetryAt,
+			Proof:         firstNonEmpty(delivery.LastError, delivery.Summary, "Delivery attempt is visible in TraceDeck."),
+		})
+	}
+	return proof
+}
+
+func alertDeliveryState(proof []model.TenantAlertDeliveryProof) string {
+	if len(proof) == 0 {
+		return constants.DeliveryStatusPending
+	}
+	hasDelivered := false
+	for _, item := range proof {
+		switch item.Status {
+		case constants.DeliveryStatusFailed:
+			return constants.DeliveryStatusFailed
+		case constants.DeliveryStatusRetrying:
+			return constants.DeliveryStatusRetrying
+		case constants.DeliveryStatusDelivered:
+			hasDelivered = true
+		}
+	}
+	if hasDelivered {
+		return constants.DeliveryStatusDelivered
+	}
+	return proof[0].Status
+}
+
+func alertInboxNextAction(event model.RiskEvent, proof []model.TenantAlertDeliveryProof) string {
+	state := alertDeliveryState(proof)
+	switch state {
+	case constants.DeliveryStatusDelivered:
+		return firstNonEmpty(event.Recommendation, "Review this alert with the customer and keep proof visible.")
+	case constants.DeliveryStatusRetrying:
+		return "Watch notification retry timing before escalating the alert."
+	case constants.DeliveryStatusFailed:
+		return "Fix the delivery provider route, then resend proof for this alert."
+	default:
+		return "Route this alert through email, push, or dashboard before customer review."
+	}
+}
+
+func tenantAlertInboxSummary(items []model.TenantAlertInboxItem, sourceHostCount int) model.TenantAlertInboxSummary {
+	summary := model.TenantAlertInboxSummary{
+		Total:           len(items),
+		SourceHostCount: sourceHostCount,
+	}
+	for _, item := range items {
+		if item.Status == constants.RiskStatusOpen {
+			summary.Open++
+		}
+		if severityRank(item.Severity) >= severityRank(constants.SeverityHigh) {
+			summary.HighOrCritical++
+		}
+		hasEmail := false
+		hasPush := false
+		hasDashboard := false
+		for _, proof := range item.DeliveryProof {
+			switch proof.Channel {
+			case constants.DeliveryChannelEmail:
+				hasEmail = true
+			case constants.DeliveryChannelPush:
+				hasPush = true
+			case constants.DeliveryChannelDashboard:
+				hasDashboard = true
+			}
+			switch proof.Status {
+			case constants.DeliveryStatusRetrying:
+				summary.DeliveryRetrying++
+			case constants.DeliveryStatusFailed:
+				summary.DeliveryFailed++
+			}
+		}
+		if hasEmail {
+			summary.WithEmail++
+		}
+		if hasPush {
+			summary.WithPush++
+		}
+		if hasDashboard {
+			summary.WithDashboard++
+		}
+	}
+	if summary.Total > 0 {
+		summary.NotificationReady = ((summary.WithEmail + summary.WithPush + summary.WithDashboard) * 100) / (summary.Total * 3)
+	}
+	return summary
 }
 
 func tenantValuePanels(operations model.TenantOperationsSummary, plan model.Plan, trustScore int) []model.TenantValuePanel {

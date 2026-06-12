@@ -837,6 +837,57 @@ func TestTenantOperationsSummaryEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantAlertInboxEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "inbox-device-001",
+		"host_name": "inbox-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	inboxResponse := httptest.NewRecorder()
+	handler.ServeHTTP(inboxResponse, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentAlertInbox, nil))
+	if inboxResponse.Code != http.StatusOK {
+		t.Fatalf("expected alert inbox 200, got %d: %s", inboxResponse.Code, inboxResponse.Body.String())
+	}
+	var inbox model.TenantAlertInbox
+	if err := json.Unmarshal(inboxResponse.Body.Bytes(), &inbox); err != nil {
+		t.Fatalf("decode alert inbox: %v", err)
+	}
+	if inbox.Summary.Total == 0 || inbox.Summary.WithEmail == 0 || inbox.Summary.WithPush == 0 || inbox.Summary.WithDashboard == 0 {
+		t.Fatalf("expected event-linked channel proof in alert inbox: %+v", inbox.Summary)
+	}
+	if len(inbox.Items) == 0 || inbox.Items[0].EventID == "" || inbox.Items[0].NextAction == "" {
+		t.Fatalf("expected actionable alert inbox items: %+v", inbox.Items)
+	}
+	if !strings.Contains(inbox.PrivacyBoundary, "no passwords") || !strings.Contains(inbox.PrivacyBoundary, "screenshots") {
+		t.Fatalf("expected privacy boundary on alert inbox: %q", inbox.PrivacyBoundary)
+	}
+}
+
 func TestTenantMonetizationSummaryEndpoint(t *testing.T) {
 	t.Parallel()
 
