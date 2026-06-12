@@ -93,6 +93,11 @@ GET  /api/v1/archive/status
 GET  /
 ```
 
+Telemetry ingest accepts metadata-only agent events. Phase 30 makes ingest
+idempotent for stable non-empty event IDs, so replaying the same
+`local-event-*` payload is acknowledged without creating duplicate stored
+telemetry rows.
+
 Tenant creation request:
 
 ```json

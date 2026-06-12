@@ -1077,12 +1077,21 @@ func (m *Memory) IngestTelemetryEvents(_ context.Context, deviceID string, req m
 	if limit > constants.TelemetryIngestMaxEvents {
 		limit = constants.TelemetryIngestMaxEvents
 	}
+	seenTelemetryIDs := telemetryEventIDs(m.telemetryEvents[deviceID])
 	accepted := make([]model.TelemetryEvent, 0, limit)
+	acceptedPayloadEvents := 0
 	var lastObserved time.Time
 	for i := 0; i < limit; i++ {
 		evt := normalizeTelemetryEvent(req.Events[i], tenant.TenantID, device)
 		if evt.ObservedAt.After(lastObserved) {
 			lastObserved = evt.ObservedAt
+		}
+		acceptedPayloadEvents++
+		if evt.ID != "" {
+			if seenTelemetryIDs[evt.ID] {
+				continue
+			}
+			seenTelemetryIDs[evt.ID] = true
 		}
 		accepted = append(accepted, evt)
 	}
@@ -1094,7 +1103,7 @@ func (m *Memory) IngestTelemetryEvents(_ context.Context, deviceID string, req m
 		Action:    constants.AuditActionTelemetryIngested,
 		Actor:     constants.AuditActorLocalAPI,
 		ActorRole: constants.RoleBusinessManager,
-		Summary:   fmt.Sprintf("telemetry ingest accepted %d metadata events for %s", len(accepted), deviceID),
+		Summary:   fmt.Sprintf("telemetry ingest accepted %d metadata events for %s", acceptedPayloadEvents, deviceID),
 		CreatedAt: now,
 	})
 	if err := m.persistLocked(); err != nil {
@@ -1104,7 +1113,7 @@ func (m *Memory) IngestTelemetryEvents(_ context.Context, deviceID string, req m
 	return model.IngestTelemetryResponse{
 		TenantID:           tenant.TenantID,
 		DeviceID:           deviceID,
-		AcceptedEvents:     len(accepted),
+		AcceptedEvents:     acceptedPayloadEvents,
 		StoredEvents:       len(m.telemetryEvents[deviceID]),
 		LastObservedAt:     lastObserved,
 		LastIngestedAt:     now,
@@ -1527,6 +1536,17 @@ func normalizeTelemetryEvent(evt model.TelemetryEvent, tenantID string, device m
 	}
 	evt.Metadata = metadata
 	return evt
+}
+
+func telemetryEventIDs(events []model.TelemetryEvent) map[string]bool {
+	ids := make(map[string]bool, len(events))
+	for _, event := range events {
+		id := strings.TrimSpace(event.ID)
+		if id != "" {
+			ids[id] = true
+		}
+	}
+	return ids
 }
 
 func archiveKey(device model.Device, uploadedAt time.Time) string {

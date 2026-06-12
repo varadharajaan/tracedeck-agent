@@ -30,6 +30,8 @@ const (
 	DefaultCollectionInterval    = "10m"
 	DefaultBackendSyncBatchLimit = 100
 	DefaultBackendSyncTimeout    = "10s"
+	BackendSyncCursorName        = "backend_telemetry"
+	BackendSyncEventIDPrefix     = "local-event-"
 )
 
 const (

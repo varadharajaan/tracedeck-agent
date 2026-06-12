@@ -53,7 +53,11 @@ backend_sync:
   request_timeout: 10s
 ```
 
-When enabled, the agent posts the current collection cycle after SQLite storage
-succeeds. The payload contains typed event metadata only and does not include
-passwords, credentials, screenshots, tokens, cookies, keylogs, private messages,
-raw URLs, page titles, provider secrets, or raw file contents.
+When enabled, the agent posts locally stored SQLite events after storage
+succeeds. `batch_limit` bounds each replay batch. If the backend is offline,
+the agent leaves the sync cursor unchanged, logs a warning, and retries the
+backlog during a later online cycle.
+
+The payload contains typed event metadata only and does not include passwords,
+credentials, screenshots, tokens, cookies, keylogs, private messages, raw URLs,
+page titles, provider secrets, or raw file contents.

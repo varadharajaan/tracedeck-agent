@@ -4,6 +4,7 @@ import (
 	"context"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/varadharajaan/tracedeck-agent/backend/internal/constants"
 	"github.com/varadharajaan/tracedeck-agent/backend/internal/model"
@@ -225,5 +226,71 @@ func TestPersistentStoreSurvivesRestart(t *testing.T) {
 	}
 	if monetization.ReadinessScore == 0 || monetization.NotificationScore == 0 || len(monetization.NotificationRoutes) != 3 {
 		t.Fatalf("expected loaded tenant monetization summary: %+v", monetization)
+	}
+}
+
+func TestTelemetryIngestIsIdempotentForStableEventIDs(t *testing.T) {
+	t.Parallel()
+
+	repo := NewMemory()
+	ctx := context.Background()
+	_, err := repo.CreateTenant(ctx, model.CreateTenantRequest{
+		TenantID:        "family-varadha",
+		Name:            "Family Varadha",
+		PlanID:          constants.PlanFamilyPro,
+		RetentionTierID: constants.RetentionFamilyCloud,
+		PrimaryProfile:  "ai-btech-student",
+	})
+	if err != nil {
+		t.Fatalf("create tenant: %v", err)
+	}
+	_, err = repo.EnrollDevice(ctx, model.EnrollDeviceRequest{
+		TenantID: "family-varadha",
+		DeviceID: "replay-device",
+		HostName: "replay-host",
+		Profile:  "ai-btech-student",
+		OSName:   "windows",
+	})
+	if err != nil {
+		t.Fatalf("enroll device: %v", err)
+	}
+
+	request := model.IngestTelemetryRequest{
+		TenantID: "family-varadha",
+		DeviceID: "replay-device",
+		HostName: "replay-host",
+		Profile:  "ai-btech-student",
+		OSName:   "windows",
+		Events: []model.TelemetryEvent{{
+			ID:         "local-event-1",
+			Type:       "process_snapshot",
+			Source:     constants.RiskSourceProcess,
+			ObservedAt: time.Date(2026, 6, 12, 8, 0, 0, 0, time.UTC),
+			AppName:    "Code.exe",
+			ProcessID:  123,
+			PathHash:   "hash-only",
+			Metadata:   map[string]string{"category": "coding"},
+		}},
+	}
+	first, err := repo.IngestTelemetryEvents(ctx, "replay-device", request)
+	if err != nil {
+		t.Fatalf("first ingest: %v", err)
+	}
+	if first.AcceptedEvents != 1 || first.StoredEvents != 1 {
+		t.Fatalf("expected first ingest to store event: %+v", first)
+	}
+	second, err := repo.IngestTelemetryEvents(ctx, "replay-device", request)
+	if err != nil {
+		t.Fatalf("second ingest: %v", err)
+	}
+	if second.AcceptedEvents != 1 || second.StoredEvents != 1 {
+		t.Fatalf("expected duplicate ingest to be acknowledged without duplicate storage: %+v", second)
+	}
+	status, err := repo.TelemetryIngestStatus(ctx, "replay-device")
+	if err != nil {
+		t.Fatalf("telemetry status: %v", err)
+	}
+	if status.StoredEvents != 1 || status.RecentEvents[0].ID != "local-event-1" {
+		t.Fatalf("expected one stored telemetry event: %+v", status)
 	}
 }
