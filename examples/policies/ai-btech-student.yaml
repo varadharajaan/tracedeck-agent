@@ -37,6 +37,12 @@ archive:
     standard_ia_until: 365
     archive_after: 365
 
+backend_sync:
+  enabled: false
+  base_url: http://127.0.0.1:18080
+  batch_limit: 100
+  request_timeout: 10s
+
 alerts:
   enabled: true
   email:

@@ -39,3 +39,21 @@ alerts:
 
 Provider credentials are supplied by environment variables, not YAML. SMTP uses
 `TRACEDECK_SMTP_*` variables, and SES uses the AWS SDK default credential chain.
+
+## Backend Sync
+
+`backend_sync` controls metadata-only sync from the local agent to the local
+backend.
+
+```yaml
+backend_sync:
+  enabled: false
+  base_url: http://127.0.0.1:18080
+  batch_limit: 100
+  request_timeout: 10s
+```
+
+When enabled, the agent posts the current collection cycle after SQLite storage
+succeeds. The payload contains typed event metadata only and does not include
+passwords, credentials, screenshots, tokens, cookies, keylogs, private messages,
+raw URLs, page titles, provider secrets, or raw file contents.

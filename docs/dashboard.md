@@ -52,6 +52,8 @@ tables: package fit, paid proof, upgrade motion, renewal risk, commercial
 lever, anomaly assurance, email delivery, push delivery, and report mail
 readiness. The panels are populated from the existing typed tenant operations,
 tenant monetisation summary, alert delivery, weekly report, and host risk APIs.
+Phase 28 adds Live Agent Telemetry and Telemetry Privacy Boundary panels backed
+by the agent-to-backend metadata ingest bridge.
 
 The dashboard reads the base backend endpoints:
 
@@ -66,6 +68,7 @@ For the selected host it reads:
 - `/api/v1/devices/{deviceId}/anomalies`
 - `/api/v1/devices/{deviceId}/tamper-events`
 - `/api/v1/devices/{deviceId}/alert-deliveries`
+- `/api/v1/devices/{deviceId}/telemetry-status`
 - `/api/v1/devices/{deviceId}/reports/weekly`
 - `/api/v1/tenants/{tenantId}`
 - `/api/v1/plans`
@@ -93,6 +96,8 @@ Current panels:
   risk, and commercial lever
 - buyer notification assurance for anomaly alerting, email delivery, push
   delivery, weekly report mail, last signal, and next action
+- live agent telemetry proof for backend-ingested process and health metadata
+- telemetry privacy boundary showing metadata-only ingest limits
 - customer operations cockpit for fleet, anomaly, mail delivery, push reach,
   and paid value
 - escalation workbench for tenant-level policy, anomaly, delivery, and archive

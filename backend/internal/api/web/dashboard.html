@@ -575,6 +575,34 @@
       <div class="metric"><span class="muted">Delivery</span><strong id="metric-delivery">-</strong><small>Email, push, dashboard</small></div>
     </section>
 
+    <section class="content-grid">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Live Agent Telemetry</h2>
+            <p class="muted">Metadata-only ingest proof from endpoint agent cycles</p>
+          </div>
+          <span id="telemetry-status" class="badge pending">pending</span>
+        </div>
+        <div class="brief-grid">
+          <div class="brief-item"><small>Stored Events</small><strong id="telemetry-stored">-</strong><span id="telemetry-stored-sub" class="muted">No backend ingest yet</span></div>
+          <div class="brief-item"><small>Process Source</small><strong id="telemetry-process">-</strong><span id="telemetry-process-sub" class="muted">No process proof</span></div>
+          <div class="brief-item"><small>Health Source</small><strong id="telemetry-health">-</strong><span id="telemetry-health-sub" class="muted">No health proof</span></div>
+          <div class="brief-item"><small>Last Ingest</small><strong id="telemetry-last">-</strong><span id="telemetry-last-sub" class="muted">Waiting for agent sync</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Telemetry Privacy Boundary</h2>
+            <p class="muted">What backend sync can prove without collecting sensitive content</p>
+          </div>
+          <span id="telemetry-boundary-status" class="badge healthy">metadata only</span>
+        </div>
+        <div id="telemetry-recent-list" class="catalog-list"><div class="empty">No backend-ingested telemetry events yet.</div></div>
+      </div>
+    </section>
+
     <section class="command-board" aria-label="product command overview">
       <div class="command-card primary">
         <div class="section-head">
@@ -1453,6 +1481,7 @@
       renderTenantOperations(context.tenantOperations);
       renderMonetizationSummary(context.monetizationSummary);
       renderBuyerMonetizationConsole(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
+      renderTelemetryStatus(context.telemetryStatus);
       renderNotificationRoutes(context.notificationRoutes);
       renderDataExports(context.dataExports);
       renderDeleteRequests(context.deleteRequests);
@@ -2082,6 +2111,51 @@
       `).join("");
     }
 
+    function renderTelemetryStatus(status) {
+      const model = status || {};
+      const stored = Number(model.stored_events || 0);
+      const countsBySource = model.counts_by_source || {};
+      const countsByType = model.counts_by_type || {};
+      const processEvents = countMatching(countsBySource, "process");
+      const healthEvents = countMatching(countsBySource, "health");
+      document.getElementById("telemetry-status").outerHTML =
+        badge(stored > 0 ? "healthy" : "pending").replace("<span", '<span id="telemetry-status"');
+      document.getElementById("telemetry-boundary-status").outerHTML =
+        badge(stored > 0 ? "healthy" : "metadata only").replace("<span", '<span id="telemetry-boundary-status"');
+      setText("telemetry-stored", stored);
+      setText("telemetry-stored-sub", model.privacy_boundary || "No backend ingest yet.");
+      setText("telemetry-process", processEvents);
+      setText("telemetry-process-sub", `${countMatching(countsByType, "process")} process snapshots`);
+      setText("telemetry-health", healthEvents);
+      setText("telemetry-health-sub", `${countMatching(countsByType, "health")} health events`);
+      setText("telemetry-last", model.last_ingested_at ? formatAge(model.last_ingested_at) : "-");
+      setText("telemetry-last-sub", model.last_observed_at ? `observed ${formatDate(model.last_observed_at)}` : "Waiting for agent sync");
+
+      const recent = model.recent_events || [];
+      const target = document.getElementById("telemetry-recent-list");
+      if (recent.length === 0) {
+        target.innerHTML = '<div class="empty">No backend-ingested telemetry events yet.</div>';
+        return;
+      }
+      target.innerHTML = recent.map((item) => `
+        <div class="catalog-item">
+          <strong>${escapeHTML(item.type)} from ${escapeHTML(item.source)}</strong>
+          <span class="muted">${escapeHTML(item.app_name || item.host_name || "metadata event")} - ${escapeHTML(formatDate(item.observed_at))}</span>
+          <div class="action-meta">
+            <span class="pill">${escapeHTML(item.path_hash ? "path hash present" : "no path hash")}</span>
+            <span class="pill">${escapeHTML(Object.keys(item.metadata || {}).length)} metadata fields</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function countMatching(counts, token) {
+      return Object.entries(counts || {}).reduce((total, entry) => {
+        const [key, value] = entry;
+        return String(key).includes(token) ? total + Number(value || 0) : total;
+      }, 0);
+    }
+
     function renderPaidCapabilities(items) {
       setText("paid-capability-count", `${items.length} capabilit${items.length === 1 ? "y" : "ies"}`);
       const target = document.getElementById("paid-capability-list");
@@ -2412,6 +2486,7 @@
       const deviceGroups = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/device-groups`) : null;
       const policyAssignments = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/policy-assignments`) : null;
       const notificationRoutes = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-routes`) : null;
+      const telemetryStatus = await loadOptionalJSON(`${base}/telemetry-status`);
       const consentCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/consent-center`) : null;
       const tenantOperations = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/operations-summary`) : null;
       const monetizationSummary = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/monetization-summary`) : null;
@@ -2428,6 +2503,7 @@
         deviceGroups,
         policyAssignments,
         notificationRoutes,
+        telemetryStatus,
         consentCenter,
         tenantOperations,
         monetizationSummary,

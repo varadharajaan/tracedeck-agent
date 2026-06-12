@@ -90,6 +90,19 @@ func TestLoadRejectsBadArchiveUploadInterval(t *testing.T) {
 	}
 }
 
+func TestLoadRejectsBadBackendSyncURL(t *testing.T) {
+	t.Parallel()
+
+	data := strings.Replace(validMinimalPolicy(), "enabled: false\n  base_url: http://127.0.0.1:18080", "enabled: true\n  base_url: not-a-url", 1)
+	_, err := Load([]byte(data))
+	if err == nil {
+		t.Fatal("expected invalid backend sync URL to be rejected")
+	}
+	if !strings.Contains(err.Error(), constants.ConfigFieldBackendSyncBaseURL) {
+		t.Fatalf("expected backend sync base URL in error, got: %v", err)
+	}
+}
+
 func validMinimalPolicy() string {
 	return `
 tenant_id: family-varadha
@@ -127,6 +140,11 @@ archive:
     standard: 90
     standard_ia_until: 365
     archive_after: 365
+backend_sync:
+  enabled: false
+  base_url: http://127.0.0.1:18080
+  batch_limit: 100
+  request_timeout: 10s
 alerts:
   enabled: false
   email:

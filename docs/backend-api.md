@@ -85,6 +85,8 @@ GET  /api/v1/devices/{deviceId}/policy-violations
 GET  /api/v1/devices/{deviceId}/anomalies
 GET  /api/v1/devices/{deviceId}/tamper-events
 GET  /api/v1/devices/{deviceId}/alert-deliveries
+POST /api/v1/devices/{deviceId}/telemetry-events
+GET  /api/v1/devices/{deviceId}/telemetry-status
 GET  /api/v1/policy-templates
 GET  /api/v1/alert-rule-templates
 GET  /api/v1/archive/status

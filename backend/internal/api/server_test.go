@@ -76,6 +76,68 @@ func TestDeviceEnrollmentAndLookup(t *testing.T) {
 	}
 }
 
+func TestTelemetryIngestEndpoints(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	body := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "agent-device-001",
+		"host_name": "agent-host",
+		"profile": "ai-btech-student",
+		"os_name": "windows",
+		"events": [
+			{
+				"type": "process_snapshot",
+				"source": "process",
+				"observed_at": "2026-06-12T08:00:00Z",
+				"app_name": "Code.exe",
+				"process_id": 123,
+				"path_hash": "hash-only",
+				"metadata": { "category": "coding" }
+			}
+		]
+	}`)
+	ingest := httptest.NewRecorder()
+	handler.ServeHTTP(ingest, httptest.NewRequest(http.MethodPost, constants.RouteDevices+"/agent-device-001/"+constants.RouteSegmentTelemetry, bytes.NewReader(body)))
+	if ingest.Code != http.StatusAccepted {
+		t.Fatalf("expected telemetry ingest 202, got %d: %s", ingest.Code, ingest.Body.String())
+	}
+	var response model.IngestTelemetryResponse
+	if err := json.Unmarshal(ingest.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode ingest response: %v", err)
+	}
+	if response.AcceptedEvents != 1 || response.PrivacyBoundary == "" || !response.BackendVisibleHost {
+		t.Fatalf("unexpected ingest response: %+v", response)
+	}
+
+	status := httptest.NewRecorder()
+	handler.ServeHTTP(status, httptest.NewRequest(http.MethodGet, constants.RouteDevices+"/agent-device-001/"+constants.RouteSegmentTelemetryStatus, nil))
+	if status.Code != http.StatusOK {
+		t.Fatalf("expected telemetry status 200, got %d: %s", status.Code, status.Body.String())
+	}
+	var telemetryStatus model.TelemetryIngestStatus
+	if err := json.Unmarshal(status.Body.Bytes(), &telemetryStatus); err != nil {
+		t.Fatalf("decode telemetry status: %v", err)
+	}
+	if telemetryStatus.StoredEvents != 1 || telemetryStatus.CountsBySource["process"] != 1 || telemetryStatus.RecentEvents[0].PathHash != "hash-only" {
+		t.Fatalf("unexpected telemetry status: %+v", telemetryStatus)
+	}
+}
+
 func TestHostDashboardRiskEndpoints(t *testing.T) {
 	t.Parallel()
 

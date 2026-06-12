@@ -86,3 +86,7 @@
     fit, paid proof, upgrade motion, renewal risk, commercial lever, anomaly
     assurance, email delivery, push delivery, report mail readiness,
     Postman/Newman coverage, and local verification.
+31. Phase 28: agent telemetry ingest bridge. Typed metadata-only backend ingest
+    endpoint, telemetry status endpoint, agent backend sync policy/client,
+    dashboard live telemetry panels, regenerated schema, Postman/Newman
+    coverage, real agent live smoke, and local verification.

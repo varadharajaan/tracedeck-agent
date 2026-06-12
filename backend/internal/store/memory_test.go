@@ -46,6 +46,28 @@ func TestPersistentStoreSurvivesRestart(t *testing.T) {
 	if _, err := first.HostOverview(ctx, device.DeviceID); err != nil {
 		t.Fatalf("seed host overview: %v", err)
 	}
+	ingest, err := first.IngestTelemetryEvents(ctx, device.DeviceID, model.IngestTelemetryRequest{
+		TenantID: "family-varadha",
+		DeviceID: device.DeviceID,
+		HostName: device.HostName,
+		Profile:  device.Profile,
+		OSName:   device.OSName,
+		Events: []model.TelemetryEvent{{
+			Type:       "process_snapshot",
+			Source:     constants.RiskSourceProcess,
+			ObservedAt: device.LastSeenAt,
+			AppName:    "Code.exe",
+			ProcessID:  123,
+			PathHash:   "hash-only",
+			Metadata:   map[string]string{"category": "coding"},
+		}},
+	})
+	if err != nil {
+		t.Fatalf("ingest telemetry: %v", err)
+	}
+	if ingest.AcceptedEvents != 1 || ingest.StoredEvents != 1 {
+		t.Fatalf("expected telemetry ingest counts: %+v", ingest)
+	}
 	rule, err := first.CreateAlertRule(ctx, "family-varadha", model.CreateAlertRuleRequest{
 		TemplateID: constants.AlertRuleTemplateRiskySoftware,
 		Name:       "Persist risky software rule",
@@ -144,6 +166,13 @@ func TestPersistentStoreSurvivesRestart(t *testing.T) {
 	}
 	if loadedDevice.HostName != "persistent-host" {
 		t.Fatalf("unexpected loaded device: %+v", loadedDevice)
+	}
+	telemetryStatus, err := second.TelemetryIngestStatus(ctx, "persistent-device")
+	if err != nil {
+		t.Fatalf("load telemetry status after restart: %v", err)
+	}
+	if telemetryStatus.StoredEvents != 1 || telemetryStatus.CountsByType["process_snapshot"] != 1 {
+		t.Fatalf("expected persisted telemetry status: %+v", telemetryStatus)
 	}
 	events, err := second.ListPolicyViolations(ctx, "persistent-device")
 	if err != nil {
