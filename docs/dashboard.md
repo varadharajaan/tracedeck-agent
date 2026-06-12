@@ -39,6 +39,8 @@ band: anomaly notification proof, mail delivery proof, push notification reach,
 and customer audit evidence.
 Phase 21 adds managed policy rollout panels for device groups and policy
 assignments.
+Phase 22 adds data rights workflow panels for tenant export manifests and
+delete request queues.
 
 The dashboard reads the base backend endpoints:
 
@@ -63,6 +65,8 @@ For the selected host it reads:
 - `/api/v1/alert-rule-templates`
 - `/api/v1/tenants/{tenantId}/alert-rules`
 - `/api/v1/tenants/{tenantId}/consent-center`
+- `/api/v1/tenants/{tenantId}/data-exports`
+- `/api/v1/tenants/{tenantId}/delete-requests`
 - `/api/v1/tenants/{tenantId}/device-groups`
 - `/api/v1/tenants/{tenantId}/policy-assignments`
 
@@ -112,6 +116,8 @@ Current panels:
 - consent and audit center with visible monitoring, recipients, export/delete
   readiness, pause controls, and denied sensitive collection categories
 - policy audit trail for recent tenant and policy changes
+- data export center for auditable tenant export manifests
+- delete request queue for non-destructive data deletion workflows
 
 API-provided text is escaped before rendering.
 

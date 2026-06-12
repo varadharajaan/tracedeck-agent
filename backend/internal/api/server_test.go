@@ -516,6 +516,74 @@ func TestDeviceGroupAndPolicyAssignmentEndpoints(t *testing.T) {
 	}
 }
 
+func TestDataExportAndDeleteRequestEndpoints(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	exportBody := []byte(`{"format":"json","scope":"tenant"}`)
+	createExport := httptest.NewRecorder()
+	handler.ServeHTTP(createExport, httptest.NewRequest(http.MethodPost, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentDataExports, bytes.NewReader(exportBody)))
+	if createExport.Code != http.StatusCreated {
+		t.Fatalf("expected export create 201, got %d: %s", createExport.Code, createExport.Body.String())
+	}
+	var export model.TenantDataExport
+	if err := json.Unmarshal(createExport.Body.Bytes(), &export); err != nil {
+		t.Fatalf("decode export: %v", err)
+	}
+	if export.Status != constants.DataExportStatusReady || export.ResourceCount == 0 || export.StorageKey == "" {
+		t.Fatalf("unexpected data export: %+v", export)
+	}
+
+	deleteBody := []byte(`{"scope":"tenant","reason":"family account data cleanup"}`)
+	createDelete := httptest.NewRecorder()
+	handler.ServeHTTP(createDelete, httptest.NewRequest(http.MethodPost, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentDeleteRequests, bytes.NewReader(deleteBody)))
+	if createDelete.Code != http.StatusCreated {
+		t.Fatalf("expected delete request create 201, got %d: %s", createDelete.Code, createDelete.Body.String())
+	}
+	var deleteRequest model.DeleteRequest
+	if err := json.Unmarshal(createDelete.Body.Bytes(), &deleteRequest); err != nil {
+		t.Fatalf("decode delete request: %v", err)
+	}
+	if deleteRequest.Status != constants.DeleteRequestStatusQueued || deleteRequest.DueAt.IsZero() {
+		t.Fatalf("unexpected delete request: %+v", deleteRequest)
+	}
+
+	exports := httptest.NewRecorder()
+	handler.ServeHTTP(exports, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentDataExports, nil))
+	if exports.Code != http.StatusOK || !strings.Contains(exports.Body.String(), constants.DataExportStatusReady) {
+		t.Fatalf("expected export list, got %d: %s", exports.Code, exports.Body.String())
+	}
+
+	deletes := httptest.NewRecorder()
+	handler.ServeHTTP(deletes, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentDeleteRequests, nil))
+	if deletes.Code != http.StatusOK || !strings.Contains(deletes.Body.String(), constants.DeleteRequestStatusQueued) {
+		t.Fatalf("expected delete request list, got %d: %s", deletes.Code, deletes.Body.String())
+	}
+
+	audit := httptest.NewRecorder()
+	handler.ServeHTTP(audit, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentAuditEvents, nil))
+	if audit.Code != http.StatusOK {
+		t.Fatalf("expected audit 200, got %d", audit.Code)
+	}
+	if !strings.Contains(audit.Body.String(), constants.AuditActionDataExportCreated) || !strings.Contains(audit.Body.String(), constants.AuditActionDeleteRequestCreated) {
+		t.Fatalf("expected data export and delete request audit events, got %s", audit.Body.String())
+	}
+}
+
 func TestTenantValidation(t *testing.T) {
 	t.Parallel()
 

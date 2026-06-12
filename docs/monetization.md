@@ -74,6 +74,13 @@ Phase 21 adds managed-policy packaging:
 - dashboard visibility for assignment mode, status, target, policy template,
   and alert-rule coverage
 
+Phase 22 adds data-rights packaging for paid trust plans:
+
+- tenant export manifests
+- delete request queue
+- audit events for export and delete workflows
+- dashboard proof for compliance and family trust conversations
+
 This still uses the existing privacy-aware API data: typed risk categories,
 delivery routes, report readiness, health, archive, role, retention, and policy
 template metadata. It does not add credential, keylog, private-message, raw URL,

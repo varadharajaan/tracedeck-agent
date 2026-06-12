@@ -998,8 +998,8 @@
         <section class="content-grid">
           <div class="panel">
             <div class="section-head">
-            <div>
-              <h2>Consent + Audit Center</h2>
+              <div>
+                <h2>Consent + Audit Center</h2>
                 <p class="muted">Transparent collection status, recipients, rights, and policy history. Denied categories include passwords and credentials, screenshots, and private content.</p>
             </div>
               <span id="consent-status" class="badge pending">pending</span>
@@ -1022,6 +1022,29 @@
               <span id="consent-audit-count" class="pill">0 events</span>
             </div>
             <div id="consent-audit-list" class="timeline"><div class="empty">No audit events yet.</div></div>
+          </div>
+        </section>
+
+        <section class="content-grid">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Data Export Center</h2>
+                <p class="muted">Auditable tenant export manifests for report, archive, and compliance workflows</p>
+              </div>
+              <span id="data-export-count" class="pill">0 exports</span>
+            </div>
+            <div id="data-export-list" class="catalog-list"><div class="empty">No data exports yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Delete Request Queue</h2>
+                <p class="muted">Non-destructive deletion requests tracked for review, audit, and compliance SLAs</p>
+              </div>
+              <span id="delete-request-count" class="pill">0 requests</span>
+            </div>
+            <div id="delete-request-list" class="catalog-list"><div class="empty">No delete requests yet.</div></div>
           </div>
         </section>
       </div>
@@ -1224,6 +1247,8 @@
       renderDeviceGroups(context.deviceGroups);
       renderPolicyAssignments(context.policyAssignments);
       renderConsentCenter(context.consentCenter);
+      renderDataExports(context.dataExports);
+      renderDeleteRequests(context.deleteRequests);
       renderTimeline(policy.items.concat(anomalies.items, tamper.items));
       renderRiskTable("policy-table", policy.items, ["severity", "category", "source", "reason", "status"]);
       renderRiskTable("anomaly-table", anomalies.items, ["severity", "category", "source", "reason"]);
@@ -1762,6 +1787,46 @@
       `).join("");
     }
 
+    function renderDataExports(exports) {
+      const items = (exports && exports.items) || [];
+      setText("data-export-count", `${items.length} export${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("data-export-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No data exports yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="catalog-item">
+          <strong>${escapeHTML(item.format)} ${escapeHTML(item.scope)} export</strong>
+          <span class="muted">${escapeHTML(item.resource_count)} resources - ${escapeHTML(item.storage_key)}</span>
+          <div class="action-meta">
+            ${badge(item.status)}
+            <span class="pill">expires ${escapeHTML(formatDate(item.expires_at))}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderDeleteRequests(requests) {
+      const items = (requests && requests.items) || [];
+      setText("delete-request-count", `${items.length} request${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("delete-request-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No delete requests yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="catalog-item">
+          <strong>${escapeHTML(item.scope)} delete request</strong>
+          <span class="muted">${escapeHTML(item.reason)}</span>
+          <div class="action-meta">
+            ${badge(item.status)}
+            <span class="pill">due ${escapeHTML(formatDate(item.due_at))}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
     function renderTimeline(events) {
       const sorted = events.slice().sort((left, right) => new Date(right.observed_at) - new Date(left.observed_at));
       setText("timeline-count", `${sorted.length} events`);
@@ -1898,6 +1963,8 @@
       const deviceGroups = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/device-groups`) : null;
       const policyAssignments = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/policy-assignments`) : null;
       const consentCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/consent-center`) : null;
+      const dataExports = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/data-exports`) : null;
+      const deleteRequests = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delete-requests`) : null;
       renderOverview(overview, deviceHealth, policy, anomalies, tamper, deliveries, {
         tenant,
         plans,
@@ -1909,6 +1976,8 @@
         deviceGroups,
         policyAssignments,
         consentCenter,
+        dataExports,
+        deleteRequests,
         auditEvents,
         weeklyReport
       });
