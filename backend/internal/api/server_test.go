@@ -1732,6 +1732,76 @@ func TestTenantCustomerSuccessPacketEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantPushActivationCenterEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "push-activation-device-001",
+		"host_name": "push-activation-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentPushActivation, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected push activation center 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var center model.TenantPushActivationCenter
+	if err := json.Unmarshal(response.Body.Bytes(), &center); err != nil {
+		t.Fatalf("decode push activation center: %v", err)
+	}
+	if center.Summary.ActivationScore == 0 || center.Summary.NotificationScore == 0 || center.Summary.RecommendedPaidPackage == "" || center.Summary.OwnerNextStep == "" {
+		t.Fatalf("expected scored push activation summary: %+v", center.Summary)
+	}
+	if center.Summary.MailDelivered == 0 || center.Summary.DashboardDelivered == 0 || center.Summary.PushRoutesTotal == 0 || center.Summary.AlertRulesUsingPush == 0 || center.Summary.AlertsWithPush == 0 {
+		t.Fatalf("expected push, mail fallback, dashboard fallback, routes, and alert rule proof: %+v", center.Summary)
+	}
+	if len(center.Routes) == 0 || len(center.Scenarios) < 3 || len(center.Actions) == 0 {
+		t.Fatalf("expected push routes, scenarios, and owner actions: %+v", center)
+	}
+	route := center.Routes[0]
+	if route.Provider != constants.DeliveryProviderWebPush || route.SubscriptionLabel == "" || route.ProofState == "" || route.EndpointStorage == "" || route.NextAction == "" {
+		t.Fatalf("expected provider-safe push route proof: %+v", route)
+	}
+	if !strings.Contains(route.EndpointStorage, "raw push endpoint is not stored") {
+		t.Fatalf("expected route to deny raw endpoint storage, got %q", route.EndpointStorage)
+	}
+	if center.Scenarios[0].Trigger == "" || len(center.Scenarios[0].Channels) == 0 || center.Scenarios[0].BuyerValue == "" {
+		t.Fatalf("expected typed anomaly notification scenario: %+v", center.Scenarios)
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "push_endpoint", "screenshot_bytes", "raw_url", "page_title", "alert_body", "card_number", "cvv", "payment_token"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("push activation center leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+	if !strings.Contains(center.PrivacyBoundary, "metadata-only") || !strings.Contains(center.PrivacyBoundary, "no push endpoints") || !strings.Contains(center.PrivacyBoundary, "no passwords") {
+		t.Fatalf("expected strict push activation privacy boundary, got %q", center.PrivacyBoundary)
+	}
+}
+
 func TestTenantNotificationRevenueCockpitEndpoint(t *testing.T) {
 	t.Parallel()
 

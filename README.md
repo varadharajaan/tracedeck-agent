@@ -264,3 +264,13 @@ provider rehearsal, privacy assurances, objection answers, and owner actions.
 It does not collect passwords, screenshots, raw URLs, page titles, alert
 bodies, provider secrets, push endpoints, endpoint payloads, private content,
 invoices, or payment card data.
+
+Phase 59 adds a typed Push Activation Center at
+`/api/v1/tenants/{tenantId}/push-activation-center`. It gives the dashboard a
+monetisation-grade notification readiness panel for push delivered/retrying
+proof, mail fallback, dashboard fallback, route proof, preference/escalation
+coverage, provider-safe simulation, anomaly push/mail scenarios, owner
+actions, and privacy guard. It is metadata-only and does not collect passwords,
+screenshots, raw URLs, page titles, alert bodies, provider secrets, push
+endpoints, endpoint payloads, private content, invoices, payment card data, or
+raw provider payloads.

@@ -87,6 +87,13 @@ REQUIRED_IDS = (
     "paid-ops-section",
     "revenue-section",
     "notification-proof-section",
+    "push-activation-section",
+    "push-activation-status",
+    "push-activation-headline",
+    "push-route-list",
+    "push-scenario-list",
+    "push-action-list",
+    "push-guard-list",
     "mail-report-section",
     "archive-proof-section",
     "trust-proof-section",
@@ -192,8 +199,8 @@ def main() -> int:
                             clientHeight: element.clientHeight
                           }));
                           checks.push({
-                            name: "command-navigation-has-fourteen-jumps",
-                            ok: jumpBoxes.length === 14,
+                            name: "command-navigation-has-fifteen-jumps",
+                            ok: jumpBoxes.length === 15,
                             detail: `${jumpBoxes.length} command jump buttons`
                           });
                           for (const item of jumpBoxes) {

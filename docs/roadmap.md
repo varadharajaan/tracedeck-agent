@@ -229,3 +229,9 @@
     provider rehearsal, privacy assurances, buyer objection answers, owner
     actions, Postman/Newman coverage, screenshot-free layout guard, docs, and
     full local verification.
+62. Phase 59: push activation center. Typed tenant push-activation-center API
+    and dashboard surface for monetisable push notification readiness, mail
+    fallback, dashboard fallback, retry posture, route proof, preference and
+    escalation coverage, anomaly push/mail scenarios, owner actions,
+    Postman/Newman coverage, screenshot-free layout guard, docs, and full local
+    verification.

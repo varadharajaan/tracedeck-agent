@@ -348,3 +348,20 @@ Phase 58 adds a Customer Success Packet for customer reviews and renewal calls:
 This makes the dashboard easier to monetise because a parent, school admin, or
 business manager can understand the paid value without reading every host-level
 event table.
+
+Phase 59 adds a Push Activation Center for notification conversion:
+
+- push activation score and recommended package
+- delivered, retrying, failed, and pending push proof
+- mail fallback and dashboard fallback proof beside push route state
+- push route proof with subscription labels, SLA, provider-safe simulation, and
+  next action
+- anomaly push/mail scenarios for non-study browsing, media playback, and
+  tamper fallback
+- owner action queue for closing push proof before paid demos
+- privacy guard for metadata-only notification evidence
+
+This makes "push notification" sellable instead of vague: buyers can see
+whether urgent anomalies will reach them, what fallback exists, what proof is
+missing, and which paid package it supports. It does not add sensitive
+collection or live provider sends.
