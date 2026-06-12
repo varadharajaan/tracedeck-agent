@@ -30,27 +30,29 @@ const (
 )
 
 const (
-	RouteSegmentSummary        = "summary"
-	RouteSegmentDaily          = "daily"
-	RouteSegmentReports        = "reports"
-	RouteSegmentWeekly         = "weekly"
-	RouteSegmentPDF            = "pdf"
-	RouteSegmentOverview       = "overview"
-	RouteSegmentAuditEvents    = "audit-events"
-	RouteSegmentAlertRules     = "alert-rules"
-	RouteSegmentConsentCenter  = "consent-center"
-	RouteSegmentOperations     = "operations-summary"
-	RouteSegmentMonetization   = "monetization-summary"
-	RouteSegmentNotifications  = "notification-routes"
-	RouteSegmentDataExports    = "data-exports"
-	RouteSegmentDeleteRequests = "delete-requests"
-	RouteSegmentDeviceGroups   = "device-groups"
-	RouteSegmentPolicyAssign   = "policy-assignments"
-	RouteSegmentPolicyEvents   = "policy-violations"
-	RouteSegmentAnomalies      = "anomalies"
-	RouteSegmentTamperEvents   = "tamper-events"
-	RouteSegmentAlertDelivery  = "alert-deliveries"
-	RouteSegmentHealth         = "health"
+	RouteSegmentSummary         = "summary"
+	RouteSegmentDaily           = "daily"
+	RouteSegmentReports         = "reports"
+	RouteSegmentWeekly          = "weekly"
+	RouteSegmentPDF             = "pdf"
+	RouteSegmentOverview        = "overview"
+	RouteSegmentAuditEvents     = "audit-events"
+	RouteSegmentAlertRules      = "alert-rules"
+	RouteSegmentConsentCenter   = "consent-center"
+	RouteSegmentOperations      = "operations-summary"
+	RouteSegmentMonetization    = "monetization-summary"
+	RouteSegmentNotifications   = "notification-routes"
+	RouteSegmentDataExports     = "data-exports"
+	RouteSegmentDeleteRequests  = "delete-requests"
+	RouteSegmentDeviceGroups    = "device-groups"
+	RouteSegmentPolicyAssign    = "policy-assignments"
+	RouteSegmentPolicyEvents    = "policy-violations"
+	RouteSegmentAnomalies       = "anomalies"
+	RouteSegmentTamperEvents    = "tamper-events"
+	RouteSegmentAlertDelivery   = "alert-deliveries"
+	RouteSegmentHealth          = "health"
+	RouteSegmentTelemetry       = "telemetry-events"
+	RouteSegmentTelemetryStatus = "telemetry-status"
 )
 
 const (
@@ -107,6 +109,7 @@ const (
 	AuditActionDataExportCreated    = "data_export.created"
 	AuditActionDeleteRequestCreated = "delete_request.created"
 	AuditActionPolicyAssigned       = "policy_assignment.created"
+	AuditActionTelemetryIngested    = "telemetry.ingested"
 	AuditActorLocalAPI              = "local_backend"
 )
 
@@ -282,4 +285,10 @@ const (
 	MonetizationStagePilotReady      = "pilot_ready"
 	MonetizationStageConversionReady = "conversion_ready"
 	MonetizationStageExpansionReady  = "expansion_ready"
+)
+
+const (
+	TelemetryIngestMaxEvents    = 500
+	TelemetryStatusRecentEvents = 8
+	TelemetryPrivacyBoundary    = "metadata-only: no passwords, credentials, screenshots, tokens, cookies, keylogs, private messages, raw URLs, or page titles"
 )

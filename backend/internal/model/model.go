@@ -190,6 +190,53 @@ type AlertDelivery struct {
 	Summary          string     `json:"summary"`
 }
 
+type TelemetryEvent struct {
+	ID         string            `json:"id"`
+	Type       string            `json:"type"`
+	Source     string            `json:"source"`
+	ObservedAt time.Time         `json:"observed_at"`
+	TenantID   string            `json:"tenant_id"`
+	DeviceID   string            `json:"device_id"`
+	HostName   string            `json:"host_name"`
+	AppName    string            `json:"app_name"`
+	ProcessID  int32             `json:"process_id"`
+	PathHash   string            `json:"path_hash"`
+	Metadata   map[string]string `json:"metadata"`
+}
+
+type IngestTelemetryRequest struct {
+	TenantID string           `json:"tenant_id"`
+	DeviceID string           `json:"device_id"`
+	HostName string           `json:"host_name"`
+	Profile  string           `json:"profile"`
+	OSName   string           `json:"os_name"`
+	Events   []TelemetryEvent `json:"events"`
+}
+
+type IngestTelemetryResponse struct {
+	TenantID           string    `json:"tenant_id"`
+	DeviceID           string    `json:"device_id"`
+	AcceptedEvents     int       `json:"accepted_events"`
+	StoredEvents       int       `json:"stored_events"`
+	LastObservedAt     time.Time `json:"last_observed_at"`
+	LastIngestedAt     time.Time `json:"last_ingested_at"`
+	PrivacyBoundary    string    `json:"privacy_boundary"`
+	BackendVisibleHost bool      `json:"backend_visible_host"`
+}
+
+type TelemetryIngestStatus struct {
+	TenantID        string           `json:"tenant_id"`
+	DeviceID        string           `json:"device_id"`
+	HostName        string           `json:"host_name"`
+	StoredEvents    int              `json:"stored_events"`
+	CountsByType    map[string]int   `json:"counts_by_type"`
+	CountsBySource  map[string]int   `json:"counts_by_source"`
+	LastObservedAt  time.Time        `json:"last_observed_at"`
+	LastIngestedAt  time.Time        `json:"last_ingested_at"`
+	RecentEvents    []TelemetryEvent `json:"recent_events"`
+	PrivacyBoundary string           `json:"privacy_boundary"`
+}
+
 type DeviceHealth struct {
 	DeviceID             string    `json:"device_id"`
 	Score                int       `json:"score"`

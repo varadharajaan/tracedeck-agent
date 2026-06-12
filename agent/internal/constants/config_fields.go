@@ -17,6 +17,9 @@ const (
 	ConfigFieldArchiveUploadInterval  = "archive.upload_interval"
 	ConfigFieldArchiveStandardIAUntil = "archive.storage_class_days.standard_ia_until"
 	ConfigFieldArchiveAfter           = "archive.storage_class_days.archive_after"
+	ConfigFieldBackendSyncBaseURL     = "backend_sync.base_url"
+	ConfigFieldBackendSyncBatchLimit  = "backend_sync.batch_limit"
+	ConfigFieldBackendSyncTimeout     = "backend_sync.request_timeout"
 	ConfigFieldEmailProvider          = "alerts.email.provider"
 	ConfigFieldEmailFrom              = "alerts.email.from"
 	ConfigFieldEmailTo                = "alerts.email.to"
@@ -47,4 +50,5 @@ const (
 	ConfigErrorRuleNameRequired            = "rule name must not be empty"
 	ConfigErrorTimeMustUseHourMinute       = "must use HH:MM 24-hour format"
 	ConfigErrorDurationRequired            = "must be a valid Go duration such as 10m or 1h"
+	ConfigErrorURLRequired                 = "must be a valid http or https URL"
 )

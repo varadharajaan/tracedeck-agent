@@ -38,6 +38,7 @@ type Memory struct {
 	tamperEvents       map[string][]model.RiskEvent
 	alertDeliveries    map[string][]model.AlertDelivery
 	healthScores       map[string]model.DeviceHealth
+	telemetryEvents    map[string][]model.TelemetryEvent
 }
 
 func NewMemory() *Memory {
@@ -55,6 +56,7 @@ func NewMemory() *Memory {
 		tamperEvents:       make(map[string][]model.RiskEvent),
 		alertDeliveries:    make(map[string][]model.AlertDelivery),
 		healthScores:       make(map[string]model.DeviceHealth),
+		telemetryEvents:    make(map[string][]model.TelemetryEvent),
 	}
 }
 
@@ -1028,6 +1030,129 @@ func (m *Memory) ListAlertDeliveries(_ context.Context, deviceID string) ([]mode
 	return cloneAlertDeliveries(m.alertDeliveries[device.DeviceID]), nil
 }
 
+func (m *Memory) IngestTelemetryEvents(_ context.Context, deviceID string, req model.IngestTelemetryRequest) (model.IngestTelemetryResponse, error) {
+	now := time.Now().UTC()
+	deviceID = strings.TrimSpace(deviceID)
+	req.DeviceID = strings.TrimSpace(req.DeviceID)
+	if req.DeviceID == "" {
+		req.DeviceID = deviceID
+	}
+	req.TenantID = strings.TrimSpace(req.TenantID)
+	req.HostName = strings.TrimSpace(req.HostName)
+	req.Profile = strings.TrimSpace(req.Profile)
+	req.OSName = strings.TrimSpace(req.OSName)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if req.DeviceID != deviceID {
+		return model.IngestTelemetryResponse{}, ErrDeviceNotFound
+	}
+	tenant, ok := m.tenants[req.TenantID]
+	if !ok {
+		return model.IngestTelemetryResponse{}, ErrTenantNotFound
+	}
+
+	device, ok := m.devices[deviceID]
+	if !ok {
+		device = model.Device{
+			TenantID:   tenant.TenantID,
+			DeviceID:   deviceID,
+			HostName:   fallbackString(req.HostName, deviceID),
+			Profile:    fallbackString(req.Profile, tenant.PrimaryProfile),
+			OSName:     fallbackString(req.OSName, constants.StatusEmpty),
+			EnrolledAt: now,
+			LastSeenAt: now,
+		}
+	} else if device.TenantID != tenant.TenantID {
+		return model.IngestTelemetryResponse{}, ErrDeviceNotFound
+	}
+	device.HostName = fallbackString(req.HostName, device.HostName)
+	device.Profile = fallbackString(req.Profile, device.Profile)
+	device.OSName = fallbackString(req.OSName, device.OSName)
+	device.LastSeenAt = now
+	m.devices[deviceID] = device
+
+	limit := len(req.Events)
+	if limit > constants.TelemetryIngestMaxEvents {
+		limit = constants.TelemetryIngestMaxEvents
+	}
+	accepted := make([]model.TelemetryEvent, 0, limit)
+	var lastObserved time.Time
+	for i := 0; i < limit; i++ {
+		evt := normalizeTelemetryEvent(req.Events[i], tenant.TenantID, device)
+		if evt.ObservedAt.After(lastObserved) {
+			lastObserved = evt.ObservedAt
+		}
+		accepted = append(accepted, evt)
+	}
+	m.telemetryEvents[deviceID] = append(m.telemetryEvents[deviceID], accepted...)
+	m.auditEvents = append(m.auditEvents, model.AuditEvent{
+		ID:        auditID(tenant.TenantID, len(m.auditEvents)+1, now),
+		TenantID:  tenant.TenantID,
+		Category:  constants.AuditCategorySystem,
+		Action:    constants.AuditActionTelemetryIngested,
+		Actor:     constants.AuditActorLocalAPI,
+		ActorRole: constants.RoleBusinessManager,
+		Summary:   fmt.Sprintf("telemetry ingest accepted %d metadata events for %s", len(accepted), deviceID),
+		CreatedAt: now,
+	})
+	if err := m.persistLocked(); err != nil {
+		return model.IngestTelemetryResponse{}, err
+	}
+
+	return model.IngestTelemetryResponse{
+		TenantID:           tenant.TenantID,
+		DeviceID:           deviceID,
+		AcceptedEvents:     len(accepted),
+		StoredEvents:       len(m.telemetryEvents[deviceID]),
+		LastObservedAt:     lastObserved,
+		LastIngestedAt:     now,
+		PrivacyBoundary:    constants.TelemetryPrivacyBoundary,
+		BackendVisibleHost: true,
+	}, nil
+}
+
+func (m *Memory) TelemetryIngestStatus(_ context.Context, deviceID string) (model.TelemetryIngestStatus, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	device, ok := m.devices[strings.TrimSpace(deviceID)]
+	if !ok {
+		return model.TelemetryIngestStatus{}, ErrDeviceNotFound
+	}
+	events := cloneTelemetryEvents(m.telemetryEvents[device.DeviceID])
+	countsByType := make(map[string]int)
+	countsBySource := make(map[string]int)
+	var lastObserved time.Time
+	for _, evt := range events {
+		countsByType[evt.Type]++
+		countsBySource[evt.Source]++
+		if evt.ObservedAt.After(lastObserved) {
+			lastObserved = evt.ObservedAt
+		}
+	}
+	sort.Slice(events, func(i, j int) bool {
+		return events[i].ObservedAt.After(events[j].ObservedAt)
+	})
+	recent := events
+	if len(recent) > constants.TelemetryStatusRecentEvents {
+		recent = recent[:constants.TelemetryStatusRecentEvents]
+	}
+	return model.TelemetryIngestStatus{
+		TenantID:        device.TenantID,
+		DeviceID:        device.DeviceID,
+		HostName:        device.HostName,
+		StoredEvents:    len(events),
+		CountsByType:    countsByType,
+		CountsBySource:  countsBySource,
+		LastObservedAt:  lastObserved,
+		LastIngestedAt:  device.LastSeenAt,
+		RecentEvents:    cloneTelemetryEvents(recent),
+		PrivacyBoundary: constants.TelemetryPrivacyBoundary,
+	}, nil
+}
+
 func (m *Memory) hostOverviewLocked(device model.Device) model.HostOverview {
 	policyEvents := cloneRiskEvents(m.policyEvents[device.DeviceID])
 	anomalies := cloneRiskEvents(m.anomalyEvents[device.DeviceID])
@@ -1370,6 +1495,40 @@ func normalizeStrings(values []string) []string {
 	return normalized
 }
 
+func fallbackString(value string, fallback string) string {
+	clean := strings.TrimSpace(value)
+	if clean != "" {
+		return clean
+	}
+	return strings.TrimSpace(fallback)
+}
+
+func normalizeTelemetryEvent(evt model.TelemetryEvent, tenantID string, device model.Device) model.TelemetryEvent {
+	evt.ID = strings.TrimSpace(evt.ID)
+	evt.Type = strings.TrimSpace(evt.Type)
+	evt.Source = strings.TrimSpace(evt.Source)
+	evt.TenantID = tenantID
+	evt.DeviceID = device.DeviceID
+	evt.HostName = device.HostName
+	evt.AppName = strings.TrimSpace(evt.AppName)
+	evt.PathHash = strings.TrimSpace(evt.PathHash)
+	if evt.ObservedAt.IsZero() {
+		evt.ObservedAt = time.Now().UTC()
+	} else {
+		evt.ObservedAt = evt.ObservedAt.UTC()
+	}
+	metadata := make(map[string]string, len(evt.Metadata))
+	for key, value := range evt.Metadata {
+		cleanKey := strings.TrimSpace(key)
+		if cleanKey == "" {
+			continue
+		}
+		metadata[cleanKey] = strings.TrimSpace(value)
+	}
+	evt.Metadata = metadata
+	return evt
+}
+
 func archiveKey(device model.Device, uploadedAt time.Time) string {
 	parts := []string{
 		"tenant=" + strings.TrimSpace(device.TenantID),
@@ -1397,6 +1556,7 @@ type persistentState struct {
 	TamperEvents       map[string][]model.RiskEvent         `json:"tamper_events"`
 	AlertDeliveries    map[string][]model.AlertDelivery     `json:"alert_deliveries"`
 	HealthScores       map[string]model.DeviceHealth        `json:"health_scores"`
+	TelemetryEvents    map[string][]model.TelemetryEvent    `json:"telemetry_events"`
 }
 
 func (m *Memory) load() error {
@@ -1430,6 +1590,7 @@ func (m *Memory) load() error {
 	m.tamperEvents = cloneRiskMap(state.TamperEvents)
 	m.alertDeliveries = cloneDeliveryMap(state.AlertDeliveries)
 	m.healthScores = cloneHealthMap(state.HealthScores)
+	m.telemetryEvents = cloneTelemetryMap(state.TelemetryEvents)
 	return nil
 }
 
@@ -1453,6 +1614,7 @@ func (m *Memory) persistLocked() error {
 		TamperEvents:       cloneRiskMap(m.tamperEvents),
 		AlertDeliveries:    cloneDeliveryMap(m.alertDeliveries),
 		HealthScores:       cloneHealthMap(m.healthScores),
+		TelemetryEvents:    cloneTelemetryMap(m.telemetryEvents),
 	}
 	data, err := json.MarshalIndent(state, "", "  ")
 	if err != nil {
@@ -1574,6 +1736,30 @@ func cloneDeliveryMap(input map[string][]model.AlertDelivery) map[string][]model
 
 func cloneHealthMap(input map[string]model.DeviceHealth) map[string]model.DeviceHealth {
 	output := make(map[string]model.DeviceHealth, len(input))
+	for key, value := range input {
+		output[key] = value
+	}
+	return output
+}
+
+func cloneTelemetryEvents(input []model.TelemetryEvent) []model.TelemetryEvent {
+	output := append([]model.TelemetryEvent(nil), input...)
+	for index := range output {
+		output[index].Metadata = cloneStringMap(output[index].Metadata)
+	}
+	return output
+}
+
+func cloneTelemetryMap(input map[string][]model.TelemetryEvent) map[string][]model.TelemetryEvent {
+	output := make(map[string][]model.TelemetryEvent, len(input))
+	for key, value := range input {
+		output[key] = cloneTelemetryEvents(value)
+	}
+	return output
+}
+
+func cloneStringMap(input map[string]string) map[string]string {
+	output := make(map[string]string, len(input))
 	for key, value := range input {
 		output[key] = value
 	}

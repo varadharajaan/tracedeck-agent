@@ -35,4 +35,6 @@ type Repository interface {
 	ListAnomalies(context.Context, string) ([]model.RiskEvent, error)
 	ListTamperEvents(context.Context, string) ([]model.RiskEvent, error)
 	ListAlertDeliveries(context.Context, string) ([]model.AlertDelivery, error)
+	IngestTelemetryEvents(context.Context, string, model.IngestTelemetryRequest) (model.IngestTelemetryResponse, error)
+	TelemetryIngestStatus(context.Context, string) (model.TelemetryIngestStatus, error)
 }

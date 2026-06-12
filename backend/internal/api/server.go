@@ -237,6 +237,10 @@ func (s *Server) handleDeviceRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTamperEvents(w, r, deviceID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentAlertDelivery && r.Method == http.MethodGet:
 		s.handleAlertDeliveries(w, r, deviceID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentTelemetry && r.Method == http.MethodPost:
+		s.handleTelemetryIngest(w, r, deviceID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentTelemetryStatus && r.Method == http.MethodGet:
+		s.handleTelemetryStatus(w, r, deviceID)
 	default:
 		http.NotFound(w, r)
 	}
@@ -790,6 +794,51 @@ func (s *Server) handleAlertDeliveries(w http.ResponseWriter, r *http.Request, d
 	writeJSON(w, http.StatusOK, model.ListResponse[model.AlertDelivery]{Items: deliveries, Count: len(deliveries)})
 }
 
+func (s *Server) handleTelemetryIngest(w http.ResponseWriter, r *http.Request, deviceID string) {
+	var req model.IngestTelemetryRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid telemetry ingest json")
+		return
+	}
+	if err := validateIngestTelemetryRequest(deviceID, req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if !tenantAllowed(r.Context(), req.TenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	response, err := s.store.IngestTelemetryEvents(r.Context(), deviceID, req)
+	if err != nil {
+		switch {
+		case errors.Is(err, store.ErrTenantNotFound):
+			writeError(w, http.StatusNotFound, "tenant not found")
+		case errors.Is(err, store.ErrDeviceNotFound):
+			writeError(w, http.StatusNotFound, "device not found")
+		default:
+			writeError(w, http.StatusInternalServerError, "telemetry ingest failed")
+		}
+		return
+	}
+	writeJSON(w, http.StatusAccepted, response)
+}
+
+func (s *Server) handleTelemetryStatus(w http.ResponseWriter, r *http.Request, deviceID string) {
+	if !s.deviceAllowed(w, r, deviceID) {
+		return
+	}
+	status, err := s.store.TelemetryIngestStatus(r.Context(), deviceID)
+	if err != nil {
+		if errors.Is(err, store.ErrDeviceNotFound) {
+			writeError(w, http.StatusNotFound, "device not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "telemetry status lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, status)
+}
+
 func (s *Server) handleWeeklyReport(w http.ResponseWriter, r *http.Request, deviceID string) {
 	overview, err := s.store.HostOverview(r.Context(), deviceID)
 	if err != nil {
@@ -999,6 +1048,41 @@ func validateCreateNotificationRouteRequest(req model.CreateNotificationRouteReq
 	case strings.TrimSpace(req.Status) != "" && !knownRouteStatus(req.Status):
 		return errors.New("status is unknown")
 	default:
+		return nil
+	}
+}
+
+func validateIngestTelemetryRequest(deviceID string, req model.IngestTelemetryRequest) error {
+	switch {
+	case strings.TrimSpace(req.TenantID) == "":
+		return errors.New("tenant_id is required")
+	case strings.TrimSpace(req.DeviceID) == "":
+		return errors.New("device_id is required")
+	case strings.TrimSpace(deviceID) != strings.TrimSpace(req.DeviceID):
+		return errors.New("device_id must match route device")
+	case strings.TrimSpace(req.HostName) == "":
+		return errors.New("host_name is required")
+	case strings.TrimSpace(req.Profile) == "":
+		return errors.New("profile is required")
+	case len(req.Events) == 0:
+		return errors.New("at least one telemetry event is required")
+	case len(req.Events) > constants.TelemetryIngestMaxEvents:
+		return fmt.Errorf("events exceeds maximum batch size %d", constants.TelemetryIngestMaxEvents)
+	default:
+		for index, evt := range req.Events {
+			if strings.TrimSpace(evt.Type) == "" {
+				return fmt.Errorf("events[%d].type is required", index)
+			}
+			if strings.TrimSpace(evt.Source) == "" {
+				return fmt.Errorf("events[%d].source is required", index)
+			}
+			if strings.TrimSpace(evt.TenantID) != "" && strings.TrimSpace(evt.TenantID) != strings.TrimSpace(req.TenantID) {
+				return fmt.Errorf("events[%d].tenant_id must match request tenant_id", index)
+			}
+			if strings.TrimSpace(evt.DeviceID) != "" && strings.TrimSpace(evt.DeviceID) != strings.TrimSpace(req.DeviceID) {
+				return fmt.Errorf("events[%d].device_id must match request device_id", index)
+			}
+		}
 		return nil
 	}
 }

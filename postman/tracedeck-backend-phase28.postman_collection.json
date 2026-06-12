@@ -1,0 +1,85 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 28",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Contains Telemetry Panels",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard has live telemetry panels', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Live Agent Telemetry');",
+        "  pm.expect(html).to.include('Telemetry Privacy Boundary');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Ingest Agent Telemetry",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/v1/devices/newman-agent-device/telemetry-events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"device_id\":\"newman-agent-device\",\"host_name\":\"newman-host\",\"profile\":\"ai-btech-student\",\"os_name\":\"windows\",\"events\":[{\"type\":\"process.observed\",\"source\":\"collector.process\",\"observed_at\":\"2026-06-12T08:00:00Z\",\"app_name\":\"Code.exe\",\"process_id\":101,\"path_hash\":\"hash-only\",\"metadata\":{\"category\":\"coding\"}},{\"type\":\"device.health.observed\",\"source\":\"collector.device.health\",\"observed_at\":\"2026-06-12T08:00:01Z\",\"metadata\":{\"health_score\":\"92\",\"operating_system\":\"windows\"}}]}"
+        }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('telemetry ingest accepts metadata-only events', function () {",
+        "  pm.response.to.have.status(202);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.accepted_events).to.eql(2);",
+        "  pm.expect(body.stored_events).to.be.at.least(2);",
+        "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+        "  pm.expect(body.backend_visible_host).to.eql(true);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Telemetry Status",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/devices/newman-agent-device/telemetry-status" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('telemetry status summarizes ingested events', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.stored_events).to.be.at.least(2);",
+        "  pm.expect(body.counts_by_source['collector.process']).to.eql(1);",
+        "  pm.expect(body.counts_by_source['collector.device.health']).to.eql(1);",
+        "  pm.expect(body.recent_events).to.be.an('array').that.is.not.empty;",
+        "  pm.expect(body.privacy_boundary).to.include('no passwords');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Reject Mismatched Device",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/v1/devices/newman-agent-device/telemetry-events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"device_id\":\"other-device\",\"host_name\":\"newman-host\",\"profile\":\"ai-btech-student\",\"events\":[{\"type\":\"process.observed\",\"source\":\"collector.process\"}]}"
+        }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('mismatched route device is rejected', function () {",
+        "  pm.response.to.have.status(400);",
+        "  pm.expect(pm.response.json().error).to.include('device_id must match');",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

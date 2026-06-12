@@ -18,6 +18,7 @@ import (
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/logging"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/platform"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/storage/sqlite"
+	"github.com/varadharajaan/tracedeck-agent/agent/internal/syncer"
 )
 
 type RunOptions struct {
@@ -51,6 +52,8 @@ type RunResult struct {
 	AlertDelivered  bool
 	BrowserEvents   int
 	HealthEvents    int
+	TelemetrySynced bool
+	TelemetryEvents int
 }
 
 func Run(ctx context.Context, opts RunOptions) (RunResult, error) {
@@ -212,6 +215,38 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 
 	result := RunResult{Cycles: 1, CollectedEvents: len(events), StoredEvents: total, BrowserEvents: len(browserEvents), HealthEvents: len(healthEvents)}
 
+	if r.policy.BackendSync.Enabled {
+		syncEvents := events
+		if r.policy.BackendSync.BatchLimit > 0 && len(syncEvents) > r.policy.BackendSync.BatchLimit {
+			syncEvents = syncEvents[:r.policy.BackendSync.BatchLimit]
+		}
+		timeout, err := parseDurationOrDefault(r.policy.BackendSync.RequestTimeout, constants.DefaultBackendSyncTimeout)
+		if err != nil {
+			return RunResult{}, err
+		}
+		client, err := syncer.NewClient(r.policy.BackendSync.BaseURL, timeout)
+		if err != nil {
+			return RunResult{}, err
+		}
+		hostName, err := platformAdapter.Hostname(ctx)
+		if err != nil {
+			hostName = constants.UnknownHost
+		}
+		syncResult, err := client.IngestEvents(ctx, r.policy, hostName, platformAdapter.Name(), syncEvents)
+		if err != nil {
+			return RunResult{}, err
+		}
+		result.TelemetrySynced = true
+		result.TelemetryEvents = syncResult.AcceptedEvents
+		r.logger.Info("backend telemetry synced",
+			"tenant_id", syncResult.TenantID,
+			"device_id", syncResult.DeviceID,
+			"accepted_events", syncResult.AcceptedEvents,
+			"stored_events", syncResult.StoredEvents,
+			"privacy_boundary", syncResult.PrivacyBoundary,
+		)
+	}
+
 	if archiveEnabled {
 		batch, err := archive.NewWriter(r.opts.OutboxDir).WriteBatch(ctx, r.policy, events)
 		if err != nil {
@@ -300,6 +335,8 @@ func (r *RunResult) merge(next RunResult) {
 		r.AlertOutboxPath = next.AlertOutboxPath
 	}
 	r.AlertDelivered = r.AlertDelivered || next.AlertDelivered
+	r.TelemetrySynced = r.TelemetrySynced || next.TelemetrySynced
+	r.TelemetryEvents += next.TelemetryEvents
 }
 
 func parseDurationOrDefault(value string, fallback string) (time.Duration, error) {
@@ -315,12 +352,14 @@ func parseDurationOrDefault(value string, fallback string) (time.Duration, error
 
 func FormatRunResult(result RunResult) string {
 	return fmt.Sprintf(
-		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d browser_events=%d health_events=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_delivery=%s alert_delivered=%t",
+		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d browser_events=%d health_events=%d telemetry_synced=%t telemetry_events=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_delivery=%s alert_delivered=%t",
 		result.Cycles,
 		result.CollectedEvents,
 		result.StoredEvents,
 		result.BrowserEvents,
 		result.HealthEvents,
+		result.TelemetrySynced,
+		result.TelemetryEvents,
 		result.ArchiveBatch,
 		result.ArchiveUploaded,
 		result.AlertsRaised,

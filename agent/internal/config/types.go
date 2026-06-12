@@ -7,6 +7,7 @@ type Policy struct {
 	Collection         CollectionPolicy    `json:"collection" yaml:"collection"`
 	Retention          RetentionPolicy     `json:"retention" yaml:"retention"`
 	Archive            ArchivePolicy       `json:"archive" yaml:"archive"`
+	BackendSync        BackendSyncPolicy   `json:"backend_sync" yaml:"backend_sync"`
 	Alerts             AlertPolicy         `json:"alerts" yaml:"alerts"`
 	StudyApps          []string            `json:"study_apps" yaml:"study_apps"`
 	BlockedApps        []string            `json:"blocked_apps" yaml:"blocked_apps"`
@@ -71,6 +72,13 @@ type ArchivePolicy struct {
 	UploadInterval   string           `json:"upload_interval" yaml:"upload_interval"`
 	RetryWhenOnline  bool             `json:"retry_when_online" yaml:"retry_when_online"`
 	StorageClassDays StorageClassDays `json:"storage_class_days" yaml:"storage_class_days"`
+}
+
+type BackendSyncPolicy struct {
+	Enabled        bool   `json:"enabled" yaml:"enabled"`
+	BaseURL        string `json:"base_url" yaml:"base_url" jsonschema:"format=uri"`
+	BatchLimit     int    `json:"batch_limit" yaml:"batch_limit" jsonschema:"minimum=1"`
+	RequestTimeout string `json:"request_timeout" yaml:"request_timeout"`
 }
 
 type StorageClassDays struct {

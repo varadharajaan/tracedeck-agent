@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -54,6 +55,15 @@ func (p Policy) Validate() error {
 	}
 	if p.Archive.StorageClassDays.ArchiveAfter < p.Archive.StorageClassDays.StandardIAUntil {
 		errs = append(errs, fieldError(constants.ConfigFieldArchiveAfter, constants.ConfigErrorArchiveAfterStandardIA))
+	}
+
+	if p.BackendSync.Enabled {
+		validateHTTPURL(&errs, constants.ConfigFieldBackendSyncBaseURL, p.BackendSync.BaseURL)
+		if p.BackendSync.BatchLimit <= 0 {
+			errs = append(errs, fieldError(constants.ConfigFieldBackendSyncBatchLimit, constants.ConfigErrorMustBeGreaterThanZero))
+		}
+		requiredString(&errs, constants.ConfigFieldBackendSyncTimeout, p.BackendSync.RequestTimeout)
+		validateDuration(&errs, constants.ConfigFieldBackendSyncTimeout, p.BackendSync.RequestTimeout)
 	}
 
 	requireEnum(&errs, constants.ConfigFieldEmailProvider, p.Alerts.Email.Provider, emailProviders)
@@ -137,5 +147,12 @@ func validateDuration(errs *[]error, fieldName, value string) {
 	duration, err := time.ParseDuration(value)
 	if err != nil || duration <= 0 {
 		*errs = append(*errs, fieldError(fieldName, constants.ConfigErrorDurationRequired))
+	}
+}
+
+func validateHTTPURL(errs *[]error, fieldName, value string) {
+	parsed, err := url.Parse(strings.TrimSpace(value))
+	if err != nil || parsed == nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		*errs = append(*errs, fieldError(fieldName, constants.ConfigErrorURLRequired))
 	}
 }
