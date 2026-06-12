@@ -1,0 +1,162 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 18",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Without API Key",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is public', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Family Pro Tenant",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"name\":\"Family Varadha\",\"plan_id\":\"family_pro\",\"retention_tier_id\":\"family_cloud_90_365_archive\",\"primary_profile\":\"ai-btech-student\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/tenants"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('tenant created with paid packaging fields', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.plan_id).to.eql('family_pro');",
+              "  pm.expect(body.retention_tier_id).to.eql('family_cloud_90_365_archive');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Enroll Product Dashboard Device",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"device_id\":\"postman-phase18-device\",\"host_name\":\"postman-phase18-host\",\"profile\":\"ai-btech-student\",\"os_name\":\"windows\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/devices/enroll"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('device enrolled', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().device_id).to.eql('postman-phase18-device');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Overview Has Monetisation Signals",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "url": "{{baseUrl}}/api/v1/devices/postman-phase18-device/overview"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('overview includes dashboard monetisation signals', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.policy_violations.length).to.be.above(0);",
+              "  pm.expect(body.anomalies.length).to.be.above(0);",
+              "  pm.expect(body.tamper_events.length).to.be.above(0);",
+              "  pm.expect(body.alert_deliveries.some((item) => item.channel === 'email')).to.eql(true);",
+              "  pm.expect(body.alert_deliveries.some((item) => item.channel === 'push')).to.eql(true);",
+              "  pm.expect(body.alert_deliveries.some((item) => item.channel === 'dashboard')).to.eql(true);",
+              "  pm.expect(body.health.score).to.be.above(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Contains Product Cockpit",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('dashboard exposes product-grade command center sections', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('Priority Action');",
+              "  pm.expect(html).to.include('Notification Promise');",
+              "  pm.expect(html).to.include('Commercial Readiness');",
+              "  pm.expect(html).to.include('Trust Coverage');",
+              "  pm.expect(html).to.include('Executive Briefing');",
+              "  pm.expect(html).to.include('Notification Action Queue');",
+              "  pm.expect(html).to.include('Mail Delivery Center');",
+              "  pm.expect(html).to.include('Push Routing');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18080"
+    },
+    {
+      "key": "apiKey",
+      "value": "phase18-local-secret"
+    }
+  ]
+}

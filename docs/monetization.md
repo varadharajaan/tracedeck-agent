@@ -34,6 +34,18 @@ surfaces:
 - paid trigger and upgrade-path cues for Family Pro, school, and business
   packaging
 
+Phase 18 makes the dashboard feel more like a paid product cockpit than an
+operator debug screen. The first screen now surfaces:
+
+- priority action for the most urgent route or risk event
+- notification promise across email, push, and dashboard channels
+- commercial readiness score for demos and paid packaging
+- trust coverage across agent health, S3 archive, dashboard feed, and audit
+- executive briefing with top risk, study signal, alert outcome, and archive
+  trust
+- notification action queue for retrying push routes, mail route issues, and
+  open anomaly/policy/tamper items
+
 This still uses the existing privacy-aware API data: typed risk categories,
 delivery routes, report readiness, health, archive, role, retention, and policy
 template metadata. It does not add credential, keylog, private-message, raw URL,

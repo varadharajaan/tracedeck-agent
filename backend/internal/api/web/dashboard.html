@@ -134,6 +134,101 @@
       grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.75fr);
       gap: 16px;
     }
+    .command-board {
+      display: grid;
+      grid-template-columns: minmax(280px, 1.35fr) repeat(3, minmax(190px, 1fr));
+      gap: 12px;
+    }
+    .command-card {
+      min-height: 126px;
+      display: grid;
+      align-content: space-between;
+      gap: 12px;
+      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+    .command-card.primary {
+      border-left: 5px solid var(--teal);
+    }
+    .command-card strong {
+      display: block;
+      font-size: 24px;
+      line-height: 1.05;
+      overflow-wrap: anywhere;
+    }
+    .command-card p {
+      color: var(--muted);
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+    .action-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .brief-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .brief-item {
+      min-height: 108px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+      display: grid;
+      align-content: space-between;
+      gap: 8px;
+    }
+    .brief-item small {
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .brief-item strong {
+      font-size: 18px;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+    .brief-item span {
+      overflow-wrap: anywhere;
+    }
+    .action-list {
+      display: grid;
+      gap: 10px;
+    }
+    .action-item {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+    }
+    .action-item strong, .action-item span {
+      overflow-wrap: anywhere;
+    }
+    .readiness-meter {
+      display: grid;
+      gap: 8px;
+    }
+    .readiness-track {
+      height: 10px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #eef1f5;
+    }
+    .readiness-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--teal), var(--green));
+    }
     .stack { display: grid; gap: 16px; }
     .section-head {
       display: flex;
@@ -388,6 +483,8 @@
     }
     @media (max-width: 1180px) {
       .shell, .content-grid { grid-template-columns: 1fr; }
+      .command-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .brief-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
     @media (max-width: 720px) {
@@ -397,6 +494,8 @@
       .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .signal-grid { grid-template-columns: 1fr; }
       .route-grid { grid-template-columns: 1fr; }
+      .command-board { grid-template-columns: 1fr; }
+      .brief-grid { grid-template-columns: 1fr; }
       .summary-line { grid-template-columns: 1fr; }
       .kv div { grid-template-columns: 1fr; }
       main { width: min(100vw - 20px, 1400px); }
@@ -424,6 +523,85 @@
       <div class="metric"><span class="muted">Anomalies</span><strong id="metric-anomalies">-</strong><small>Behavior and software drift</small></div>
       <div class="metric"><span class="muted">Tamper</span><strong id="metric-tamper">-</strong><small>Trust and service health</small></div>
       <div class="metric"><span class="muted">Delivery</span><strong id="metric-delivery">-</strong><small>Email, push, dashboard</small></div>
+    </section>
+
+    <section class="command-board" aria-label="product command overview">
+      <div class="command-card primary">
+        <div class="section-head">
+          <div>
+            <h2>Priority Action</h2>
+            <p id="priority-detail">Waiting for host data.</p>
+          </div>
+          <span id="priority-status" class="badge pending">pending</span>
+        </div>
+        <strong id="priority-action">Select a host</strong>
+        <div class="action-meta">
+          <span id="priority-owner" class="pill">owner pending</span>
+          <span id="priority-channel" class="pill">route pending</span>
+          <span id="priority-age" class="pill">age pending</span>
+        </div>
+      </div>
+      <div class="command-card">
+        <div>
+          <h2>Notification Promise</h2>
+          <p id="promise-detail">Mail, push, and dashboard route state.</p>
+        </div>
+        <strong id="promise-delivery">-</strong>
+        <div class="action-meta">
+          <span id="promise-email" class="pill">email pending</span>
+          <span id="promise-push" class="pill">push pending</span>
+        </div>
+      </div>
+      <div class="command-card">
+        <div>
+          <h2>Commercial Readiness</h2>
+          <p id="readiness-detail">Family Pro, school, and business packaging.</p>
+        </div>
+        <strong id="commercial-readiness">-</strong>
+        <div class="readiness-meter">
+          <div class="readiness-track"><div id="commercial-readiness-bar" class="readiness-fill"></div></div>
+          <div id="readiness-meta" class="action-meta"><span class="pill">waiting</span></div>
+        </div>
+      </div>
+      <div class="command-card">
+        <div>
+          <h2>Trust Coverage</h2>
+          <p id="trust-detail">Agent, archive, delivery, and audit health.</p>
+        </div>
+        <strong id="trust-coverage">-</strong>
+        <div class="action-meta">
+          <span id="trust-agent" class="pill">agent pending</span>
+          <span id="trust-archive" class="pill">archive pending</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Executive Briefing</h2>
+            <p class="muted">Sellable summary of risk, study signal, alerts, and archive trust</p>
+          </div>
+          <span id="executive-score" class="pill">waiting</span>
+        </div>
+        <div class="brief-grid">
+          <div class="brief-item"><small>Top Risk</small><strong id="brief-risk">-</strong><span id="brief-risk-sub" class="muted">No risk data</span></div>
+          <div class="brief-item"><small>Study Signal</small><strong id="brief-study">-</strong><span id="brief-study-sub" class="muted">No activity data</span></div>
+          <div class="brief-item"><small>Alert Outcome</small><strong id="brief-alerts">-</strong><span id="brief-alerts-sub" class="muted">No delivery data</span></div>
+          <div class="brief-item"><small>Archive Trust</small><strong id="brief-archive">-</strong><span id="brief-archive-sub" class="muted">No archive data</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Notification Action Queue</h2>
+            <p class="muted">Anomaly, mail, push, and dashboard items needing attention</p>
+          </div>
+          <span id="action-count" class="pill">0 actions</span>
+        </div>
+        <div id="notification-actions" class="action-list"><div class="empty">No notification actions yet.</div></div>
+      </div>
     </section>
 
     <section class="shell">
@@ -771,6 +949,30 @@
       return date.toLocaleString();
     }
 
+    function formatAge(value) {
+      if (!value) return "age unknown";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "age unknown";
+      const minutesAgo = Math.max(0, Math.round((Date.now() - date.getTime()) / 60000));
+      if (minutesAgo < 60) return `${minutesAgo} min ago`;
+      const hoursAgo = Math.round(minutesAgo / 60);
+      if (hoursAgo < 24) return `${hoursAgo} hr ago`;
+      return `${Math.round(hoursAgo / 24)} d ago`;
+    }
+
+    function capitalize(value) {
+      const clean = String(value || "");
+      return clean ? clean.charAt(0).toUpperCase() + clean.slice(1) : "-";
+    }
+
+    function severityRank(value) {
+      return ({ critical: 4, high: 3, medium: 2, low: 1, info: 0 }[String(value || "").toLowerCase()] ?? 0);
+    }
+
+    function statusRank(value) {
+      return ({ open: 3, retrying: 3, failed: 3, pending: 2, acknowledged: 1, delivered: 0, resolved: 0 }[String(value || "").toLowerCase()] ?? 0);
+    }
+
     function badge(value) {
       const clean = String(value || "info").toLowerCase();
       return `<span class="badge ${escapeHTML(clean)}">${escapeHTML(value)}</span>`;
@@ -868,6 +1070,9 @@
       renderNotificationOperations(deliveries.items);
       renderAlertInbox(policy.items.concat(anomalies.items, tamper.items), deliveries.items);
       renderProductPackaging({ ...context, deliveries: deliveries.items });
+      renderCommandBoard(overview, healthModel, policy, anomalies, tamper, deliveries, context);
+      renderExecutiveBrief(overview, healthModel, policy, anomalies, tamper, deliveries, context);
+      renderNotificationActionQueue(policy.items.concat(anomalies.items, tamper.items), deliveries.items);
       renderMarketplace(context.templates);
       renderRetentionTiers(context.retentionTiers);
       renderTimeline(policy.items.concat(anomalies.items, tamper.items));
@@ -883,6 +1088,170 @@
       setText("delivery-count", `${deliveries.count} routes`);
       document.getElementById("metric-delivery").nextElementSibling.textContent =
         deliveryIssues === 0 ? "All routes delivered" : `${deliveryIssues} route needs attention`;
+    }
+
+    function topRiskEvent(events) {
+      if (events.length === 0) return null;
+      return events.slice().sort((left, right) => {
+        const statusDelta = statusRank(right.status) - statusRank(left.status);
+        if (statusDelta !== 0) return statusDelta;
+        const severityDelta = severityRank(right.severity) - severityRank(left.severity);
+        if (severityDelta !== 0) return severityDelta;
+        return new Date(right.observed_at) - new Date(left.observed_at);
+      })[0];
+    }
+
+    function topDeliveryProblem(items) {
+      const problems = items.filter((item) => item.status !== DELIVERY_STATUS.delivered);
+      if (problems.length === 0) return null;
+      return problems.slice().sort((left, right) => {
+        const statusDelta = statusRank(right.status) - statusRank(left.status);
+        if (statusDelta !== 0) return statusDelta;
+        return new Date(right.last_attempt_at) - new Date(left.last_attempt_at);
+      })[0];
+    }
+
+    function readinessScore(context, deliveries, archive, health) {
+      const weekly = context.weeklyReport || {};
+      const tenant = context.tenant || {};
+      const plan = (context.plans.items || []).find((item) => item.id === tenant.plan_id) || {};
+      const checks = [
+        weekly.email_ready,
+        weekly.pdf_ready,
+        (context.templates.count || 0) >= 3,
+        (context.roles.count || 0) >= 4,
+        (context.retentionTiers.count || 0) >= 3,
+        Boolean(plan.cloud_archive),
+        deliveries.some((item) => item.channel === CHANNEL.email && item.status === DELIVERY_STATUS.delivered),
+        deliveries.some((item) => item.channel === CHANNEL.push),
+        archive.provider === "s3",
+        Number(health.score || 0) >= 70
+      ];
+      return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+    }
+
+    function renderCommandBoard(overview, health, policy, anomalies, tamper, deliveries, context) {
+      const allEvents = policy.items.concat(anomalies.items, tamper.items);
+      const deliveryProblem = topDeliveryProblem(deliveries.items);
+      const topEvent = topRiskEvent(allEvents);
+      const email = latestDelivery(deliveryByChannel(deliveries.items, CHANNEL.email));
+      const push = latestDelivery(deliveryByChannel(deliveries.items, CHANNEL.push));
+      const delivered = deliveries.items.filter((item) => item.status === DELIVERY_STATUS.delivered).length;
+      const readiness = readinessScore(context, deliveries.items, overview.archive, health);
+      const archiveHealthy = overview.archive.pending_batches === 0 && overview.archive.status === "delivered";
+      const trustScore = Math.round(([
+        health.agent_healthy,
+        overview.archive.provider === "s3",
+        deliveries.items.some((item) => item.channel === CHANNEL.dashboard && item.status === DELIVERY_STATUS.delivered),
+        (context.auditEvents.count || 0) > 0
+      ].filter(Boolean).length / 4) * 100);
+
+      if (deliveryProblem) {
+        document.getElementById("priority-status").outerHTML = badge(deliveryProblem.status).replace("<span", '<span id="priority-status"');
+        setText("priority-action", `${capitalize(deliveryProblem.channel)} delivery needs attention`);
+        setText("priority-detail", deliveryProblem.last_error || deliveryProblem.summary || "Review route health and retry policy.");
+        setText("priority-owner", deliveryProblem.recipient);
+        setText("priority-channel", `${deliveryProblem.provider} route`);
+        setText("priority-age", formatAge(deliveryProblem.last_attempt_at));
+      } else if (topEvent) {
+        document.getElementById("priority-status").outerHTML = badge(topEvent.severity).replace("<span", '<span id="priority-status"');
+        setText("priority-action", `Review ${rowDetail(topEvent)}`);
+        setText("priority-detail", topEvent.reason);
+        setText("priority-owner", topEvent.category);
+        setText("priority-channel", topEvent.source);
+        setText("priority-age", formatAge(topEvent.observed_at));
+      } else {
+        document.getElementById("priority-status").outerHTML = badge("healthy").replace("<span", '<span id="priority-status"');
+        setText("priority-action", "No immediate action");
+        setText("priority-detail", "Host is reporting without active risk events.");
+        setText("priority-owner", overview.device.host_name);
+        setText("priority-channel", "all routes");
+        setText("priority-age", "current");
+      }
+
+      setText("promise-delivery", `${delivered}/${deliveries.count} routes delivered`);
+      setText("promise-detail", deliveryProblem ? "One or more notification routes need attention." : "Mail, push, and dashboard routes are visible.");
+      setText("promise-email", email ? `${email.status} email` : "email missing");
+      setText("promise-push", push ? `${push.status} push` : "push missing");
+
+      setText("commercial-readiness", `${readiness}% ready`);
+      document.getElementById("commercial-readiness-bar").style.width = readiness + "%";
+      setText("readiness-detail", readiness >= 80 ? "Ready for Family Pro packaging and demos." : "Finish delivery, report, or archive readiness before selling.");
+      document.getElementById("readiness-meta").innerHTML = [
+        `<span class="pill">${escapeHTML((context.templates.count || 0))} templates</span>`,
+        `<span class="pill">${escapeHTML((context.roles.count || 0))} role views</span>`,
+        `<span class="pill">${escapeHTML((context.retentionTiers.count || 0))} retention tiers</span>`
+      ].join("");
+
+      setText("trust-coverage", `${trustScore}% covered`);
+      setText("trust-detail", archiveHealthy ? "Agent, archive, delivery, and audit signals are covered." : "Archive backlog or route status needs watch.");
+      setText("trust-agent", health.agent_healthy ? "agent healthy" : "agent unhealthy");
+      setText("trust-archive", `${overview.archive.pending_batches} archive backlog`);
+    }
+
+    function renderExecutiveBrief(overview, health, policy, anomalies, tamper, deliveries, context) {
+      const allEvents = policy.items.concat(anomalies.items, tamper.items);
+      const topEvent = topRiskEvent(allEvents);
+      const totalActivity = Number(overview.summary.study_minutes || 0) + Number(overview.summary.coding_minutes || 0) + Number(overview.summary.entertainment_minutes || 0);
+      const productive = Number(overview.summary.study_minutes || 0) + Number(overview.summary.coding_minutes || 0);
+      const productivePct = totalActivity > 0 ? Math.round((productive / totalActivity) * 100) : 0;
+      const delivered = deliveries.items.filter((item) => item.status === DELIVERY_STATUS.delivered).length;
+      const weekly = context.weeklyReport || {};
+      const overall = Math.round((Number(overview.summary.compliance_score || 0) + Number(health.score || 0) + productivePct) / 3);
+
+      setText("executive-score", `${overall}% command score`);
+      setText("brief-risk", topEvent ? rowDetail(topEvent) : "No active risk");
+      setText("brief-risk-sub", topEvent ? `${topEvent.severity} ${topEvent.category}: ${topEvent.reason}` : "No policy, anomaly, or tamper events.");
+      setText("brief-study", `${productivePct}% productive`);
+      setText("brief-study-sub", `${minutes(overview.summary.study_minutes)} study, ${minutes(overview.summary.coding_minutes)} coding, ${minutes(overview.summary.entertainment_minutes)} entertainment`);
+      setText("brief-alerts", `${delivered}/${deliveries.count} delivered`);
+      setText("brief-alerts-sub", weekly.email_ready ? weekly.email_preview : "Weekly report email is not ready yet.");
+      setText("brief-archive", `${overview.archive.pending_batches} pending`);
+      setText("brief-archive-sub", `${overview.archive.provider} archive, last key ${overview.archive.last_uploaded_key || "not uploaded yet"}`);
+    }
+
+    function renderNotificationActionQueue(events, deliveries) {
+      const deliveryProblems = deliveries
+        .filter((item) => item.status !== DELIVERY_STATUS.delivered)
+        .map((item) => ({
+          title: `${capitalize(item.channel)} route ${item.status}`,
+          detail: item.last_error || item.summary || "Route requires review.",
+          badges: [item.channel, item.provider, item.status],
+          observedAt: item.last_attempt_at,
+          rank: 10 + statusRank(item.status)
+        }));
+      const riskActions = events
+        .filter((event) => event.status === "open" || severityRank(event.severity) >= 3)
+        .map((event) => ({
+          title: rowDetail(event),
+          detail: event.recommendation || event.reason,
+          badges: [event.severity, event.category, event.type],
+          observedAt: event.observed_at,
+          rank: severityRank(event.severity)
+        }));
+      const actions = deliveryProblems.concat(riskActions)
+        .sort((left, right) => {
+          const rankDelta = right.rank - left.rank;
+          if (rankDelta !== 0) return rankDelta;
+          return new Date(right.observedAt) - new Date(left.observedAt);
+        })
+        .slice(0, 5);
+      setText("action-count", `${actions.length} action${actions.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("notification-actions");
+      if (actions.length === 0) {
+        target.innerHTML = '<div class="empty">No notification actions yet.</div>';
+        return;
+      }
+      target.innerHTML = actions.map((action) => `
+        <div class="action-item">
+          <strong>${escapeHTML(action.title)}</strong>
+          <span class="muted">${escapeHTML(action.detail)}</span>
+          <div class="action-meta">
+            ${action.badges.map((item) => badge(item)).join(" ")}
+            <span class="pill">${escapeHTML(formatAge(action.observedAt))}</span>
+          </div>
+        </div>
+      `).join("");
     }
 
     function renderDeviceHealth(health) {
