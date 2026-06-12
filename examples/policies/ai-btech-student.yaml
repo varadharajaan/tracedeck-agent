@@ -43,7 +43,7 @@ alerts:
     provider: ses
     to:
       - varathu09@gmail.com
-    min_severity: high
+    min_severity: medium
     cooldown_minutes: 30
 
 study_apps:
@@ -83,6 +83,14 @@ allowed_domains:
   - microsoft.com
   - learn.microsoft.com
 
+blocked_domains:
+  - instagram.com
+  - netflix.com
+  - primevideo.com
+  - hotstar.com
+  - steampowered.com
+  - epicgames.com
+
 warn_categories:
   - video-streaming
   - social-media
@@ -119,6 +127,9 @@ alert_rules:
     enabled: true
     severity: critical
   blocked_app_opened:
+    enabled: true
+    severity: high
+  blocked_domain_opened:
     enabled: true
     severity: high
   media_player_used:

@@ -12,6 +12,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase2.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase2b.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase3.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase4.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
@@ -21,6 +22,18 @@ Browser fixture smoke data is generated under `data/local/smoke-phase3/`, and
 the smoke archive is checked to ensure raw URLs and page titles are not stored.
 Earlier phase smokes pass `--disable-browser-history` so they do not collect
 real local browser history while validating process/archive/alert behavior.
+
+Phase 4 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-alert-engine.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase4.ps1
+```
+
+The Phase 4 smoke creates a local policy fixture under `data/local/`, boots the
+agent once with a generated browser history fixture, stages a dry-run archive
+and alert notification, and verifies both `non_study_youtube` and
+`blocked_domain_opened` without leaking raw URL or page-title data.
 
 `go test -race ./...` is run when the local Go toolchain supports it. On
 Windows shells where CGO is disabled or no race-capable C toolchain is active,
