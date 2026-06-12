@@ -51,10 +51,30 @@ for email, push, or dashboard delivery, updates route verification status, and
 records an audit event. It does not send live messages and does not store SMTP
 passwords, push endpoint secrets, alert bodies, tokens, or endpoint payloads.
 
+Phase 46 adds delivery remediation on top of route registry and drilldown:
+
+```text
+GET  /api/v1/tenants/{tenantId}/delivery-remediation
+POST /api/v1/tenants/{tenantId}/delivery-remediation
+```
+
+The remediation endpoint returns route recovery actions with owner, SLA target,
+provider state, latest delivery status, next retry/check time, audit state, and
+recent dry-run plans. POST supports `mode: "dry_run"` only and typed actions
+such as `retry_plan`, `owner_ack`, `sla_watch`, `enable_route`, `fix_provider`,
+`run_rehearsal`, and `maintain_proof`.
+
+Remediation is planning and audit proof only. It does not send live mail or push
+payloads, and it does not store provider secrets, SMTP passwords, push endpoint
+secrets, alert bodies, screenshots, tokens, cookies, or raw URLs.
+
 ## Verification
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase26.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase26.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase26.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase46.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase46.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase46.ps1
 ```

@@ -221,6 +221,20 @@ verification metadata plus an audit event. It never sends live provider
 messages and never stores SMTP passwords, push endpoint secrets, alert bodies,
 tokens, cookies, screenshots, or endpoint payloads.
 
+Phase 46 adds provider-safe delivery remediation APIs:
+
+- `GET /api/v1/tenants/{tenantId}/delivery-remediation`
+- `POST /api/v1/tenants/{tenantId}/delivery-remediation`
+
+The `GET` route returns a typed remediation summary, route recovery actions,
+owner labels, SLA targets, next retry windows, route/provider state, recent
+dry-run remediation plans, audit state, and a privacy boundary. The `POST`
+route accepts `mode: "dry_run"` only with typed actions such as `retry_plan`,
+`owner_ack`, `sla_watch`, `enable_route`, `fix_provider`, `run_rehearsal`, and
+`maintain_proof`. It records a provider-safe plan and audit event. It never
+sends live provider messages and never stores provider secrets, alert bodies,
+tokens, cookies, passwords, screenshots, raw URLs, or endpoint payloads.
+
 Phase 31 adds `GET /api/v1/tenants/{tenantId}/sync-health` for buyer and admin
 proof that backend-visible telemetry is arriving per host. It returns reporting
 host counts, stored metadata event totals, the highest stable `local-event-*`

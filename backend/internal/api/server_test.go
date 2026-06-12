@@ -827,6 +827,88 @@ func TestTenantDeliveryDrilldownEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantDeliveryRemediationEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "demo-study-laptop",
+		"host_name": "Demo Study Laptop",
+		"profile": "ai-btech-student",
+		"os_name": "Windows 11"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	remediationResponse := httptest.NewRecorder()
+	handler.ServeHTTP(remediationResponse, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentDeliveryRemedy, nil))
+	if remediationResponse.Code != http.StatusOK {
+		t.Fatalf("expected remediation 200, got %d: %s", remediationResponse.Code, remediationResponse.Body.String())
+	}
+	var remediation model.TenantDeliveryRemediation
+	if err := json.Unmarshal(remediationResponse.Body.Bytes(), &remediation); err != nil {
+		t.Fatalf("decode delivery remediation: %v", err)
+	}
+	if remediation.Summary.RoutesTotal != 3 || len(remediation.Actions) != 3 {
+		t.Fatalf("expected three remediation routes: %+v", remediation)
+	}
+	if !strings.Contains(remediation.PrivacyBoundary, "without live provider sends") {
+		t.Fatalf("expected provider-safe privacy boundary: %q", remediation.PrivacyBoundary)
+	}
+	if strings.Contains(strings.ToLower(remediationResponse.Body.String()), "smtp_password") {
+		t.Fatalf("expected remediation payload without provider secrets: %s", remediationResponse.Body.String())
+	}
+
+	runBody := []byte(`{"mode":"dry_run","channel":"push","action":"retry_plan","reason":"plan route recovery for paid demo","owner":"parent mobile push subscription"}`)
+	runResponse := httptest.NewRecorder()
+	handler.ServeHTTP(runResponse, httptest.NewRequest(http.MethodPost, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentDeliveryRemedy, bytes.NewReader(runBody)))
+	if runResponse.Code != http.StatusAccepted {
+		t.Fatalf("expected remediation run 202, got %d: %s", runResponse.Code, runResponse.Body.String())
+	}
+	var planned model.TenantDeliveryRemediation
+	if err := json.Unmarshal(runResponse.Body.Bytes(), &planned); err != nil {
+		t.Fatalf("decode planned delivery remediation: %v", err)
+	}
+	if planned.Summary.PlannedActions < 1 || len(planned.RecentPlans) < 1 {
+		t.Fatalf("expected planned remediation action: %+v", planned.Summary)
+	}
+	if planned.RecentPlans[0].Action != constants.DeliveryRemediationActionRetryPlan || planned.RecentPlans[0].Channel != constants.DeliveryChannelPush {
+		t.Fatalf("expected push retry plan, got %+v", planned.RecentPlans[0])
+	}
+
+	invalid := httptest.NewRecorder()
+	handler.ServeHTTP(invalid, httptest.NewRequest(http.MethodPost, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentDeliveryRemedy, strings.NewReader(`{"mode":"send_live","action":"retry_plan"}`)))
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("expected invalid remediation mode 400, got %d: %s", invalid.Code, invalid.Body.String())
+	}
+
+	audit := httptest.NewRecorder()
+	handler.ServeHTTP(audit, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentAuditEvents, nil))
+	if audit.Code != http.StatusOK {
+		t.Fatalf("expected audit 200, got %d", audit.Code)
+	}
+	if !strings.Contains(audit.Body.String(), constants.AuditActionDeliveryRemediation) {
+		t.Fatalf("expected delivery remediation audit event, got %s", audit.Body.String())
+	}
+}
+
 func TestConsentCenterEndpoint(t *testing.T) {
 	t.Parallel()
 

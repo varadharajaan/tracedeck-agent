@@ -30,6 +30,7 @@ type Memory struct {
 	auditEvents        []model.AuditEvent
 	alertRules         map[string][]model.AlertRule
 	notificationRoutes map[string][]model.NotificationRoute
+	deliveryRemedies   map[string][]model.TenantDeliveryRemediationAction
 	activityViews      map[string][]model.TenantActivityView
 	dataExports        map[string][]model.TenantDataExport
 	deleteRequests     map[string][]model.DeleteRequest
@@ -49,6 +50,7 @@ func NewMemory() *Memory {
 		tenants:            make(map[string]model.Tenant),
 		alertRules:         make(map[string][]model.AlertRule),
 		notificationRoutes: make(map[string][]model.NotificationRoute),
+		deliveryRemedies:   make(map[string][]model.TenantDeliveryRemediationAction),
 		activityViews:      make(map[string][]model.TenantActivityView),
 		dataExports:        make(map[string][]model.TenantDataExport),
 		deleteRequests:     make(map[string][]model.DeleteRequest),
@@ -351,6 +353,77 @@ func (m *Memory) RunTenantDeliveryDrilldown(_ context.Context, tenantID string, 
 		return model.TenantDeliveryDrilldown{}, err
 	}
 	return buildTenantDeliveryDrilldown(tenantID, m.notificationRoutes[tenantID], m.deliveriesForTenantLocked(tenantID), now, constants.DeliveryDrillModeDryRun), nil
+}
+
+func (m *Memory) TenantDeliveryRemediation(_ context.Context, tenantID string) (model.TenantDeliveryRemediation, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	tenant, ok := m.tenants[tenantID]
+	if !ok {
+		return model.TenantDeliveryRemediation{}, ErrTenantNotFound
+	}
+	m.seedNotificationRoutesForTenantLocked(tenant)
+	return buildTenantDeliveryRemediation(
+		tenantID,
+		m.notificationRoutes[tenantID],
+		m.deliveriesForTenantLocked(tenantID),
+		m.deliveryRemedies[tenantID],
+		now,
+	), nil
+}
+
+func (m *Memory) RunTenantDeliveryRemediation(_ context.Context, tenantID string, req model.RunDeliveryRemediationRequest) (model.TenantDeliveryRemediation, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	tenant, ok := m.tenants[tenantID]
+	if !ok {
+		return model.TenantDeliveryRemediation{}, ErrTenantNotFound
+	}
+	m.seedNotificationRoutesForTenantLocked(tenant)
+
+	route, delivery := selectDeliveryRemediationRoute(
+		m.notificationRoutes[tenantID],
+		m.deliveriesForTenantLocked(tenantID),
+		strings.TrimSpace(req.RouteID),
+		strings.TrimSpace(req.Channel),
+	)
+	action := deliveryRemediationAction(route, delivery, now)
+	action.ID = deliveryRemediationID(tenantID, len(m.deliveryRemedies[tenantID])+1, now)
+	action.TenantID = tenantID
+	action.Action = firstNonEmpty(strings.TrimSpace(req.Action), action.Action)
+	action.Owner = firstNonEmpty(strings.TrimSpace(req.Owner), action.Owner)
+	action.Status = deliveryRemediationStatusForAction(action.Action)
+	action.Plan = firstNonEmpty(strings.TrimSpace(req.Reason), action.Plan)
+	action.AuditState = constants.AuditActionDeliveryRemediation
+	action.CreatedAt = now
+	m.deliveryRemedies[tenantID] = append(m.deliveryRemedies[tenantID], action)
+
+	m.auditEvents = append(m.auditEvents, model.AuditEvent{
+		ID:        auditID(tenantID, len(m.auditEvents)+1, now),
+		TenantID:  tenantID,
+		Category:  constants.AuditCategorySystem,
+		Action:    constants.AuditActionDeliveryRemediation,
+		Actor:     constants.AuditActorLocalAPI,
+		ActorRole: constants.RoleBusinessManager,
+		Summary:   fmt.Sprintf("delivery remediation %s planned for %s route", action.Action, action.Channel),
+		CreatedAt: now,
+	})
+	if err := m.persistLocked(); err != nil {
+		return model.TenantDeliveryRemediation{}, err
+	}
+	return buildTenantDeliveryRemediation(
+		tenantID,
+		m.notificationRoutes[tenantID],
+		m.deliveriesForTenantLocked(tenantID),
+		m.deliveryRemedies[tenantID],
+		now,
+	), nil
 }
 
 func (m *Memory) deliveriesForTenantLocked(tenantID string) []model.AlertDelivery {
@@ -2072,6 +2145,15 @@ func notificationRouteID(tenantID string, sequence int, createdAt time.Time) str
 	}, "-")
 }
 
+func deliveryRemediationID(tenantID string, sequence int, createdAt time.Time) string {
+	return strings.Join([]string{
+		strings.TrimSpace(tenantID),
+		"delivery-remediation",
+		fmt.Sprintf("%03d", sequence),
+		createdAt.Format("20060102T150405Z"),
+	}, "-")
+}
+
 func activityViewID(requestedID string, tenantID string, sequence int) string {
 	if id := strings.TrimSpace(requestedID); id != "" {
 		return id
@@ -2233,23 +2315,24 @@ func archiveKey(device model.Device, uploadedAt time.Time) string {
 }
 
 type persistentState struct {
-	Version            string                                `json:"version"`
-	Tenants            map[string]model.Tenant               `json:"tenants"`
-	Devices            map[string]model.Device               `json:"devices"`
-	AuditEvents        []model.AuditEvent                    `json:"audit_events"`
-	AlertRules         map[string][]model.AlertRule          `json:"alert_rules"`
-	NotificationRoutes map[string][]model.NotificationRoute  `json:"notification_routes"`
-	ActivityViews      map[string][]model.TenantActivityView `json:"activity_views"`
-	DataExports        map[string][]model.TenantDataExport   `json:"data_exports"`
-	DeleteRequests     map[string][]model.DeleteRequest      `json:"delete_requests"`
-	DeviceGroups       map[string][]model.DeviceGroup        `json:"device_groups"`
-	PolicyAssigns      map[string][]model.PolicyAssignment   `json:"policy_assignments"`
-	PolicyEvents       map[string][]model.RiskEvent          `json:"policy_events"`
-	AnomalyEvents      map[string][]model.RiskEvent          `json:"anomaly_events"`
-	TamperEvents       map[string][]model.RiskEvent          `json:"tamper_events"`
-	AlertDeliveries    map[string][]model.AlertDelivery      `json:"alert_deliveries"`
-	HealthScores       map[string]model.DeviceHealth         `json:"health_scores"`
-	TelemetryEvents    map[string][]model.TelemetryEvent     `json:"telemetry_events"`
+	Version            string                                             `json:"version"`
+	Tenants            map[string]model.Tenant                            `json:"tenants"`
+	Devices            map[string]model.Device                            `json:"devices"`
+	AuditEvents        []model.AuditEvent                                 `json:"audit_events"`
+	AlertRules         map[string][]model.AlertRule                       `json:"alert_rules"`
+	NotificationRoutes map[string][]model.NotificationRoute               `json:"notification_routes"`
+	DeliveryRemedies   map[string][]model.TenantDeliveryRemediationAction `json:"delivery_remedies"`
+	ActivityViews      map[string][]model.TenantActivityView              `json:"activity_views"`
+	DataExports        map[string][]model.TenantDataExport                `json:"data_exports"`
+	DeleteRequests     map[string][]model.DeleteRequest                   `json:"delete_requests"`
+	DeviceGroups       map[string][]model.DeviceGroup                     `json:"device_groups"`
+	PolicyAssigns      map[string][]model.PolicyAssignment                `json:"policy_assignments"`
+	PolicyEvents       map[string][]model.RiskEvent                       `json:"policy_events"`
+	AnomalyEvents      map[string][]model.RiskEvent                       `json:"anomaly_events"`
+	TamperEvents       map[string][]model.RiskEvent                       `json:"tamper_events"`
+	AlertDeliveries    map[string][]model.AlertDelivery                   `json:"alert_deliveries"`
+	HealthScores       map[string]model.DeviceHealth                      `json:"health_scores"`
+	TelemetryEvents    map[string][]model.TelemetryEvent                  `json:"telemetry_events"`
 }
 
 func (m *Memory) load() error {
@@ -2274,6 +2357,7 @@ func (m *Memory) load() error {
 	m.auditEvents = append([]model.AuditEvent(nil), state.AuditEvents...)
 	m.alertRules = cloneAlertRuleMap(state.AlertRules)
 	m.notificationRoutes = cloneNotificationRouteMap(state.NotificationRoutes)
+	m.deliveryRemedies = cloneDeliveryRemediationMap(state.DeliveryRemedies)
 	m.activityViews = cloneActivityViewMap(state.ActivityViews)
 	m.dataExports = cloneDataExportMap(state.DataExports)
 	m.deleteRequests = cloneDeleteRequestMap(state.DeleteRequests)
@@ -2299,6 +2383,7 @@ func (m *Memory) persistLocked() error {
 		AuditEvents:        append([]model.AuditEvent(nil), m.auditEvents...),
 		AlertRules:         cloneAlertRuleMap(m.alertRules),
 		NotificationRoutes: cloneNotificationRouteMap(m.notificationRoutes),
+		DeliveryRemedies:   cloneDeliveryRemediationMap(m.deliveryRemedies),
 		ActivityViews:      cloneActivityViewMap(m.activityViews),
 		DataExports:        cloneDataExportMap(m.dataExports),
 		DeleteRequests:     cloneDeleteRequestMap(m.deleteRequests),
@@ -2369,6 +2454,18 @@ func cloneNotificationRouteMap(input map[string][]model.NotificationRoute) map[s
 	output := make(map[string][]model.NotificationRoute, len(input))
 	for key, value := range input {
 		output[key] = append([]model.NotificationRoute(nil), value...)
+	}
+	return output
+}
+
+func cloneDeliveryRemediations(input []model.TenantDeliveryRemediationAction) []model.TenantDeliveryRemediationAction {
+	return append([]model.TenantDeliveryRemediationAction(nil), input...)
+}
+
+func cloneDeliveryRemediationMap(input map[string][]model.TenantDeliveryRemediationAction) map[string][]model.TenantDeliveryRemediationAction {
+	output := make(map[string][]model.TenantDeliveryRemediationAction, len(input))
+	for key, value := range input {
+		output[key] = cloneDeliveryRemediations(value)
 	}
 	return output
 }
@@ -3306,7 +3403,7 @@ func buildTenantDeliveryDrilldown(tenantID string, routes []model.NotificationRo
 		if route.Status == constants.StatusHealthy {
 			summary.HealthyRoutes++
 		}
-		if item.ProofState != "customer_proof" && item.ProofState != "rehearsed" {
+		if item.ProofState != constants.DeliveryProofStateCustomer && item.ProofState != constants.DeliveryProofStateRehearsed {
 			summary.RoutesNeedingProof++
 			actions = append(actions, model.TenantOperationsSignal{
 				Title:      titleWord(route.Channel) + " delivery proof needed",
@@ -3326,11 +3423,11 @@ func buildTenantDeliveryDrilldown(tenantID string, routes []model.NotificationRo
 		}
 		switch route.Channel {
 		case constants.DeliveryChannelEmail:
-			summary.EmailReady = item.ProofState == "customer_proof" || item.ProofState == "rehearsed"
+			summary.EmailReady = item.ProofState == constants.DeliveryProofStateCustomer || item.ProofState == constants.DeliveryProofStateRehearsed
 		case constants.DeliveryChannelPush:
-			summary.PushReady = item.ProofState == "customer_proof" || item.ProofState == "rehearsed"
+			summary.PushReady = item.ProofState == constants.DeliveryProofStateCustomer || item.ProofState == constants.DeliveryProofStateRehearsed
 		case constants.DeliveryChannelDashboard:
-			summary.DashboardReady = item.ProofState == "customer_proof" || item.ProofState == "rehearsed"
+			summary.DashboardReady = item.ProofState == constants.DeliveryProofStateCustomer || item.ProofState == constants.DeliveryProofStateRehearsed
 		}
 	}
 	if summary.RoutesTotal > 0 {
@@ -3403,31 +3500,31 @@ func latestDeliveryForRoute(deliveries []model.AlertDelivery, route model.Notifi
 func deliveryProofState(route model.NotificationRoute, delivery *model.AlertDelivery) string {
 	switch {
 	case !route.Enabled:
-		return "disabled"
+		return constants.DeliveryProofStateDisabled
 	case !deliveryProviderMatchesChannel(route.Provider, route.Channel):
-		return "provider_mismatch"
+		return constants.DeliveryProofStateMismatch
 	case delivery != nil && delivery.Status == constants.DeliveryStatusDelivered:
-		return "customer_proof"
+		return constants.DeliveryProofStateCustomer
 	case route.Status == constants.StatusHealthy && route.LastVerifiedAt != nil:
-		return "rehearsed"
+		return constants.DeliveryProofStateRehearsed
 	case delivery != nil && (delivery.Status == constants.DeliveryStatusRetrying || delivery.Status == constants.DeliveryStatusFailed):
-		return "needs_provider_attention"
+		return constants.DeliveryProofStateNeedsProvider
 	default:
-		return "needs_delivery_proof"
+		return constants.DeliveryProofStateNeedsProof
 	}
 }
 
 func deliveryRehearsalResult(route model.NotificationRoute, delivery *model.AlertDelivery) string {
 	switch deliveryProofState(route, delivery) {
-	case "customer_proof":
+	case constants.DeliveryProofStateCustomer:
 		return "latest metadata shows delivered route proof"
-	case "rehearsed":
+	case constants.DeliveryProofStateRehearsed:
 		return "dry-run route rehearsal passed without provider payloads"
-	case "disabled":
+	case constants.DeliveryProofStateDisabled:
 		return "route disabled; rehearsal skipped"
-	case "provider_mismatch":
+	case constants.DeliveryProofStateMismatch:
 		return "provider/channel mismatch blocks rehearsal"
-	case "needs_provider_attention":
+	case constants.DeliveryProofStateNeedsProvider:
 		return "latest provider metadata needs retry or verification"
 	default:
 		return "dry-run rehearsal available"
@@ -3436,15 +3533,15 @@ func deliveryRehearsalResult(route model.NotificationRoute, delivery *model.Aler
 
 func deliveryDrilldownNextAction(route model.NotificationRoute, delivery *model.AlertDelivery, proofState string) string {
 	switch proofState {
-	case "customer_proof":
+	case constants.DeliveryProofStateCustomer:
 		return "Use latest delivery metadata as buyer proof."
-	case "rehearsed":
+	case constants.DeliveryProofStateRehearsed:
 		return "Send a real proof notification when production provider credentials are configured."
-	case "disabled":
+	case constants.DeliveryProofStateDisabled:
 		return "Enable this route before relying on it for anomaly alerts."
-	case "provider_mismatch":
+	case constants.DeliveryProofStateMismatch:
 		return "Fix the provider/channel pairing before rehearsal."
-	case "needs_provider_attention":
+	case constants.DeliveryProofStateNeedsProvider:
 		if delivery != nil {
 			return firstNonEmpty(delivery.LastError, delivery.Summary, "Review retry timing and provider status.")
 		}
@@ -3477,6 +3574,191 @@ func deliveryProviderMatchesChannel(provider string, channel string) bool {
 		return provider == constants.DeliveryProviderLocalFeed
 	default:
 		return false
+	}
+}
+
+func buildTenantDeliveryRemediation(tenantID string, routes []model.NotificationRoute, deliveries []model.AlertDelivery, planned []model.TenantDeliveryRemediationAction, generatedAt time.Time) model.TenantDeliveryRemediation {
+	routes = append([]model.NotificationRoute(nil), routes...)
+	sort.Slice(routes, func(i, j int) bool {
+		if routes[i].Channel != routes[j].Channel {
+			return routes[i].Channel < routes[j].Channel
+		}
+		return routes[i].CreatedAt.Before(routes[j].CreatedAt)
+	})
+
+	actions := make([]model.TenantDeliveryRemediationAction, 0, len(routes))
+	summary := model.TenantDeliveryRemediationSummary{RoutesTotal: len(routes)}
+	for _, route := range routes {
+		latest := latestDeliveryForRoute(deliveries, route)
+		action := deliveryRemediationAction(route, latest, generatedAt)
+		actions = append(actions, action)
+		if action.Status != constants.DeliveryRemediationStatusHealthy {
+			summary.ProblemsOpen++
+		}
+		if action.Action == constants.DeliveryRemediationActionSLAWatch {
+			summary.SLAWatch++
+		}
+		if action.Status != constants.DeliveryRemediationStatusHealthy && action.NextRetryAt != nil && (summary.NextRetryAt == nil || action.NextRetryAt.Before(*summary.NextRetryAt)) {
+			next := *action.NextRetryAt
+			summary.NextRetryAt = &next
+		}
+		switch route.Channel {
+		case constants.DeliveryChannelEmail:
+			summary.EmailProtected = action.Status == constants.DeliveryRemediationStatusHealthy
+		case constants.DeliveryChannelPush:
+			summary.PushProtected = action.Status == constants.DeliveryRemediationStatusHealthy
+		case constants.DeliveryChannelDashboard:
+			summary.DashboardProtected = action.Status == constants.DeliveryRemediationStatusHealthy
+		}
+	}
+
+	recent := cloneDeliveryRemediations(planned)
+	sort.Slice(recent, func(i, j int) bool {
+		return recent[i].CreatedAt.After(recent[j].CreatedAt)
+	})
+	for _, plan := range recent {
+		summary.PlannedActions++
+		if plan.Status == constants.DeliveryRemediationStatusAcked {
+			summary.OwnerAcknowledged++
+		}
+		if summary.LastPlannedAt == nil || plan.CreatedAt.After(*summary.LastPlannedAt) {
+			plannedAt := plan.CreatedAt
+			summary.LastPlannedAt = &plannedAt
+		}
+	}
+	if len(recent) > 6 {
+		recent = recent[:6]
+	}
+	if summary.RoutesTotal > 0 {
+		summary.RemediationScore = ((summary.RoutesTotal - summary.ProblemsOpen) * 100) / summary.RoutesTotal
+	}
+
+	return model.TenantDeliveryRemediation{
+		TenantID:        tenantID,
+		GeneratedAt:     generatedAt,
+		PrivacyBoundary: constants.DeliveryRemediationPrivacyNote,
+		Summary:         summary,
+		Actions:         actions,
+		RecentPlans:     recent,
+	}
+}
+
+func deliveryRemediationAction(route model.NotificationRoute, delivery *model.AlertDelivery, generatedAt time.Time) model.TenantDeliveryRemediationAction {
+	drilldown := deliveryDrilldownRoute(route, delivery)
+	nextRetryAt := drilldown.LatestDeliveryAt
+	if delivery != nil && delivery.NextRetryAt != nil {
+		nextRetry := *delivery.NextRetryAt
+		nextRetryAt = &nextRetry
+	}
+	action := model.TenantDeliveryRemediationAction{
+		RouteID:              route.ID,
+		Channel:              route.Channel,
+		Provider:             route.Provider,
+		RecipientLabel:       route.RecipientLabel,
+		Action:               deliveryRemediationActionForProof(drilldown.ProofState),
+		Status:               deliveryRemediationStatusForProof(drilldown.ProofState),
+		Owner:                deliveryRemediationOwner(route),
+		Problem:              drilldown.RehearsalResult,
+		Plan:                 deliveryRemediationPlan(drilldown, delivery),
+		SLATarget:            drilldown.SLA,
+		LatestDeliveryStatus: drilldown.LatestDeliveryStatus,
+		LatestDeliveryAt:     drilldown.LatestDeliveryAt,
+		NextRetryAt:          nextRetryAt,
+		AuditState:           constants.StatusPending,
+		PrivacyBoundary:      constants.DeliveryRemediationPrivacyNote,
+		CreatedAt:            generatedAt,
+	}
+	if action.NextRetryAt == nil && action.Status != constants.DeliveryRemediationStatusHealthy {
+		nextRetry := deliveryRemediationNextRetry(route.Channel, generatedAt)
+		action.NextRetryAt = &nextRetry
+	}
+	return action
+}
+
+func selectDeliveryRemediationRoute(routes []model.NotificationRoute, deliveries []model.AlertDelivery, routeID string, channel string) (model.NotificationRoute, *model.AlertDelivery) {
+	var fallback *model.NotificationRoute
+	for index := range routes {
+		route := routes[index]
+		if routeID != "" && route.ID != routeID {
+			continue
+		}
+		if channel != "" && route.Channel != channel {
+			continue
+		}
+		latest := latestDeliveryForRoute(deliveries, route)
+		if deliveryProofState(route, latest) != constants.DeliveryProofStateCustomer && deliveryProofState(route, latest) != constants.DeliveryProofStateRehearsed {
+			return route, latest
+		}
+		if fallback == nil {
+			current := route
+			fallback = &current
+		}
+	}
+	if fallback != nil {
+		return *fallback, latestDeliveryForRoute(deliveries, *fallback)
+	}
+	if len(routes) == 0 {
+		return model.NotificationRoute{}, nil
+	}
+	return routes[0], latestDeliveryForRoute(deliveries, routes[0])
+}
+
+func deliveryRemediationActionForProof(proofState string) string {
+	switch proofState {
+	case constants.DeliveryProofStateCustomer, constants.DeliveryProofStateRehearsed:
+		return constants.DeliveryRemediationActionMaintain
+	case constants.DeliveryProofStateDisabled:
+		return constants.DeliveryRemediationActionEnable
+	case constants.DeliveryProofStateMismatch:
+		return constants.DeliveryRemediationActionFix
+	case constants.DeliveryProofStateNeedsProvider:
+		return constants.DeliveryRemediationActionRetryPlan
+	default:
+		return constants.DeliveryRemediationActionRehearsal
+	}
+}
+
+func deliveryRemediationStatusForProof(proofState string) string {
+	switch proofState {
+	case constants.DeliveryProofStateCustomer, constants.DeliveryProofStateRehearsed:
+		return constants.DeliveryRemediationStatusHealthy
+	default:
+		return constants.DeliveryRemediationStatusOpen
+	}
+}
+
+func deliveryRemediationStatusForAction(action string) string {
+	switch action {
+	case constants.DeliveryRemediationActionOwnerAck:
+		return constants.DeliveryRemediationStatusAcked
+	case constants.DeliveryRemediationActionMaintain:
+		return constants.DeliveryRemediationStatusHealthy
+	default:
+		return constants.DeliveryRemediationStatusPlanned
+	}
+}
+
+func deliveryRemediationOwner(route model.NotificationRoute) string {
+	return firstNonEmpty(route.RecipientLabel, constants.RoleBusinessManager)
+}
+
+func deliveryRemediationPlan(route model.TenantDeliveryDrilldownRoute, delivery *model.AlertDelivery) string {
+	if delivery != nil && strings.TrimSpace(delivery.LastError) != "" {
+		return "Plan a provider-safe retry review for: " + delivery.LastError
+	}
+	return firstNonEmpty(route.NextAction, route.Evidence, "Plan dry-run verification before relying on this notification route.")
+}
+
+func deliveryRemediationNextRetry(channel string, generatedAt time.Time) time.Time {
+	switch channel {
+	case constants.DeliveryChannelPush:
+		return generatedAt.Add(time.Minute)
+	case constants.DeliveryChannelEmail:
+		return generatedAt.Add(5 * time.Minute)
+	case constants.DeliveryChannelDashboard:
+		return generatedAt
+	default:
+		return generatedAt.Add(15 * time.Minute)
 	}
 }
 

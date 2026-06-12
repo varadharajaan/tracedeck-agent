@@ -587,6 +587,23 @@ contract. Newman runs
 live demo and covers the command-center dashboard markers plus the typed APIs
 that feed anomaly, notification, mail, archive, and revenue proof.
 
+Phase 46 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase46.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase46.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase46.ps1
+```
+
+The Phase 46 smoke live-boots the seeded dashboard, verifies Delivery
+Remediation Center, Remediation Action Ledger, and Remediation SLA markers,
+checks the tenant delivery-remediation API, records a dry-run push retry plan,
+rejects live-send remediation mode, verifies the audit event, and reruns the
+screenshot-free dashboard layout contract. Newman runs
+`postman/tracedeck-backend-phase46.postman_collection.json` against the same
+live demo and covers remediation summary, plan creation, mode rejection, and
+audit evidence.
+
 Phase 13 adds:
 
 ```powershell

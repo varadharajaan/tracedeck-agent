@@ -43,6 +43,7 @@ const (
 	RouteSegmentOperations      = "operations-summary"
 	RouteSegmentMonetization    = "monetization-summary"
 	RouteSegmentDeliveryDrill   = "delivery-drilldown"
+	RouteSegmentDeliveryRemedy  = "delivery-remediation"
 	RouteSegmentSyncHealth      = "sync-health"
 	RouteSegmentActivityFeed    = "activity-feed"
 	RouteSegmentActivityViews   = "activity-views"
@@ -111,6 +112,7 @@ const (
 	AuditActionAlertRuleCreated     = "alert_rule.created"
 	AuditActionNotificationRoute    = "notification_route.created"
 	AuditActionDeliveryDrillRun     = "delivery_drilldown.rehearsed"
+	AuditActionDeliveryRemediation  = "delivery_remediation.planned"
 	AuditActionActivityViewCreated  = "activity_view.created"
 	AuditActionDeviceGroupCreated   = "device_group.created"
 	AuditActionDataExportCreated    = "data_export.created"
@@ -244,6 +246,31 @@ const (
 const (
 	DeliveryDrillModeDryRun  = "dry_run"
 	DeliveryDrillPrivacyNote = "metadata-only dry run: no provider secrets, alert bodies, screenshots, tokens, cookies, passwords, or endpoint payloads are collected or stored"
+)
+
+const (
+	DeliveryProofStateCustomer      = "customer_proof"
+	DeliveryProofStateRehearsed     = "rehearsed"
+	DeliveryProofStateDisabled      = "disabled"
+	DeliveryProofStateMismatch      = "provider_mismatch"
+	DeliveryProofStateNeedsProvider = "needs_provider_attention"
+	DeliveryProofStateNeedsProof    = "needs_delivery_proof"
+)
+
+const (
+	DeliveryRemediationModeDryRun      = "dry_run"
+	DeliveryRemediationActionRetryPlan = "retry_plan"
+	DeliveryRemediationActionOwnerAck  = "owner_ack"
+	DeliveryRemediationActionSLAWatch  = "sla_watch"
+	DeliveryRemediationActionEnable    = "enable_route"
+	DeliveryRemediationActionFix       = "fix_provider"
+	DeliveryRemediationActionRehearsal = "run_rehearsal"
+	DeliveryRemediationActionMaintain  = "maintain_proof"
+	DeliveryRemediationStatusOpen      = "open"
+	DeliveryRemediationStatusPlanned   = "planned"
+	DeliveryRemediationStatusAcked     = "owner_acknowledged"
+	DeliveryRemediationStatusHealthy   = "healthy"
+	DeliveryRemediationPrivacyNote     = "metadata-only remediation: plans and audit proof are recorded without live provider sends, alert bodies, screenshots, tokens, cookies, passwords, raw URLs, or provider secrets"
 )
 
 const (

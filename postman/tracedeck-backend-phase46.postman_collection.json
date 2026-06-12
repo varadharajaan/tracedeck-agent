@@ -1,0 +1,94 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 46",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Has Delivery Remediation Center",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard contains remediation monetisation markers', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Delivery Remediation Center');",
+        "  pm.expect(html).to.include('Remediation Action Ledger');",
+        "  pm.expect(html).to.include('Remediation SLA');",
+        "  pm.expect(html).to.include('delivery-remediation-action-list');",
+        "  pm.expect(html).to.include('delivery-remediation-plan-list');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Tenant Delivery Remediation Summary",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/delivery-remediation" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('delivery remediation exposes route recovery state safely', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.privacy_boundary).to.include('without live provider sends');",
+        "  pm.expect(body.summary.routes_total).to.be.at.least(3);",
+        "  pm.expect(body.actions.length).to.be.at.least(3);",
+        "  pm.expect(JSON.stringify(body).toLowerCase()).to.not.include('smtp_password');",
+        "  pm.expect(JSON.stringify(body).toLowerCase()).to.not.include('provider_secret');",
+        "  pm.expect(JSON.stringify(body).toLowerCase()).to.not.include('screenshot_bytes');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Plan Push Route Remediation",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/delivery-remediation",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"mode\":\"dry_run\",\"channel\":\"push\",\"action\":\"retry_plan\",\"reason\":\"phase46 Newman route recovery plan\",\"owner\":\"parent mobile push subscription\"}" }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dry-run push remediation plan is recorded', function () {",
+        "  pm.response.to.have.status(202);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.summary.planned_actions).to.be.at.least(1);",
+        "  pm.expect(body.recent_plans.length).to.be.at.least(1);",
+        "  pm.expect(body.recent_plans[0].action).to.eql('retry_plan');",
+        "  pm.expect(body.recent_plans[0].channel).to.eql('push');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Reject Live Send Remediation Mode",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/delivery-remediation",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"mode\":\"send_live\",\"action\":\"retry_plan\"}" }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('live send remediation mode is rejected', function () {",
+        "  pm.response.to.have.status(400);",
+        "  pm.expect(pm.response.json().error).to.include('mode');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Audit Contains Delivery Remediation Plan",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/audit-events" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('audit event records remediation planning', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.items.some((item) => item.action === 'delivery_remediation.planned')).to.eql(true);",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}
