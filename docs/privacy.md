@@ -35,3 +35,9 @@ verification status, route summary, and audit metadata only. They do not send
 live email or push payloads, and they do not collect or store provider secrets,
 alert bodies, endpoint payloads, passwords, tokens, cookies, screenshots, or
 private content.
+
+Phase 46 delivery remediation is also metadata-only. It records typed recovery
+plans, owner/SLA state, retry/check timing, and audit events for email, push,
+and dashboard routes. It rejects live-send remediation modes and does not store
+provider secrets, alert bodies, screenshots, passwords, cookies, tokens, raw
+URLs, page titles, or private content.

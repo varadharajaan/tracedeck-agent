@@ -160,3 +160,8 @@
     mail/PDF readiness, fleet coverage, S3 archive retention, trust/audit,
     revenue package state, delivery proof, owner action queue, smoke/Newman
     coverage, screenshot-free layout guard, docs, and full local verification.
+49. Phase 46: delivery remediation center. Typed tenant API and dashboard
+    panels for provider-safe route recovery planning, owner/SLA state, dry-run
+    push/mail remediation plans, live-send rejection, audit proof,
+    Postman/Newman coverage, screenshot-free layout guard, docs, and full local
+    verification.

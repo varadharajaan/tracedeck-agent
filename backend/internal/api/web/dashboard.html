@@ -1587,6 +1587,39 @@
       </div>
     </section>
 
+    <section id="delivery-remediation-section" class="content-grid" aria-label="delivery remediation center">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Delivery Remediation Center</h2>
+            <p class="muted">SLA-aware recovery board for anomaly push, critical mail, dashboard inbox, weekly report delivery, owner assignment, retry planning, and audit proof.</p>
+          </div>
+          <span id="delivery-remediation-status" class="badge pending">pending</span>
+        </div>
+        <div class="brief-grid">
+          <div class="brief-item"><small>Recovery Score</small><strong id="delivery-remediation-score">-</strong><span id="delivery-remediation-score-sub" class="muted">No remediation score</span></div>
+          <div class="brief-item"><small>Open Problems</small><strong id="delivery-remediation-problems">-</strong><span id="delivery-remediation-problems-sub" class="muted">No route problems</span></div>
+          <div class="brief-item"><small>Planned Actions</small><strong id="delivery-remediation-plans">-</strong><span id="delivery-remediation-plans-sub" class="muted">No recovery plans</span></div>
+          <div class="brief-item"><small>Remediation SLA</small><strong id="delivery-remediation-sla">-</strong><span id="delivery-remediation-sla-sub" class="muted">No retry window</span></div>
+        </div>
+        <div class="summary-list" style="margin-top: 12px;">
+          <div class="summary-line"><span>Boundary</span><strong id="delivery-remediation-boundary">metadata-only remediation</strong></div>
+          <div class="summary-line"><span>Last Plan</span><strong id="delivery-remediation-last-plan">-</strong></div>
+        </div>
+        <div id="delivery-remediation-action-list" class="buyer-ops-list" style="margin-top: 12px;"><div class="empty">No delivery remediation actions yet.</div></div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Remediation Action Ledger</h2>
+            <p class="muted">Dry-run recovery plans recorded for push and mail delivery without live sends, secrets, or alert bodies.</p>
+          </div>
+          <span id="delivery-remediation-ledger-status" class="badge pending">pending</span>
+        </div>
+        <div id="delivery-remediation-plan-list" class="action-list"><div class="empty">No delivery remediation plans yet.</div></div>
+      </div>
+    </section>
+
     <section id="commercial-section" class="commercial-room" aria-label="commercial control room">
       <div class="commercial-hero">
         <div class="section-head">
@@ -2997,6 +3030,7 @@
       renderCommercialControlRoom(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderBuyerMonetizationConsole(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderDeliveryDrilldown(context.deliveryDrilldown);
+      renderDeliveryRemediation(context.deliveryRemediation);
       renderMonetisationLaunchDeck(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderRevenueCommandSuite(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderBuyerAssuranceWall(overview, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
@@ -3097,6 +3131,8 @@
       const inboxSummary = alertInbox.summary || {};
       const deliveryDrill = context.deliveryDrilldown || {};
       const drillSummary = deliveryDrill.summary || {};
+      const deliveryRemediation = context.deliveryRemediation || {};
+      const remediationSummary = deliveryRemediation.summary || {};
       const plans = (context.plans && context.plans.items) || [];
       const tiers = (context.retentionTiers && context.retentionTiers.items) || [];
       const plan = plans.find((item) => item.id === (tenant.plan_id || monetization.plan_id || operations.plan_id)) || {};
@@ -3127,7 +3163,9 @@
       const audience = monetization.audience || plan.audience || tenant.primary_profile || overview.device.profile || "customer";
       const openAlerts = Number(inboxSummary.open ?? allEvents.filter((event) => event.status !== "resolved").length);
       const highAlerts = Number(inboxSummary.high_or_critical || allEvents.filter((event) => ["critical", "high"].includes(String(event.severity || "").toLowerCase())).length);
-      const nextAction = routeProblem
+      const nextAction = Number(remediationSummary.problems_open || 0) > 0
+        ? `${remediationSummary.problems_open} delivery remediation action${Number(remediationSummary.problems_open || 0) === 1 ? "" : "s"}`
+        : routeProblem
         ? `${capitalize(routeProblem.channel)} route needs proof`
         : topEvent
           ? `Review ${rowDetail(topEvent)}`
@@ -3166,7 +3204,7 @@
       setText("command-center-revenue-sub", `${packageName}; ${(monetization.paid_capabilities || []).length || 0} paid capabilities visible.`);
 
       renderCommandCenterInbox(alertInbox.items || [], allEvents, deliveries.items);
-      renderCommandCenterDeliveryProof({ email, push, dashboard, weekly, drillSummary, deliveryScore });
+      renderCommandCenterDeliveryProof({ email, push, dashboard, weekly, drillSummary, remediationSummary, deliveryScore });
       renderCommandCenterActions({
         topEvent,
         routeProblem,
@@ -3249,6 +3287,11 @@
           title: "Weekly report mail",
           detail: model.weekly.email_preview || model.weekly.generated_note || "Weekly report email/PDF proof pending",
           status: model.weekly.email_ready && model.weekly.pdf_ready ? "ready" : model.weekly.generated ? "watch" : "pending"
+        },
+        {
+          title: "Delivery remediation",
+          detail: `${model.remediationSummary.problems_open || 0} open recovery issue${Number(model.remediationSummary.problems_open || 0) === 1 ? "" : "s"}, ${model.remediationSummary.planned_actions || 0} dry-run plan${Number(model.remediationSummary.planned_actions || 0) === 1 ? "" : "s"}`,
+          status: Number(model.remediationSummary.problems_open || 0) === 0 ? "healthy" : Number(model.remediationSummary.planned_actions || 0) > 0 ? "planned" : "watch"
         }
       ];
       document.getElementById("command-center-delivery-status").outerHTML =
@@ -4759,6 +4802,67 @@
       `).join("");
     }
 
+    function renderDeliveryRemediation(remediation) {
+      const model = remediation || {};
+      const summary = model.summary || {};
+      const actions = model.actions || [];
+      const plans = model.recent_plans || [];
+      const score = Number(summary.remediation_score || 0);
+      const problems = Number(summary.problems_open || 0);
+      const status = score >= 70 && problems === 0 ? "healthy" : score > 0 || actions.length > 0 ? "watch" : "pending";
+
+      document.getElementById("delivery-remediation-status").outerHTML =
+        badge(status).replace("<span", '<span id="delivery-remediation-status"');
+      setText("delivery-remediation-score", `${score}%`);
+      setText("delivery-remediation-score-sub", `${summary.routes_total || 0} routes, ${problems} open recovery issue${problems === 1 ? "" : "s"}`);
+      setText("delivery-remediation-problems", problems);
+      setText("delivery-remediation-problems-sub", `${summary.email_protected ? "mail protected" : "mail needs proof"}, ${summary.push_protected ? "push protected" : "push needs proof"}, ${summary.dashboard_protected ? "dashboard protected" : "dashboard needs proof"}`);
+      setText("delivery-remediation-plans", summary.planned_actions || 0);
+      setText("delivery-remediation-plans-sub", `${summary.owner_acknowledged || 0} owner acknowledged, ${summary.sla_watch || 0} SLA watch`);
+      setText("delivery-remediation-sla", summary.next_retry_at ? formatAge(summary.next_retry_at) : "no retry due");
+      setText("delivery-remediation-sla-sub", summary.next_retry_at ? `next planned check ${formatDate(summary.next_retry_at)}` : "All routes have no pending retry window.");
+      setText("delivery-remediation-boundary", model.privacy_boundary || "metadata-only remediation");
+      setText("delivery-remediation-last-plan", summary.last_planned_at ? formatDate(summary.last_planned_at) : "no plan recorded");
+
+      const actionTarget = document.getElementById("delivery-remediation-action-list");
+      if (actions.length === 0) {
+        actionTarget.innerHTML = '<div class="empty">No delivery remediation actions yet.</div>';
+      } else {
+        actionTarget.innerHTML = actions.map((action) => `
+          <div class="buyer-ops-list-item">
+            <strong>${escapeHTML(capitalize(action.channel || "route"))} - ${escapeHTML(action.action || "review")}</strong>
+            <span class="muted">${escapeHTML(action.plan || action.problem || "Review route recovery plan.")}</span>
+            <div class="action-meta">
+              ${badge(action.status || "watch")}
+              <span class="pill">${escapeHTML(action.provider || "provider pending")}</span>
+              <span class="pill">${escapeHTML(action.owner || "owner pending")}</span>
+              <span class="pill">${escapeHTML(action.sla_target || "SLA pending")}</span>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      document.getElementById("delivery-remediation-ledger-status").outerHTML =
+        badge(plans.length > 0 ? "planned" : "pending").replace("<span", '<span id="delivery-remediation-ledger-status"');
+      const planTarget = document.getElementById("delivery-remediation-plan-list");
+      if (plans.length === 0) {
+        planTarget.innerHTML = '<div class="empty">No delivery remediation plans yet.</div>';
+        return;
+      }
+      planTarget.innerHTML = plans.map((plan) => `
+        <div class="action-item">
+          <strong>${escapeHTML(capitalize(plan.channel || "route"))} ${escapeHTML(plan.action || "plan")}</strong>
+          <span class="muted">${escapeHTML(plan.plan || "Provider-safe remediation plan recorded.")}</span>
+          <div class="action-meta">
+            ${badge(plan.status || "planned")}
+            <span class="pill">${escapeHTML(plan.owner || "owner pending")}</span>
+            <span class="pill">${escapeHTML(plan.audit_state || "audit pending")}</span>
+            <span class="pill">${escapeHTML(formatAge(plan.created_at))}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
     function renderTelemetryStatus(status) {
       const model = status || {};
       const stored = Number(model.stored_events || 0);
@@ -5301,6 +5405,7 @@
       const policyAssignments = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/policy-assignments`) : null;
       const notificationRoutes = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-routes`) : null;
       const deliveryDrilldown = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delivery-drilldown`) : null;
+      const deliveryRemediation = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delivery-remediation`) : null;
       const telemetryStatus = await loadOptionalJSON(`${base}/telemetry-status`);
       const consentCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/consent-center`) : null;
       const alertInbox = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/alert-inbox`) : null;
@@ -5323,6 +5428,7 @@
         policyAssignments,
         notificationRoutes,
         deliveryDrilldown,
+        deliveryRemediation,
         telemetryStatus,
         consentCenter,
         alertInbox,

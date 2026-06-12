@@ -108,6 +108,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase4
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase44.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase45.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase45.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase45.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase46.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase46.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase46.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-service-manifests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-windows-task.ps1
 ```
@@ -138,3 +142,10 @@ into one top panel backed by existing typed APIs. The phase adds presentation,
 docs, smoke/Newman coverage, and layout guards only; it does not add password,
 credential, raw URL, page title, private message, camera, microphone, or
 covert screenshot collection.
+
+Phase 46 adds a delivery remediation center and typed
+`/api/v1/tenants/{tenantId}/delivery-remediation` API. It turns mail/push route
+problems into owned dry-run recovery plans with SLA state and audit proof, and
+surfaces that proof in the monetisation command center. Live-send remediation
+modes are rejected; provider secrets, alert bodies, screenshots, passwords,
+tokens, cookies, raw URLs, and private content are not collected or stored.

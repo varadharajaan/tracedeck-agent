@@ -206,6 +206,9 @@ Current panels:
 - provider-safe delivery drilldown for email, push, and dashboard dry-run
   rehearsal, route score, channel readiness, route evidence, and next actions
   without provider secrets or alert bodies
+- delivery remediation center for SLA-aware route recovery, owner assignment,
+  dry-run retry planning, audit proof, anomaly push recovery, and mail delivery
+  assurance without live sends or provider payload storage
 
 API-provided text is escaped before rendering.
 
@@ -269,6 +272,13 @@ fleet coverage, S3 archive retention, trust/audit, revenue package, delivery
 proof, and owner action queue are visible before deeper host panels. The panel
 uses existing tenant operations, monetisation summary, alert inbox, delivery
 drilldown, sync health, consent, weekly report, and per-host delivery APIs.
+
+Phase 46 adds a Delivery Remediation Center. It shows route recovery score,
+open push/mail/dashboard problems, planned dry-run actions, owner
+acknowledgement, SLA watch, next retry/check windows, and a remediation action
+ledger. The Monetisation Command Center also includes remediation state in the
+delivery proof list so paid demos answer not only "what failed?" but "who owns
+the recovery and what proof exists?"
 
 A future frontend phase can move this surface to a richer application shell with
 role-specific onboarding, no-code alert rule editing, weekly report drilldowns,

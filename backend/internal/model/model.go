@@ -513,6 +513,15 @@ type RunDeliveryDrilldownRequest struct {
 	Reason  string `json:"reason"`
 }
 
+type RunDeliveryRemediationRequest struct {
+	Mode    string `json:"mode"`
+	Channel string `json:"channel"`
+	RouteID string `json:"route_id"`
+	Action  string `json:"action"`
+	Reason  string `json:"reason"`
+	Owner   string `json:"owner"`
+}
+
 type TenantDeliveryDrilldownSummary struct {
 	RoutesTotal        int        `json:"routes_total"`
 	EnabledRoutes      int        `json:"enabled_routes"`
@@ -551,6 +560,50 @@ type TenantDeliveryDrilldown struct {
 	Summary         TenantDeliveryDrilldownSummary `json:"summary"`
 	Routes          []TenantDeliveryDrilldownRoute `json:"routes"`
 	Actions         []TenantOperationsSignal       `json:"actions"`
+}
+
+type TenantDeliveryRemediationSummary struct {
+	RoutesTotal        int        `json:"routes_total"`
+	ProblemsOpen       int        `json:"problems_open"`
+	PlannedActions     int        `json:"planned_actions"`
+	OwnerAcknowledged  int        `json:"owner_acknowledged"`
+	SLAWatch           int        `json:"sla_watch"`
+	RemediationScore   int        `json:"remediation_score"`
+	EmailProtected     bool       `json:"email_protected"`
+	PushProtected      bool       `json:"push_protected"`
+	DashboardProtected bool       `json:"dashboard_protected"`
+	NextRetryAt        *time.Time `json:"next_retry_at,omitempty"`
+	LastPlannedAt      *time.Time `json:"last_planned_at,omitempty"`
+}
+
+type TenantDeliveryRemediationAction struct {
+	ID                   string     `json:"id"`
+	TenantID             string     `json:"tenant_id"`
+	RouteID              string     `json:"route_id"`
+	Channel              string     `json:"channel"`
+	Provider             string     `json:"provider"`
+	RecipientLabel       string     `json:"recipient_label"`
+	Action               string     `json:"action"`
+	Status               string     `json:"status"`
+	Owner                string     `json:"owner"`
+	Problem              string     `json:"problem"`
+	Plan                 string     `json:"plan"`
+	SLATarget            string     `json:"sla_target"`
+	LatestDeliveryStatus string     `json:"latest_delivery_status"`
+	LatestDeliveryAt     *time.Time `json:"latest_delivery_at,omitempty"`
+	NextRetryAt          *time.Time `json:"next_retry_at,omitempty"`
+	AuditState           string     `json:"audit_state"`
+	PrivacyBoundary      string     `json:"privacy_boundary"`
+	CreatedAt            time.Time  `json:"created_at"`
+}
+
+type TenantDeliveryRemediation struct {
+	TenantID        string                            `json:"tenant_id"`
+	GeneratedAt     time.Time                         `json:"generated_at"`
+	PrivacyBoundary string                            `json:"privacy_boundary"`
+	Summary         TenantDeliveryRemediationSummary  `json:"summary"`
+	Actions         []TenantDeliveryRemediationAction `json:"actions"`
+	RecentPlans     []TenantDeliveryRemediationAction `json:"recent_plans"`
 }
 
 type ConsentCollectionItem struct {

@@ -157,3 +157,17 @@ Phase 45 turns the top of the dashboard into a monetisation command center:
 
 The phase is presentation and verification only. It improves the paid-product
 story without adding sensitive collectors or live provider sends.
+
+Phase 46 turns route failures into a monetisable trust workflow:
+
+- delivery remediation center for anomaly push, critical mail, dashboard inbox,
+  and weekly report delivery recovery
+- route recovery score, open problem count, owner acknowledgement, and SLA watch
+- dry-run retry plans that create audit proof without sending provider payloads
+- command-center delivery proof that includes remediation state
+- Newman and smoke coverage for summary, dry-run plan creation, live-send mode
+  rejection, and audit evidence
+
+This supports Family Pro, school, and small-business packaging because buyers
+pay for reliable alerting, owned recovery, and proof that mail/push routes are
+working or being repaired.
