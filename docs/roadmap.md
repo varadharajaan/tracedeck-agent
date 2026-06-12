@@ -124,3 +124,7 @@
 40. Phase 37: dashboard contract guard. Embedded dashboard DOM/JavaScript ID
     contract test, local script, smoke/Newman coverage, docs, and full local
     verification.
+41. Phase 38: commercial control room. First-screen buyer-ready dashboard for
+    host coverage, anomaly urgency, email proof, push proof, weekly report
+    mail, delivery evidence, customer success actions, Postman/Newman coverage,
+    docs, and full local verification.

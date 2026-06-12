@@ -451,6 +451,21 @@ replacement calls, and fails if any referenced DOM target is missing. The
 smoke and Newman scripts keep live dashboard and monetisation API coverage in
 the same verification path.
 
+Phase 38 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase38.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase38.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase38.ps1
+```
+
+The Phase 38 smoke live-boots the seeded dashboard and verifies the Commercial
+Control Room, Alert Delivery Evidence, Customer Success Queue, tenant
+operations summary, monetisation summary, and notification route registry.
+Newman runs `postman/tracedeck-backend-phase38.postman_collection.json` against
+the same live demo so the monetisation-grade first screen remains covered by a
+repeatable API/dashboard contract.
+
 Phase 13 adds:
 
 ```powershell

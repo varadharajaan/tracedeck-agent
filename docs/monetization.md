@@ -122,3 +122,20 @@ surface:
 
 The phase adds presentation and verification only; it does not add sensitive
 collectors.
+
+Phase 38 adds a Commercial Control Room as the first buyer-facing layer:
+
+- host coverage and hosts needing attention
+- anomaly command with the top policy, anomaly, or tamper signal
+- email proof for alert and report delivery
+- push proof for immediate anomaly notification
+- weekly report mail/PDF readiness
+- upgrade trigger and conversion-stage visibility
+- alert delivery evidence across anomaly, email, push, dashboard, and report
+  proof
+- customer success queue for parent, school, coaching center, and business
+  buyers
+
+This keeps TraceDeck positioned as endpoint productivity and risk observability
+rather than a narrow monitoring tool, while continuing to use the existing
+privacy-aware typed APIs.
