@@ -570,6 +570,23 @@ runs `postman/tracedeck-backend-phase44.postman_collection.json` against the
 same live demo and covers current drilldown proof, dry-run rehearsal,
 invalid live-send rejection, and audit evidence.
 
+Phase 45 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase45.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase45.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase45.ps1
+```
+
+The Phase 45 smoke live-boots the seeded dashboard, verifies Monetisation
+Command Center, Anomaly And Notification Inbox, Delivery And Mail Proof, and
+Owner Action Queue markers, checks tenant operations, monetisation summary,
+alert inbox, and delivery drilldown APIs, and reruns the screenshot-free layout
+contract. Newman runs
+`postman/tracedeck-backend-phase45.postman_collection.json` against the same
+live demo and covers the command-center dashboard markers plus the typed APIs
+that feed anomaly, notification, mail, archive, and revenue proof.
+
 Phase 13 adds:
 
 ```powershell

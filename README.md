@@ -106,6 +106,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase4
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase43.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase44.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase44.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase45.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase45.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-service-manifests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-windows-task.ps1
 ```
@@ -127,3 +129,12 @@ dry-run rehearsals across email, push, and dashboard routes. The dashboard shows
 route score, channel readiness, route evidence, and next actions without sending
 live messages or storing provider secrets, alert bodies, endpoint payloads, or
 sensitive content.
+
+Phase 45 adds a monetisation command center as the first buyer-grade dashboard
+surface. It rolls anomaly inbox urgency, push notification reach, mail delivery
+proof, weekly report mail/PDF readiness, fleet coverage, S3 archive retention,
+trust/audit posture, revenue package state, delivery proof, and owner actions
+into one top panel backed by existing typed APIs. The phase adds presentation,
+docs, smoke/Newman coverage, and layout guards only; it does not add password,
+credential, raw URL, page title, private message, camera, microphone, or
+covert screenshot collection.

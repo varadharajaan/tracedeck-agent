@@ -141,3 +141,19 @@ Phase 38 adds a Commercial Control Room as the first buyer-facing layer:
 This keeps TraceDeck positioned as endpoint productivity and risk observability
 rather than a narrow monitoring tool, while continuing to use the existing
 privacy-aware typed APIs.
+
+Phase 45 turns the top of the dashboard into a monetisation command center:
+
+- anomaly and notification inbox for policy, anomaly, and tamper urgency
+- push notification reach and retry state
+- mail delivery proof for critical alerts
+- weekly report mail and PDF readiness
+- fleet coverage and selected-host context
+- S3 archive retention and backlog status
+- trust center with visible monitoring, agent health, and audit posture
+- revenue package and paid capability signal
+- delivery and mail proof list for email, push, dashboard, and reports
+- owner action queue for parent, school, coaching center, and business buyers
+
+The phase is presentation and verification only. It improves the paid-product
+story without adding sensitive collectors or live provider sends.

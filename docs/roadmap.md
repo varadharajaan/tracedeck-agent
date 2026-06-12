@@ -155,3 +155,8 @@
     for email, push, and dashboard dry-run rehearsal, route score, channel
     readiness, route evidence, next action, audit trail, Postman/Newman
     coverage, screenshot-free layout guard, docs, and full local verification.
+48. Phase 45: monetisation command center. Premium first-screen dashboard for
+    anomaly inbox, push notification reach, mail delivery proof, weekly report
+    mail/PDF readiness, fleet coverage, S3 archive retention, trust/audit,
+    revenue package state, delivery proof, owner action queue, smoke/Newman
+    coverage, screenshot-free layout guard, docs, and full local verification.
