@@ -133,6 +133,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase55.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase55.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase55.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase56.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase56.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase56.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase57.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase57.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase57.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase49.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase49.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase49.ps1
@@ -238,3 +244,11 @@ simulation proof, trust/data-rights readiness, and upgrade actions. It is
 metadata-only and does not collect payment card data, invoices, provider
 secrets, passwords, screenshots, raw URLs, page titles, alert bodies, tokens,
 cookies, private content, or endpoint payloads.
+
+Phase 57 adds a typed Customer Control Room at
+`/api/v1/tenants/{tenantId}/customer-control-room`. It becomes the first
+dashboard surface for anomaly command, mail delivery, push notification
+evidence, provider proof, report/archive readiness, package billing, customer
+health, and owner monetisation actions. It is metadata-only and does not
+collect passwords, screenshots, raw URLs, page titles, alert bodies, provider
+secrets, endpoint payloads, private content, or payment card data.

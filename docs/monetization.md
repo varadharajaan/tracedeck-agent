@@ -318,3 +318,18 @@ Phase 56 adds Package Billing Readiness for customer-facing monetisation:
 
 This turns the broad monitoring dashboard into a clearer packaging and renewal
 story while staying metadata-only.
+
+Phase 57 adds a Customer Control Room as the monetisation front door:
+
+- customer-ready score and recommended package
+- anomaly command wall with host labels and mail/push/dashboard state
+- mail delivery proof for alerts and reports
+- push notification evidence for urgent anomalies, including retry state
+- provider simulation proof for email, push, and dashboard routes
+- package billing score, report readiness, archive posture, and trust score
+- owner monetisation actions with source, owner, SLA, paid tier, and next step
+
+This answers the buyer's first questions without forcing them through
+host-level tables: what happened, who was notified, did mail or push work,
+what proof is missing, and what package value does it support. It remains
+metadata-only and does not add sensitive collectors or live provider sends.

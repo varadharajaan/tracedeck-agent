@@ -317,6 +317,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantBusinessDashboard(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentRoleExperience && r.Method == http.MethodGet:
 		s.handleTenantRoleExperiences(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentCustomerControl && r.Method == http.MethodGet:
+		s.handleTenantCustomerControlRoom(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentExecutiveConsole && r.Method == http.MethodGet:
 		s.handleTenantExecutiveConsole(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentNotificationRev && r.Method == http.MethodGet:
@@ -645,6 +647,23 @@ func (s *Server) handleTenantExecutiveConsole(w http.ResponseWriter, r *http.Req
 		return
 	}
 	writeJSON(w, http.StatusOK, console)
+}
+
+func (s *Server) handleTenantCustomerControlRoom(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	room, err := s.store.TenantCustomerControlRoom(r.Context(), tenantID)
+	if err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant customer control room lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, room)
 }
 
 func (s *Server) handleTenantNotificationRevenueCockpit(w http.ResponseWriter, r *http.Request, tenantID string) {

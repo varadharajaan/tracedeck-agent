@@ -723,6 +723,16 @@ layout contract. Newman runs
 live demo and covers dashboard markers plus typed package billing readiness
 proof.
 
+The Phase 57 smoke live-boots the seeded dashboard, verifies Customer Control
+Room, Customer Value Tiles, Anomaly Command Wall, Mail And Push Delivery, and
+Owner Monetisation Actions markers, checks the tenant `customer-control-room`
+API, verifies customer score, notification score, package score, mail proof,
+push delivery evidence, provider/package/action surfaces, and strict
+privacy/forbidden markers, and reruns the screenshot-free dashboard layout
+contract. Newman runs
+`postman/tracedeck-backend-phase57.postman_collection.json` against the same
+live demo and covers dashboard markers plus typed customer control proof.
+
 Phase 13 adds:
 
 ```powershell

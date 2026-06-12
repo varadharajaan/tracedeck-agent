@@ -192,8 +192,8 @@ def main() -> int:
                             clientHeight: element.clientHeight
                           }));
                           checks.push({
-                            name: "command-navigation-has-twelve-jumps",
-                            ok: jumpBoxes.length === 12,
+                            name: "command-navigation-has-thirteen-jumps",
+                            ok: jumpBoxes.length === 13,
                             detail: `${jumpBoxes.length} command jump buttons`
                           });
                           for (const item of jumpBoxes) {
