@@ -284,3 +284,13 @@ readiness, owner actions, and privacy guard. It is metadata-only and
 does not collect passwords, screenshots, raw URLs, page titles, alert bodies,
 provider secrets, push endpoints, endpoint payloads, private content,
 invoices, payment card data, tokens, cookies, or raw provider payloads.
+
+Phase 61 adds a typed Account Portfolio Index at
+`/api/v1/account-portfolio-index`. It gives account owners and admins a
+multi-tenant opening view with tenant rows, host coverage, anomaly pressure,
+mail delivery proof, push notification proof, dashboard fallback, archive
+posture, package readiness, owner actions, and privacy guard. Tenant-scoped
+API sessions see only their allowed tenant. It is metadata-only and does not
+collect passwords, screenshots, raw URLs, page titles, alert bodies, provider
+secrets, push endpoints, endpoint payloads, private content, invoices, payment
+card data, tokens, cookies, or raw provider payloads.

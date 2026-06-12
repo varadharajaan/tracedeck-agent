@@ -385,3 +385,19 @@ This is the surface that makes TraceDeck feel like an admin product rather than
 a single-machine monitor: the buyer can compare hosts, understand which machine
 needs attention, verify whether anomaly push and mail delivery worked, and see
 paid package value in one screen.
+
+Phase 61 adds an Account Portfolio Index for multi-tenant packaging:
+
+- account score, tenant count, host coverage, notification score, and trust
+  posture
+- tenant rows with plan, audience, portfolio score, alert pressure, delivery
+  proof, archive backlog, and next action
+- account proof cards for tenant coverage, notification delivery, alert queue,
+  package readiness, and archive/sync posture
+- owner actions for high alerts, route proof gaps, archive backlog, and paid
+  account readiness
+- tenant-scoped API behavior so schools and businesses can limit account views
+
+This makes TraceDeck easier to sell above a single family tenant: a school,
+coaching center, MSP, or small business can see which account needs attention,
+which routes have proof, and what package value is ready for renewal.

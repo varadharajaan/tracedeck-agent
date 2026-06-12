@@ -65,6 +65,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc(constants.RouteAuditEvents, s.handleAuditEvents)
 	mux.HandleFunc(constants.RoutePolicyTemplates, s.handlePolicyTemplates)
 	mux.HandleFunc(constants.RouteAlertRuleTemplates, s.handleAlertRuleTemplates)
+	mux.HandleFunc(constants.RouteAccountPortfolio, s.handleAccountPortfolioIndex)
 	mux.HandleFunc(constants.RouteArchiveStatus, s.handleArchiveStatus)
 	return requestLogger(s.logger, s.authMiddleware(mux))
 }
@@ -283,6 +284,31 @@ func (s *Server) handleTenants(w http.ResponseWriter, r *http.Request) {
 	default:
 		writeMethodNotAllowed(w)
 	}
+}
+
+func (s *Server) handleAccountPortfolioIndex(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != constants.RouteAccountPortfolio {
+		http.NotFound(w, r)
+		return
+	}
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+	tenants := filterTenantsForPrincipal(r.Context(), s.store.ListTenants(r.Context()))
+	tenantIDs := make([]string, 0, len(tenants))
+	for _, tenant := range tenants {
+		tenantIDs = append(tenantIDs, tenant.TenantID)
+	}
+	if strings.TrimSpace(requestPrincipal(r.Context()).TenantID) != "" && len(tenantIDs) == 0 {
+		tenantIDs = append(tenantIDs, requestPrincipal(r.Context()).TenantID)
+	}
+	index, err := s.store.AccountPortfolioIndex(r.Context(), tenantIDs)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "account portfolio index lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, index)
 }
 
 func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {

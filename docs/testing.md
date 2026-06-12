@@ -761,6 +761,16 @@ screenshot-free dashboard layout contract. Newman runs
 `postman/tracedeck-backend-phase60.postman_collection.json` against the same
 live demo and covers dashboard markers plus typed portfolio proof.
 
+The Phase 61 smoke live-boots the seeded dashboard, verifies Account Portfolio
+Index, Account Tenant Rows, Account Proof Cards, Account Owner Actions, and the
+Account command jump marker, checks the account `account-portfolio-index` API,
+verifies account score, notification score, tenant rows, proof cards, owner
+actions, mail/dashboard proof, tenant row privacy, and strict
+privacy/forbidden markers, and reruns the screenshot-free dashboard layout
+contract. Newman runs
+`postman/tracedeck-backend-phase61.postman_collection.json` against the same
+live demo and covers dashboard markers plus typed account portfolio proof.
+
 Phase 13 adds:
 
 ```powershell

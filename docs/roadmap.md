@@ -241,3 +241,9 @@
     dashboard fallback proof, archive/sync posture, package readiness, owner
     actions, privacy guard, Postman/Newman coverage, screenshot-free layout
     guard, docs, and full local verification.
+64. Phase 61: account portfolio index. Typed account portfolio API and dashboard
+    surface for multi-tenant tenant rows, host coverage, alert pressure, mail
+    delivery proof, push notification proof, dashboard fallback proof,
+    archive/sync posture, package readiness, owner actions, tenant-scoped
+    filtering, Postman/Newman coverage, screenshot-free layout guard, docs, and
+    full local verification.

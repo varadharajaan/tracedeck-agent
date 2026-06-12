@@ -413,6 +413,14 @@ segments, owner actions, and privacy guard. The command
 navigation includes a Portfolio jump target so parents, school admins, and
 business managers can compare hosts without opening every host panel.
 
+Phase 61 adds the Account Portfolio Index before the command navigation. It
+renders the typed `account-portfolio-index` API as a multi-tenant account/admin
+opening view: account score, tenant count, host coverage, alert pressure,
+notification score, mail and push delivery proof, dashboard fallback, archive
+posture, tenant rows, proof cards, owner actions, and privacy guard. The
+command navigation includes an Account jump target so admins can move between
+account-level and tenant-level proof without losing context.
+
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
 paid customer onboarding workflows.

@@ -1,0 +1,95 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 61",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Has Account Portfolio",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('dashboard contains account portfolio markers', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('Account Portfolio Index');",
+              "  pm.expect(html).to.include('Account Tenant Rows');",
+              "  pm.expect(html).to.include('Account Proof Cards');",
+              "  pm.expect(html).to.include('Account Owner Actions');",
+              "  pm.expect(html).to.include('data-jump-target=\"account-portfolio-section\"');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Account Portfolio Index",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/account-portfolio-index"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('account portfolio exposes monetisable multi-tenant proof', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.summary.account_score).to.be.above(0);",
+              "  pm.expect(body.summary.notification_score).to.be.above(0);",
+              "  pm.expect(body.summary.tenants_total).to.be.at.least(1);",
+              "  pm.expect(body.summary.hosts_total).to.be.at.least(1);",
+              "  pm.expect(body.summary.mail_delivered).to.be.at.least(1);",
+              "  pm.expect(body.summary.dashboard_delivered).to.be.at.least(1);",
+              "  pm.expect(body.summary.owner_next_step).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.tenants.length).to.be.at.least(1);",
+              "  pm.expect(body.proof.length).to.be.at.least(5);",
+              "  pm.expect(body.actions.length).to.be.at.least(1);",
+              "  pm.expect(body.tenants[0].tenant_id).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.tenants[0].next_action).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.tenants[0].privacy_boundary).to.include('metadata-only');",
+              "  const notificationProof = body.proof.find(function (proof) { return proof.label === 'Notification delivery proof' && proof.next_action; });",
+              "  pm.expect(notificationProof).to.be.an('object');",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(body.privacy_boundary).to.include('no passwords');",
+              "  pm.expect(body.privacy_boundary).to.include('no screenshots');",
+              "  const serialized = JSON.stringify(body).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'push_endpoint', 'screenshot_bytes', 'raw_url', 'page_title', 'alert_body', 'card_number', 'cvv', 'payment_token'].forEach(function (marker) {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
