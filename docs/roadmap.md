@@ -107,3 +107,8 @@
     API with host, kind, channel, status, query, and limit filters; dashboard
     Tenant Activity Feed and Filtered Command Feed panels; Postman/Newman
     coverage, live dashboard smoke, and local verification.
+36. Phase 33: monetisation command views. Tenant-scoped saved activity views
+    for high-risk anomalies, mail proof, push retry, and sync/archive evidence;
+    dashboard command-view and notification-proof panels; typed validation,
+    audit events, Postman/Newman coverage, live dashboard smoke, and local
+    verification.

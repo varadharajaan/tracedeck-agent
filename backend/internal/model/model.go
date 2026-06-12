@@ -290,6 +290,27 @@ type TenantActivityFeed struct {
 	PrivacyBoundary string                    `json:"privacy_boundary"`
 }
 
+type TenantActivityView struct {
+	ID          string                   `json:"id"`
+	TenantID    string                   `json:"tenant_id"`
+	Name        string                   `json:"name"`
+	Description string                   `json:"description"`
+	Filter      TenantActivityFeedFilter `json:"filter"`
+	PaidTier    string                   `json:"paid_tier"`
+	SortOrder   int                      `json:"sort_order"`
+	CreatedAt   time.Time                `json:"created_at"`
+	UpdatedAt   time.Time                `json:"updated_at"`
+}
+
+type CreateTenantActivityViewRequest struct {
+	ID          string                   `json:"id"`
+	Name        string                   `json:"name"`
+	Description string                   `json:"description"`
+	Filter      TenantActivityFeedFilter `json:"filter"`
+	PaidTier    string                   `json:"paid_tier"`
+	SortOrder   int                      `json:"sort_order"`
+}
+
 type DeviceSyncHealth struct {
 	TenantID          string    `json:"tenant_id"`
 	DeviceID          string    `json:"device_id"`

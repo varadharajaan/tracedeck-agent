@@ -43,6 +43,7 @@ const (
 	RouteSegmentMonetization    = "monetization-summary"
 	RouteSegmentSyncHealth      = "sync-health"
 	RouteSegmentActivityFeed    = "activity-feed"
+	RouteSegmentActivityViews   = "activity-views"
 	RouteSegmentNotifications   = "notification-routes"
 	RouteSegmentDataExports     = "data-exports"
 	RouteSegmentDeleteRequests  = "delete-requests"
@@ -107,6 +108,7 @@ const (
 	AuditActionTenantCreated        = "tenant.created"
 	AuditActionAlertRuleCreated     = "alert_rule.created"
 	AuditActionNotificationRoute    = "notification_route.created"
+	AuditActionActivityViewCreated  = "activity_view.created"
 	AuditActionDeviceGroupCreated   = "device_group.created"
 	AuditActionDataExportCreated    = "data_export.created"
 	AuditActionDeleteRequestCreated = "delete_request.created"
@@ -301,4 +303,11 @@ const (
 	ActivityFeedKindRisk      = "risk"
 	ActivityFeedKindDelivery  = "delivery"
 	ActivityFeedKindTelemetry = "telemetry"
+)
+
+const (
+	ActivityViewHighRiskOpen = "high-risk-open"
+	ActivityViewEmailProof   = "email-proof"
+	ActivityViewPushRetry    = "push-retry"
+	ActivityViewSyncProof    = "sync-proof"
 )

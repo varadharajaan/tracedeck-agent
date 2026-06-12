@@ -224,5 +224,15 @@ backend-visible telemetry metadata items into one time-ordered response with
 summary counts for risk, delivery, sync, email proof, push retry, reporting
 hosts, and source hosts.
 
+Phase 33 adds tenant-scoped saved command views:
+
+- `GET /api/v1/tenants/{tenantId}/activity-views`
+- `POST /api/v1/tenants/{tenantId}/activity-views`
+
+New tenants receive seeded monetisation views for open high-risk anomalies,
+mail delivery proof, push retry watch, and sync/archive proof. Created views are
+persisted, audited, and validated against typed feed kind, severity, channel,
+status, limit, and paid-tier values.
+
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.

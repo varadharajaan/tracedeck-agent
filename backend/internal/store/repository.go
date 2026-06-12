@@ -19,6 +19,8 @@ type Repository interface {
 	TenantMonetizationSummary(context.Context, string) (model.TenantMonetizationSummary, error)
 	TenantSyncHealth(context.Context, string) (model.TenantSyncHealth, error)
 	TenantActivityFeed(context.Context, string, model.TenantActivityFeedFilter) (model.TenantActivityFeed, error)
+	CreateTenantActivityView(context.Context, string, model.CreateTenantActivityViewRequest) (model.TenantActivityView, error)
+	ListTenantActivityViews(context.Context, string) []model.TenantActivityView
 	CreateTenantDataExport(context.Context, string, model.CreateTenantDataExportRequest) (model.TenantDataExport, error)
 	ListTenantDataExports(context.Context, string) []model.TenantDataExport
 	CreateDeleteRequest(context.Context, string, model.CreateDeleteRequestRequest) (model.DeleteRequest, error)

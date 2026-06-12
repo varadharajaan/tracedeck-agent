@@ -313,6 +313,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantSyncHealth(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentActivityFeed && r.Method == http.MethodGet:
 		s.handleTenantActivityFeed(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentActivityViews:
+		s.handleTenantActivityViews(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentDataExports:
 		s.handleTenantDataExports(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentDeleteRequests:
@@ -534,6 +536,48 @@ func (s *Server) handleTenantActivityFeed(w http.ResponseWriter, r *http.Request
 		return
 	}
 	writeJSON(w, http.StatusOK, feed)
+}
+
+func (s *Server) handleTenantActivityViews(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	if _, err := s.store.GetTenant(r.Context(), tenantID); err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant lookup failed")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		views := s.store.ListTenantActivityViews(r.Context(), tenantID)
+		writeJSON(w, http.StatusOK, model.ListResponse[model.TenantActivityView]{
+			Items: views,
+			Count: len(views),
+		})
+	case http.MethodPost:
+		var req model.CreateTenantActivityViewRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid activity view json")
+			return
+		}
+		if err := validateCreateTenantActivityViewRequest(req); err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		view, err := s.store.CreateTenantActivityView(r.Context(), tenantID, req)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "activity view creation failed")
+			return
+		}
+		writeJSON(w, http.StatusCreated, view)
+	default:
+		writeMethodNotAllowed(w)
+	}
 }
 
 func activityFeedFilterFromQuery(r *http.Request) model.TenantActivityFeedFilter {
@@ -1111,6 +1155,28 @@ func validateCreateNotificationRouteRequest(req model.CreateNotificationRouteReq
 	}
 }
 
+func validateCreateTenantActivityViewRequest(req model.CreateTenantActivityViewRequest) error {
+	filter := req.Filter
+	switch {
+	case strings.TrimSpace(req.Name) == "":
+		return errors.New("name is required")
+	case strings.TrimSpace(req.PaidTier) != "" && !store.KnownPlanID(req.PaidTier):
+		return errors.New("paid_tier is unknown")
+	case strings.TrimSpace(filter.Kind) != "" && !knownActivityFeedKind(filter.Kind):
+		return errors.New("filter.kind is unknown")
+	case strings.TrimSpace(filter.Severity) != "" && !knownSeverity(filter.Severity):
+		return errors.New("filter.severity is unknown")
+	case strings.TrimSpace(filter.Channel) != "" && !knownChannels([]string{filter.Channel}):
+		return errors.New("filter.channel is unknown")
+	case strings.TrimSpace(filter.Status) != "" && !knownActivityFeedStatus(filter.Status):
+		return errors.New("filter.status is unknown")
+	case filter.Limit > constants.ActivityFeedMaxLimit:
+		return fmt.Errorf("filter.limit exceeds maximum %d", constants.ActivityFeedMaxLimit)
+	default:
+		return nil
+	}
+}
+
 func validateIngestTelemetryRequest(deviceID string, req model.IngestTelemetryRequest) error {
 	switch {
 	case strings.TrimSpace(req.TenantID) == "":
@@ -1302,6 +1368,35 @@ func providerAllowedForChannel(provider string, channel string) bool {
 func knownRouteStatus(status string) bool {
 	switch strings.TrimSpace(status) {
 	case constants.StatusHealthy, constants.StatusWatch, constants.StatusAttention, constants.StatusPending:
+		return true
+	default:
+		return false
+	}
+}
+
+func knownActivityFeedKind(kind string) bool {
+	switch strings.TrimSpace(kind) {
+	case constants.ActivityFeedKindRisk, constants.ActivityFeedKindDelivery, constants.ActivityFeedKindTelemetry:
+		return true
+	default:
+		return false
+	}
+}
+
+func knownActivityFeedStatus(status string) bool {
+	switch strings.TrimSpace(status) {
+	case constants.RiskStatusOpen,
+		constants.RiskStatusAcknowledged,
+		constants.RiskStatusResolved,
+		constants.DeliveryStatusDelivered,
+		constants.DeliveryStatusPending,
+		constants.DeliveryStatusRetrying,
+		constants.DeliveryStatusFailed,
+		constants.DeliveryStatusSuppressed,
+		constants.StatusOK,
+		constants.StatusHealthy,
+		constants.StatusWatch,
+		constants.StatusAttention:
 		return true
 	default:
 		return false
