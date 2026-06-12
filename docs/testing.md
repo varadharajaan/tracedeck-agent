@@ -23,6 +23,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase12.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase13.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase14.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase15.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase16.ps1
 ```
 
@@ -146,6 +147,20 @@ verifies generated weekly report JSON, verifies the PDF endpoint returns
 and stops the backend. Newman runs
 `postman/tracedeck-backend-phase14.postman_collection.json` against a live
 API-key-protected backend.
+
+Phase 15 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-service-manager.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/manage-agent-service.ps1 -Action status -DryRun
+```
+
+The Phase 15 verifier dry-runs `install`, `start`, `stop`, `status`, and
+`uninstall` for Windows, macOS, and Linux, confirms the generated action plans
+include Task Scheduler, systemd, and launchd commands, renders service
+manifests, verifies the Windows Task Scheduler template, runs cross-platform
+builds, and checks root artifact hygiene. It does not register, start, stop, or
+remove real host services during verification.
 
 Phase 16 adds:
 
