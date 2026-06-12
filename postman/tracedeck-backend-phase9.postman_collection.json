@@ -1,0 +1,261 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 9",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Tenant",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"name\":\"Family Varadha\",\"plan_id\":\"family_pro\",\"retention_tier_id\":\"family_cloud_90_365_archive\",\"primary_profile\":\"ai-btech-student\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/tenants"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('tenant created', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().tenant_id).to.eql('family-varadha');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Enroll Device",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"device_id\":\"postman-phase9-device\",\"host_name\":\"postman-phase9-host\",\"profile\":\"ai-btech-student\",\"os_name\":\"windows\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/devices/enroll"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('device enrolled', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().device_id).to.eql('postman-phase9-device');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Host Overview",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/postman-phase9-device/overview"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('host overview exposes risk and delivery', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.device.device_id).to.eql('postman-phase9-device');",
+              "  pm.expect(body.risk_score).to.be.above(0);",
+              "  pm.expect(body.policy_violations.length).to.be.above(0);",
+              "  pm.expect(body.alert_deliveries.length).to.be.above(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Policy Violations",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/postman-phase9-device/policy-violations"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('policy violations are typed', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.count).to.be.above(0);",
+              "  pm.expect(body.items[0].type).to.eql('policy_violation');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Anomalies",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/postman-phase9-device/anomalies"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('anomalies are typed', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.count).to.be.above(0);",
+              "  pm.expect(body.items[0].type).to.eql('anomaly');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tamper Events",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/postman-phase9-device/tamper-events"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('tamper events are typed', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.count).to.be.above(0);",
+              "  pm.expect(body.items[0].type).to.eql('tamper');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Alert Deliveries",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/postman-phase9-device/alert-deliveries"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('email and push delivery routes are visible', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.items.some((route) => route.channel === 'email' && route.status === 'delivered')).to.eql(true);",
+              "  pm.expect(body.items.some((route) => route.channel === 'push')).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Daily Summary",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/postman-phase9-device/summary/daily"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('daily summary reflects host data', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.device_id).to.eql('postman-phase9-device');",
+              "  pm.expect(body.compliance_score).to.be.above(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('dashboard exposes host risk surface', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('TraceDeck Command Center');",
+              "  pm.expect(html).to.include('Alert Delivery');",
+              "  pm.expect(html).to.include('Tamper And Trust');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18080"
+    }
+  ]
+}

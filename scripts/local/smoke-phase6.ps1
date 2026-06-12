@@ -110,7 +110,7 @@ try {
     }
 
     $dashboard = Invoke-WebRequest -UseBasicParsing -Method "GET" -Uri "$baseUrl/"
-    if ($dashboard.StatusCode -ne 200 -or $dashboard.Content -notmatch "Plans") {
+    if ($dashboard.StatusCode -ne 200 -or $dashboard.Content -notmatch "TraceDeck Command Center") {
         Write-TraceDeckLog -Level "ERROR" -Message "Dashboard SaaS readiness smoke failed."
         exit 1
     }

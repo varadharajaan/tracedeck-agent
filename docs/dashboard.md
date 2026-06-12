@@ -1,23 +1,44 @@
 # Dashboard
 
-Phase 5 serves a small embedded dashboard shell from the Go backend at `/`.
+The Go backend serves an embedded dashboard from `/`.
 
-The dashboard reads:
+Phase 9 expands the dashboard into a host-level command center for productivity,
+risk, archive, and alert-delivery visibility. It remains a lightweight static
+HTML/CSS/JavaScript asset embedded into the backend binary.
+
+The dashboard reads the base backend endpoints:
 
 - `/health`
 - `/api/v1/devices`
-- `/api/v1/tenants`
-- `/api/v1/plans`
-- `/api/v1/roles`
-- `/api/v1/policy-templates`
-- `/api/v1/archive/status`
-- `/api/v1/audit-events`
 
-It shows device count, tenant count, plan count, policy template count, audit
-event count, archive backlog, enrolled devices, starter policy templates,
-tenant readiness rows, plans, and roles. API-provided text is escaped before
-rendering.
+For the selected host it reads:
 
-This is the dashboard foundation. A full React dashboard, role-based UI,
-policy builder, consent center, weekly reports, and compliance scoring remain
-planned Phase 5/6 expansion work.
+- `/api/v1/devices/{deviceId}/overview`
+- `/api/v1/devices/{deviceId}/policy-violations`
+- `/api/v1/devices/{deviceId}/anomalies`
+- `/api/v1/devices/{deviceId}/tamper-events`
+- `/api/v1/devices/{deviceId}/alert-deliveries`
+
+Current panels:
+
+- host filter and host identity
+- compliance score, risk score, policy, anomaly, tamper, and delivery metrics
+- study/coding/entertainment activity mix
+- S3 archive health and backlog
+- risk timeline
+- policy violation table
+- anomaly table
+- tamper and trust table
+- email, push, and dashboard alert delivery table
+
+API-provided text is escaped before rendering.
+
+Phase 9 uses in-memory demo risk data for enrolled devices so the dashboard can
+be smoke-tested before durable backend event storage exists. The slice does not
+add new endpoint collectors and does not collect passwords, credentials,
+keylogs, cookies, tokens, private messages, camera, microphone, raw URLs, page
+titles, or covert screenshots.
+
+A future frontend phase can move this surface to a richer application shell with
+authentication, role-based views, saved filters, no-code alert rule editing,
+weekly report drilldowns, and durable event search.

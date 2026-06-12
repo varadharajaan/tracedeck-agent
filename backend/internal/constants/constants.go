@@ -28,14 +28,16 @@ const (
 )
 
 const (
-	RouteSegmentSummary      = "summary"
-	RouteSegmentDaily        = "daily"
-	RouteSegmentReports      = "reports"
-	RouteSegmentWeekly       = "weekly"
-	RouteSegmentAuditEvents  = "audit-events"
-	RouteSegmentPolicyEvents = "policy-violations"
-	RouteSegmentAnomalies    = "anomalies"
-	RouteSegmentTamperEvents = "tamper-events"
+	RouteSegmentSummary       = "summary"
+	RouteSegmentDaily         = "daily"
+	RouteSegmentReports       = "reports"
+	RouteSegmentWeekly        = "weekly"
+	RouteSegmentOverview      = "overview"
+	RouteSegmentAuditEvents   = "audit-events"
+	RouteSegmentPolicyEvents  = "policy-violations"
+	RouteSegmentAnomalies     = "anomalies"
+	RouteSegmentTamperEvents  = "tamper-events"
+	RouteSegmentAlertDelivery = "alert-deliveries"
 )
 
 const (
@@ -87,6 +89,71 @@ const (
 )
 
 const (
-	StatusOK    = "ok"
-	StatusEmpty = "empty"
+	StatusOK      = "ok"
+	StatusEmpty   = "empty"
+	StatusPending = "pending"
+)
+
+const (
+	RiskTypePolicyViolation = "policy_violation"
+	RiskTypeAnomaly         = "anomaly"
+	RiskTypeTamper          = "tamper"
+)
+
+const (
+	SeverityInfo     = "info"
+	SeverityLow      = "low"
+	SeverityMedium   = "medium"
+	SeverityHigh     = "high"
+	SeverityCritical = "critical"
+)
+
+const (
+	RiskLevelLow    = "low"
+	RiskLevelMedium = "medium"
+	RiskLevelHigh   = "high"
+)
+
+const (
+	RiskStatusOpen         = "open"
+	RiskStatusAcknowledged = "acknowledged"
+	RiskStatusResolved     = "resolved"
+)
+
+const (
+	RiskSourceBrowser = "browser"
+	RiskSourceProcess = "process"
+	RiskSourceAgent   = "agent"
+	RiskSourceArchive = "archive"
+)
+
+const (
+	RiskCategoryMediaPlayback     = "media_playback"
+	RiskCategoryNonStudyYouTube   = "non_study_youtube"
+	RiskCategoryEntertainment     = "entertainment"
+	RiskCategoryRiskySoftware     = "risky_software"
+	RiskCategoryArchiveHealth     = "archive_health"
+	RiskCategoryAgentHealth       = "agent_health"
+	RiskCategoryPolicyChange      = "policy_change"
+	RiskCategoryProductivityShift = "productivity_shift"
+)
+
+const (
+	DeliveryChannelEmail     = "email"
+	DeliveryChannelPush      = "push"
+	DeliveryChannelDashboard = "dashboard"
+)
+
+const (
+	DeliveryStatusDelivered  = "delivered"
+	DeliveryStatusPending    = "pending"
+	DeliveryStatusRetrying   = "retrying"
+	DeliveryStatusFailed     = "failed"
+	DeliveryStatusSuppressed = "suppressed"
+)
+
+const (
+	DeliveryProviderSMTP      = "smtp"
+	DeliveryProviderWebPush   = "web_push"
+	DeliveryProviderLocalFeed = "local_dashboard"
 )

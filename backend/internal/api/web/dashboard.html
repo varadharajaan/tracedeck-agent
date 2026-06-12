@@ -7,14 +7,18 @@
   <style>
     :root {
       color-scheme: light;
-      --bg: #f7f8fa;
+      --bg: #f6f7f9;
       --surface: #ffffff;
-      --ink: #1d2430;
+      --surface-2: #f9fafb;
+      --ink: #18212f;
       --muted: #667085;
-      --line: #d9dee7;
-      --accent: #1f7a8c;
-      --risk: #b42318;
-      --ok: #027a48;
+      --line: #d7dde6;
+      --teal: #147d7f;
+      --green: #027a48;
+      --amber: #b54708;
+      --red: #b42318;
+      --blue: #175cd3;
+      --shadow: 0 10px 28px rgba(24, 33, 47, 0.08);
     }
     * { box-sizing: border-box; }
     body {
@@ -23,157 +27,428 @@
       color: var(--ink);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       font-size: 14px;
+      letter-spacing: 0;
     }
     header {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 20px;
       align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      min-height: 64px;
-      padding: 14px 24px;
+      min-height: 72px;
+      padding: 16px 28px;
       border-bottom: 1px solid var(--line);
       background: var(--surface);
     }
     main {
-      width: min(1180px, calc(100vw - 32px));
-      margin: 24px auto;
+      width: min(1400px, calc(100vw - 32px));
+      margin: 20px auto 32px;
       display: grid;
-      gap: 18px;
+      gap: 16px;
     }
-    h1, h2, p { margin: 0; }
-    h1 { font-size: 20px; font-weight: 700; }
-    h2 { font-size: 15px; font-weight: 700; }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 21px; font-weight: 750; }
+    h2 { font-size: 15px; font-weight: 750; }
+    h3 { font-size: 13px; font-weight: 750; }
+    button, select {
+      font: inherit;
+      min-height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--ink);
+    }
+    button {
+      padding: 0 14px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    button.primary {
+      border-color: var(--teal);
+      background: var(--teal);
+      color: #ffffff;
+    }
+    select {
+      min-width: 260px;
+      padding: 0 34px 0 12px;
+    }
     .muted { color: var(--muted); }
-    .grid {
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0 12px;
+      border: 1px solid #abefc6;
+      border-radius: 999px;
+      background: #ecfdf3;
+      color: var(--green);
+      font-weight: 750;
+      white-space: nowrap;
+    }
+    .shell {
       display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: 12px;
+      grid-template-columns: 310px minmax(0, 1fr);
+      gap: 16px;
     }
     .panel, .metric {
       background: var(--surface);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    .panel { padding: 16px; }
+    .metric {
+      min-height: 108px;
+      padding: 14px;
+      display: grid;
+      align-content: space-between;
     }
     .metric strong {
       display: block;
-      margin-top: 8px;
-      font-size: 26px;
+      margin-top: 10px;
+      font-size: 28px;
       line-height: 1;
     }
-    .row {
+    .metric small {
+      display: block;
+      color: var(--muted);
+      margin-top: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .metric-grid {
       display: grid;
-      grid-template-columns: 1.2fr 1fr;
-      gap: 18px;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
     }
-    .row.three {
-      grid-template-columns: 1fr 1fr 1fr;
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.75fr);
+      gap: 16px;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 12px;
+    .stack { display: grid; gap: 16px; }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 12px;
     }
-    th, td {
-      padding: 10px 8px;
-      text-align: left;
-      border-bottom: 1px solid var(--line);
-      vertical-align: top;
+    .host-card {
+      display: grid;
+      gap: 14px;
     }
-    th {
+    .host-name {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.1;
+      overflow-wrap: anywhere;
+    }
+    .kv {
+      display: grid;
+      gap: 8px;
+    }
+    .kv div {
+      display: grid;
+      grid-template-columns: 96px minmax(0, 1fr);
+      gap: 8px;
+      align-items: baseline;
+    }
+    .kv span:first-child {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      font-weight: 750;
+    }
+    .activity-bars {
+      display: grid;
+      gap: 10px;
+    }
+    .bar-row {
+      display: grid;
+      gap: 6px;
+    }
+    .bar-meta {
+      display: flex;
+      justify-content: space-between;
       color: var(--muted);
       font-size: 12px;
       font-weight: 700;
-      text-transform: uppercase;
     }
-    .status {
+    .bar-track {
+      height: 9px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #eef1f5;
+    }
+    .bar {
+      height: 100%;
+      border-radius: inherit;
+      width: 0;
+    }
+    .bar.study { background: var(--green); }
+    .bar.coding { background: var(--blue); }
+    .bar.entertainment { background: var(--amber); }
+    .badge, .pill {
       display: inline-flex;
       align-items: center;
-      min-height: 28px;
-      padding: 0 10px;
-      border: 1px solid var(--line);
+      min-height: 24px;
+      padding: 0 9px;
       border-radius: 999px;
-      background: #f4fbf8;
-      color: var(--ok);
-      font-weight: 700;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
       white-space: nowrap;
     }
-    .tag {
-      display: inline-flex;
-      margin: 4px 6px 0 0;
-      padding: 4px 8px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      color: var(--muted);
-      background: #fbfcfe;
+    .badge.high, .badge.critical, .badge.failed { color: var(--red); background: #fff4f2; border-color: #fecdca; }
+    .badge.medium, .badge.retrying, .badge.pending { color: var(--amber); background: #fffaeb; border-color: #fedf89; }
+    .badge.low, .badge.info, .badge.delivered, .badge.resolved { color: var(--green); background: #ecfdf3; border-color: #abefc6; }
+    .badge.open { color: var(--red); background: #fff4f2; border-color: #fecdca; }
+    .badge.acknowledged { color: var(--blue); background: #eff8ff; border-color: #b2ddff; }
+    .timeline {
+      display: grid;
+      gap: 10px;
     }
-    @media (max-width: 820px) {
-      header { align-items: flex-start; flex-direction: column; }
-      .grid, .row { grid-template-columns: 1fr; }
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr);
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      margin-top: 5px;
+      border-radius: 50%;
+      background: var(--teal);
+    }
+    .dot.high, .dot.critical { background: var(--red); }
+    .dot.medium { background: var(--amber); }
+    .dot.low, .dot.info { background: var(--green); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    th, td {
+      padding: 11px 8px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      overflow-wrap: anywhere;
+    }
+    th {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    td { line-height: 1.35; }
+    tr:last-child td { border-bottom: 0; }
+    .table-wrap {
+      overflow-x: auto;
+    }
+    .empty {
+      min-height: 96px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+      text-align: center;
+      padding: 16px;
+    }
+    @media (max-width: 1180px) {
+      .shell, .content-grid { grid-template-columns: 1fr; }
+      .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 720px) {
+      header { grid-template-columns: 1fr; }
+      .toolbar { justify-content: stretch; }
+      select, button { width: 100%; }
+      .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .kv div { grid-template-columns: 1fr; }
+      main { width: min(100vw - 20px, 1400px); }
     }
   </style>
 </head>
 <body>
   <header>
     <div>
-      <h1>TraceDeck</h1>
-      <p class="muted">Endpoint productivity and risk observability</p>
+      <h1>TraceDeck Command Center</h1>
+      <p class="muted">Endpoint productivity, alert delivery, and risk observability</p>
     </div>
-    <span class="status">Local backend online</span>
+    <div class="toolbar">
+      <select id="host-select" aria-label="Host filter"></select>
+      <button id="refresh-button" class="primary" type="button">Refresh</button>
+      <span id="backend-status" class="status">Local backend online</span>
+    </div>
   </header>
   <main>
-    <section class="grid" aria-label="dashboard metrics">
-      <div class="metric"><span class="muted">Devices</span><strong id="device-count">0</strong></div>
-      <div class="metric"><span class="muted">Tenants</span><strong id="tenant-count">0</strong></div>
-      <div class="metric"><span class="muted">Plans</span><strong id="plan-count">0</strong></div>
-      <div class="metric"><span class="muted">Policy Templates</span><strong id="template-count">0</strong></div>
-      <div class="metric"><span class="muted">Audit Events</span><strong id="audit-count">0</strong></div>
-      <div class="metric"><span class="muted">Archive Backlog</span><strong id="archive-backlog">0</strong></div>
+    <section class="metric-grid" aria-label="host metrics">
+      <div class="metric"><span class="muted">Compliance</span><strong id="metric-compliance">-</strong><small id="metric-compliance-sub">No host selected</small></div>
+      <div class="metric"><span class="muted">Risk Score</span><strong id="metric-risk">-</strong><small id="metric-risk-sub">Risk level</small></div>
+      <div class="metric"><span class="muted">Policy</span><strong id="metric-policy">-</strong><small>Open policy violations</small></div>
+      <div class="metric"><span class="muted">Anomalies</span><strong id="metric-anomalies">-</strong><small>Behavior and software drift</small></div>
+      <div class="metric"><span class="muted">Tamper</span><strong id="metric-tamper">-</strong><small>Trust and service health</small></div>
+      <div class="metric"><span class="muted">Delivery</span><strong id="metric-delivery">-</strong><small>Email, push, dashboard</small></div>
     </section>
-    <section class="row">
-      <div class="panel">
-        <h2>Enrolled Devices</h2>
-        <table>
-          <thead><tr><th>Device</th><th>Tenant</th><th>Profile</th><th>Last Seen</th></tr></thead>
-          <tbody id="device-table"><tr><td colspan="4" class="muted">No devices enrolled yet.</td></tr></tbody>
-        </table>
-      </div>
-      <div class="panel">
-        <h2>Policy Templates</h2>
-        <div id="template-list" class="muted">Loading templates...</div>
-      </div>
-    </section>
-    <section class="row three">
-      <div class="panel">
-        <h2>Tenants</h2>
-        <table>
-          <thead><tr><th>Tenant</th><th>Plan</th><th>Status</th></tr></thead>
-          <tbody id="tenant-table"><tr><td colspan="3" class="muted">No tenants created yet.</td></tr></tbody>
-        </table>
-      </div>
-      <div class="panel">
-        <h2>Plans</h2>
-        <div id="plan-list" class="muted">Loading plans...</div>
-      </div>
-      <div class="panel">
-        <h2>Roles</h2>
-        <div id="role-list" class="muted">Loading roles...</div>
+
+    <section class="shell">
+      <aside class="panel host-card">
+        <div>
+          <p class="muted">Selected Host</p>
+          <p id="host-name" class="host-name">No host enrolled</p>
+        </div>
+        <div class="kv">
+          <div><span>Device</span><strong id="host-device">-</strong></div>
+          <div><span>Tenant</span><strong id="host-tenant">-</strong></div>
+          <div><span>Profile</span><strong id="host-profile">-</strong></div>
+          <div><span>OS</span><strong id="host-os">-</strong></div>
+          <div><span>Last Seen</span><strong id="host-last-seen">-</strong></div>
+        </div>
+        <div>
+          <div class="section-head">
+            <h2>Activity Mix</h2>
+            <span id="activity-total" class="pill">0 min</span>
+          </div>
+          <div class="activity-bars">
+            <div class="bar-row">
+              <div class="bar-meta"><span>Study</span><span id="study-mins">0 min</span></div>
+              <div class="bar-track"><div id="study-bar" class="bar study"></div></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-meta"><span>Coding</span><span id="coding-mins">0 min</span></div>
+              <div class="bar-track"><div id="coding-bar" class="bar coding"></div></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-meta"><span>Entertainment</span><span id="entertainment-mins">0 min</span></div>
+              <div class="bar-track"><div id="entertainment-bar" class="bar entertainment"></div></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="section-head">
+            <h2>Archive Health</h2>
+            <span id="archive-status" class="badge pending">pending</span>
+          </div>
+          <div class="kv">
+            <div><span>Provider</span><strong id="archive-provider">-</strong></div>
+            <div><span>Backlog</span><strong id="archive-backlog">-</strong></div>
+            <div><span>Last Key</span><strong id="archive-key">-</strong></div>
+          </div>
+        </div>
+      </aside>
+
+      <div class="stack">
+        <section class="content-grid">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Risk Timeline</h2>
+                <p class="muted">Latest host events</p>
+              </div>
+              <span id="timeline-count" class="pill">0 events</span>
+            </div>
+            <div id="risk-timeline" class="timeline"><div class="empty">No host risk events yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Alert Delivery</h2>
+                <p class="muted">Email, push, and dashboard status</p>
+              </div>
+              <span id="delivery-count" class="pill">0 routes</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Channel</th><th>Status</th><th>Recipient</th><th>Attempts</th></tr></thead>
+                <tbody id="delivery-table"><tr><td colspan="4" class="muted">No alert deliveries yet.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-grid">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Policy Violations</h2>
+                <p class="muted">Study policy and blocked activity</p>
+              </div>
+              <span id="policy-count" class="pill">0 open</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Severity</th><th>Category</th><th>Source</th><th>Reason</th><th>Status</th></tr></thead>
+                <tbody id="policy-table"><tr><td colspan="5" class="muted">No policy violations yet.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Anomalies</h2>
+                <p class="muted">Software and behavior drift</p>
+              </div>
+              <span id="anomaly-count" class="pill">0 active</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Severity</th><th>Category</th><th>Source</th><th>Reason</th></tr></thead>
+                <tbody id="anomaly-table"><tr><td colspan="4" class="muted">No anomalies yet.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-head">
+            <div>
+              <h2>Tamper And Trust</h2>
+              <p class="muted">Agent, policy, archive, and service integrity</p>
+            </div>
+            <span id="tamper-count" class="pill">0 events</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Severity</th><th>Category</th><th>Signal</th><th>Recommendation</th><th>Observed</th></tr></thead>
+              <tbody id="tamper-table"><tr><td colspan="5" class="muted">No trust events yet.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
       </div>
     </section>
   </main>
   <script>
+    const state = { devices: [], selectedDeviceId: "" };
+
     async function loadJSON(path) {
       const response = await fetch(path);
-      if (!response.ok) throw new Error(path + " failed");
+      if (!response.ok) throw new Error(path + " failed with " + response.status);
       return response.json();
     }
 
     function text(value) {
+      if (value === 0) return "0";
       return value || "-";
     }
 
     function escapeHTML(value) {
-      return text(value).replace(/[&<>"']/g, (char) => ({
+      return String(text(value)).replace(/[&<>"']/g, (char) => ({
         "&": "&amp;",
         "<": "&lt;",
         ">": "&gt;",
@@ -182,60 +457,226 @@
       }[char]));
     }
 
-    async function refresh() {
-      const [health, devices, tenants, plans, roles, templates, archive, audit] = await Promise.all([
-        loadJSON("/health"),
-        loadJSON("/api/v1/devices"),
-        loadJSON("/api/v1/tenants"),
-        loadJSON("/api/v1/plans"),
-        loadJSON("/api/v1/roles"),
-        loadJSON("/api/v1/policy-templates"),
-        loadJSON("/api/v1/archive/status"),
-        loadJSON("/api/v1/audit-events")
-      ]);
-
-      document.getElementById("device-count").textContent = devices.count;
-      document.getElementById("tenant-count").textContent = tenants.count;
-      document.getElementById("plan-count").textContent = plans.count;
-      document.getElementById("template-count").textContent = templates.count;
-      document.getElementById("audit-count").textContent = audit.count;
-      document.getElementById("archive-backlog").textContent = archive.pending_batches;
-      document.querySelector(".status").textContent = "Local backend " + health.status;
-
-      const deviceTable = document.getElementById("device-table");
-      if (devices.count === 0) {
-        deviceTable.innerHTML = '<tr><td colspan="4" class="muted">No devices enrolled yet.</td></tr>';
-      } else {
-        deviceTable.innerHTML = devices.items.map((device) =>
-          `<tr><td>${escapeHTML(device.device_id)}</td><td>${escapeHTML(device.tenant_id)}</td><td>${escapeHTML(device.profile)}</td><td>${escapeHTML(device.last_seen_at)}</td></tr>`
-        ).join("");
-      }
-
-      document.getElementById("template-list").innerHTML = templates.items.map((template) =>
-        `<p><strong>${escapeHTML(template.name)}</strong><br><span class="muted">${escapeHTML(template.description)}</span><br>${template.roles.map((role) => `<span class="tag">${escapeHTML(role)}</span>`).join("")}</p>`
-      ).join("");
-
-      const tenantTable = document.getElementById("tenant-table");
-      if (tenants.count === 0) {
-        tenantTable.innerHTML = '<tr><td colspan="3" class="muted">No tenants created yet.</td></tr>';
-      } else {
-        tenantTable.innerHTML = tenants.items.map((tenant) =>
-          `<tr><td>${escapeHTML(tenant.name)}</td><td>${escapeHTML(tenant.plan_id)}</td><td>${escapeHTML(tenant.status)}</td></tr>`
-        ).join("");
-      }
-
-      document.getElementById("plan-list").innerHTML = plans.items.map((plan) =>
-        `<p><strong>${escapeHTML(plan.name)}</strong><br><span class="muted">${escapeHTML(plan.price_model)}</span><br><span class="tag">${escapeHTML(plan.audience)}</span><span class="tag">${escapeHTML(plan.device_limit === 0 ? "custom devices" : plan.device_limit + " devices")}</span></p>`
-      ).join("");
-
-      document.getElementById("role-list").innerHTML = roles.items.map((role) =>
-        `<p><strong>${escapeHTML(role.name)}</strong><br><span class="muted">${escapeHTML(role.description)}</span></p>`
-      ).join("");
+    function formatDate(value) {
+      if (!value) return "-";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleString();
     }
 
-    refresh().catch(() => {
-      document.querySelector(".status").textContent = "Local backend error";
+    function badge(value) {
+      const clean = String(value || "info").toLowerCase();
+      return `<span class="badge ${escapeHTML(clean)}">${escapeHTML(value)}</span>`;
+    }
+
+    function setText(id, value) {
+      document.getElementById(id).textContent = text(value);
+    }
+
+    function setMetric(id, value, suffix) {
+      document.getElementById(id).textContent = suffix ? text(value) + suffix : text(value);
+    }
+
+    function minutes(value) {
+      return `${Number(value || 0)} min`;
+    }
+
+    function setBar(id, value, total) {
+      const percent = total > 0 ? Math.round((Number(value || 0) / total) * 100) : 0;
+      document.getElementById(id).style.width = Math.max(0, Math.min(100, percent)) + "%";
+    }
+
+    function rowDetail(event) {
+      return event.app_name || event.domain || event.resource_label || event.source || "-";
+    }
+
+    function renderHostOptions() {
+      const select = document.getElementById("host-select");
+      if (state.devices.length === 0) {
+        select.innerHTML = '<option value="">No hosts enrolled</option>';
+        select.disabled = true;
+        return;
+      }
+      select.disabled = false;
+      select.innerHTML = state.devices.map((device) =>
+        `<option value="${escapeHTML(device.device_id)}">${escapeHTML(device.host_name)} (${escapeHTML(device.device_id)})</option>`
+      ).join("");
+      select.value = state.selectedDeviceId || state.devices[0].device_id;
+      state.selectedDeviceId = select.value;
+    }
+
+    function renderOverview(overview, policy, anomalies, tamper, deliveries) {
+      const device = overview.device;
+      const summary = overview.summary;
+      const delivered = deliveries.items.filter((item) => item.status === "delivered").length;
+      const deliveryIssues = deliveries.items.length - delivered;
+
+      setMetric("metric-compliance", summary.compliance_score, "%");
+      setText("metric-compliance-sub", `${summary.data_completeness_pct}% data completeness`);
+      setText("metric-risk", overview.risk_score);
+      setText("metric-risk-sub", `${overview.risk_level} risk`);
+      setText("metric-policy", policy.count);
+      setText("metric-anomalies", anomalies.count);
+      setText("metric-tamper", tamper.count);
+      setText("metric-delivery", `${delivered}/${deliveries.count}`);
+
+      setText("host-name", device.host_name);
+      setText("host-device", device.device_id);
+      setText("host-tenant", device.tenant_id);
+      setText("host-profile", device.profile);
+      setText("host-os", device.os_name);
+      setText("host-last-seen", formatDate(device.last_seen_at));
+
+      const total = Number(summary.study_minutes || 0) + Number(summary.coding_minutes || 0) + Number(summary.entertainment_minutes || 0);
+      setText("activity-total", minutes(total));
+      setText("study-mins", minutes(summary.study_minutes));
+      setText("coding-mins", minutes(summary.coding_minutes));
+      setText("entertainment-mins", minutes(summary.entertainment_minutes));
+      setBar("study-bar", summary.study_minutes, total);
+      setBar("coding-bar", summary.coding_minutes, total);
+      setBar("entertainment-bar", summary.entertainment_minutes, total);
+
+      document.getElementById("archive-status").outerHTML = badge(overview.archive.status).replace("<span", '<span id="archive-status"');
+      setText("archive-provider", overview.archive.provider);
+      setText("archive-backlog", overview.archive.pending_batches + " batches");
+      setText("archive-key", overview.archive.last_uploaded_key);
+
+      renderTimeline(policy.items.concat(anomalies.items, tamper.items));
+      renderRiskTable("policy-table", policy.items, ["severity", "category", "source", "reason", "status"]);
+      renderRiskTable("anomaly-table", anomalies.items, ["severity", "category", "source", "reason"]);
+      renderTamperTable(tamper.items);
+      renderDeliveries(deliveries.items);
+
+      setText("policy-count", `${policy.count} open`);
+      setText("anomaly-count", `${anomalies.count} active`);
+      setText("tamper-count", `${tamper.count} events`);
+      setText("delivery-count", `${deliveries.count} routes`);
+      document.getElementById("metric-delivery").nextElementSibling.textContent =
+        deliveryIssues === 0 ? "All routes delivered" : `${deliveryIssues} route needs attention`;
+    }
+
+    function renderTimeline(events) {
+      const sorted = events.slice().sort((left, right) => new Date(right.observed_at) - new Date(left.observed_at));
+      setText("timeline-count", `${sorted.length} events`);
+      const target = document.getElementById("risk-timeline");
+      if (sorted.length === 0) {
+        target.innerHTML = '<div class="empty">No host risk events yet.</div>';
+        return;
+      }
+      target.innerHTML = sorted.map((event) => `
+        <div class="timeline-item">
+          <span class="dot ${escapeHTML(event.severity)}"></span>
+          <div>
+            <h3>${escapeHTML(rowDetail(event))}</h3>
+            <p class="muted">${escapeHTML(event.reason)}</p>
+            <p>${badge(event.severity)} ${badge(event.type)} <span class="pill">${escapeHTML(formatDate(event.observed_at))}</span></p>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderRiskTable(id, events, columns) {
+      const target = document.getElementById(id);
+      if (events.length === 0) {
+        target.innerHTML = `<tr><td colspan="${columns.length}" class="muted">No events.</td></tr>`;
+        return;
+      }
+      target.innerHTML = events.map((event) => `
+        <tr>
+          ${columns.map((column) => {
+            const value = column === "source" ? rowDetail(event) : event[column];
+            if (column === "severity" || column === "status") return `<td>${badge(value)}</td>`;
+            return `<td>${escapeHTML(value)}</td>`;
+          }).join("")}
+        </tr>
+      `).join("");
+    }
+
+    function renderTamperTable(events) {
+      const target = document.getElementById("tamper-table");
+      if (events.length === 0) {
+        target.innerHTML = '<tr><td colspan="5" class="muted">No trust events yet.</td></tr>';
+        return;
+      }
+      target.innerHTML = events.map((event) => `
+        <tr>
+          <td>${badge(event.severity)}</td>
+          <td>${escapeHTML(event.category)}</td>
+          <td>${escapeHTML(rowDetail(event))}<br><span class="muted">${escapeHTML(event.reason)}</span></td>
+          <td>${escapeHTML(event.recommendation)}</td>
+          <td>${escapeHTML(formatDate(event.observed_at))}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderDeliveries(items) {
+      const target = document.getElementById("delivery-table");
+      if (items.length === 0) {
+        target.innerHTML = '<tr><td colspan="4" class="muted">No alert deliveries yet.</td></tr>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <tr>
+          <td><strong>${escapeHTML(item.channel)}</strong><br><span class="muted">${escapeHTML(item.provider)}</span></td>
+          <td>${badge(item.status)}<br><span class="muted">${escapeHTML(formatDate(item.last_attempt_at))}</span></td>
+          <td>${escapeHTML(item.recipient)}<br><span class="muted">${escapeHTML(item.summary)}</span></td>
+          <td>${escapeHTML(item.attempts)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderEmptyDashboard() {
+      ["metric-compliance", "metric-risk", "metric-policy", "metric-anomalies", "metric-tamper", "metric-delivery"].forEach((id) => setText(id, "-"));
+      setText("host-name", "No host enrolled");
+      setText("host-device", "-");
+      setText("host-tenant", "-");
+      setText("host-profile", "-");
+      setText("host-os", "-");
+      setText("host-last-seen", "-");
+    }
+
+    async function refresh() {
+      const health = await loadJSON("/health");
+      document.getElementById("backend-status").textContent = "Local backend " + health.status;
+
+      const devices = await loadJSON("/api/v1/devices");
+      state.devices = devices.items || [];
+      if (!state.selectedDeviceId && state.devices.length > 0) {
+        state.selectedDeviceId = state.devices[0].device_id;
+      }
+      renderHostOptions();
+
+      if (!state.selectedDeviceId) {
+        renderEmptyDashboard();
+        return;
+      }
+
+      const base = `/api/v1/devices/${encodeURIComponent(state.selectedDeviceId)}`;
+      const [overview, policy, anomalies, tamper, deliveries] = await Promise.all([
+        loadJSON(`${base}/overview`),
+        loadJSON(`${base}/policy-violations`),
+        loadJSON(`${base}/anomalies`),
+        loadJSON(`${base}/tamper-events`),
+        loadJSON(`${base}/alert-deliveries`)
+      ]);
+      renderOverview(overview, policy, anomalies, tamper, deliveries);
+    }
+
+    document.getElementById("host-select").addEventListener("change", (event) => {
+      state.selectedDeviceId = event.target.value;
+      refresh().catch(showError);
     });
+    document.getElementById("refresh-button").addEventListener("click", () => refresh().catch(showError));
+
+    function showError(error) {
+      document.getElementById("backend-status").textContent = "Local backend error";
+      document.getElementById("backend-status").style.borderColor = "#fecdca";
+      document.getElementById("backend-status").style.background = "#fff4f2";
+      document.getElementById("backend-status").style.color = "#b42318";
+      console.error(error);
+    }
+
+    refresh().catch(showError);
   </script>
 </body>
 </html>
