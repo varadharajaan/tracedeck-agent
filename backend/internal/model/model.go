@@ -1875,6 +1875,104 @@ type TenantOnboardingCenter struct {
 	GeneratedAt     time.Time                `json:"generated_at"`
 }
 
+type TenantCustomerSettingsSummary struct {
+	Status             string `json:"status"`
+	Headline           string `json:"headline"`
+	Detail             string `json:"detail"`
+	SettingsScore      int    `json:"settings_score"`
+	ConfiguredSettings int    `json:"configured_settings"`
+	SettingsTotal      int    `json:"settings_total"`
+	CurrentPlan        string `json:"current_plan"`
+	RecommendedPlan    string `json:"recommended_plan"`
+	RetentionTier      string `json:"retention_tier"`
+	NotificationReady  bool   `json:"notification_ready"`
+	ArchiveReady       bool   `json:"archive_ready"`
+	AutostartReady     bool   `json:"autostart_ready"`
+	RoleViewsReady     bool   `json:"role_views_ready"`
+	DataRightsReady    bool   `json:"data_rights_ready"`
+	PackageReady       bool   `json:"package_ready"`
+	BillingReady       bool   `json:"billing_ready"`
+	OwnerNextStep      string `json:"owner_next_step"`
+}
+
+type TenantCustomerSetting struct {
+	ID               string `json:"id"`
+	Label            string `json:"label"`
+	CurrentValue     string `json:"current_value"`
+	RecommendedValue string `json:"recommended_value"`
+	Status           string `json:"status"`
+	Owner            string `json:"owner"`
+	PaidTier         string `json:"paid_tier"`
+	Configurable     bool   `json:"configurable"`
+	Evidence         string `json:"evidence"`
+	NextAction       string `json:"next_action"`
+}
+
+type TenantCustomerSettingsPlanOption struct {
+	PlanID      string `json:"plan_id"`
+	Name        string `json:"name"`
+	Status      string `json:"status"`
+	Current     bool   `json:"current"`
+	Recommended bool   `json:"recommended"`
+	Audience    string `json:"audience"`
+	PriceModel  string `json:"price_model"`
+	DeviceLimit int    `json:"device_limit"`
+	BuyerValue  string `json:"buyer_value"`
+	NextAction  string `json:"next_action"`
+}
+
+type TenantCustomerSettingsRetentionOption struct {
+	ID                 string `json:"id"`
+	Name               string `json:"name"`
+	Status             string `json:"status"`
+	Current            bool   `json:"current"`
+	Recommended        bool   `json:"recommended"`
+	LocalTTLDays       int    `json:"local_ttl_days"`
+	S3StandardDays     int    `json:"s3_standard_days"`
+	S3StandardIAUntil  int    `json:"s3_standard_ia_until_days"`
+	S3ArchiveAfterDays int    `json:"s3_archive_after_days"`
+	ComplianceExport   bool   `json:"compliance_export"`
+	NextAction         string `json:"next_action"`
+}
+
+type TenantCustomerSettingsChannel struct {
+	Channel        string `json:"channel"`
+	Enabled        bool   `json:"enabled"`
+	Status         string `json:"status"`
+	PreferenceMode string `json:"preference_mode"`
+	DeliveryProof  string `json:"delivery_proof"`
+	Evidence       string `json:"evidence"`
+	NextAction     string `json:"next_action"`
+}
+
+type TenantCustomerSettingsAction struct {
+	Title    string `json:"title"`
+	Detail   string `json:"detail"`
+	Owner    string `json:"owner"`
+	Status   string `json:"status"`
+	Severity string `json:"severity"`
+	PaidTier string `json:"paid_tier"`
+	Source   string `json:"source"`
+}
+
+type TenantCustomerSettingsCenter struct {
+	TenantID         string                                  `json:"tenant_id"`
+	TenantName       string                                  `json:"tenant_name"`
+	PlanID           string                                  `json:"plan_id"`
+	PlanName         string                                  `json:"plan_name"`
+	RetentionTierID  string                                  `json:"retention_tier_id"`
+	RetentionName    string                                  `json:"retention_name"`
+	Audience         string                                  `json:"audience"`
+	Summary          TenantCustomerSettingsSummary           `json:"summary"`
+	Settings         []TenantCustomerSetting                 `json:"settings"`
+	PlanOptions      []TenantCustomerSettingsPlanOption      `json:"plan_options"`
+	RetentionOptions []TenantCustomerSettingsRetentionOption `json:"retention_options"`
+	Channels         []TenantCustomerSettingsChannel         `json:"channels"`
+	Actions          []TenantCustomerSettingsAction          `json:"actions"`
+	PrivacyBoundary  string                                  `json:"privacy_boundary"`
+	GeneratedAt      time.Time                               `json:"generated_at"`
+}
+
 type TenantExecutiveConsoleSummary struct {
 	Status                 string `json:"status"`
 	Headline               string `json:"headline"`

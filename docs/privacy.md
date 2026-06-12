@@ -161,3 +161,11 @@ readiness, proof rows, and owner actions. It does not add collectors and does
 not store passwords, screenshots, raw URLs, page titles, alert bodies, provider
 secrets, push endpoints, endpoint payloads, private content, invoices, tokens,
 cookies, payment card data, or raw provider payloads.
+
+Phase 64 customer settings center is metadata-only. It exposes plan labels,
+retention tier labels, notification preference status, route proof state, role
+settings, archive posture, autostart readiness, data-rights state, and owner
+actions. It does not add collectors and does not store passwords, screenshots,
+raw URLs, page titles, alert bodies, provider secrets, push endpoints, endpoint
+payloads, private content, invoices, tokens, cookies, payment card data, or raw
+provider payloads.

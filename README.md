@@ -313,3 +313,13 @@ privacy/data-rights guardrails, and owner actions. It remains metadata-only and
 does not collect passwords, screenshots, raw URLs, page titles, alert bodies,
 provider secrets, push endpoints, endpoint payloads, private content, invoices,
 payment card data, tokens, cookies, or raw provider payloads.
+
+Phase 64 adds a typed Customer Settings Center at
+`/api/v1/tenants/{tenantId}/customer-settings-center` and a dashboard panel for
+buyer/admin activation settings. It shows current and recommended plan,
+retention, notification policy, mail route, push route, dashboard fallback,
+archive, autostart, role dashboard, and privacy/data-rights settings with
+owner actions. It remains metadata-only and does not collect passwords,
+screenshots, raw URLs, page titles, alert bodies, provider secrets, push
+endpoints, endpoint payloads, private content, invoices, payment card data,
+tokens, cookies, or raw provider payloads.

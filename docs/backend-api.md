@@ -78,6 +78,7 @@ GET  /api/v1/tenants/{tenantId}/provider-simulation-lab
 POST /api/v1/tenants/{tenantId}/provider-simulation-lab
 GET  /api/v1/tenants/{tenantId}/package-billing-readiness
 GET  /api/v1/tenants/{tenantId}/onboarding-center
+GET  /api/v1/tenants/{tenantId}/customer-settings-center
 GET  /api/v1/tenants/{tenantId}/notification-command-center
 GET  /api/v1/tenants/{tenantId}/delivery-timeline
 GET  /api/v1/tenants/{tenantId}/sync-health
@@ -457,3 +458,15 @@ boundary. It does not collect or store passwords, screenshots, raw URLs, page
 titles, alert bodies, provider secrets, push endpoints, endpoint payloads,
 private content, invoices, tokens, cookies, payment card data, or raw provider
 payloads.
+
+Phase 64 adds `GET /api/v1/tenants/{tenantId}/customer-settings-center`. It
+composes plan, retention, package billing, onboarding, notification
+preferences, notification routes, and role experience metadata into a typed
+customer-facing settings contract. The response includes settings score,
+current and recommended plan/retention settings, notification policy state,
+mail/push/dashboard channel settings, archive/autostart/role/data-rights
+settings, owner actions, plan options, retention options, and a strict
+metadata-only privacy boundary. It does not collect or store passwords,
+screenshots, raw URLs, page titles, alert bodies, provider secrets, push
+endpoints, endpoint payloads, private content, invoices, tokens, cookies,
+payment card data, or raw provider payloads.

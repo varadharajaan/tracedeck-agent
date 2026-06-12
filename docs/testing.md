@@ -790,6 +790,16 @@ screenshot-free dashboard layout contract. Newman runs
 `postman/tracedeck-backend-phase63.postman_collection.json` against the same
 live demo and covers dashboard markers plus typed onboarding proof.
 
+The Phase 64 smoke live-boots the seeded dashboard, verifies Customer Settings
+Center, Settings Matrix, Plan And Retention Options, Notification Channel
+Settings, Settings Owner Actions, and Settings command navigation markers,
+checks the tenant `customer-settings-center` API, verifies settings score,
+settings rows, plan options, retention options, mail/push/dashboard channels,
+owner actions, and strict privacy/forbidden markers, and reruns the
+screenshot-free dashboard layout contract. Newman runs
+`postman/tracedeck-backend-phase64.postman_collection.json` against the same
+live demo and covers dashboard markers plus typed customer settings proof.
+
 Phase 13 adds:
 
 ```powershell

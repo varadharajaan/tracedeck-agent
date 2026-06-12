@@ -1132,6 +1132,38 @@ func (m *Memory) TenantOnboardingCenter(ctx context.Context, tenantID string) (m
 	return buildTenantOnboardingCenter(roles, packageBilling, portfolio, push, preferences, syncHealth, generatedAt), nil
 }
 
+func (m *Memory) TenantCustomerSettingsCenter(ctx context.Context, tenantID string) (model.TenantCustomerSettingsCenter, error) {
+	generatedAt := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	packageBilling, err := m.TenantPackageBillingReadiness(ctx, tenantID)
+	if err != nil {
+		return model.TenantCustomerSettingsCenter{}, err
+	}
+	onboarding, err := m.TenantOnboardingCenter(ctx, tenantID)
+	if err != nil {
+		return model.TenantCustomerSettingsCenter{}, err
+	}
+	preferences, err := m.TenantNotificationPreferences(ctx, tenantID)
+	if err != nil {
+		return model.TenantCustomerSettingsCenter{}, err
+	}
+	roles, err := m.TenantRoleExperiences(ctx, tenantID)
+	if err != nil {
+		return model.TenantCustomerSettingsCenter{}, err
+	}
+	routes := m.ListNotificationRoutes(ctx, tenantID)
+
+	m.mu.RLock()
+	tenant, ok := m.tenants[tenantID]
+	m.mu.RUnlock()
+	if !ok {
+		return model.TenantCustomerSettingsCenter{}, ErrTenantNotFound
+	}
+
+	return buildTenantCustomerSettingsCenter(tenant, packageBilling, onboarding, preferences, roles, routes, generatedAt), nil
+}
+
 func (m *Memory) TenantExecutiveConsole(ctx context.Context, tenantID string) (model.TenantExecutiveConsole, error) {
 	generatedAt := time.Now().UTC()
 	tenantID = strings.TrimSpace(tenantID)
@@ -5350,6 +5382,369 @@ func onboardingSeverity(step model.TenantOnboardingStep) string {
 		return constants.SeverityHigh
 	}
 	return constants.SeverityMedium
+}
+
+func buildTenantCustomerSettingsCenter(
+	tenant model.Tenant,
+	packageBilling model.TenantPackageBillingReadiness,
+	onboarding model.TenantOnboardingCenter,
+	preferences model.NotificationPreferenceCenter,
+	roles model.TenantRoleExperience,
+	routes []model.NotificationRoute,
+	generatedAt time.Time,
+) model.TenantCustomerSettingsCenter {
+	plan := planByID(tenant.PlanID)
+	retention := retentionTierByID(tenant.RetentionTierID)
+	recommendedPlan := customerSettingsRecommendedPlan(plan, packageBilling)
+	settings := tenantCustomerSettings(tenant, plan, retention, recommendedPlan, packageBilling, onboarding, preferences, roles, routes)
+	configured := 0
+	for _, setting := range settings {
+		if setting.Status == constants.StatusHealthy {
+			configured++
+		}
+	}
+	settingsScore := 0
+	if len(settings) > 0 {
+		settingsScore = (configured * 100) / len(settings)
+	}
+	settingsScore = averageScore(settingsScore, packageBilling.Summary.PackageScore, onboarding.Summary.ReadinessScore, preferences.Summary.PreferenceScore, roles.Summary.ReadinessScore)
+	summary := model.TenantCustomerSettingsSummary{
+		SettingsScore:      settingsScore,
+		ConfiguredSettings: configured,
+		SettingsTotal:      len(settings),
+		CurrentPlan:        firstNonEmpty(plan.Name, tenant.PlanID),
+		RecommendedPlan:    firstNonEmpty(recommendedPlan.Name, packageBilling.Summary.RecommendedPackage, packageBilling.PlanName),
+		RetentionTier:      firstNonEmpty(retention.Name, tenant.RetentionTierID),
+		NotificationReady:  onboarding.Summary.NotificationReady && preferences.Summary.PreferenceScore >= 60,
+		ArchiveReady:       onboarding.Summary.ArchiveReady && packageBilling.Summary.RetentionReady,
+		AutostartReady:     onboarding.Summary.AutostartReady,
+		RoleViewsReady:     roles.Summary.RolesReady == roles.Summary.RolesTotal && roles.Summary.RolesTotal > 0,
+		DataRightsReady:    packageBilling.Summary.TrustScore >= 60 && onboarding.Summary.PrivacyReady,
+		PackageReady:       packageBilling.Summary.PackageScore >= 60,
+		BillingReady:       packageBilling.Summary.BillingReady,
+		OwnerNextStep:      tenantCustomerSettingsNextStep(settings),
+	}
+	summary.Status = tenantCustomerSettingsStatus(summary)
+	summary.Headline, summary.Detail = tenantCustomerSettingsNarrative(summary)
+
+	return model.TenantCustomerSettingsCenter{
+		TenantID:         tenant.TenantID,
+		TenantName:       tenant.Name,
+		PlanID:           tenant.PlanID,
+		PlanName:         firstNonEmpty(plan.Name, tenant.PlanID),
+		RetentionTierID:  tenant.RetentionTierID,
+		RetentionName:    firstNonEmpty(retention.Name, tenant.RetentionTierID),
+		Audience:         firstNonEmpty(plan.Audience, onboarding.Audience, packageBilling.Audience),
+		Summary:          summary,
+		Settings:         settings,
+		PlanOptions:      tenantCustomerSettingsPlanOptions(plan, recommendedPlan),
+		RetentionOptions: tenantCustomerSettingsRetentionOptions(retention, recommendedPlan),
+		Channels:         tenantCustomerSettingsChannels(preferences, routes),
+		Actions:          tenantCustomerSettingsActions(settings, packageBilling.Actions, onboarding.Actions),
+		PrivacyBoundary:  constants.CustomerSettingsPrivacyNote,
+		GeneratedAt:      generatedAt,
+	}
+}
+
+func customerSettingsRecommendedPlan(current model.Plan, packageBilling model.TenantPackageBillingReadiness) model.Plan {
+	for _, plan := range packageBilling.Plans {
+		if plan.Recommended {
+			return planByID(plan.PlanID)
+		}
+	}
+	if packageBilling.Summary.PackageScore >= 70 && current.ID == constants.PlanFree {
+		return planByID(constants.PlanFamilyPro)
+	}
+	return current
+}
+
+func tenantCustomerSettings(
+	tenant model.Tenant,
+	plan model.Plan,
+	retention model.RetentionTier,
+	recommendedPlan model.Plan,
+	packageBilling model.TenantPackageBillingReadiness,
+	onboarding model.TenantOnboardingCenter,
+	preferences model.NotificationPreferenceCenter,
+	roles model.TenantRoleExperience,
+	routes []model.NotificationRoute,
+) []model.TenantCustomerSetting {
+	return []model.TenantCustomerSetting{
+		customerSetting("plan", "Plan Package", firstNonEmpty(plan.Name, tenant.PlanID), firstNonEmpty(recommendedPlan.Name, packageBilling.Summary.RecommendedPackage), packageBilling.Summary.BillingReady, constants.RoleBusinessManager, constants.PlanFamilyPro, true, fmt.Sprintf("%d%% package score", packageBilling.Summary.PackageScore), packageBilling.Summary.NextBestAction),
+		customerSetting("retention", "Retention Tier", firstNonEmpty(retention.Name, tenant.RetentionTierID), customerSettingsRecommendedRetention(recommendedPlan), packageBilling.Summary.RetentionReady, constants.RoleBusinessManager, constants.PlanFamilyPro, true, fmt.Sprintf("%d local days, %d S3 standard days, archive after %d days", retention.LocalTTLDays, retention.S3StandardDays, retention.S3ArchiveAfterDays), "Confirm local TTL, S3 lifecycle, and archive policy before selling retention."),
+		customerSetting("notification-policy", "Notification Policy", fmt.Sprintf("%d rules, immediate=%d", preferences.Summary.RulesTotal, preferences.Summary.ImmediateRules), "Immediate critical alerts with digest and study-safe suppression", preferences.Summary.PreferenceScore >= 60, constants.RoleParent, constants.PlanFamilyPro, true, fmt.Sprintf("%d%% preference score", preferences.Summary.PreferenceScore), "Tune quiet hours, escalation, and study-safe suppression before owner handoff."),
+		customerSetting("mail-route", "Mail Delivery", customerSettingsRouteValue(routes, constants.DeliveryChannelEmail), "Verified email route for anomaly and weekly report proof", customerSettingsRouteReady(routes, constants.DeliveryChannelEmail), constants.RoleParent, constants.PlanFamilyPro, true, "email route proof is metadata-only", "Verify SMTP/SES route labels without storing provider secrets."),
+		customerSetting("push-route", "Push Notification", customerSettingsRouteValue(routes, constants.DeliveryChannelPush), "Verified push route plus dashboard fallback", customerSettingsRouteReady(routes, constants.DeliveryChannelPush), constants.RoleParent, constants.PlanFamilyPro, true, "push route proof excludes raw endpoints", "Verify push route proof and dashboard fallback before promising urgent alerts."),
+		customerSetting("archive", "Archive And Sync", boolReady(onboarding.Summary.ArchiveReady), "S3 standard, IA, archive lifecycle, and offline replay proof", onboarding.Summary.ArchiveReady, constants.RoleSchoolAdmin, constants.PlanFamilyPro, true, fmt.Sprintf("%d archive proof cards", len(packageBilling.FeatureGates)), "Clear archive backlog and keep lifecycle proof visible."),
+		customerSetting("autostart", "Autostart", boolReady(onboarding.Summary.AutostartReady), "Windows Task Scheduler, macOS launchd, and Linux systemd proof", onboarding.Summary.AutostartReady, constants.RoleBusinessManager, constants.PlanFamilyPro, false, "managed by local scripts and manifests", "Verify reboot persistence during live boot testing."),
+		customerSetting("role-views", "Role Dashboards", fmt.Sprintf("%d/%d roles ready", roles.Summary.RolesReady, roles.Summary.RolesTotal), "Parent, student, school admin, and business manager views", roles.Summary.RolesReady == roles.Summary.RolesTotal && roles.Summary.RolesTotal > 0, constants.RoleBusinessManager, constants.PlanSchool, true, roles.Summary.Headline, "Assign the right dashboard view before paid rollout."),
+		customerSetting("privacy-data-rights", "Privacy And Data Rights", boolReady(onboarding.Summary.PrivacyReady), "Visible monitoring, audit, export, delete request, and pause policy proof", onboarding.Summary.PrivacyReady && packageBilling.Summary.TrustScore >= 60, constants.RoleBusinessManager, constants.PlanBusiness, false, fmt.Sprintf("%d%% trust score", packageBilling.Summary.TrustScore), "Review data-rights proof with the customer before activation."),
+	}
+}
+
+func customerSetting(id string, label string, current string, recommended string, ready bool, owner string, paidTier string, configurable bool, evidence string, nextAction string) model.TenantCustomerSetting {
+	return model.TenantCustomerSetting{
+		ID:               id,
+		Label:            label,
+		CurrentValue:     current,
+		RecommendedValue: recommended,
+		Status:           boolStatus(ready),
+		Owner:            owner,
+		PaidTier:         paidTier,
+		Configurable:     configurable,
+		Evidence:         evidence,
+		NextAction:       nextAction,
+	}
+}
+
+func customerSettingsRecommendedRetention(plan model.Plan) string {
+	switch plan.ID {
+	case constants.PlanBusiness:
+		return "Business Compliance"
+	case constants.PlanSchool:
+		return "School Year Archive"
+	case constants.PlanFamilyPro:
+		return "Family Cloud 90/365 Archive"
+	default:
+		return "Local Only 7 Days"
+	}
+}
+
+func customerSettingsRouteValue(routes []model.NotificationRoute, channel string) string {
+	for _, route := range routes {
+		if route.Channel == channel {
+			return fmt.Sprintf("%s via %s: %s", route.RecipientLabel, route.Provider, route.Status)
+		}
+	}
+	return "route not configured"
+}
+
+func customerSettingsRouteReady(routes []model.NotificationRoute, channel string) bool {
+	for _, route := range routes {
+		if route.Channel == channel && route.Enabled && route.Status == constants.StatusHealthy {
+			return true
+		}
+	}
+	return false
+}
+
+func tenantCustomerSettingsStatus(summary model.TenantCustomerSettingsSummary) string {
+	switch {
+	case summary.SettingsScore >= 80 && summary.NotificationReady && summary.DataRightsReady:
+		return constants.StatusHealthy
+	case !summary.BillingReady || !summary.NotificationReady || !summary.DataRightsReady:
+		return constants.StatusAttention
+	case summary.SettingsScore >= 60:
+		return constants.StatusWatch
+	default:
+		return constants.StatusPending
+	}
+}
+
+func tenantCustomerSettingsNarrative(summary model.TenantCustomerSettingsSummary) (string, string) {
+	switch {
+	case !summary.BillingReady:
+		return "Customer settings need package confirmation",
+			"Plan, retention, trust, and billing-safe metadata must be ready before activation."
+	case !summary.NotificationReady:
+		return "Notification settings need proof",
+			"Mail, push, dashboard fallback, preference policy, and escalation settings should be ready before rollout."
+	case !summary.DataRightsReady:
+		return "Privacy and data rights settings need review",
+			"Visible monitoring, audit, export, delete request, and metadata-only guardrails must be confirmed."
+	default:
+		return fmt.Sprintf("%s settings are %d%% ready", summary.CurrentPlan, summary.SettingsScore),
+			fmt.Sprintf("%d/%d settings configured with %s retention and %s recommended.", summary.ConfiguredSettings, summary.SettingsTotal, summary.RetentionTier, summary.RecommendedPlan)
+	}
+}
+
+func tenantCustomerSettingsNextStep(settings []model.TenantCustomerSetting) string {
+	for _, setting := range settings {
+		if setting.Status != constants.StatusHealthy {
+			return setting.NextAction
+		}
+	}
+	return "Customer settings are ready for activation review."
+}
+
+func tenantCustomerSettingsPlanOptions(current model.Plan, recommended model.Plan) []model.TenantCustomerSettingsPlanOption {
+	candidates := []model.Plan{planByID(constants.PlanFree), planByID(constants.PlanFamilyPro), planByID(constants.PlanSchool), planByID(constants.PlanBusiness)}
+	options := make([]model.TenantCustomerSettingsPlanOption, 0, len(candidates))
+	for _, plan := range candidates {
+		isCurrent := plan.ID == current.ID
+		isRecommended := plan.ID == recommended.ID
+		status := constants.StatusWatch
+		if isCurrent || isRecommended {
+			status = constants.StatusHealthy
+		}
+		if plan.ID == constants.PlanFree && !isCurrent {
+			status = constants.StatusPending
+		}
+		options = append(options, model.TenantCustomerSettingsPlanOption{
+			PlanID:      plan.ID,
+			Name:        plan.Name,
+			Status:      status,
+			Current:     isCurrent,
+			Recommended: isRecommended,
+			Audience:    plan.Audience,
+			PriceModel:  plan.PriceModel,
+			DeviceLimit: plan.DeviceLimit,
+			BuyerValue:  businessPackageValue(plan.ID),
+			NextAction:  packagePlanNextAction(plan, isCurrent, isRecommended),
+		})
+	}
+	return options
+}
+
+func tenantCustomerSettingsRetentionOptions(current model.RetentionTier, recommendedPlan model.Plan) []model.TenantCustomerSettingsRetentionOption {
+	recommendedID := customerSettingsRecommendedRetentionID(recommendedPlan)
+	tiers := RetentionTiers()
+	options := make([]model.TenantCustomerSettingsRetentionOption, 0, len(tiers))
+	for _, tier := range tiers {
+		isCurrent := tier.ID == current.ID
+		isRecommended := tier.ID == recommendedID
+		status := constants.StatusWatch
+		if isCurrent || isRecommended {
+			status = constants.StatusHealthy
+		}
+		if tier.ID == constants.RetentionLocalOnly && !isCurrent {
+			status = constants.StatusPending
+		}
+		options = append(options, model.TenantCustomerSettingsRetentionOption{
+			ID:                 tier.ID,
+			Name:               tier.Name,
+			Status:             status,
+			Current:            isCurrent,
+			Recommended:        isRecommended,
+			LocalTTLDays:       tier.LocalTTLDays,
+			S3StandardDays:     tier.S3StandardDays,
+			S3StandardIAUntil:  tier.S3StandardIAUntil,
+			S3ArchiveAfterDays: tier.S3ArchiveAfterDays,
+			ComplianceExport:   tier.ComplianceExport,
+			NextAction:         customerSettingsRetentionNextAction(tier, isCurrent, isRecommended),
+		})
+	}
+	return options
+}
+
+func customerSettingsRecommendedRetentionID(plan model.Plan) string {
+	switch plan.ID {
+	case constants.PlanBusiness:
+		return constants.RetentionBusiness
+	case constants.PlanSchool:
+		return constants.RetentionSchoolYear
+	case constants.PlanFamilyPro:
+		return constants.RetentionFamilyCloud
+	default:
+		return constants.RetentionLocalOnly
+	}
+}
+
+func customerSettingsRetentionNextAction(tier model.RetentionTier, current bool, recommended bool) string {
+	switch {
+	case current:
+		return "Use this retention tier as the current archive promise."
+	case recommended:
+		return "Prepare this retention tier as the recommended paid setting."
+	case tier.ID == constants.RetentionLocalOnly:
+		return "Keep local-only retention for starter trials."
+	default:
+		return "Keep this retention tier available for higher-trust buyers."
+	}
+}
+
+func tenantCustomerSettingsChannels(preferences model.NotificationPreferenceCenter, routes []model.NotificationRoute) []model.TenantCustomerSettingsChannel {
+	return []model.TenantCustomerSettingsChannel{
+		customerSettingsChannel(constants.DeliveryChannelEmail, preferences.Summary.EmailEnabled, preferences, routes),
+		customerSettingsChannel(constants.DeliveryChannelPush, preferences.Summary.PushEnabled, preferences, routes),
+		customerSettingsChannel(constants.DeliveryChannelDashboard, preferences.Summary.DashboardEnabled, preferences, routes),
+	}
+}
+
+func customerSettingsChannel(channel string, enabled bool, preferences model.NotificationPreferenceCenter, routes []model.NotificationRoute) model.TenantCustomerSettingsChannel {
+	proof := customerSettingsRouteValue(routes, channel)
+	ready := enabled && (channel == constants.DeliveryChannelDashboard || customerSettingsRouteReady(routes, channel))
+	mode := "disabled"
+	if enabled {
+		mode = "enabled"
+	}
+	return model.TenantCustomerSettingsChannel{
+		Channel:        channel,
+		Enabled:        enabled,
+		Status:         boolStatus(ready),
+		PreferenceMode: mode,
+		DeliveryProof:  proof,
+		Evidence:       fmt.Sprintf("%d immediate, %d digest, %d silent rules", preferences.Summary.ImmediateRules, preferences.Summary.DigestRules, preferences.Summary.SilentRules),
+		NextAction:     customerSettingsChannelNextAction(channel, ready),
+	}
+}
+
+func customerSettingsChannelNextAction(channel string, ready bool) string {
+	if ready {
+		return "Keep route proof fresh for customer reviews."
+	}
+	return fmt.Sprintf("Enable and verify %s route proof before activation.", channel)
+}
+
+func tenantCustomerSettingsActions(settings []model.TenantCustomerSetting, packageActions []model.TenantPackageBillingAction, onboardingActions []model.TenantOnboardingAction) []model.TenantCustomerSettingsAction {
+	actions := make([]model.TenantCustomerSettingsAction, 0, 8)
+	for _, setting := range settings {
+		if setting.Status == constants.StatusHealthy {
+			continue
+		}
+		actions = append(actions, model.TenantCustomerSettingsAction{
+			Title:    setting.Label,
+			Detail:   setting.NextAction,
+			Owner:    setting.Owner,
+			Status:   setting.Status,
+			Severity: constants.SeverityMedium,
+			PaidTier: setting.PaidTier,
+			Source:   "customer setting",
+		})
+		if len(actions) >= 4 {
+			break
+		}
+	}
+	for _, action := range packageActions {
+		if len(actions) >= 6 {
+			break
+		}
+		actions = append(actions, model.TenantCustomerSettingsAction{
+			Title:    action.Title,
+			Detail:   firstNonEmpty(action.NextAction, action.Detail),
+			Owner:    action.Owner,
+			Status:   action.Status,
+			Severity: constants.SeverityMedium,
+			PaidTier: action.PaidTier,
+			Source:   "package billing",
+		})
+	}
+	for _, action := range onboardingActions {
+		if len(actions) >= 8 {
+			break
+		}
+		actions = append(actions, model.TenantCustomerSettingsAction{
+			Title:    action.Title,
+			Detail:   action.Detail,
+			Owner:    action.Owner,
+			Status:   action.Status,
+			Severity: action.Severity,
+			PaidTier: action.PaidTier,
+			Source:   "onboarding",
+		})
+	}
+	if len(actions) == 0 {
+		actions = append(actions, model.TenantCustomerSettingsAction{
+			Title:    "Customer settings review",
+			Detail:   "Plan, retention, notification, archive, role, and privacy settings are ready for activation review.",
+			Owner:    constants.RoleBusinessManager,
+			Status:   constants.StatusHealthy,
+			Severity: constants.SeverityInfo,
+			PaidTier: constants.PlanFamilyPro,
+			Source:   "customer settings",
+		})
+	}
+	return actions
 }
 
 func buildTenantExecutiveConsole(

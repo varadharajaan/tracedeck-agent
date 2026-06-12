@@ -2084,6 +2084,94 @@ func TestTenantOnboardingCenterEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantCustomerSettingsCenterEndpoint(t *testing.T) {
+	t.Parallel()
+
+	repo := store.NewMemory()
+	handler := NewServer(repo, slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "settings-device-001",
+		"host_name": "settings-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	response := httptest.NewRecorder()
+	route := constants.RouteTenants + "/family-varadha/" + constants.RouteSegmentCustomerSettings
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, route, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected customer settings center 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var center model.TenantCustomerSettingsCenter
+	if err := json.Unmarshal(response.Body.Bytes(), &center); err != nil {
+		t.Fatalf("decode customer settings center: %v", err)
+	}
+	if center.Summary.SettingsScore == 0 || center.Summary.SettingsTotal < 8 || center.Summary.OwnerNextStep == "" {
+		t.Fatalf("expected scored customer settings summary: %+v", center.Summary)
+	}
+	if len(center.Settings) < 8 || len(center.PlanOptions) < 4 || len(center.RetentionOptions) < 3 || len(center.Channels) < 3 || len(center.Actions) < 1 {
+		t.Fatalf("expected settings, plan, retention, channel, and action rows: %+v", center)
+	}
+	hasPlan := false
+	hasRetention := false
+	hasPush := false
+	hasPrivacy := false
+	for _, setting := range center.Settings {
+		switch setting.ID {
+		case "plan":
+			hasPlan = setting.Configurable && setting.CurrentValue != "" && setting.RecommendedValue != ""
+		case "retention":
+			hasRetention = setting.Configurable && setting.Evidence != ""
+		case "push-route":
+			hasPush = setting.Configurable && strings.Contains(setting.Evidence, "push")
+		case "privacy-data-rights":
+			hasPrivacy = !setting.Configurable && setting.NextAction != ""
+		}
+	}
+	if !hasPlan || !hasRetention || !hasPush || !hasPrivacy {
+		t.Fatalf("expected plan, retention, push, and privacy settings: %+v", center.Settings)
+	}
+	if !strings.Contains(center.PrivacyBoundary, "metadata-only") || !strings.Contains(center.PrivacyBoundary, "no passwords") || !strings.Contains(center.PrivacyBoundary, "no screenshots") || !strings.Contains(center.PrivacyBoundary, "push endpoints") {
+		t.Fatalf("expected strict customer settings privacy boundary, got %q", center.PrivacyBoundary)
+	}
+
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "push_endpoint_url", "screenshot_bytes", "raw_url", "page_title", "alert_body", "card_number", "cvv", "payment_token"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("customer settings center leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+
+	scopedHandler := NewServerWithAuth(repo, slog.Default(), AuthConfig{APIKey: "local-key", TenantID: "school-alpha"}).Handler()
+	scopedRequest := httptest.NewRequest(http.MethodGet, route, nil)
+	scopedRequest.Header.Set(constants.HeaderAPIKey, "local-key")
+	scopedResponse := httptest.NewRecorder()
+	scopedHandler.ServeHTTP(scopedResponse, scopedRequest)
+	if scopedResponse.Code != http.StatusForbidden {
+		t.Fatalf("expected tenant-scoped settings route to reject another tenant, got %d: %s", scopedResponse.Code, scopedResponse.Body.String())
+	}
+}
+
 func TestTenantNotificationRevenueCockpitEndpoint(t *testing.T) {
 	t.Parallel()
 
