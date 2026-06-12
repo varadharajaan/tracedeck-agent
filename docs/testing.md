@@ -18,6 +18,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase7.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase8.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase9.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase10.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
@@ -102,6 +103,16 @@ enrolls a host, verifies host overview, policy violation, anomaly, tamper, alert
 delivery, archive, and dashboard HTML behavior, then stops the process. Newman
 runs `postman/tracedeck-backend-phase9.postman_collection.json` against a live
 backend and writes its JSON report under `data/local/newman/phase9/`.
+
+Phase 10 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/start-dashboard-demo.ps1
+```
+
+The Phase 10 verifier starts the backend with seeded demo host data on
+localhost, verifies the host overview and dashboard HTML, checks root hygiene,
+and stops the demo backend.
 
 `go test -race ./...` is run when the local Go toolchain supports it. On
 Windows shells where CGO is disabled or no race-capable C toolchain is active,

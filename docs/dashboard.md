@@ -2,6 +2,24 @@
 
 The Go backend serves an embedded dashboard from `/`.
 
+To start a local dashboard with seeded host risk data:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/start-dashboard-demo.ps1
+```
+
+Then open:
+
+```text
+http://127.0.0.1:18080/
+```
+
+Stop the demo backend with:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/stop-backend-dev.ps1
+```
+
 Phase 9 expands the dashboard into a host-level command center for productivity,
 risk, archive, and alert-delivery visibility. It remains a lightweight static
 HTML/CSS/JavaScript asset embedded into the backend binary.
