@@ -21,6 +21,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase10.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase11.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase12.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase13.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
@@ -128,6 +129,20 @@ file and API key, verifies missing-key rejection, creates a tenant, enrolls a
 host, confirms risk data exists, restarts the backend against the same state
 file, and verifies the host and alert delivery rows survived restart. Newman
 runs `postman/tracedeck-backend-phase11.postman_collection.json` against a live
+API-key-protected backend.
+
+Phase 13 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-risky-software.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase13.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase13.ps1
+```
+
+The Phase 13 smoke builds and boots the backend on localhost, enrolls a host,
+verifies the seeded risky software anomaly, and confirms the dashboard includes
+the risky software watchlist. Newman runs
+`postman/tracedeck-backend-phase13.postman_collection.json` against a live
 API-key-protected backend.
 
 Phase 12 adds:

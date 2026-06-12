@@ -62,6 +62,8 @@ Current panels:
 - risk timeline
 - policy violation table
 - anomaly table
+- risky software watchlist for torrent, VPN/proxy, game launcher, non-standard
+  browser, and downloads-installer signals
 - tamper and trust table
 - email, push, and dashboard alert delivery table
 - policy template marketplace

@@ -10,3 +10,15 @@ Generate the policy schema with:
 ```powershell
 go run ./agent/cmd/tracedeck-agent schema --out ./docs/schema/policy-v1alpha1.schema.json
 ```
+
+Risky software alerting is controlled by a typed alert rule:
+
+```yaml
+alert_rules:
+  risky_software_detected:
+    enabled: true
+    severity: high
+```
+
+The classifier stores risk category and reason metadata on process events. It
+does not store raw executable paths.

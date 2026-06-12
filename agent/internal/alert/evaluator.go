@@ -31,6 +31,7 @@ func NewEvaluator() *Evaluator {
 func (e *Evaluator) Evaluate(_ context.Context, policy *config.Policy, events []event.Event) []Alert {
 	alerts := make([]Alert, 0)
 	alerts = append(alerts, e.evaluateBlockedApps(policy, events)...)
+	alerts = append(alerts, e.evaluateRiskySoftware(policy, events)...)
 	alerts = append(alerts, e.evaluateBlockedDomains(policy, events)...)
 	alerts = append(alerts, e.evaluateNonStudyYouTube(policy, events)...)
 	return filterBySeverity(alerts, policy.Alerts.Email.MinSeverity)
@@ -76,6 +77,55 @@ func (e *Evaluator) evaluateBlockedApps(policy *config.Policy, events []event.Ev
 				constants.AlertMetadataReason:   constants.AlertReasonBlockedAppObserved,
 				constants.AlertMetadataSeverity: string(rule.Severity),
 				constants.AlertMetadataAppName:  evt.AppName,
+			},
+		})
+	}
+
+	return alerts
+}
+
+func (e *Evaluator) evaluateRiskySoftware(policy *config.Policy, events []event.Event) []Alert {
+	rule, ok := policy.AlertRules[constants.AlertRuleRiskySoftwareDetected]
+	if !ok || !rule.Enabled {
+		return nil
+	}
+
+	seenApps := make(map[string]struct{})
+	alerts := make([]Alert, 0)
+	for _, evt := range events {
+		if evt.Type != constants.EventTypeProcessObserved {
+			continue
+		}
+		category := normalize(evt.Metadata[constants.EventMetadataSoftwareRiskCategory])
+		if category == "" {
+			continue
+		}
+		normalizedApp := normalize(evt.AppName)
+		if _, seen := seenApps[normalizedApp]; seen {
+			continue
+		}
+		seenApps[normalizedApp] = struct{}{}
+
+		reason := evt.Metadata[constants.EventMetadataSoftwareRiskReason]
+		if reason == "" {
+			reason = constants.AlertReasonRiskySoftwareProcess
+		}
+		alerts = append(alerts, Alert{
+			RuleName:   constants.AlertRuleRiskySoftwareDetected,
+			Severity:   string(rule.Severity),
+			Reason:     reason,
+			TenantID:   evt.TenantID,
+			DeviceID:   evt.DeviceID,
+			HostName:   evt.HostName,
+			AppName:    evt.AppName,
+			ObservedAt: evt.Timestamp,
+			Metadata: map[string]string{
+				constants.AlertMetadataRuleName:             constants.AlertRuleRiskySoftwareDetected,
+				constants.AlertMetadataReason:               reason,
+				constants.AlertMetadataSeverity:             string(rule.Severity),
+				constants.AlertMetadataAppName:              evt.AppName,
+				constants.AlertMetadataSoftwareRiskCategory: category,
+				constants.AlertMetadataSoftwareRiskReason:   reason,
 			},
 		})
 	}

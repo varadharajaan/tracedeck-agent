@@ -139,6 +139,9 @@ alert_rules:
   unknown_software_installed:
     enabled: true
     severity: high
+  risky_software_detected:
+    enabled: true
+    severity: high
   non_study_youtube:
     enabled: true
     severity: medium

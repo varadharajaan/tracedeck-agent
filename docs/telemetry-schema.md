@@ -10,6 +10,7 @@ tracedeck.browser.category.duration_seconds
 tracedeck.browser.history.events
 tracedeck.policy.violation.count
 tracedeck.anomaly.count
+tracedeck.software.risk.count
 tracedeck.agent.export.failure.count
 tracedeck.agent.buffer.queue_size
 tracedeck.agent.s3.upload.count
