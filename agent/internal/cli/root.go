@@ -85,25 +85,33 @@ func newRunCommand() *cobra.Command {
 	var alertDryRun bool
 	var collectionInterval string
 	var maxCycles int
+	var browserHistoryPath []string
+	var browserHistoryLimit int
+	var browserCacheDir string
+	var disableBrowserHistory bool
 
 	cmd := &cobra.Command{
 		Use:   constants.CommandRun,
 		Short: "Run TraceDeck agent",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			result, err := app.Run(context.Background(), app.RunOptions{
-				ConfigPath:         configPath,
-				DataDir:            dataDir,
-				LogDir:             logDir,
-				LogLevel:           logLevel,
-				OutboxDir:          outboxDir,
-				Once:               once,
-				ProcessLimit:       processLimit,
-				ArchiveOnce:        archiveOnce,
-				ArchiveDryRun:      archiveDryRun,
-				AlertOnce:          alertOnce,
-				AlertDryRun:        alertDryRun,
-				CollectionInterval: collectionInterval,
-				MaxCycles:          maxCycles,
+				ConfigPath:            configPath,
+				DataDir:               dataDir,
+				LogDir:                logDir,
+				LogLevel:              logLevel,
+				OutboxDir:             outboxDir,
+				Once:                  once,
+				ProcessLimit:          processLimit,
+				ArchiveOnce:           archiveOnce,
+				ArchiveDryRun:         archiveDryRun,
+				AlertOnce:             alertOnce,
+				AlertDryRun:           alertDryRun,
+				CollectionInterval:    collectionInterval,
+				MaxCycles:             maxCycles,
+				BrowserHistoryPath:    browserHistoryPath,
+				BrowserHistoryLimit:   browserHistoryLimit,
+				BrowserCacheDir:       browserCacheDir,
+				DisableBrowserHistory: disableBrowserHistory,
 			})
 			if err != nil {
 				return err
@@ -125,5 +133,9 @@ func newRunCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&alertDryRun, "alert-dry-run", true, "write alert notifications to local outbox instead of sending email")
 	cmd.Flags().StringVar(&collectionInterval, "collection-interval", constants.DefaultCollectionInterval, "continuous mode collection interval")
 	cmd.Flags().IntVar(&maxCycles, "max-cycles", constants.DefaultMaxCycles, "maximum continuous cycles before exit; 0 runs until interrupted")
+	cmd.Flags().StringArrayVar(&browserHistoryPath, "browser-history-path", nil, "browser history SQLite path; repeat for multiple paths")
+	cmd.Flags().IntVar(&browserHistoryLimit, "browser-history-limit", constants.DefaultBrowserLimit, "maximum browser history rows to inspect per history file")
+	cmd.Flags().StringVar(&browserCacheDir, "browser-cache-dir", "", "local browser history cache directory")
+	cmd.Flags().BoolVar(&disableBrowserHistory, "disable-browser-history", false, "disable browser history collection for controlled smokes")
 	return cmd
 }

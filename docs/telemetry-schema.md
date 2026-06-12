@@ -7,6 +7,7 @@ tracedeck.device.active.duration_seconds
 tracedeck.app.usage.duration_seconds
 tracedeck.browser.domain.duration_seconds
 tracedeck.browser.category.duration_seconds
+tracedeck.browser.history.events
 tracedeck.policy.violation.count
 tracedeck.anomaly.count
 tracedeck.agent.export.failure.count

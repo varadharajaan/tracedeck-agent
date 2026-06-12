@@ -22,3 +22,8 @@ adapter contract instead of calling host OS APIs directly.
 Phase 2B turns the one-shot runner into a continuous loop. `run --once` remains
 the single-snapshot path, while `run` without `--once` repeats collection using
 `--collection-interval` until interrupted or `--max-cycles` is reached.
+
+Phase 3 adds a browser history collector for Chromium-style history databases.
+It copies browser history into a bounded local cache, reads recent rows through
+SQLite, and persists domain/category events only. Raw URLs, query strings, and
+page titles are used only transiently for classification and are not stored.

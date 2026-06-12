@@ -18,3 +18,7 @@ S3 upload is available through the AWS SDK adapter and is skipped when
 
 Phase 2B enables continuous mode. The first continuous cycle stages an archive
 batch immediately, then subsequent staging follows `archive.upload_interval`.
+
+Phase 3 archive batches may include `browser.domain.observed` events. Those
+events contain domain/category metadata only, so S3 archives do not receive raw
+browser URLs or page titles.

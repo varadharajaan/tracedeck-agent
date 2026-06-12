@@ -16,7 +16,7 @@ try {
     }
 
     Invoke-TraceDeckLoggedCommand -Label "Agent bootstrap smoke" -Command {
-        go run ./agent/cmd/tracedeck-agent run --once --config ./examples/policies/ai-btech-student.yaml
+        go run ./agent/cmd/tracedeck-agent run --once --config ./examples/policies/ai-btech-student.yaml --disable-browser-history
     }
 
     Complete-TraceDeckScriptLog

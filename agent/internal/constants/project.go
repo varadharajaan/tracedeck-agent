@@ -22,6 +22,7 @@ const (
 	DefaultSQLiteFile   = "tracedeck-agent.sqlite"
 	DefaultOutboxDir    = "data/local/outbox"
 	DefaultProcessLimit = 256
+	DefaultBrowserLimit = DefaultBrowserHistoryLimit
 	DefaultMaxCycles    = 0
 )
 
