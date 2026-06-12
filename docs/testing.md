@@ -683,6 +683,15 @@ markers, and reruns the screenshot-free dashboard layout contract. Newman runs
 `postman/tracedeck-backend-phase52.postman_collection.json` against the same
 live demo and covers dashboard markers plus typed role experience packaging.
 
+The Phase 53 smoke live-boots the seeded dashboard, verifies Executive
+Notification Console, Value Tiles, Anomaly Alert Stream, Mail And Push Proof,
+and Owner Action Board markers, checks the tenant `executive-console` API,
+verifies readiness, anomaly, mail, push, report, archive, role, delivery, and
+owner-action proof, checks strict privacy/forbidden markers, and reruns the
+screenshot-free dashboard layout contract. Newman runs
+`postman/tracedeck-backend-phase53.postman_collection.json` against the same
+live demo and covers dashboard markers plus typed executive console packaging.
+
 Phase 13 adds:
 
 ```powershell

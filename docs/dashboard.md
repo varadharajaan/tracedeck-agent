@@ -82,6 +82,11 @@ API. The panel packages parent, student, school admin, and business manager
 views with readiness scores, visible panels, notification promise,
 archive/report promise, consent controls, paid tier, next action, and a paid
 onboarding checklist.
+Phase 53 adds an Executive Notification Console backed by the typed
+executive-console API. It is the first monetisation-grade surface on the page
+and shows sellable readiness, anomaly/open alert pressure, mail delivery proof,
+push reach, weekly report readiness, archive posture, role packaging, value
+tiles, provider-safe delivery proof, alert stream, and owner actions.
 
 The dashboard reads the base backend endpoints:
 
@@ -100,6 +105,7 @@ For the selected host it reads:
 - `/api/v1/devices/{deviceId}/reports/weekly`
 - `/api/v1/tenants/{tenantId}/delivery-timeline?device_id={deviceId}&limit=8`
 - `/api/v1/tenants/{tenantId}/role-experiences`
+- `/api/v1/tenants/{tenantId}/executive-console`
 - `/api/v1/tenants/{tenantId}`
 - `/api/v1/plans`
 - `/api/v1/roles`
@@ -123,6 +129,9 @@ Current panels:
 
 - local dashboard access panel for API-key protected backends; the key is kept
   in browser session storage and sent as `X-TraceDeck-API-Key`
+- executive notification console for sellable readiness, anomaly urgency, mail
+  proof, push reach, weekly report readiness, archive posture, role packaging,
+  paid value tiles, alert stream, delivery proof, and owner actions
 - host filter and host identity
 - monetisation launch deck for customer package, readiness, notification score,
   trust score, and conversion stage
@@ -215,8 +224,9 @@ Current panels:
   report delivery proof
 - buyer demo checklist for anomaly, route, report, archive, consent/data
   rights, and saved-view readiness
-- command navigation for paid ops, revenue, Notify Pro, notifications, reports,
-  archive, trust, and hosts with KPI summaries backed by existing typed APIs
+- command navigation for executive, paid ops, revenue, Notify Pro,
+  notifications, reports, archive, trust, and hosts with KPI summaries backed
+  by existing typed APIs
 - buyer operations brief for monetisation demos with anomaly alerting, mail
   delivery proof, push notification dispatch, weekly report delivery, archive
   retention, trust/audit, delivery command, packaging snapshot, and next

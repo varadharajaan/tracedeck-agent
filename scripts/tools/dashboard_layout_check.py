@@ -13,6 +13,13 @@ VIEWPORTS = (
 )
 
 REQUIRED_IDS = (
+    "executive-console-section",
+    "executive-console-status",
+    "executive-console-headline",
+    "executive-tile-list",
+    "executive-alert-list",
+    "executive-delivery-list",
+    "executive-action-list",
     "business-dashboard-section",
     "business-dashboard-status",
     "business-dashboard-headline",
@@ -165,8 +172,8 @@ def main() -> int:
                             clientHeight: element.clientHeight
                           }));
                           checks.push({
-                            name: "command-navigation-has-eight-jumps",
-                            ok: jumpBoxes.length === 8,
+                            name: "command-navigation-has-nine-jumps",
+                            ok: jumpBoxes.length === 9,
                             detail: `${jumpBoxes.length} command jump buttons`
                           });
                           for (const item of jumpBoxes) {

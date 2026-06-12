@@ -1494,6 +1494,75 @@ func TestTenantRoleExperiencesEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantExecutiveConsoleEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "executive-console-device-001",
+		"host_name": "executive-console-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentExecutiveConsole, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected executive console 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var console model.TenantExecutiveConsole
+	if err := json.Unmarshal(response.Body.Bytes(), &console); err != nil {
+		t.Fatalf("decode executive console: %v", err)
+	}
+	if console.Summary.ReadinessScore == 0 || console.Summary.NotificationScore == 0 || console.Summary.RecommendedPaidPackage == "" || console.Summary.NextBestAction == "" {
+		t.Fatalf("expected monetisable executive summary: %+v", console.Summary)
+	}
+	if console.Summary.EmailDelivered == 0 || console.Summary.DashboardDelivered == 0 {
+		t.Fatalf("expected mail and dashboard delivery proof: %+v", console.Summary)
+	}
+	if len(console.Tiles) < 8 || len(console.Alerts) == 0 || len(console.Deliveries) < 3 || len(console.Actions) == 0 {
+		t.Fatalf("expected tiles, alerts, deliveries, and actions: %+v", console)
+	}
+	hasPush := false
+	for _, delivery := range console.Deliveries {
+		if delivery.Channel == constants.DeliveryChannelPush && delivery.Status != "" && delivery.PaidTier != "" {
+			hasPush = true
+		}
+	}
+	if !hasPush {
+		t.Fatalf("expected push notification proof in executive console: %+v", console.Deliveries)
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "screenshot_bytes", "raw_url", "page_title", "alert_body"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("executive console leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+	if !strings.Contains(console.PrivacyBoundary, "metadata-only") || !strings.Contains(console.PrivacyBoundary, "no passwords") || !strings.Contains(console.PrivacyBoundary, "screenshots") {
+		t.Fatalf("expected strict executive console privacy boundary, got %q", console.PrivacyBoundary)
+	}
+}
+
 func TestDeviceGroupAndPolicyAssignmentEndpoints(t *testing.T) {
 	t.Parallel()
 

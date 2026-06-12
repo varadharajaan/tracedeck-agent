@@ -1,0 +1,112 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 53",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Has Executive Console",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('dashboard contains executive monetisation markers', function () {",
+              "  pm.response.to.have.status(200);",
+              "  var body = pm.response.text();",
+              "  ['Executive Notification Console', 'executive-console-section', 'Value Tiles', 'Anomaly Alert Stream', 'Mail And Push Proof', 'Owner Action Board', 'Business Dashboard', 'Role Experience Center'].forEach(function (marker) {",
+              "    pm.expect(body).to.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Executive Console",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/executive-console"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('executive console exposes monetisable command surface', function () {",
+              "  pm.response.to.have.status(200);",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.summary.readiness_score).to.be.above(0);",
+              "  pm.expect(json.summary.notification_score).to.be.above(0);",
+              "  pm.expect(json.summary.recommended_paid_package).to.be.a('string').and.not.empty;",
+              "  pm.expect(json.summary.next_best_action).to.be.a('string').and.not.empty;",
+              "  pm.expect(json.summary.email_delivered).to.be.above(0);",
+              "  pm.expect(json.summary.dashboard_delivered).to.be.above(0);",
+              "  pm.expect(json.tiles.length).to.be.at.least(8);",
+              "  pm.expect(json.alerts.length).to.be.at.least(1);",
+              "  pm.expect(json.deliveries.length).to.be.at.least(3);",
+              "  pm.expect(json.actions.length).to.be.at.least(1);",
+              "  pm.expect(json.deliveries.some(function (item) { return item.channel === 'push' && item.status && item.paid_tier; })).to.eql(true);",
+              "  pm.expect(json.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(json.privacy_boundary).to.include('no passwords');",
+              "  pm.expect(json.privacy_boundary).to.include('screenshots');",
+              "  var serialized = JSON.stringify(json).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'screenshot_bytes', 'raw_url', 'page_title', 'alert_body'].forEach(function (marker) {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Business Dashboard",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/business-dashboard"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('business dashboard still exposes product proof', function () {",
+              "  pm.response.to.have.status(200);",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.summary.product_score).to.be.above(0);",
+              "  pm.expect(json.summary.notification_score).to.be.above(0);",
+              "  pm.expect(json.channels.some(function (channel) { return channel.channel === 'push' && channel.status; })).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
