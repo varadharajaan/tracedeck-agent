@@ -33,6 +33,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase22.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase23.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase24.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase25.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase26.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase27.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase28.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase29.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
@@ -303,6 +308,24 @@ verifies the stale first listener is stopped, verifies the second process owns
 the port, checks current dashboard customer operations panels, and verifies the
 seeded tenant operations API. Newman starts the dashboard through the same
 launcher and verifies health, dashboard HTML, and operations summary.
+
+Phase 29 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-js.ps1 -OutputRoot "data/local/dashboard-js-check/phase29"
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase29.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase29.ps1
+```
+
+The Phase 29 verifier syntax-checks the embedded dashboard JavaScript, then the
+smoke live-boots the seeded dashboard, asserts the embedded UI contains the
+monetisation launch deck, anomaly push assurance, mail delivery assurance,
+weekly report proof, and notification revenue stream, then verifies the backing
+overview, delivery, weekly report, operations, and monetisation summary APIs.
+Newman runs
+`postman/tracedeck-backend-phase29.postman_collection.json` against a live
+dashboard demo and checks the same buyer-ready notification and paid packaging
+contract.
 
 Phase 13 adds:
 

@@ -54,6 +54,10 @@ readiness. The panels are populated from the existing typed tenant operations,
 tenant monetisation summary, alert delivery, weekly report, and host risk APIs.
 Phase 28 adds Live Agent Telemetry and Telemetry Privacy Boundary panels backed
 by the agent-to-backend metadata ingest bridge.
+Phase 29 moves the monetisation story into the first screen with a launch deck
+for customer package readiness, anomaly push assurance, mail delivery
+assurance, weekly report proof, host risk command, archive retention,
+notification revenue stream, and buyer action prompts.
 
 The dashboard reads the base backend endpoints:
 
@@ -88,6 +92,15 @@ For the selected host it reads:
 Current panels:
 
 - host filter and host identity
+- monetisation launch deck for customer package, readiness, notification score,
+  trust score, and conversion stage
+- anomaly push assurance showing route status, recipient, provider, and proof
+- mail delivery assurance showing critical alert email route status and proof
+- weekly report proof showing email and PDF readiness
+- host risk command for the highest-risk anomaly, policy, or tamper signal
+- archive retention proof for S3-backed retention and backlog state
+- notification revenue stream showing email, push, and dashboard delivery proof
+- buyer action prompts for immediate action, route proof, and upgrade lever
 - priority action board for the highest-value intervention
 - notification promise for email, push, and dashboard delivery status
 - commercial readiness score for Family Pro, school, and business packaging
