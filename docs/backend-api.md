@@ -60,6 +60,8 @@ GET  /api/v1/tenants/{tenantId}
 GET  /api/v1/tenants/{tenantId}/audit-events
 GET  /api/v1/tenants/{tenantId}/alert-rules
 POST /api/v1/tenants/{tenantId}/alert-rules
+GET  /api/v1/tenants/{tenantId}/notification-routes
+POST /api/v1/tenants/{tenantId}/notification-routes
 GET  /api/v1/tenants/{tenantId}/consent-center
 GET  /api/v1/tenants/{tenantId}/operations-summary
 GET  /api/v1/tenants/{tenantId}/monetization-summary
@@ -186,6 +188,16 @@ customer-ready product cockpit. It returns plan packaging, conversion stage,
 readiness/notification/trust scores, email/push/dashboard promise lines,
 route-level delivery proof, paid capability proof, and conversion actions for
 Family Pro, school, and business demos.
+
+Phase 26 adds tenant-scoped notification route registry APIs:
+
+- `GET /api/v1/tenants/{tenantId}/notification-routes`
+- `POST /api/v1/tenants/{tenantId}/notification-routes`
+
+Routes are typed records for email, push, and dashboard delivery readiness.
+They store channel, provider, enabled state, status, recipient label, route
+summary, and verification timestamp. They do not store SMTP passwords, API
+keys, push endpoint secrets, auth tokens, or raw message content.
 
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.

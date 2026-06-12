@@ -1,0 +1,84 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 26",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Contains Notification Route Panels",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard has notification route panels', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Notification Route Registry');",
+        "  pm.expect(html).to.include('Route Readiness Proof');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Seeded Notification Routes",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/notification-routes" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('tenant has seeded notification routes', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.count).to.be.at.least(3);",
+        "  const channels = body.items.map((item) => item.channel);",
+        "  pm.expect(channels).to.include('email');",
+        "  pm.expect(channels).to.include('push');",
+        "  pm.expect(channels).to.include('dashboard');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Create Notification Route",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/notification-routes",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"channel\":\"push\",\"provider\":\"web_push\",\"recipient_label\":\"parent secondary phone\",\"status\":\"watch\",\"enabled\":true,\"last_summary\":\"Waiting for first delivered push proof.\"}"
+        }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('notification route can be created', function () {",
+        "  pm.response.to.have.status(201);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.channel).to.eql('push');",
+        "  pm.expect(body.provider).to.eql('web_push');",
+        "  pm.expect(body.recipient_label).to.eql('parent secondary phone');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Reject Invalid Provider Pairing",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/notification-routes",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"channel\":\"email\",\"provider\":\"web_push\",\"recipient_label\":\"bad route\",\"enabled\":true}"
+        }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('invalid provider pairing is rejected', function () {",
+        "  pm.response.to.have.status(400);",
+        "  pm.expect(pm.response.json().error).to.include('provider is not valid');",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

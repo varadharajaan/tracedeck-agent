@@ -65,6 +65,20 @@ func TestPersistentStoreSurvivesRestart(t *testing.T) {
 	if rule.ID == "" {
 		t.Fatalf("expected alert rule id: %+v", rule)
 	}
+	route, err := first.CreateNotificationRoute(ctx, "family-varadha", model.CreateNotificationRouteRequest{
+		Channel:        constants.DeliveryChannelPush,
+		Provider:       constants.DeliveryProviderWebPush,
+		RecipientLabel: "persistent parent mobile route",
+		Status:         constants.StatusWatch,
+		Enabled:        true,
+		LastSummary:    "persistent route waiting for first delivered push proof",
+	})
+	if err != nil {
+		t.Fatalf("create notification route: %v", err)
+	}
+	if route.ID == "" {
+		t.Fatalf("expected notification route id: %+v", route)
+	}
 	group, err := first.CreateDeviceGroup(ctx, "family-varadha", model.CreateDeviceGroupRequest{
 		Name:             "Persistent exam devices",
 		Description:      "Devices assigned to exam mode",
@@ -148,6 +162,10 @@ func TestPersistentStoreSurvivesRestart(t *testing.T) {
 	rules := second.ListAlertRules(ctx, "family-varadha")
 	if len(rules) < 3 {
 		t.Fatalf("expected seeded and custom alert rules after restart: %+v", rules)
+	}
+	routes := second.ListNotificationRoutes(ctx, "family-varadha")
+	if len(routes) < 4 {
+		t.Fatalf("expected seeded and custom notification routes after restart: %+v", routes)
 	}
 	groups := second.ListDeviceGroups(ctx, "family-varadha")
 	if len(groups) < 2 {
