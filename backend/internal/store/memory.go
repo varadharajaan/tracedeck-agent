@@ -28,6 +28,8 @@ type Memory struct {
 	tenants         map[string]model.Tenant
 	auditEvents     []model.AuditEvent
 	alertRules      map[string][]model.AlertRule
+	deviceGroups    map[string][]model.DeviceGroup
+	policyAssigns   map[string][]model.PolicyAssignment
 	policyEvents    map[string][]model.RiskEvent
 	anomalyEvents   map[string][]model.RiskEvent
 	tamperEvents    map[string][]model.RiskEvent
@@ -40,6 +42,8 @@ func NewMemory() *Memory {
 		devices:         make(map[string]model.Device),
 		tenants:         make(map[string]model.Tenant),
 		alertRules:      make(map[string][]model.AlertRule),
+		deviceGroups:    make(map[string][]model.DeviceGroup),
+		policyAssigns:   make(map[string][]model.PolicyAssignment),
 		policyEvents:    make(map[string][]model.RiskEvent),
 		anomalyEvents:   make(map[string][]model.RiskEvent),
 		tamperEvents:    make(map[string][]model.RiskEvent),
@@ -107,6 +111,8 @@ func (m *Memory) CreateTenant(_ context.Context, req model.CreateTenantRequest) 
 	}
 	m.tenants[tenantID] = tenant
 	m.seedAlertRulesForTenantLocked(tenant)
+	m.seedDeviceGroupsForTenantLocked(tenant)
+	m.seedPolicyAssignmentsForTenantLocked(tenant)
 	m.auditEvents = append(m.auditEvents, model.AuditEvent{
 		ID:        auditID(tenantID, len(m.auditEvents)+1, now),
 		TenantID:  tenantID,
@@ -188,6 +194,126 @@ func (m *Memory) ListAlertRules(_ context.Context, tenantID string) []model.Aler
 		return rules[i].TenantID < rules[j].TenantID
 	})
 	return rules
+}
+
+func (m *Memory) CreateDeviceGroup(_ context.Context, tenantID string, req model.CreateDeviceGroupRequest) (model.DeviceGroup, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.tenants[tenantID]; !ok {
+		return model.DeviceGroup{}, ErrTenantNotFound
+	}
+	group := model.DeviceGroup{
+		ID:               deviceGroupID(tenantID, len(m.deviceGroups[tenantID])+1, now),
+		TenantID:         tenantID,
+		Name:             strings.TrimSpace(req.Name),
+		Description:      strings.TrimSpace(req.Description),
+		Profile:          strings.TrimSpace(req.Profile),
+		DeviceIDs:        normalizeStrings(req.DeviceIDs),
+		PolicyTemplateID: strings.TrimSpace(req.PolicyTemplateID),
+		CreatedAt:        now,
+		UpdatedAt:        now,
+	}
+	m.deviceGroups[tenantID] = append(m.deviceGroups[tenantID], group)
+	m.auditEvents = append(m.auditEvents, model.AuditEvent{
+		ID:        auditID(tenantID, len(m.auditEvents)+1, now),
+		TenantID:  tenantID,
+		Category:  constants.AuditCategoryPolicy,
+		Action:    constants.AuditActionDeviceGroupCreated,
+		Actor:     constants.AuditActorLocalAPI,
+		ActorRole: constants.RoleBusinessManager,
+		Summary:   "device group created: " + group.Name,
+		CreatedAt: now,
+	})
+	if err := m.persistLocked(); err != nil {
+		return model.DeviceGroup{}, err
+	}
+	return group, nil
+}
+
+func (m *Memory) ListDeviceGroups(_ context.Context, tenantID string) []model.DeviceGroup {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	tenantID = strings.TrimSpace(tenantID)
+	groups := make([]model.DeviceGroup, 0)
+	if tenantID == "" {
+		for _, tenantGroups := range m.deviceGroups {
+			groups = append(groups, tenantGroups...)
+		}
+	} else {
+		groups = append(groups, m.deviceGroups[tenantID]...)
+	}
+	sort.Slice(groups, func(i, j int) bool {
+		if groups[i].TenantID == groups[j].TenantID {
+			return groups[i].CreatedAt.Before(groups[j].CreatedAt)
+		}
+		return groups[i].TenantID < groups[j].TenantID
+	})
+	return cloneDeviceGroups(groups)
+}
+
+func (m *Memory) CreatePolicyAssignment(_ context.Context, tenantID string, req model.CreatePolicyAssignmentRequest) (model.PolicyAssignment, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.tenants[tenantID]; !ok {
+		return model.PolicyAssignment{}, ErrTenantNotFound
+	}
+	assignment := model.PolicyAssignment{
+		ID:               policyAssignmentID(tenantID, len(m.policyAssigns[tenantID])+1, now),
+		TenantID:         tenantID,
+		Name:             strings.TrimSpace(req.Name),
+		TargetType:       strings.TrimSpace(req.TargetType),
+		TargetID:         strings.TrimSpace(req.TargetID),
+		PolicyTemplateID: strings.TrimSpace(req.PolicyTemplateID),
+		AlertRuleIDs:     normalizeStrings(req.AlertRuleIDs),
+		Mode:             strings.TrimSpace(req.Mode),
+		Status:           constants.PolicyAssignmentStatusActive,
+		CreatedAt:        now,
+		UpdatedAt:        now,
+	}
+	m.policyAssigns[tenantID] = append(m.policyAssigns[tenantID], assignment)
+	m.auditEvents = append(m.auditEvents, model.AuditEvent{
+		ID:        auditID(tenantID, len(m.auditEvents)+1, now),
+		TenantID:  tenantID,
+		Category:  constants.AuditCategoryPolicy,
+		Action:    constants.AuditActionPolicyAssigned,
+		Actor:     constants.AuditActorLocalAPI,
+		ActorRole: constants.RoleSchoolAdmin,
+		Summary:   "policy assigned: " + assignment.Name,
+		CreatedAt: now,
+	})
+	if err := m.persistLocked(); err != nil {
+		return model.PolicyAssignment{}, err
+	}
+	return assignment, nil
+}
+
+func (m *Memory) ListPolicyAssignments(_ context.Context, tenantID string) []model.PolicyAssignment {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	tenantID = strings.TrimSpace(tenantID)
+	assignments := make([]model.PolicyAssignment, 0)
+	if tenantID == "" {
+		for _, tenantAssignments := range m.policyAssigns {
+			assignments = append(assignments, tenantAssignments...)
+		}
+	} else {
+		assignments = append(assignments, m.policyAssigns[tenantID]...)
+	}
+	sort.Slice(assignments, func(i, j int) bool {
+		if assignments[i].TenantID == assignments[j].TenantID {
+			return assignments[i].CreatedAt.Before(assignments[j].CreatedAt)
+		}
+		return assignments[i].TenantID < assignments[j].TenantID
+	})
+	return clonePolicyAssignments(assignments)
 }
 
 func (m *Memory) ListTenants(_ context.Context) []model.Tenant {
@@ -330,6 +456,62 @@ func (m *Memory) seedAlertRulesForTenantLocked(tenant model.Tenant) {
 			Enabled:   true,
 			CreatedAt: now.Add(time.Millisecond),
 			UpdatedAt: now.Add(time.Millisecond),
+		},
+	}
+}
+
+func (m *Memory) seedDeviceGroupsForTenantLocked(tenant model.Tenant) {
+	tenantID := strings.TrimSpace(tenant.TenantID)
+	if tenantID == "" || len(m.deviceGroups[tenantID]) > 0 {
+		return
+	}
+	now := time.Now().UTC()
+	profile := strings.TrimSpace(tenant.PrimaryProfile)
+	if profile == "" {
+		profile = "ai-btech-student"
+	}
+	m.deviceGroups[tenantID] = []model.DeviceGroup{
+		{
+			ID:               deviceGroupID(tenantID, 1, now),
+			TenantID:         tenantID,
+			Name:             "Primary study devices",
+			Description:      "Default group for the tenant primary policy profile.",
+			Profile:          profile,
+			DeviceIDs:        []string{},
+			PolicyTemplateID: profile,
+			CreatedAt:        now,
+			UpdatedAt:        now,
+		},
+	}
+}
+
+func (m *Memory) seedPolicyAssignmentsForTenantLocked(tenant model.Tenant) {
+	tenantID := strings.TrimSpace(tenant.TenantID)
+	if tenantID == "" || len(m.policyAssigns[tenantID]) > 0 {
+		return
+	}
+	now := time.Now().UTC()
+	profile := strings.TrimSpace(tenant.PrimaryProfile)
+	if profile == "" {
+		profile = "ai-btech-student"
+	}
+	groupID := ""
+	if groups := m.deviceGroups[tenantID]; len(groups) > 0 {
+		groupID = groups[0].ID
+	}
+	m.policyAssigns[tenantID] = []model.PolicyAssignment{
+		{
+			ID:               policyAssignmentID(tenantID, 1, now),
+			TenantID:         tenantID,
+			Name:             "Primary profile assignment",
+			TargetType:       constants.PolicyAssignmentTargetDeviceGroup,
+			TargetID:         groupID,
+			PolicyTemplateID: profile,
+			AlertRuleIDs:     alertRuleIDs(m.alertRules[tenantID]),
+			Mode:             constants.PolicyAssignmentModeActive,
+			Status:           constants.PolicyAssignmentStatusActive,
+			CreatedAt:        now,
+			UpdatedAt:        now,
 		},
 	}
 }
@@ -649,6 +831,34 @@ func alertRuleID(tenantID string, sequence int, createdAt time.Time) string {
 	}, "-")
 }
 
+func deviceGroupID(tenantID string, sequence int, createdAt time.Time) string {
+	return strings.Join([]string{
+		strings.TrimSpace(tenantID),
+		"device-group",
+		fmt.Sprintf("%03d", sequence),
+		createdAt.Format("20060102T150405Z"),
+	}, "-")
+}
+
+func policyAssignmentID(tenantID string, sequence int, createdAt time.Time) string {
+	return strings.Join([]string{
+		strings.TrimSpace(tenantID),
+		"policy-assignment",
+		fmt.Sprintf("%03d", sequence),
+		createdAt.Format("20060102T150405Z"),
+	}, "-")
+}
+
+func alertRuleIDs(rules []model.AlertRule) []string {
+	ids := make([]string, 0, len(rules))
+	for _, rule := range rules {
+		if clean := strings.TrimSpace(rule.ID); clean != "" {
+			ids = append(ids, clean)
+		}
+	}
+	return ids
+}
+
 func normalizeStrings(values []string) []string {
 	normalized := make([]string, 0, len(values))
 	seen := make(map[string]bool, len(values))
@@ -675,16 +885,18 @@ func archiveKey(device model.Device, uploadedAt time.Time) string {
 }
 
 type persistentState struct {
-	Version         string                           `json:"version"`
-	Tenants         map[string]model.Tenant          `json:"tenants"`
-	Devices         map[string]model.Device          `json:"devices"`
-	AuditEvents     []model.AuditEvent               `json:"audit_events"`
-	AlertRules      map[string][]model.AlertRule     `json:"alert_rules"`
-	PolicyEvents    map[string][]model.RiskEvent     `json:"policy_events"`
-	AnomalyEvents   map[string][]model.RiskEvent     `json:"anomaly_events"`
-	TamperEvents    map[string][]model.RiskEvent     `json:"tamper_events"`
-	AlertDeliveries map[string][]model.AlertDelivery `json:"alert_deliveries"`
-	HealthScores    map[string]model.DeviceHealth    `json:"health_scores"`
+	Version         string                              `json:"version"`
+	Tenants         map[string]model.Tenant             `json:"tenants"`
+	Devices         map[string]model.Device             `json:"devices"`
+	AuditEvents     []model.AuditEvent                  `json:"audit_events"`
+	AlertRules      map[string][]model.AlertRule        `json:"alert_rules"`
+	DeviceGroups    map[string][]model.DeviceGroup      `json:"device_groups"`
+	PolicyAssigns   map[string][]model.PolicyAssignment `json:"policy_assignments"`
+	PolicyEvents    map[string][]model.RiskEvent        `json:"policy_events"`
+	AnomalyEvents   map[string][]model.RiskEvent        `json:"anomaly_events"`
+	TamperEvents    map[string][]model.RiskEvent        `json:"tamper_events"`
+	AlertDeliveries map[string][]model.AlertDelivery    `json:"alert_deliveries"`
+	HealthScores    map[string]model.DeviceHealth       `json:"health_scores"`
 }
 
 func (m *Memory) load() error {
@@ -708,6 +920,8 @@ func (m *Memory) load() error {
 	m.devices = cloneDeviceMap(state.Devices)
 	m.auditEvents = append([]model.AuditEvent(nil), state.AuditEvents...)
 	m.alertRules = cloneAlertRuleMap(state.AlertRules)
+	m.deviceGroups = cloneDeviceGroupMap(state.DeviceGroups)
+	m.policyAssigns = clonePolicyAssignmentMap(state.PolicyAssigns)
 	m.policyEvents = cloneRiskMap(state.PolicyEvents)
 	m.anomalyEvents = cloneRiskMap(state.AnomalyEvents)
 	m.tamperEvents = cloneRiskMap(state.TamperEvents)
@@ -726,6 +940,8 @@ func (m *Memory) persistLocked() error {
 		Devices:         cloneDeviceMap(m.devices),
 		AuditEvents:     append([]model.AuditEvent(nil), m.auditEvents...),
 		AlertRules:      cloneAlertRuleMap(m.alertRules),
+		DeviceGroups:    cloneDeviceGroupMap(m.deviceGroups),
+		PolicyAssigns:   clonePolicyAssignmentMap(m.policyAssigns),
 		PolicyEvents:    cloneRiskMap(m.policyEvents),
 		AnomalyEvents:   cloneRiskMap(m.anomalyEvents),
 		TamperEvents:    cloneRiskMap(m.tamperEvents),
@@ -782,6 +998,38 @@ func cloneAlertRuleMap(input map[string][]model.AlertRule) map[string][]model.Al
 	output := make(map[string][]model.AlertRule, len(input))
 	for key, value := range input {
 		output[key] = append([]model.AlertRule(nil), value...)
+	}
+	return output
+}
+
+func cloneDeviceGroups(input []model.DeviceGroup) []model.DeviceGroup {
+	output := append([]model.DeviceGroup(nil), input...)
+	for index := range output {
+		output[index].DeviceIDs = append([]string(nil), output[index].DeviceIDs...)
+	}
+	return output
+}
+
+func cloneDeviceGroupMap(input map[string][]model.DeviceGroup) map[string][]model.DeviceGroup {
+	output := make(map[string][]model.DeviceGroup, len(input))
+	for key, value := range input {
+		output[key] = cloneDeviceGroups(value)
+	}
+	return output
+}
+
+func clonePolicyAssignments(input []model.PolicyAssignment) []model.PolicyAssignment {
+	output := append([]model.PolicyAssignment(nil), input...)
+	for index := range output {
+		output[index].AlertRuleIDs = append([]string(nil), output[index].AlertRuleIDs...)
+	}
+	return output
+}
+
+func clonePolicyAssignmentMap(input map[string][]model.PolicyAssignment) map[string][]model.PolicyAssignment {
+	output := make(map[string][]model.PolicyAssignment, len(input))
+	for key, value := range input {
+		output[key] = clonePolicyAssignments(value)
 	}
 	return output
 }
@@ -1056,6 +1304,15 @@ func KnownRetentionTierID(tierID string) bool {
 
 func KnownAlertRuleTemplateID(templateID string) bool {
 	for _, template := range AlertRuleTemplates() {
+		if template.ID == strings.TrimSpace(templateID) {
+			return true
+		}
+	}
+	return false
+}
+
+func KnownPolicyTemplateID(templateID string) bool {
+	for _, template := range PolicyTemplates() {
 		if template.ID == strings.TrimSpace(templateID) {
 			return true
 		}

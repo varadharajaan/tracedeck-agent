@@ -65,6 +65,15 @@ Phase 20 adds buyer-facing trust and alert proof:
 - static dashboard disclosure that passwords, credentials, screenshots, and
   private content are denied collection categories
 
+Phase 21 adds managed-policy packaging:
+
+- device groups for family, school, coaching center, and business cohorts
+- policy assignments by tenant, device group, or device
+- seeded primary group and assignment for new tenants
+- audit evidence for group creation and assignment rollout
+- dashboard visibility for assignment mode, status, target, policy template,
+  and alert-rule coverage
+
 This still uses the existing privacy-aware API data: typed risk categories,
 delivery routes, report readiness, health, archive, role, retention, and policy
 template metadata. It does not add credential, keylog, private-message, raw URL,

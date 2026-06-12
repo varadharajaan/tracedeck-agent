@@ -17,6 +17,8 @@ remote unauthenticated backend.
   recipients, data export/delete readiness, pause controls, and audit history.
 - Alert revenue operations panels for anomaly notification proof, email
   delivery proof, push reach, and customer audit evidence.
+- Device group and policy assignment APIs for tenant, group, and device-level
+  rollout readiness.
 
 ## Boundaries
 
@@ -33,7 +35,7 @@ remote unauthenticated backend.
 - Durable tenant store.
 - Authentication and tenant authorization.
 - Billing provider integration.
-- Policy assignment by tenant, role, and device group.
+- Hosted policy assignment by tenant, role, and device group.
 - Authenticated hosted consent/audit center with durable export and deletion
   workflows.
 - Report export and retention enforcement.

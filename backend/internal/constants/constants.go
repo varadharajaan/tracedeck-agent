@@ -39,6 +39,8 @@ const (
 	RouteSegmentAuditEvents   = "audit-events"
 	RouteSegmentAlertRules    = "alert-rules"
 	RouteSegmentConsentCenter = "consent-center"
+	RouteSegmentDeviceGroups  = "device-groups"
+	RouteSegmentPolicyAssign  = "policy-assignments"
 	RouteSegmentPolicyEvents  = "policy-violations"
 	RouteSegmentAnomalies     = "anomalies"
 	RouteSegmentTamperEvents  = "tamper-events"
@@ -93,9 +95,26 @@ const (
 )
 
 const (
-	AuditActionTenantCreated    = "tenant.created"
-	AuditActionAlertRuleCreated = "alert_rule.created"
-	AuditActorLocalAPI          = "local_backend"
+	AuditActionTenantCreated      = "tenant.created"
+	AuditActionAlertRuleCreated   = "alert_rule.created"
+	AuditActionDeviceGroupCreated = "device_group.created"
+	AuditActionPolicyAssigned     = "policy_assignment.created"
+	AuditActorLocalAPI            = "local_backend"
+)
+
+const (
+	PolicyAssignmentTargetTenant      = "tenant"
+	PolicyAssignmentTargetDeviceGroup = "device_group"
+	PolicyAssignmentTargetDevice      = "device"
+)
+
+const (
+	PolicyAssignmentModeAudit  = "audit"
+	PolicyAssignmentModeActive = "active"
+)
+
+const (
+	PolicyAssignmentStatusActive = "active"
 )
 
 const (

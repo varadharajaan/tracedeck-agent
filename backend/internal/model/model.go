@@ -44,6 +44,49 @@ type CreateTenantRequest struct {
 	PrimaryProfile  string `json:"primary_profile"`
 }
 
+type DeviceGroup struct {
+	ID               string    `json:"id"`
+	TenantID         string    `json:"tenant_id"`
+	Name             string    `json:"name"`
+	Description      string    `json:"description"`
+	Profile          string    `json:"profile"`
+	DeviceIDs        []string  `json:"device_ids"`
+	PolicyTemplateID string    `json:"policy_template_id"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}
+
+type CreateDeviceGroupRequest struct {
+	Name             string   `json:"name"`
+	Description      string   `json:"description"`
+	Profile          string   `json:"profile"`
+	DeviceIDs        []string `json:"device_ids"`
+	PolicyTemplateID string   `json:"policy_template_id"`
+}
+
+type PolicyAssignment struct {
+	ID               string    `json:"id"`
+	TenantID         string    `json:"tenant_id"`
+	Name             string    `json:"name"`
+	TargetType       string    `json:"target_type"`
+	TargetID         string    `json:"target_id"`
+	PolicyTemplateID string    `json:"policy_template_id"`
+	AlertRuleIDs     []string  `json:"alert_rule_ids"`
+	Mode             string    `json:"mode"`
+	Status           string    `json:"status"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}
+
+type CreatePolicyAssignmentRequest struct {
+	Name             string   `json:"name"`
+	TargetType       string   `json:"target_type"`
+	TargetID         string   `json:"target_id"`
+	PolicyTemplateID string   `json:"policy_template_id"`
+	AlertRuleIDs     []string `json:"alert_rule_ids"`
+	Mode             string   `json:"mode"`
+}
+
 type EnrollDeviceRequest struct {
 	TenantID string `json:"tenant_id"`
 	DeviceID string `json:"device_id"`

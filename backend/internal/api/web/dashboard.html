@@ -975,6 +975,29 @@
         <section class="content-grid">
           <div class="panel">
             <div class="section-head">
+              <div>
+                <h2>Device Groups</h2>
+                <p class="muted">Managed family, school, and business device cohorts for policy rollout</p>
+              </div>
+              <span id="device-group-count" class="pill">0 groups</span>
+            </div>
+            <div id="device-group-list" class="catalog-list"><div class="empty">No device groups yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Policy Assignments</h2>
+                <p class="muted">Tenant and group-level policy rollout status for managed endpoints</p>
+              </div>
+              <span id="policy-assignment-count" class="pill">0 assignments</span>
+            </div>
+            <div id="policy-assignment-list" class="catalog-list"><div class="empty">No policy assignments yet.</div></div>
+          </div>
+        </section>
+
+        <section class="content-grid">
+          <div class="panel">
+            <div class="section-head">
             <div>
               <h2>Consent + Audit Center</h2>
                 <p class="muted">Transparent collection status, recipients, rights, and policy history. Denied categories include passwords and credentials, screenshots, and private content.</p>
@@ -1198,6 +1221,8 @@
       renderRetentionTiers(context.retentionTiers);
       renderAlertRules(context.alertRules);
       renderAlertRuleTemplates(context.alertRuleTemplates);
+      renderDeviceGroups(context.deviceGroups);
+      renderPolicyAssignments(context.policyAssignments);
       renderConsentCenter(context.consentCenter);
       renderTimeline(policy.items.concat(anomalies.items, tamper.items));
       renderRiskTable("policy-table", policy.items, ["severity", "category", "source", "reason", "status"]);
@@ -1650,6 +1675,47 @@
       `).join("");
     }
 
+    function renderDeviceGroups(groups) {
+      const items = (groups && groups.items) || [];
+      setText("device-group-count", `${items.length} group${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("device-group-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No device groups yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="catalog-item">
+          <strong>${escapeHTML(item.name)}</strong>
+          <span class="muted">${escapeHTML(item.description || "No description")} - ${escapeHTML(item.device_ids ? item.device_ids.length : 0)} device${item.device_ids && item.device_ids.length === 1 ? "" : "s"}</span>
+          <div class="action-meta">
+            <span class="pill">${escapeHTML(item.profile)}</span>
+            <span class="pill">${escapeHTML(item.policy_template_id)}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderPolicyAssignments(assignments) {
+      const items = (assignments && assignments.items) || [];
+      setText("policy-assignment-count", `${items.length} assignment${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("policy-assignment-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No policy assignments yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="catalog-item">
+          <strong>${escapeHTML(item.name)}</strong>
+          <span class="muted">${escapeHTML(item.target_type)} ${escapeHTML(item.target_id)} - ${escapeHTML(item.policy_template_id)}</span>
+          <div class="action-meta">
+            ${badge(item.status)}
+            <span class="pill">${escapeHTML(item.mode)}</span>
+            <span class="pill">${escapeHTML(item.alert_rule_ids ? item.alert_rule_ids.length : 0)} alert rules</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
     function renderConsentCenter(consent) {
       const center = consent || {};
       document.getElementById("consent-status").outerHTML =
@@ -1829,6 +1895,8 @@
       ]);
       const tenant = await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}`);
       const alertRules = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/alert-rules`) : null;
+      const deviceGroups = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/device-groups`) : null;
+      const policyAssignments = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/policy-assignments`) : null;
       const consentCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/consent-center`) : null;
       renderOverview(overview, deviceHealth, policy, anomalies, tamper, deliveries, {
         tenant,
@@ -1838,6 +1906,8 @@
         templates,
         alertRuleTemplates,
         alertRules,
+        deviceGroups,
+        policyAssignments,
         consentCenter,
         auditEvents,
         weeklyReport

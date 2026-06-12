@@ -37,6 +37,8 @@ and paid rule recipes.
 Phase 20 adds consent/audit trust panels and a stronger paid alert operations
 band: anomaly notification proof, mail delivery proof, push notification reach,
 and customer audit evidence.
+Phase 21 adds managed policy rollout panels for device groups and policy
+assignments.
 
 The dashboard reads the base backend endpoints:
 
@@ -61,6 +63,8 @@ For the selected host it reads:
 - `/api/v1/alert-rule-templates`
 - `/api/v1/tenants/{tenantId}/alert-rules`
 - `/api/v1/tenants/{tenantId}/consent-center`
+- `/api/v1/tenants/{tenantId}/device-groups`
+- `/api/v1/tenants/{tenantId}/policy-assignments`
 
 Current panels:
 
@@ -103,6 +107,8 @@ Current panels:
 - retention and archive plan catalog
 - no-code alert rules for saved tenant automations
 - rule builder recipes for paid alert templates
+- device groups for managed family, school, and business cohorts
+- policy assignments for tenant and group-level policy rollout status
 - consent and audit center with visible monitoring, recipients, export/delete
   readiness, pause controls, and denied sensitive collection categories
 - policy audit trail for recent tenant and policy changes

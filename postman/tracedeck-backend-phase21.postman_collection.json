@@ -1,0 +1,274 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 21",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Without API Key",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is public', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Tenant",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"name\":\"Family Varadha\",\"plan_id\":\"family_pro\",\"retention_tier_id\":\"family_cloud_90_365_archive\",\"primary_profile\":\"ai-btech-student\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/tenants"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('tenant created', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().tenant_id).to.eql('family-varadha');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Enroll Host",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"device_id\":\"phase21-policy-device\",\"host_name\":\"phase21-policy-host\",\"profile\":\"ai-btech-student\",\"os_name\":\"windows\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/devices/enroll"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('host enrolled', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().device_id).to.eql('phase21-policy-device');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Seeded Device Groups",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/device-groups"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('tenant starts with a device group', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.count).to.be.above(0);",
+              "  pm.expect(body.items[0].policy_template_id).to.eql('ai-btech-student');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Device Group",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\":\"Exam Mode Devices\",\"description\":\"Managed exam preparation laptops\",\"profile\":\"school-laptop\",\"device_ids\":[\"phase21-policy-device\"],\"policy_template_id\":\"school-laptop\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/device-groups"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('device group is created', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.name).to.eql('Exam Mode Devices');",
+              "  pm.expect(body.device_ids).to.include('phase21-policy-device');",
+              "  pm.collectionVariables.set('deviceGroupId', body.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Policy Assignment",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"name\":\"Exam mode rollout\",\"target_type\":\"device_group\",\"target_id\":\"{{deviceGroupId}}\",\"policy_template_id\":\"school-laptop\",\"alert_rule_ids\":[\"manual-rule-001\"],\"mode\":\"active\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/policy-assignments"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('policy assignment is created', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.name).to.eql('Exam mode rollout');",
+              "  pm.expect(body.target_type).to.eql('device_group');",
+              "  pm.expect(body.status).to.eql('active');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List Policy Assignments",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/policy-assignments"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('tenant has seeded and custom policy assignments', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.count).to.be.above(1);",
+              "  pm.expect(body.items.some((item) => item.name === 'Exam mode rollout')).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Audit Includes Assignment Changes",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/audit-events"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('audit trail records group and assignment changes', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.items.some((item) => item.action === 'device_group.created')).to.eql(true);",
+              "  pm.expect(body.items.some((item) => item.action === 'policy_assignment.created')).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Contains Policy Rollout Panels",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('dashboard exposes managed policy rollout panels', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('Device Groups');",
+              "  pm.expect(html).to.include('Policy Assignments');",
+              "  pm.expect(html).to.include('Managed family, school, and business device cohorts');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18080"
+    },
+    {
+      "key": "apiKey",
+      "value": "phase21-local-secret"
+    },
+    {
+      "key": "deviceGroupId",
+      "value": ""
+    }
+  ]
+}

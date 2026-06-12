@@ -61,6 +61,10 @@ GET  /api/v1/tenants/{tenantId}/audit-events
 GET  /api/v1/tenants/{tenantId}/alert-rules
 POST /api/v1/tenants/{tenantId}/alert-rules
 GET  /api/v1/tenants/{tenantId}/consent-center
+GET  /api/v1/tenants/{tenantId}/device-groups
+POST /api/v1/tenants/{tenantId}/device-groups
+GET  /api/v1/tenants/{tenantId}/policy-assignments
+POST /api/v1/tenants/{tenantId}/policy-assignments
 POST /api/v1/devices/enroll
 GET  /api/v1/devices
 GET  /api/v1/devices/{deviceId}
@@ -148,6 +152,18 @@ readiness, data export/delete readiness, alert recipients, collection
 disclosures, and recent tenant/policy audit events. Passwords, credentials,
 screenshots, private messages, cookies, tokens, camera, and microphone are
 reported as denied collection categories.
+
+Phase 21 adds tenant-scoped managed rollout APIs:
+
+- `GET /api/v1/tenants/{tenantId}/device-groups`
+- `POST /api/v1/tenants/{tenantId}/device-groups`
+- `GET /api/v1/tenants/{tenantId}/policy-assignments`
+- `POST /api/v1/tenants/{tenantId}/policy-assignments`
+
+New tenants receive a seeded primary device group and policy assignment.
+Creating groups or assignments records tenant audit events. Assignments use
+typed target values (`tenant`, `device_group`, `device`) and typed modes
+(`audit`, `active`).
 
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.

@@ -298,6 +298,10 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantAlertRules(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentConsentCenter && r.Method == http.MethodGet:
 		s.handleTenantConsentCenter(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentDeviceGroups:
+		s.handleTenantDeviceGroups(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentPolicyAssign:
+		s.handleTenantPolicyAssignments(w, r, tenantID)
 	default:
 		http.NotFound(w, r)
 	}
@@ -401,6 +405,90 @@ func (s *Server) handleTenantConsentCenter(w http.ResponseWriter, r *http.Reques
 	auditEvents = filterAuditEventsForPrincipal(r.Context(), auditEvents)
 	rules := s.store.ListAlertRules(r.Context(), tenantID)
 	writeJSON(w, http.StatusOK, buildConsentCenter(tenant, auditEvents, rules))
+}
+
+func (s *Server) handleTenantDeviceGroups(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	if _, err := s.store.GetTenant(r.Context(), tenantID); err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant lookup failed")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		groups := s.store.ListDeviceGroups(r.Context(), tenantID)
+		writeJSON(w, http.StatusOK, model.ListResponse[model.DeviceGroup]{
+			Items: groups,
+			Count: len(groups),
+		})
+	case http.MethodPost:
+		var req model.CreateDeviceGroupRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid device group json")
+			return
+		}
+		if err := validateCreateDeviceGroupRequest(req); err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		group, err := s.store.CreateDeviceGroup(r.Context(), tenantID, req)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "device group creation failed")
+			return
+		}
+		writeJSON(w, http.StatusCreated, group)
+	default:
+		writeMethodNotAllowed(w)
+	}
+}
+
+func (s *Server) handleTenantPolicyAssignments(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	if _, err := s.store.GetTenant(r.Context(), tenantID); err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant lookup failed")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		assignments := s.store.ListPolicyAssignments(r.Context(), tenantID)
+		writeJSON(w, http.StatusOK, model.ListResponse[model.PolicyAssignment]{
+			Items: assignments,
+			Count: len(assignments),
+		})
+	case http.MethodPost:
+		var req model.CreatePolicyAssignmentRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid policy assignment json")
+			return
+		}
+		if err := validateCreatePolicyAssignmentRequest(req); err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		assignment, err := s.store.CreatePolicyAssignment(r.Context(), tenantID, req)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "policy assignment creation failed")
+			return
+		}
+		writeJSON(w, http.StatusCreated, assignment)
+	default:
+		writeMethodNotAllowed(w)
+	}
 }
 
 func (s *Server) handleDevice(w http.ResponseWriter, r *http.Request, deviceID string) {
@@ -724,9 +812,65 @@ func validateCreateAlertRuleRequest(req model.CreateAlertRuleRequest) error {
 	}
 }
 
+func validateCreateDeviceGroupRequest(req model.CreateDeviceGroupRequest) error {
+	switch {
+	case strings.TrimSpace(req.Name) == "":
+		return errors.New("name is required")
+	case strings.TrimSpace(req.Profile) == "":
+		return errors.New("profile is required")
+	case strings.TrimSpace(req.PolicyTemplateID) == "":
+		return errors.New("policy_template_id is required")
+	case !store.KnownPolicyTemplateID(req.PolicyTemplateID):
+		return errors.New("policy_template_id is unknown")
+	default:
+		return nil
+	}
+}
+
+func validateCreatePolicyAssignmentRequest(req model.CreatePolicyAssignmentRequest) error {
+	switch {
+	case strings.TrimSpace(req.Name) == "":
+		return errors.New("name is required")
+	case strings.TrimSpace(req.TargetType) == "":
+		return errors.New("target_type is required")
+	case !knownPolicyAssignmentTarget(req.TargetType):
+		return errors.New("target_type is unknown")
+	case strings.TrimSpace(req.TargetID) == "":
+		return errors.New("target_id is required")
+	case strings.TrimSpace(req.PolicyTemplateID) == "":
+		return errors.New("policy_template_id is required")
+	case !store.KnownPolicyTemplateID(req.PolicyTemplateID):
+		return errors.New("policy_template_id is unknown")
+	case strings.TrimSpace(req.Mode) == "":
+		return errors.New("mode is required")
+	case !knownPolicyAssignmentMode(req.Mode):
+		return errors.New("mode is unknown")
+	default:
+		return nil
+	}
+}
+
 func knownSeverity(severity string) bool {
 	switch strings.TrimSpace(severity) {
 	case constants.SeverityInfo, constants.SeverityLow, constants.SeverityMedium, constants.SeverityHigh, constants.SeverityCritical:
+		return true
+	default:
+		return false
+	}
+}
+
+func knownPolicyAssignmentTarget(target string) bool {
+	switch strings.TrimSpace(target) {
+	case constants.PolicyAssignmentTargetTenant, constants.PolicyAssignmentTargetDeviceGroup, constants.PolicyAssignmentTargetDevice:
+		return true
+	default:
+		return false
+	}
+}
+
+func knownPolicyAssignmentMode(mode string) bool {
+	switch strings.TrimSpace(mode) {
+	case constants.PolicyAssignmentModeAudit, constants.PolicyAssignmentModeActive:
 		return true
 	default:
 		return false
