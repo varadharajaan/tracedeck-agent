@@ -19,3 +19,8 @@ Phase 7 service templates do not install or start services automatically. macOS
 foreground app support is marked as requiring Accessibility permission, and
 Linux foreground support is marked partial because X11 and Wayland differ. No
 new collector is enabled without typed policy and platform support work.
+
+Phase 8 Windows scheduled-task registration is explicit and may request UAC
+approval. The task avoids console-window flicker by launching the agent
+executable in the background, but it is not a covert monitoring mechanism.
+TraceDeck remains transparent and consent-based.

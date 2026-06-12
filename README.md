@@ -20,6 +20,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase5.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase6.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase7.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase8.ps1
 go run ./agent/cmd/tracedeck-agent validate-config --config ./examples/policies/ai-btech-student.yaml
 go run ./agent/cmd/tracedeck-agent schema --out ./docs/schema/policy-v1alpha1.schema.json
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase5.ps1
@@ -27,6 +28,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase6.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase6.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-service-manifests.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-windows-task.ps1
 ```
 
 All repeatable setup and verification work is kept under `scripts/`, and script
