@@ -420,6 +420,21 @@ runs gofmt, agent tests, backend API tests, dashboard JavaScript syntax checks,
 the Phase 34 authenticated dashboard Newman guard, cross-platform builds, and
 root artifact hygiene.
 
+Phase 36 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase36.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase36.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase36.ps1
+```
+
+The Phase 36 smoke live-boots the seeded dashboard, verifies the Revenue
+Command Center, Monetisation Value Stack, Notification Proof Rail, and Buyer
+Demo Checklist markers, then checks monetisation summary, operations summary,
+notification routes, and consent/data-rights APIs. Newman runs
+`postman/tracedeck-backend-phase36.postman_collection.json` against the live
+dashboard demo and checks the same revenue-dashboard contract.
+
 Phase 13 adds:
 
 ```powershell

@@ -106,3 +106,19 @@ This still uses the existing privacy-aware API data: typed risk categories,
 delivery routes, report readiness, health, archive, role, retention, and policy
 template metadata. It does not add credential, keylog, private-message, raw URL,
 page-title, camera, microphone, or covert screen collection.
+
+Phase 36 upgrades the embedded dashboard into a stronger revenue command
+surface:
+
+- revenue command center for paid-plan outcome, conversion stage, seats, and
+  buyer readiness
+- monetisation value stack for host coverage, anomaly queue, mail delivery,
+  push reach, weekly report, S3 archive retention, consent/audit trust, and
+  upgrade lever
+- notification proof rail for anomaly alert, email delivery, push delivery,
+  dashboard inbox, and report mail proof
+- buyer demo checklist for route proof, report/PDF, archive, consent/data
+  rights, data export/delete readiness, and saved buyer views
+
+The phase adds presentation and verification only; it does not add sensitive
+collectors.

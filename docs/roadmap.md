@@ -118,3 +118,6 @@
 38. Phase 35: versioned policy schema checks. Typed policy-schema version
     registry, `schema --version` CLI support, checked-in schema drift tests,
     local schema verification script, docs, and local verification.
+39. Phase 36: monetisation-grade revenue dashboard. First-screen Revenue
+    Command Center, Monetisation Value Stack, Notification Proof Rail, Buyer
+    Demo Checklist, live smoke/Newman coverage, docs, and local verification.
