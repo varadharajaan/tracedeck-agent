@@ -27,3 +27,10 @@ Phase 3 adds a browser history collector for Chromium-style history databases.
 It copies browser history into a bounded local cache, reads recent rows through
 SQLite, and persists domain/category events only. Raw URLs, query strings, and
 page titles are used only transiently for classification and are not stored.
+
+Phase 4 adds the first policy/anomaly evaluator layer. The app pipeline collects
+events, stores them locally, optionally archives the batch, then evaluates alert
+rules against the in-memory event batch. Evaluators are split by rule family so
+new rules can be added without turning the runner into rule-specific code.
+Current rule families cover blocked process names, blocked browser domains, and
+non-study YouTube domain activity.

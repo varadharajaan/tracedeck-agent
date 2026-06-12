@@ -44,3 +44,119 @@ func TestEvaluatorDetectsBlockedApp(t *testing.T) {
 		t.Fatalf("unexpected rule: %s", alerts[0].RuleName)
 	}
 }
+
+func TestEvaluatorDetectsNonStudyYouTube(t *testing.T) {
+	t.Parallel()
+
+	policy := &config.Policy{
+		TenantID: constants.DefaultTenantID,
+		DeviceID: constants.DefaultDeviceID,
+		Alerts: config.AlertPolicy{Email: config.EmailPolicy{
+			MinSeverity: config.Severity(constants.SeverityMedium),
+		}},
+		AlertRules: map[string]config.RuleSpec{
+			constants.AlertRuleNonStudyYouTube: {
+				Enabled:  true,
+				Severity: config.Severity(constants.SeverityMedium),
+			},
+		},
+	}
+
+	alerts := NewEvaluator().Evaluate(context.Background(), policy, []event.Event{{
+		Type:      constants.EventTypeBrowserObserved,
+		Timestamp: time.Now().UTC(),
+		TenantID:  policy.TenantID,
+		DeviceID:  policy.DeviceID,
+		HostName:  constants.UnknownHost,
+		AppName:   constants.BrowserNameChrome,
+		Metadata: map[string]string{
+			constants.EventMetadataDomain:   constants.DomainYouTubeLong,
+			constants.EventMetadataCategory: constants.CategoryVideoStreaming,
+		},
+	}})
+
+	if len(alerts) != 1 {
+		t.Fatalf("expected 1 alert, got %d", len(alerts))
+	}
+	if alerts[0].RuleName != constants.AlertRuleNonStudyYouTube {
+		t.Fatalf("unexpected rule: %s", alerts[0].RuleName)
+	}
+	if alerts[0].Metadata[constants.AlertMetadataDomain] != constants.DomainYouTubeLong {
+		t.Fatalf("expected domain metadata: %+v", alerts[0].Metadata)
+	}
+}
+
+func TestEvaluatorIgnoresStudyYouTube(t *testing.T) {
+	t.Parallel()
+
+	policy := &config.Policy{
+		TenantID: constants.DefaultTenantID,
+		DeviceID: constants.DefaultDeviceID,
+		Alerts: config.AlertPolicy{Email: config.EmailPolicy{
+			MinSeverity: config.Severity(constants.SeverityMedium),
+		}},
+		AlertRules: map[string]config.RuleSpec{
+			constants.AlertRuleNonStudyYouTube: {
+				Enabled:  true,
+				Severity: config.Severity(constants.SeverityMedium),
+			},
+		},
+	}
+
+	alerts := NewEvaluator().Evaluate(context.Background(), policy, []event.Event{{
+		Type:      constants.EventTypeBrowserObserved,
+		Timestamp: time.Now().UTC(),
+		TenantID:  policy.TenantID,
+		DeviceID:  policy.DeviceID,
+		HostName:  constants.UnknownHost,
+		AppName:   constants.BrowserNameChrome,
+		Metadata: map[string]string{
+			constants.EventMetadataDomain:       constants.DomainYouTubeLong,
+			constants.EventMetadataCategory:     constants.CategoryStudy,
+			constants.EventMetadataYouTubeStudy: "true",
+		},
+	}})
+
+	if len(alerts) != 0 {
+		t.Fatalf("expected no alerts, got %d", len(alerts))
+	}
+}
+
+func TestEvaluatorDetectsBlockedDomain(t *testing.T) {
+	t.Parallel()
+
+	policy := &config.Policy{
+		TenantID:       constants.DefaultTenantID,
+		DeviceID:       constants.DefaultDeviceID,
+		BlockedDomains: []string{"example.com"},
+		Alerts: config.AlertPolicy{Email: config.EmailPolicy{
+			MinSeverity: config.Severity(constants.SeverityHigh),
+		}},
+		AlertRules: map[string]config.RuleSpec{
+			constants.AlertRuleBlockedDomainOpen: {
+				Enabled:  true,
+				Severity: config.Severity(constants.SeverityHigh),
+			},
+		},
+	}
+
+	alerts := NewEvaluator().Evaluate(context.Background(), policy, []event.Event{{
+		Type:      constants.EventTypeBrowserObserved,
+		Timestamp: time.Now().UTC(),
+		TenantID:  policy.TenantID,
+		DeviceID:  policy.DeviceID,
+		HostName:  constants.UnknownHost,
+		AppName:   constants.BrowserNameChrome,
+		Metadata: map[string]string{
+			constants.EventMetadataDomain:   "media.example.com",
+			constants.EventMetadataCategory: constants.CategoryBlocked,
+		},
+	}})
+
+	if len(alerts) != 1 {
+		t.Fatalf("expected 1 alert, got %d", len(alerts))
+	}
+	if alerts[0].RuleName != constants.AlertRuleBlockedDomainOpen {
+		t.Fatalf("unexpected rule: %s", alerts[0].RuleName)
+	}
+}

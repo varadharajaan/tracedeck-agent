@@ -14,3 +14,8 @@ persisted.
 
 Use `--disable-browser-history` for controlled local smokes or diagnostics that
 should avoid reading live browser history.
+
+Phase 4 alert evaluation consumes the stored event metadata. Blocked-domain and
+non-study YouTube alerts use the persisted domain/category fields, not raw
+browser URLs or page titles. A YouTube video id may be hashed when configured,
+but the raw id is not stored.

@@ -29,6 +29,14 @@ func NewEvaluator() *Evaluator {
 }
 
 func (e *Evaluator) Evaluate(_ context.Context, policy *config.Policy, events []event.Event) []Alert {
+	alerts := make([]Alert, 0)
+	alerts = append(alerts, e.evaluateBlockedApps(policy, events)...)
+	alerts = append(alerts, e.evaluateBlockedDomains(policy, events)...)
+	alerts = append(alerts, e.evaluateNonStudyYouTube(policy, events)...)
+	return filterBySeverity(alerts, policy.Alerts.Email.MinSeverity)
+}
+
+func (e *Evaluator) evaluateBlockedApps(policy *config.Policy, events []event.Event) []Alert {
 	rule, ok := policy.AlertRules[constants.AlertRuleBlockedAppOpened]
 	if !ok || !rule.Enabled {
 		return nil
@@ -72,7 +80,62 @@ func (e *Evaluator) Evaluate(_ context.Context, policy *config.Policy, events []
 		})
 	}
 
-	return filterBySeverity(alerts, policy.Alerts.Email.MinSeverity)
+	return alerts
+}
+
+func (e *Evaluator) evaluateBlockedDomains(policy *config.Policy, events []event.Event) []Alert {
+	rule, ok := policy.AlertRules[constants.AlertRuleBlockedDomainOpen]
+	if !ok || !rule.Enabled {
+		return nil
+	}
+	if len(policy.BlockedDomains) == 0 {
+		return nil
+	}
+
+	seenDomains := make(map[string]struct{})
+	alerts := make([]Alert, 0)
+	for _, evt := range events {
+		if evt.Type != constants.EventTypeBrowserObserved {
+			continue
+		}
+		domain := normalize(evt.Metadata[constants.EventMetadataDomain])
+		if domain == "" || !domainMatchesAny(domain, policy.BlockedDomains) {
+			continue
+		}
+		if _, seen := seenDomains[domain]; seen {
+			continue
+		}
+		seenDomains[domain] = struct{}{}
+		alerts = append(alerts, browserAlert(constants.AlertRuleBlockedDomainOpen, rule, constants.AlertReasonBlockedDomainObserved, evt))
+	}
+	return alerts
+}
+
+func (e *Evaluator) evaluateNonStudyYouTube(policy *config.Policy, events []event.Event) []Alert {
+	rule, ok := policy.AlertRules[constants.AlertRuleNonStudyYouTube]
+	if !ok || !rule.Enabled {
+		return nil
+	}
+
+	seenDomains := make(map[string]struct{})
+	alerts := make([]Alert, 0)
+	for _, evt := range events {
+		if evt.Type != constants.EventTypeBrowserObserved {
+			continue
+		}
+		domain := normalize(evt.Metadata[constants.EventMetadataDomain])
+		category := normalize(evt.Metadata[constants.EventMetadataCategory])
+		studyMatch := normalize(evt.Metadata[constants.EventMetadataYouTubeStudy])
+		if !isYouTubeDomain(domain) || category != constants.CategoryVideoStreaming || studyMatch == "true" {
+			continue
+		}
+		if _, seen := seenDomains[domain]; seen {
+			continue
+		}
+		seenDomains[domain] = struct{}{}
+		alerts = append(alerts, browserAlert(constants.AlertRuleNonStudyYouTube, rule, constants.AlertReasonNonStudyYouTubeObserved, evt))
+	}
+	return alerts
 }
 
 func normalizedSet(values []string) map[string]struct{} {
@@ -88,6 +151,48 @@ func normalizedSet(values []string) map[string]struct{} {
 
 func normalize(value string) string {
 	return strings.ToLower(strings.TrimSpace(value))
+}
+
+func browserAlert(ruleName string, rule config.RuleSpec, reason string, evt event.Event) Alert {
+	domain := evt.Metadata[constants.EventMetadataDomain]
+	category := evt.Metadata[constants.EventMetadataCategory]
+	return Alert{
+		RuleName:   ruleName,
+		Severity:   string(rule.Severity),
+		Reason:     reason,
+		TenantID:   evt.TenantID,
+		DeviceID:   evt.DeviceID,
+		HostName:   evt.HostName,
+		AppName:    evt.AppName,
+		ObservedAt: evt.Timestamp,
+		Metadata: map[string]string{
+			constants.AlertMetadataRuleName: ruleName,
+			constants.AlertMetadataReason:   reason,
+			constants.AlertMetadataSeverity: string(rule.Severity),
+			constants.AlertMetadataDomain:   domain,
+			constants.AlertMetadataCategory: category,
+		},
+	}
+}
+
+func domainMatchesAny(domain string, candidates []string) bool {
+	domain = normalize(strings.TrimPrefix(domain, "www."))
+	for _, candidate := range candidates {
+		candidate = normalize(strings.TrimPrefix(candidate, "www."))
+		if candidate == "" {
+			continue
+		}
+		if domain == candidate || strings.HasSuffix(domain, "."+candidate) {
+			return true
+		}
+	}
+	return false
+}
+
+func isYouTubeDomain(domain string) bool {
+	return domain == constants.DomainYouTubeLong ||
+		strings.HasSuffix(domain, "."+constants.DomainYouTubeLong) ||
+		domain == constants.DomainYouTubeShort
 }
 
 func filterBySeverity(alerts []Alert, minSeverity config.Severity) []Alert {
