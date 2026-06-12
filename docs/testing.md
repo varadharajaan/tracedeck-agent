@@ -484,6 +484,22 @@ after lifecycle-script changes. Newman runs
 `postman/tracedeck-backend-phase39.postman_collection.json` against that live
 demo.
 
+Phase 40 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase40.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase40.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase40.ps1
+```
+
+The Phase 40 smoke live-boots the seeded dashboard and verifies the paid ops
+console markers, notification route proof, monetisation action queue, tenant
+monetisation scores, email/push/dashboard alert delivery channels, event-linked
+delivery records, and weekly report email/PDF readiness. Newman runs
+`postman/tracedeck-backend-phase40.postman_collection.json` against the same
+live demo so the monetisation-grade UI contract includes anomaly, push, mail,
+report, archive, and trust proof.
+
 Phase 13 adds:
 
 ```powershell

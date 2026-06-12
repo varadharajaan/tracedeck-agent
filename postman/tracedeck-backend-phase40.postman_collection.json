@@ -1,0 +1,92 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 40",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Has Paid Ops Console",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard has monetisation-grade paid ops markers', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Paid Ops Console');",
+        "  pm.expect(html).to.include('Notification Route Proof');",
+        "  pm.expect(html).to.include('Monetisation Action Queue');",
+        "  pm.expect(html).to.include('paid-ops-status');",
+        "  pm.expect(html).to.include('paid-push');",
+        "  pm.expect(html).to.include('paid-mail');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Tenant Monetization Includes Route Proof",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/monetization-summary" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('monetization summary includes notification proof and paid readiness', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.readiness_score).to.be.above(0);",
+        "  pm.expect(body.notification_score).to.be.above(0);",
+        "  pm.expect(body.trust_score).to.be.above(0);",
+        "  const channels = body.notification_routes.map((item) => item.channel);",
+        "  pm.expect(channels).to.include('email');",
+        "  pm.expect(channels).to.include('push');",
+        "  pm.expect(channels).to.include('dashboard');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Discover Seeded Device",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/devices" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('seeded device is available for paid ops checks', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.count).to.be.above(0);",
+        "  pm.collectionVariables.set('deviceId', body.items[0].device_id);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Alert Deliveries Link To Events",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/devices/{{deviceId}}/alert-deliveries" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('alert deliveries include email, push, dashboard, and event linkage', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  const channels = body.items.map((item) => item.channel);",
+        "  pm.expect(channels).to.include('email');",
+        "  pm.expect(channels).to.include('push');",
+        "  pm.expect(channels).to.include('dashboard');",
+        "  pm.expect(body.items.filter((item) => item.event_id).length).to.be.above(0);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Weekly Report Mail And PDF Proof",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/devices/{{deviceId}}/reports/weekly" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('weekly report is email and PDF ready', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.email_ready).to.eql(true);",
+        "  pm.expect(body.pdf_ready).to.eql(true);",
+        "  pm.expect(body.email_preview).to.be.a('string').and.not.empty;",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" },
+    { "key": "deviceId", "value": "" }
+  ]
+}
