@@ -1885,6 +1885,84 @@
       </div>
     </section>
 
+    <section id="onboarding-center-section" class="executive-console" aria-label="tenant onboarding center">
+      <div class="executive-focus">
+        <div class="section-head">
+          <div>
+            <h2>Tenant Onboarding Center</h2>
+            <p>Paid rollout command surface for install proof, reboot persistence, anomaly mail, push delivery, archive retention, role handoff, package readiness, and privacy assurance.</p>
+          </div>
+          <span id="onboarding-center-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Customer activation</span>
+          <strong id="onboarding-center-headline">No tenant loaded</strong>
+          <p id="onboarding-center-detail">Waiting for setup, host, notification, archive, role, package, and privacy proof.</p>
+        </div>
+        <div class="executive-meter">
+          <div class="score-meta"><span>Onboarding readiness</span><span id="onboarding-center-score">0%</span></div>
+          <div class="executive-meter-track"><div id="onboarding-center-score-bar" class="executive-meter-fill"></div></div>
+        </div>
+        <div class="action-meta">
+          <span id="onboarding-center-package" class="pill">package pending</span>
+          <span id="onboarding-center-next" class="pill">action pending</span>
+          <span id="onboarding-center-privacy" class="pill">metadata-only</span>
+        </div>
+      </div>
+      <div>
+        <div class="executive-kpis">
+          <div class="executive-kpi"><small>Setup Steps</small><strong id="onboarding-kpi-steps">-</strong><span id="onboarding-kpi-steps-sub" class="muted">No setup proof</span></div>
+          <div class="executive-kpi"><small>Hosts Reporting</small><strong id="onboarding-kpi-hosts">-</strong><span id="onboarding-kpi-hosts-sub" class="muted">No host proof</span></div>
+          <div class="executive-kpi"><small>Autostart Proof</small><strong id="onboarding-kpi-autostart">-</strong><span id="onboarding-kpi-autostart-sub" class="muted">No reboot persistence proof</span></div>
+          <div class="executive-kpi"><small>Notifications</small><strong id="onboarding-kpi-notifications">-</strong><span id="onboarding-kpi-notifications-sub" class="muted">No mail/push proof</span></div>
+          <div class="executive-kpi"><small>Archive</small><strong id="onboarding-kpi-archive">-</strong><span id="onboarding-kpi-archive-sub" class="muted">No archive proof</span></div>
+          <div class="executive-kpi"><small>Role Views</small><strong id="onboarding-kpi-roles">-</strong><span id="onboarding-kpi-roles-sub" class="muted">No role handoff proof</span></div>
+        </div>
+        <div class="executive-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Setup Checklist</h2>
+                <p class="muted">Install, boot persistence, alert policy, mail, push, archive, package, role, and privacy readiness.</p>
+              </div>
+              <span id="onboarding-step-count" class="pill">0 steps</span>
+            </div>
+            <div id="onboarding-step-list" class="executive-list"><div class="empty">No onboarding steps yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Role Handoff</h2>
+                <p class="muted">Parent, student, school, and business views packaged for paid activation.</p>
+              </div>
+              <span id="onboarding-role-count" class="pill">0 roles</span>
+            </div>
+            <div id="onboarding-role-list" class="executive-list"><div class="empty">No role handoff proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Onboarding Proof</h2>
+                <p class="muted">Host reporting, autostart, notification, archive, package, and data-rights proof for customer review.</p>
+              </div>
+              <span id="onboarding-proof-count" class="pill">0 proof</span>
+            </div>
+            <div id="onboarding-proof-list" class="executive-list"><div class="empty">No onboarding proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Onboarding Owner Actions</h2>
+                <p class="muted">Action queue for production handoff, delivery assurance, archive readiness, package upgrade, and trust review.</p>
+              </div>
+              <span id="onboarding-action-count" class="pill">0 actions</span>
+            </div>
+            <div id="onboarding-action-list" class="executive-list"><div class="empty">No onboarding actions yet.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="customer-control-section" class="executive-console" aria-label="customer control room">
       <div class="executive-focus">
         <div class="section-head">
@@ -2870,6 +2948,7 @@
         </div>
       </div>
       <nav class="command-nav-grid" aria-label="dashboard sections">
+        <button class="command-jump" type="button" data-jump-target="onboarding-center-section">Onboard<span id="nav-onboarding-meta">waiting</span></button>
         <button class="command-jump is-active" type="button" data-jump-target="customer-control-section">Control<span id="nav-customer-control-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="customer-success-section">Success<span id="nav-customer-success-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="push-activation-section">Push<span id="nav-push-activation-meta">waiting</span></button>
@@ -4753,6 +4832,7 @@
       renderDeviceHealth(healthModel);
       renderTenantPlan(device, context);
       renderMonetisationOverview(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
+      renderTenantOnboardingCenter(context.onboardingCenter);
       renderCustomerControlRoom(context.customerControlRoom);
       renderCustomerSuccessPacket(context.customerSuccessPacket);
       renderPushActivationCenter(context.pushActivationCenter);
@@ -4827,6 +4907,7 @@
       setText("command-nav-routes", "routes pending");
       setText("command-nav-report", "report pending");
       setText("command-nav-archive", "archive pending");
+      setText("nav-onboarding-meta", "waiting");
       setText("nav-customer-control-meta", "waiting");
       setText("nav-customer-success-meta", "waiting");
       setText("nav-push-activation-meta", "waiting");
@@ -4898,6 +4979,8 @@
       const providerSimulationSummary = providerSimulation.summary || {};
       const packageBilling = context.packageBillingReadiness || {};
       const packageBillingSummary = packageBilling.summary || {};
+      const onboarding = context.onboardingCenter || {};
+      const onboardingSummary = onboarding.summary || {};
       const weekly = context.weeklyReport || {};
       const alertInbox = context.alertInbox || {};
       const inboxSummary = alertInbox.summary || {};
@@ -4920,6 +5003,7 @@
       setText("command-nav-routes", `${routes.length || deliveries.count} routes`);
       setText("command-nav-report", reportReady ? "report ready" : weekly.email_ready ? "email ready" : "report pending");
       setText("command-nav-archive", archiveProvider === "s3" ? `${archivePending} archive pending` : `${archiveProvider} pending`);
+      setText("nav-onboarding-meta", onboardingSummary.readiness_score ? `${onboardingSummary.readiness_score}% setup` : `${onboardingSummary.setup_steps_ready || 0}/${onboardingSummary.setup_steps_total || 0} steps`);
       setText("nav-customer-control-meta", customerControlSummary.product_score ? `${customerControlSummary.product_score}% control` : `${deliveryScore}% proof`);
       setText("nav-push-activation-meta", pushActivationSummary.activation_score ? `${pushActivationSummary.activation_score}% push` : `${pushActivationSummary.push_retrying || 0} retry`);
       setText("nav-portfolio-meta", portfolioSummary.portfolio_score ? `${portfolioSummary.portfolio_score}% fleet` : `${state.devices.length} hosts`);
@@ -5256,6 +5340,143 @@
         Number(health.score || 0) >= 70
       ];
       return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+    }
+
+    function readyLabel(value) {
+      return value ? "Ready" : "Needs proof";
+    }
+
+    function renderTenantOnboardingCenter(center) {
+      const model = center || {};
+      const summary = model.summary || {};
+      const steps = model.steps || [];
+      const roles = model.roles || [];
+      const proof = model.proof || [];
+      const actions = model.actions || [];
+      const status = summary.status || "pending";
+      const score = Number(summary.readiness_score || 0);
+      const setupReady = Number(summary.setup_steps_ready || 0);
+      const setupTotal = Number(summary.setup_steps_total || steps.length || 0);
+      const hostsReporting = Number(summary.hosts_reporting || 0);
+      const hostsTotal = Number(summary.hosts_total || 0);
+      const rolesReady = Number(summary.roles_ready || 0);
+      const rolesTotal = Number(summary.roles_total || roles.length || 0);
+
+      document.getElementById("onboarding-center-status").outerHTML =
+        badge(status).replace("<span", '<span id="onboarding-center-status"');
+      setText("onboarding-center-headline", summary.headline || "No tenant loaded");
+      setText("onboarding-center-detail", summary.detail || "Waiting for setup, host, notification, archive, role, package, and privacy proof.");
+      setText("onboarding-center-score", `${score}%`);
+      document.getElementById("onboarding-center-score-bar").style.width = Math.max(0, Math.min(100, score)) + "%";
+      setText("onboarding-center-package", summary.recommended_package || model.plan_name || "package pending");
+      setText("onboarding-center-next", summary.owner_next_step || "action pending");
+      setText("onboarding-center-privacy", model.privacy_boundary ? "metadata-only guard" : "metadata-only");
+
+      setText("onboarding-kpi-steps", setupTotal > 0 ? `${setupReady}/${setupTotal}` : "-");
+      setText("onboarding-kpi-steps-sub", setupTotal > 0 ? `${score}% onboarding readiness` : "No setup proof");
+      setText("onboarding-kpi-hosts", hostsTotal > 0 ? `${hostsReporting}/${hostsTotal}` : "-");
+      setText("onboarding-kpi-hosts-sub", summary.install_ready ? "install proof ready" : "host reporting proof pending");
+      setText("onboarding-kpi-autostart", readyLabel(Boolean(summary.autostart_ready)));
+      setText("onboarding-kpi-autostart-sub", summary.autostart_ready ? "reboot persistence verified" : "boot persistence proof pending");
+      setText("onboarding-kpi-notifications", readyLabel(Boolean(summary.notification_ready)));
+      setText("onboarding-kpi-notifications-sub", summary.notification_ready ? "mail, push, dashboard proof ready" : "mail/push proof pending");
+      setText("onboarding-kpi-archive", readyLabel(Boolean(summary.archive_ready)));
+      setText("onboarding-kpi-archive-sub", summary.archive_ready ? "S3 retention proof ready" : "archive proof pending");
+      setText("onboarding-kpi-roles", rolesTotal > 0 ? `${rolesReady}/${rolesTotal}` : "-");
+      setText("onboarding-kpi-roles-sub", summary.package_ready ? "paid role package ready" : "role/package proof pending");
+
+      renderOnboardingSteps(steps);
+      renderOnboardingRoles(roles);
+      renderOnboardingProof(proof, model.privacy_boundary);
+      renderOnboardingActions(actions);
+    }
+
+    function renderOnboardingSteps(steps) {
+      const items = (steps || []).slice(0, 8);
+      setText("onboarding-step-count", `${items.length} step${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("onboarding-step-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No onboarding steps yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+            <span class="pill">${escapeHTML(item.paid_tier || "paid tier")}</span>
+            <span class="pill">${escapeHTML(item.evidence || "evidence pending")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderOnboardingRoles(roles) {
+      const items = (roles || []).slice(0, 6);
+      setText("onboarding-role-count", `${items.length} role${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("onboarding-role-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No role handoff proof yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.name)}</strong>
+          <span class="muted">${escapeHTML(item.next_action || "Role handoff pending.")}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.view_mode || "dashboard")}</span>
+            <span class="pill">${escapeHTML(item.paid_tier || "paid tier")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderOnboardingProof(proof, privacyBoundary) {
+      const items = (proof || []).slice(0, 8);
+      setText("onboarding-proof-count", `${items.length} proof`);
+      const target = document.getElementById("onboarding-proof-list");
+      if (items.length === 0) {
+        target.innerHTML = privacyBoundary
+          ? `<div class="executive-item"><strong>Privacy guard</strong><span class="muted">${escapeHTML(privacyBoundary)}</span><div class="action-meta">${badge("ready")}<span class="pill">metadata-only</span></div></div>`
+          : '<div class="empty">No onboarding proof yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.label)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.value || "proof pending")}</span>
+            <span class="pill">${escapeHTML(item.paid_tier || "paid tier")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderOnboardingActions(actions) {
+      const items = (actions || []).slice(0, 8);
+      setText("onboarding-action-count", `${items.length} action${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("onboarding-action-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No onboarding actions yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.severity || "info")}
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+            <span class="pill">${escapeHTML(item.source || "onboarding")}</span>
+          </div>
+        </div>
+      `).join("");
     }
 
     function renderCustomerControlRoom(room) {
@@ -9177,6 +9398,7 @@
       setText("host-os", "-");
       setText("host-last-seen", "-");
       renderMonetisationOverview(null, {}, [], [], {});
+      renderTenantOnboardingCenter(null);
       renderCustomerControlRoom(null);
       renderCustomerSuccessPacket(null);
       renderPushActivationCenter(null);
@@ -9251,6 +9473,7 @@
       const notificationRevenueCockpit = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-revenue-cockpit`) : null;
       const providerSimulationLab = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/provider-simulation-lab`) : null;
       const packageBillingReadiness = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/package-billing-readiness`) : null;
+      const onboardingCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/onboarding-center`) : null;
       const notificationCommandCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-command-center`) : null;
       const deliveryTimeline = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delivery-timeline?device_id=${encodeURIComponent(overview.device.device_id)}&limit=8`) : null;
       const syncHealth = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/sync-health`) : null;
@@ -9288,6 +9511,7 @@
         notificationRevenueCockpit,
         providerSimulationLab,
         packageBillingReadiness,
+        onboardingCenter,
         notificationCommandCenter,
         deliveryTimeline,
         syncHealth,

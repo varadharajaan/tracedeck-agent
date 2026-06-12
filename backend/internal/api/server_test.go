@@ -1995,6 +1995,95 @@ func TestAccountPortfolioIndexEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantOnboardingCenterEndpoint(t *testing.T) {
+	t.Parallel()
+
+	repo := store.NewMemory()
+	handler := NewServer(repo, slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "onboarding-device-001",
+		"host_name": "onboarding-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	response := httptest.NewRecorder()
+	route := constants.RouteTenants + "/family-varadha/" + constants.RouteSegmentOnboardingCenter
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, route, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected onboarding center 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var center model.TenantOnboardingCenter
+	if err := json.Unmarshal(response.Body.Bytes(), &center); err != nil {
+		t.Fatalf("decode onboarding center: %v", err)
+	}
+	if center.Summary.ReadinessScore == 0 || center.Summary.SetupStepsTotal < 8 || center.Summary.OwnerNextStep == "" {
+		t.Fatalf("expected scored onboarding summary: %+v", center.Summary)
+	}
+	if center.Summary.HostsTotal < 1 || center.Summary.RolesTotal < 4 || len(center.Roles) < 4 {
+		t.Fatalf("expected host and role onboarding proof: %+v", center)
+	}
+	if len(center.Steps) < 8 || len(center.Proof) < 6 || len(center.Actions) < 1 {
+		t.Fatalf("expected setup steps, proof, and actions: %+v", center)
+	}
+	hasAutostart := false
+	hasNotification := false
+	hasPrivacy := false
+	for _, step := range center.Steps {
+		if step.ID == "autostart" && step.Owner != "" && step.Evidence != "" {
+			hasAutostart = true
+		}
+		if step.ID == "mail-push-proof" && step.Blocking {
+			hasNotification = true
+		}
+		if step.ID == "privacy-guard" && step.Blocking {
+			hasPrivacy = true
+		}
+	}
+	if !hasAutostart || !hasNotification || !hasPrivacy {
+		t.Fatalf("expected autostart, notification, and privacy onboarding steps: %+v", center.Steps)
+	}
+	if !strings.Contains(center.PrivacyBoundary, "metadata-only") || !strings.Contains(center.PrivacyBoundary, "no passwords") || !strings.Contains(center.PrivacyBoundary, "no screenshots") || !strings.Contains(center.PrivacyBoundary, "push endpoints") {
+		t.Fatalf("expected strict onboarding privacy boundary, got %q", center.PrivacyBoundary)
+	}
+
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "push_endpoint", "screenshot_bytes", "raw_url", "page_title", "alert_body", "card_number", "cvv", "payment_token"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("onboarding center leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+
+	scopedHandler := NewServerWithAuth(repo, slog.Default(), AuthConfig{APIKey: "local-key", TenantID: "school-alpha"}).Handler()
+	scopedRequest := httptest.NewRequest(http.MethodGet, route, nil)
+	scopedRequest.Header.Set(constants.HeaderAPIKey, "local-key")
+	scopedResponse := httptest.NewRecorder()
+	scopedHandler.ServeHTTP(scopedResponse, scopedRequest)
+	if scopedResponse.Code != http.StatusForbidden {
+		t.Fatalf("expected tenant-scoped onboarding route to reject another tenant, got %d: %s", scopedResponse.Code, scopedResponse.Body.String())
+	}
+}
+
 func TestTenantNotificationRevenueCockpitEndpoint(t *testing.T) {
 	t.Parallel()
 

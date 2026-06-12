@@ -416,3 +416,19 @@ Phase 62 adds a Monetisation Overview as the buyer-facing dashboard front door:
 This helps monetisation because the first screen now answers the buyer's main
 questions: what is happening, was I notified, can I trust delivery, what package
 is ready, and what should I do next.
+
+Phase 63 adds a Tenant Onboarding Center for conversion and activation:
+
+- setup checklist for endpoint install, autostart, notification policy,
+  mail/push proof, archive, role dashboards, package readiness, and privacy
+- host reporting and reboot persistence proof for trust after restart
+- anomaly notification readiness across mail, push, and dashboard fallback
+- archive retention and package readiness for Family Pro, School, and Business
+  conversations
+- role handoff rows for parent, student, school admin, and business manager
+- owner action queue that turns missing proof into a paid onboarding checklist
+
+This makes TraceDeck easier to monetise after a demo because the customer can
+see what is production-ready, what blocks rollout, what paid package is
+recommended, and which actions improve activation without exposing sensitive
+payloads.

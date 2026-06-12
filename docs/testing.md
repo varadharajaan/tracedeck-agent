@@ -780,6 +780,16 @@ layout contract. Newman runs
 `postman/tracedeck-backend-phase62.postman_collection.json` against the same
 live demo and covers dashboard markers plus typed account proof.
 
+The Phase 63 smoke live-boots the seeded dashboard, verifies Tenant Onboarding
+Center, Setup Checklist, Role Handoff, Onboarding Proof, Onboarding Owner
+Actions, and onboarding command navigation markers, checks the tenant
+`onboarding-center` API, verifies readiness, setup steps, host proof, role
+proof, mail/push/dashboard notification proof, archive/package/privacy proof,
+owner actions, and strict privacy/forbidden markers, and reruns the
+screenshot-free dashboard layout contract. Newman runs
+`postman/tracedeck-backend-phase63.postman_collection.json` against the same
+live demo and covers dashboard markers plus typed onboarding proof.
+
 Phase 13 adds:
 
 ```powershell

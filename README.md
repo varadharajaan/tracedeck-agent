@@ -303,3 +303,13 @@ It does not add collectors; it remains metadata-only and avoids passwords,
 screenshots, raw URLs, page titles, alert bodies, provider secrets, push
 endpoints, endpoint payloads, private content, invoices, payment card data,
 tokens, cookies, or raw provider payloads.
+
+Phase 63 adds a typed Tenant Onboarding Center at
+`/api/v1/tenants/{tenantId}/onboarding-center` and a dashboard panel for paid
+activation. It shows setup checklist readiness, host reporting, reboot
+persistence/autostart proof, anomaly notification policy, mail and push
+delivery proof, archive retention, role dashboard handoff, package readiness,
+privacy/data-rights guardrails, and owner actions. It remains metadata-only and
+does not collect passwords, screenshots, raw URLs, page titles, alert bodies,
+provider secrets, push endpoints, endpoint payloads, private content, invoices,
+payment card data, tokens, cookies, or raw provider payloads.

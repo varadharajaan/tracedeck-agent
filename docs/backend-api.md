@@ -77,6 +77,7 @@ GET  /api/v1/tenants/{tenantId}/notification-revenue-cockpit
 GET  /api/v1/tenants/{tenantId}/provider-simulation-lab
 POST /api/v1/tenants/{tenantId}/provider-simulation-lab
 GET  /api/v1/tenants/{tenantId}/package-billing-readiness
+GET  /api/v1/tenants/{tenantId}/onboarding-center
 GET  /api/v1/tenants/{tenantId}/notification-command-center
 GET  /api/v1/tenants/{tenantId}/delivery-timeline
 GET  /api/v1/tenants/{tenantId}/sync-health
@@ -444,3 +445,15 @@ or backend state.
 
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.
+
+Phase 63 adds `GET /api/v1/tenants/{tenantId}/onboarding-center`. It composes
+role experience, package billing, portfolio, push activation, notification
+preferences, and sync-health metadata into a typed tenant activation contract.
+The response includes setup checklist status, install proof, autostart/reboot
+persistence proof, notification policy proof, mail/push/dashboard delivery
+proof, archive retention posture, role dashboard handoff rows, package
+readiness, proof cards, owner actions, and a strict metadata-only privacy
+boundary. It does not collect or store passwords, screenshots, raw URLs, page
+titles, alert bodies, provider secrets, push endpoints, endpoint payloads,
+private content, invoices, tokens, cookies, payment card data, or raw provider
+payloads.

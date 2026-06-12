@@ -253,3 +253,9 @@
     readiness, archive posture, package fit, owner actions, and trust guardrails
     with Postman/Newman coverage, screenshot-free layout guard, docs, and full
     local verification.
+66. Phase 63: tenant onboarding center. Typed tenant onboarding-center API and
+    dashboard surface for endpoint install proof, reboot persistence/autostart,
+    notification policy, anomaly mail and push proof, archive retention, role
+    handoff, package readiness, privacy/data-rights guardrails, owner actions,
+    Postman/Newman coverage, screenshot-free layout guard, docs, and full local
+    verification.
