@@ -8,8 +8,12 @@ constants.
 Generate the policy schema with:
 
 ```powershell
-go run ./agent/cmd/tracedeck-agent schema --out ./docs/schema/policy-v1alpha1.schema.json
+go run ./agent/cmd/tracedeck-agent schema --version v1alpha1 --out ./docs/schema/policy-v1alpha1.schema.json
 ```
+
+The schema CLI is version-aware. `v1alpha1` is currently the latest supported
+policy schema version; future schema versions must be added through the typed
+schema version registry before the CLI can generate them.
 
 Risky software alerting is controlled by a typed alert rule:
 
