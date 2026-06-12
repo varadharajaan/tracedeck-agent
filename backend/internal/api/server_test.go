@@ -90,6 +90,67 @@ func TestDeviceEnrollmentValidation(t *testing.T) {
 	}
 }
 
+func TestTenantReadinessEndpoints(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	body := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(body)))
+	if create.Code != http.StatusCreated {
+		t.Fatalf("expected create tenant 201, got %d: %s", create.Code, create.Body.String())
+	}
+
+	list := httptest.NewRecorder()
+	handler.ServeHTTP(list, httptest.NewRequest(http.MethodGet, constants.RouteTenants, nil))
+	if list.Code != http.StatusOK {
+		t.Fatalf("expected tenant list 200, got %d", list.Code)
+	}
+	var tenants model.ListResponse[model.Tenant]
+	if err := json.Unmarshal(list.Body.Bytes(), &tenants); err != nil {
+		t.Fatalf("decode tenant list: %v", err)
+	}
+	if tenants.Count != 1 || tenants.Items[0].PlanID != constants.PlanFamilyPro {
+		t.Fatalf("unexpected tenant list: %+v", tenants)
+	}
+
+	get := httptest.NewRecorder()
+	handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha", nil))
+	if get.Code != http.StatusOK {
+		t.Fatalf("expected tenant get 200, got %d", get.Code)
+	}
+
+	tenantAudit := httptest.NewRecorder()
+	handler.ServeHTTP(tenantAudit, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/audit-events", nil))
+	if tenantAudit.Code != http.StatusOK {
+		t.Fatalf("expected tenant audit 200, got %d", tenantAudit.Code)
+	}
+	if !strings.Contains(tenantAudit.Body.String(), constants.AuditActionTenantCreated) {
+		t.Fatalf("expected tenant created audit event, got %s", tenantAudit.Body.String())
+	}
+}
+
+func TestTenantValidation(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, constants.RouteTenants, strings.NewReader(`{"tenant_id":"family-varadha","name":"Family","plan_id":"unknown","retention_tier_id":"family_cloud_90_365_archive","primary_profile":"ai-btech-student"}`)))
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("expected bad request, got %d", recorder.Code)
+	}
+	if !strings.Contains(recorder.Body.String(), "plan_id is unknown") {
+		t.Fatalf("expected validation message, got %s", recorder.Body.String())
+	}
+}
+
 func TestPolicyTemplatesAndArchiveStatus(t *testing.T) {
 	t.Parallel()
 
@@ -111,6 +172,28 @@ func TestPolicyTemplatesAndArchiveStatus(t *testing.T) {
 	}
 	if !strings.Contains(archive.Body.String(), `"provider":"s3"`) {
 		t.Fatalf("expected archive provider response, got %s", archive.Body.String())
+	}
+}
+
+func TestSaaSReadinessCatalogs(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+
+	for _, route := range []string{
+		constants.RoutePlans,
+		constants.RouteRoles,
+		constants.RouteRetentionTiers,
+		constants.RouteAuditEvents,
+	} {
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, route, nil))
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("expected %s 200, got %d", route, recorder.Code)
+		}
+		if !strings.Contains(recorder.Body.String(), `"count"`) {
+			t.Fatalf("expected list response for %s, got %s", route, recorder.Body.String())
+		}
 	}
 }
 

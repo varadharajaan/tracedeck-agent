@@ -49,6 +49,12 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc(constants.RouteDeviceEnroll, s.handleDeviceEnroll)
 	mux.HandleFunc(constants.RouteDevices, s.handleDevices)
 	mux.HandleFunc(constants.RouteDevices+"/", s.handleDeviceRoutes)
+	mux.HandleFunc(constants.RouteTenants, s.handleTenants)
+	mux.HandleFunc(constants.RouteTenants+"/", s.handleTenantRoutes)
+	mux.HandleFunc(constants.RoutePlans, s.handlePlans)
+	mux.HandleFunc(constants.RouteRoles, s.handleRoles)
+	mux.HandleFunc(constants.RouteRetentionTiers, s.handleRetentionTiers)
+	mux.HandleFunc(constants.RouteAuditEvents, s.handleAuditEvents)
 	mux.HandleFunc(constants.RoutePolicyTemplates, s.handlePolicyTemplates)
 	mux.HandleFunc(constants.RouteArchiveStatus, s.handleArchiveStatus)
 	return requestLogger(s.logger, mux)
@@ -194,19 +200,100 @@ func (s *Server) handleDeviceRoutes(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case len(parts) == 1 && r.Method == http.MethodGet:
 		s.handleDevice(w, r, deviceID)
-	case len(parts) == 3 && parts[1] == "summary" && parts[2] == "daily" && r.Method == http.MethodGet:
+	case len(parts) == 3 && parts[1] == constants.RouteSegmentSummary && parts[2] == constants.RouteSegmentDaily && r.Method == http.MethodGet:
 		s.handleDailySummary(w, r, deviceID)
-	case len(parts) == 3 && parts[1] == "reports" && parts[2] == "weekly" && r.Method == http.MethodGet:
+	case len(parts) == 3 && parts[1] == constants.RouteSegmentReports && parts[2] == constants.RouteSegmentWeekly && r.Method == http.MethodGet:
 		s.handleWeeklyReport(w, r, deviceID)
-	case len(parts) == 2 && parts[1] == "policy-violations" && r.Method == http.MethodGet:
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentPolicyEvents && r.Method == http.MethodGet:
 		writeJSON(w, http.StatusOK, model.ListResponse[string]{Items: []string{}, Count: 0})
-	case len(parts) == 2 && parts[1] == "anomalies" && r.Method == http.MethodGet:
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentAnomalies && r.Method == http.MethodGet:
 		writeJSON(w, http.StatusOK, model.ListResponse[string]{Items: []string{}, Count: 0})
-	case len(parts) == 2 && parts[1] == "tamper-events" && r.Method == http.MethodGet:
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentTamperEvents && r.Method == http.MethodGet:
 		writeJSON(w, http.StatusOK, model.ListResponse[string]{Items: []string{}, Count: 0})
 	default:
 		http.NotFound(w, r)
 	}
+}
+
+func (s *Server) handleTenants(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != constants.RouteTenants {
+		http.NotFound(w, r)
+		return
+	}
+	switch r.Method {
+	case http.MethodGet:
+		tenants := s.store.ListTenants(r.Context())
+		writeJSON(w, http.StatusOK, model.ListResponse[model.Tenant]{
+			Items: tenants,
+			Count: len(tenants),
+		})
+	case http.MethodPost:
+		var req model.CreateTenantRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid tenant json")
+			return
+		}
+		if err := validateCreateTenantRequest(req); err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		tenant, err := s.store.CreateTenant(r.Context(), req)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "tenant creation failed")
+			return
+		}
+		writeJSON(w, http.StatusCreated, tenant)
+	default:
+		writeMethodNotAllowed(w)
+	}
+}
+
+func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
+	rest := strings.TrimPrefix(r.URL.Path, constants.RouteTenants+"/")
+	parts := strings.Split(strings.Trim(rest, "/"), "/")
+	if len(parts) == 0 || strings.TrimSpace(parts[0]) == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	tenantID := parts[0]
+	switch {
+	case len(parts) == 1 && r.Method == http.MethodGet:
+		s.handleTenant(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentAuditEvents && r.Method == http.MethodGet:
+		s.handleTenantAuditEvents(w, r, tenantID)
+	default:
+		http.NotFound(w, r)
+	}
+}
+
+func (s *Server) handleTenant(w http.ResponseWriter, r *http.Request, tenantID string) {
+	tenant, err := s.store.GetTenant(r.Context(), tenantID)
+	if err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, tenant)
+}
+
+func (s *Server) handleTenantAuditEvents(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if _, err := s.store.GetTenant(r.Context(), tenantID); err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant lookup failed")
+		return
+	}
+	events := s.store.ListAuditEvents(r.Context(), tenantID)
+	writeJSON(w, http.StatusOK, model.ListResponse[model.AuditEvent]{
+		Items: events,
+		Count: len(events),
+	})
 }
 
 func (s *Server) handleDevice(w http.ResponseWriter, r *http.Request, deviceID string) {
@@ -251,12 +338,81 @@ func (s *Server) handlePolicyTemplates(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) handlePlans(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+	plans := store.Plans()
+	writeJSON(w, http.StatusOK, model.ListResponse[model.Plan]{
+		Items: plans,
+		Count: len(plans),
+	})
+}
+
+func (s *Server) handleRoles(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+	roles := store.Roles()
+	writeJSON(w, http.StatusOK, model.ListResponse[model.Role]{
+		Items: roles,
+		Count: len(roles),
+	})
+}
+
+func (s *Server) handleRetentionTiers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+	tiers := store.RetentionTiers()
+	writeJSON(w, http.StatusOK, model.ListResponse[model.RetentionTier]{
+		Items: tiers,
+		Count: len(tiers),
+	})
+}
+
+func (s *Server) handleAuditEvents(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+	events := s.store.ListAuditEvents(r.Context(), "")
+	writeJSON(w, http.StatusOK, model.ListResponse[model.AuditEvent]{
+		Items: events,
+		Count: len(events),
+	})
+}
+
 func (s *Server) handleArchiveStatus(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeMethodNotAllowed(w)
 		return
 	}
 	writeJSON(w, http.StatusOK, store.ArchiveStatus())
+}
+
+func validateCreateTenantRequest(req model.CreateTenantRequest) error {
+	switch {
+	case strings.TrimSpace(req.TenantID) == "":
+		return errors.New("tenant_id is required")
+	case strings.TrimSpace(req.Name) == "":
+		return errors.New("name is required")
+	case strings.TrimSpace(req.PlanID) == "":
+		return errors.New("plan_id is required")
+	case !store.KnownPlanID(req.PlanID):
+		return errors.New("plan_id is unknown")
+	case strings.TrimSpace(req.RetentionTierID) == "":
+		return errors.New("retention_tier_id is required")
+	case !store.KnownRetentionTierID(req.RetentionTierID):
+		return errors.New("retention_tier_id is unknown")
+	case strings.TrimSpace(req.PrimaryProfile) == "":
+		return errors.New("primary_profile is required")
+	default:
+		return nil
+	}
 }
 
 func validateEnrollDeviceRequest(req model.EnrollDeviceRequest) error {

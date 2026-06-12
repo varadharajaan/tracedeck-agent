@@ -14,11 +14,19 @@ Default base URL:
 http://127.0.0.1:18080
 ```
 
-Initial endpoints:
+Current endpoints:
 
 ```text
 GET  /health
 GET  /api/v1/version
+GET  /api/v1/plans
+GET  /api/v1/roles
+GET  /api/v1/retention-tiers
+GET  /api/v1/audit-events
+POST /api/v1/tenants
+GET  /api/v1/tenants
+GET  /api/v1/tenants/{tenantId}
+GET  /api/v1/tenants/{tenantId}/audit-events
 POST /api/v1/devices/enroll
 GET  /api/v1/devices
 GET  /api/v1/devices/{deviceId}
@@ -30,6 +38,18 @@ GET  /api/v1/devices/{deviceId}/tamper-events
 GET  /api/v1/policy-templates
 GET  /api/v1/archive/status
 GET  /
+```
+
+Tenant creation request:
+
+```json
+{
+  "tenant_id": "family-varadha",
+  "name": "Family Varadha",
+  "plan_id": "family_pro",
+  "retention_tier_id": "family_cloud_90_365_archive",
+  "primary_profile": "ai-btech-student"
+}
 ```
 
 Device enrollment request:
@@ -44,9 +64,9 @@ Device enrollment request:
 }
 ```
 
-Phase 5 storage is intentionally in-memory. It proves API shape, device
-enrollment, policy template catalog, archive status, and dashboard boot before
-adding durable backend storage in later SaaS phases.
+Phase 5 storage is intentionally in-memory. Phase 6 keeps that boundary while
+adding SaaS readiness catalogs for tenants, plans, roles, retention tiers, and
+audit events. Durable backend storage remains a later SaaS phase.
 
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.
