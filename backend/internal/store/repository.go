@@ -24,6 +24,7 @@ type Repository interface {
 	TenantOperationsSummary(context.Context, string) (model.TenantOperationsSummary, error)
 	TenantMonetizationSummary(context.Context, string) (model.TenantMonetizationSummary, error)
 	TenantBusinessDashboard(context.Context, string) (model.TenantBusinessDashboard, error)
+	TenantRoleExperiences(context.Context, string) (model.TenantRoleExperience, error)
 	TenantAlertInbox(context.Context, string) (model.TenantAlertInbox, error)
 	TenantNotificationCommandCenter(context.Context, string) (model.TenantNotificationCommandCenter, error)
 	TenantDeliveryTimeline(context.Context, string, model.TenantDeliveryTimelineFilter) (model.TenantDeliveryTimeline, error)

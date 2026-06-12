@@ -1428,6 +1428,72 @@ func TestTenantBusinessDashboardEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantRoleExperiencesEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "role-experience-device-001",
+		"host_name": "role-experience-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentRoleExperience, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected role experiences 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var experience model.TenantRoleExperience
+	if err := json.Unmarshal(response.Body.Bytes(), &experience); err != nil {
+		t.Fatalf("decode role experiences: %v", err)
+	}
+	if experience.Summary.ReadinessScore == 0 || experience.Summary.RolesTotal != 4 || len(experience.Roles) != 4 || len(experience.Onboarding) < 4 {
+		t.Fatalf("expected four scored role experiences and onboarding items: %+v", experience)
+	}
+	roleIDs := map[string]bool{}
+	for _, role := range experience.Roles {
+		roleIDs[role.RoleID] = true
+		if role.ReadinessScore == 0 || role.PaidTier == "" || role.NextAction == "" || len(role.VisiblePanels) == 0 || len(role.Metrics) == 0 {
+			t.Fatalf("expected typed role metadata for %+v", role)
+		}
+	}
+	for _, roleID := range []string{constants.RoleParent, constants.RoleStudent, constants.RoleSchoolAdmin, constants.RoleBusinessManager} {
+		if !roleIDs[roleID] {
+			t.Fatalf("expected role %q in role experiences: %+v", roleID, experience.Roles)
+		}
+	}
+	if !strings.Contains(experience.PrivacyBoundary, "metadata-only") || !strings.Contains(experience.PrivacyBoundary, "no passwords") {
+		t.Fatalf("expected strict role experience privacy boundary: %q", experience.PrivacyBoundary)
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "screenshot_bytes", "raw_url", "alert_body"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("role experiences leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+}
+
 func TestDeviceGroupAndPolicyAssignmentEndpoints(t *testing.T) {
 	t.Parallel()
 

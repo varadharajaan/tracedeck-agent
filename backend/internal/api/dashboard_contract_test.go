@@ -56,6 +56,8 @@ func TestDashboardDOMContract(t *testing.T) {
 		"Notification Preference Center",
 		"Preference Rule Matrix",
 		"Study-Safe Suppression",
+		"Role Experience Center",
+		"Paid Onboarding Checklist",
 		"Monetisation Command Center",
 		"Anomaly And Notification Inbox",
 		"Delivery And Mail Proof",

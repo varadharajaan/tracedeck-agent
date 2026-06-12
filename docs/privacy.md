@@ -66,3 +66,10 @@ label, recipient label, status, attempts, retry timing, host label, event id,
 safe summary, paid tier, and next action. It does not store SMTP passwords,
 push endpoint secrets, provider credentials, alert bodies, screenshots, raw
 URLs, page titles, cookies, tokens, private content, or endpoint payloads.
+
+Phase 52 role experiences are metadata-only. They expose role labels,
+dashboard scope, onboarding status, notification proof, archive/report
+readiness, consent controls, paid-tier labels, and next actions. They do not
+store SMTP passwords, push endpoint secrets, provider credentials, alert
+bodies, screenshots, raw URLs, page titles, cookies, tokens, private content,
+or endpoint payloads.

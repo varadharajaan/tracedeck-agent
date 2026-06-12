@@ -242,3 +242,19 @@ Phase 51 adds a Notification Evidence Timeline:
 
 This helps monetisation because customers pay for trusted alert delivery, not
 only detection. The feature stays provider-safe and metadata-only.
+
+Phase 52 adds a Role Experience Center:
+
+- parent view for family alert proof, weekly report readiness, consent, and
+  study-safe monitoring
+- student self-view for transparency, study-safe suppression, sync proof, and
+  data rights
+- school admin view for cohorts, policy rollout, offline replay, route proof,
+  and audit history
+- business manager view for productivity/risk observability, delivery audit,
+  archive trust, and compliance export value
+- paid onboarding checklist that maps each role to Family Pro, School, or
+  Business packaging
+
+This turns the same endpoint metadata into multiple paid buying stories without
+adding sensitive collectors.

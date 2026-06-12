@@ -509,3 +509,56 @@ func TestTenantDeliveryTimelineFiltersDeliveryProof(t *testing.T) {
 		t.Fatalf("expected filtered push retry timeline item: %+v", filtered)
 	}
 }
+
+func TestTenantRoleExperiences(t *testing.T) {
+	t.Parallel()
+
+	repo := NewMemory()
+	ctx := context.Background()
+	_, err := repo.CreateTenant(ctx, model.CreateTenantRequest{
+		TenantID:        "family-varadha",
+		Name:            "Family Varadha",
+		PlanID:          constants.PlanFamilyPro,
+		RetentionTierID: constants.RetentionFamilyCloud,
+		PrimaryProfile:  "ai-btech-student",
+	})
+	if err != nil {
+		t.Fatalf("create tenant: %v", err)
+	}
+	_, err = repo.EnrollDevice(ctx, model.EnrollDeviceRequest{
+		TenantID: "family-varadha",
+		DeviceID: "role-device",
+		HostName: "role-host",
+		Profile:  "ai-btech-student",
+		OSName:   "windows",
+	})
+	if err != nil {
+		t.Fatalf("enroll device: %v", err)
+	}
+
+	experience, err := repo.TenantRoleExperiences(ctx, "family-varadha")
+	if err != nil {
+		t.Fatalf("tenant role experiences: %v", err)
+	}
+	if experience.Summary.RolesTotal != 4 || experience.Summary.ReadinessScore == 0 || experience.Summary.RecommendedPackage == "" {
+		t.Fatalf("expected scored role experience summary: %+v", experience.Summary)
+	}
+	if len(experience.Roles) != 4 || len(experience.Onboarding) < 4 {
+		t.Fatalf("expected role cards and onboarding checklist: %+v", experience)
+	}
+	roleIDs := map[string]bool{}
+	for _, role := range experience.Roles {
+		roleIDs[role.RoleID] = true
+		if role.PaidTier == "" || role.PrimaryGoal == "" || role.NotificationPromise == "" || len(role.Metrics) == 0 {
+			t.Fatalf("expected role card metadata: %+v", role)
+		}
+	}
+	for _, roleID := range []string{constants.RoleParent, constants.RoleStudent, constants.RoleSchoolAdmin, constants.RoleBusinessManager} {
+		if !roleIDs[roleID] {
+			t.Fatalf("expected role %q in role experiences: %+v", roleID, experience.Roles)
+		}
+	}
+	if experience.PrivacyBoundary == "" {
+		t.Fatalf("expected privacy boundary")
+	}
+}
