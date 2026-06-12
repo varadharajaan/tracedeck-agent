@@ -886,6 +886,64 @@ func (m *Memory) TenantNotificationCommandCenter(ctx context.Context, tenantID s
 	return buildTenantNotificationCommandCenter(operations, monetization, inbox, drilldown, remediation, generatedAt), nil
 }
 
+func (m *Memory) TenantDeliveryTimeline(_ context.Context, tenantID string, filter model.TenantDeliveryTimelineFilter) (model.TenantDeliveryTimeline, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+	filter = normalizeDeliveryTimelineFilter(filter)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	tenant, ok := m.tenants[tenantID]
+	if !ok {
+		return model.TenantDeliveryTimeline{}, ErrTenantNotFound
+	}
+
+	items := make([]model.TenantDeliveryTimelineItem, 0)
+	sourceHosts := map[string]bool{}
+	for _, device := range m.devices {
+		if device.TenantID != tenantID {
+			continue
+		}
+		if filter.DeviceID != "" && filter.DeviceID != device.DeviceID {
+			continue
+		}
+		sourceHosts[device.DeviceID] = true
+		m.seedDashboardForDeviceLocked(device)
+		for _, delivery := range m.alertDeliveries[device.DeviceID] {
+			item := deliveryTimelineItem(tenantID, device, delivery)
+			if deliveryTimelineItemMatches(item, filter) {
+				items = append(items, item)
+			}
+		}
+	}
+	if err := m.persistLocked(); err != nil {
+		return model.TenantDeliveryTimeline{}, err
+	}
+
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].LastAttemptAt.Equal(items[j].LastAttemptAt) {
+			return deliveryProblemRank(items[i].Status) > deliveryProblemRank(items[j].Status)
+		}
+		return items[i].LastAttemptAt.After(items[j].LastAttemptAt)
+	})
+	summary := deliveryTimelineSummary(items, len(sourceHosts))
+	limited := items
+	if len(limited) > filter.Limit {
+		limited = limited[:filter.Limit]
+	}
+
+	return model.TenantDeliveryTimeline{
+		TenantID:        tenant.TenantID,
+		TenantName:      tenant.Name,
+		Filters:         filter,
+		Summary:         summary,
+		Items:           append([]model.TenantDeliveryTimelineItem(nil), limited...),
+		GeneratedAt:     now,
+		PrivacyBoundary: constants.DeliveryTimelinePrivacyNote,
+	}, nil
+}
+
 func (m *Memory) TenantSyncHealth(_ context.Context, tenantID string) (model.TenantSyncHealth, error) {
 	now := time.Now().UTC()
 	tenantID = strings.TrimSpace(tenantID)
@@ -1039,6 +1097,21 @@ func normalizeActivityFeedFilter(filter model.TenantActivityFeedFilter) model.Te
 	return filter
 }
 
+func normalizeDeliveryTimelineFilter(filter model.TenantDeliveryTimelineFilter) model.TenantDeliveryTimelineFilter {
+	filter.DeviceID = strings.TrimSpace(filter.DeviceID)
+	filter.Channel = strings.ToLower(strings.TrimSpace(filter.Channel))
+	filter.Status = strings.ToLower(strings.TrimSpace(filter.Status))
+	filter.Provider = strings.ToLower(strings.TrimSpace(filter.Provider))
+	filter.Query = strings.ToLower(strings.TrimSpace(filter.Query))
+	if filter.Limit <= 0 {
+		filter.Limit = constants.ActivityFeedDefaultLimit
+	}
+	if filter.Limit > constants.ActivityFeedMaxLimit {
+		filter.Limit = constants.ActivityFeedMaxLimit
+	}
+	return filter
+}
+
 func riskFeedItems(tenantID string, device model.Device, events []model.RiskEvent) []model.TenantActivityFeedItem {
 	items := make([]model.TenantActivityFeedItem, 0, len(events))
 	for _, event := range events {
@@ -1061,6 +1134,111 @@ func riskFeedItems(tenantID string, device model.Device, events []model.RiskEven
 		})
 	}
 	return items
+}
+
+func deliveryTimelineItem(tenantID string, device model.Device, delivery model.AlertDelivery) model.TenantDeliveryTimelineItem {
+	return model.TenantDeliveryTimelineItem{
+		ID:               delivery.ID,
+		TenantID:         tenantID,
+		DeviceID:         device.DeviceID,
+		HostName:         device.HostName,
+		EventID:          delivery.EventID,
+		Channel:          delivery.Channel,
+		Provider:         delivery.Provider,
+		Recipient:        delivery.Recipient,
+		Status:           delivery.Status,
+		Attempts:         delivery.Attempts,
+		Summary:          delivery.Summary,
+		NextAction:       notificationNextAction(&delivery),
+		PaidTier:         notificationCommandChannelTier(delivery.Channel),
+		LastAttemptAt:    delivery.LastAttemptAt,
+		NextRetryAt:      delivery.NextRetryAt,
+		LastError:        delivery.LastError,
+		SuppressedReason: delivery.SuppressedReason,
+	}
+}
+
+func deliveryTimelineItemMatches(item model.TenantDeliveryTimelineItem, filter model.TenantDeliveryTimelineFilter) bool {
+	if filter.Channel != "" && strings.ToLower(item.Channel) != filter.Channel {
+		return false
+	}
+	if filter.Status != "" && strings.ToLower(item.Status) != filter.Status {
+		return false
+	}
+	if filter.Provider != "" && strings.ToLower(item.Provider) != filter.Provider {
+		return false
+	}
+	if filter.Query != "" && !strings.Contains(deliveryTimelineSearchText(item), filter.Query) {
+		return false
+	}
+	return true
+}
+
+func deliveryTimelineSearchText(item model.TenantDeliveryTimelineItem) string {
+	parts := []string{
+		item.ID,
+		item.TenantID,
+		item.DeviceID,
+		item.HostName,
+		item.EventID,
+		item.Channel,
+		item.Provider,
+		item.Recipient,
+		item.Status,
+		item.Summary,
+		item.NextAction,
+		item.PaidTier,
+		item.LastError,
+		item.SuppressedReason,
+	}
+	return strings.ToLower(strings.Join(parts, " "))
+}
+
+func deliveryTimelineSummary(items []model.TenantDeliveryTimelineItem, sourceHostCount int) model.TenantDeliveryTimelineSummary {
+	summary := model.TenantDeliveryTimelineSummary{
+		Total:               len(items),
+		SourceHostCount:     sourceHostCount,
+		RecommendedPaidTier: constants.PlanFamilyPro,
+	}
+	for _, item := range items {
+		switch item.Status {
+		case constants.DeliveryStatusDelivered:
+			summary.Delivered++
+			if summary.LastDeliveredAt == nil || item.LastAttemptAt.After(*summary.LastDeliveredAt) {
+				deliveredAt := item.LastAttemptAt
+				summary.LastDeliveredAt = &deliveredAt
+			}
+		case constants.DeliveryStatusRetrying:
+			summary.Retrying++
+			summary.RouteProofGaps++
+		case constants.DeliveryStatusFailed:
+			summary.Failed++
+			summary.RouteProofGaps++
+		case constants.DeliveryStatusSuppressed:
+			summary.Suppressed++
+		case constants.DeliveryStatusPending:
+			summary.RouteProofGaps++
+		}
+		switch item.Channel {
+		case constants.DeliveryChannelEmail:
+			summary.Email++
+		case constants.DeliveryChannelPush:
+			summary.Push++
+		case constants.DeliveryChannelDashboard:
+			summary.Dashboard++
+		}
+		if item.NextRetryAt != nil && (summary.NextRetryAt == nil || item.NextRetryAt.Before(*summary.NextRetryAt)) {
+			nextRetryAt := *item.NextRetryAt
+			summary.NextRetryAt = &nextRetryAt
+		}
+		if item.PaidTier == constants.PlanBusiness {
+			summary.RecommendedPaidTier = constants.PlanBusiness
+		}
+	}
+	if len(items) > 0 {
+		summary.NotificationScore = (summary.Delivered * 100) / len(items)
+	}
+	return summary
 }
 
 func deliveryFeedItems(tenantID string, device model.Device, deliveries []model.AlertDelivery) []model.TenantActivityFeedItem {

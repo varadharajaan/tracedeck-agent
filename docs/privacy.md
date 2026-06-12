@@ -60,3 +60,9 @@ archive/report readiness, paid package labels, and owner actions from existing
 typed APIs. It does not add collectors and does not store provider secrets,
 alert bodies, screenshots, passwords, cookies, tokens, raw URLs, page titles,
 private content, or endpoint payloads.
+
+Phase 51 delivery timeline is metadata-only. It exposes channel, provider
+label, recipient label, status, attempts, retry timing, host label, event id,
+safe summary, paid tier, and next action. It does not store SMTP passwords,
+push endpoint secrets, provider credentials, alert bodies, screenshots, raw
+URLs, page titles, cookies, tokens, private content, or endpoint payloads.

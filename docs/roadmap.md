@@ -185,3 +185,8 @@
     route proof, preference readiness, archive/report value, paid package cards,
     customer owner actions, Postman/Newman coverage, screenshot-free layout
     guard, docs, and full local verification.
+54. Phase 51: delivery timeline. Typed tenant delivery history API and
+    dashboard Notification Evidence Timeline for host-level anomaly email,
+    push notification, dashboard inbox, retry timing, route proof gaps, paid
+    tier recommendation, Postman/Newman coverage, screenshot-free layout guard,
+    docs, and full local verification.

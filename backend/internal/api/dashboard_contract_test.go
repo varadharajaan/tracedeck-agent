@@ -76,6 +76,8 @@ func TestDashboardDOMContract(t *testing.T) {
 		"Mail And Push Delivery Proof",
 		"Customer Action SLAs",
 		"Notification Proof Rail",
+		"Notification Evidence Timeline",
+		"Delivery Audit Trail",
 		"Buyer Demo Checklist",
 		"Mail Delivery Center",
 		"Push Notification Center",

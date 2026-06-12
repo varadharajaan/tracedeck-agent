@@ -299,6 +299,89 @@ func TestTenantActivityFeedEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantDeliveryTimelineEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "timeline-device-001",
+		"host_name": "timeline-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	timelineResponse := httptest.NewRecorder()
+	timelinePath := constants.RouteTenants + "/family-varadha/" + constants.RouteSegmentDeliveryTimeline + "?device_id=timeline-device-001&limit=8"
+	handler.ServeHTTP(timelineResponse, httptest.NewRequest(http.MethodGet, timelinePath, nil))
+	if timelineResponse.Code != http.StatusOK {
+		t.Fatalf("expected delivery timeline 200, got %d: %s", timelineResponse.Code, timelineResponse.Body.String())
+	}
+	var timeline model.TenantDeliveryTimeline
+	if err := json.Unmarshal(timelineResponse.Body.Bytes(), &timeline); err != nil {
+		t.Fatalf("decode delivery timeline: %v", err)
+	}
+	if timeline.Filters.DeviceID != "timeline-device-001" || timeline.Summary.Total < 3 || len(timeline.Items) < 3 {
+		t.Fatalf("expected delivery timeline host proof: %+v", timeline)
+	}
+	if timeline.Summary.Email == 0 || timeline.Summary.Push == 0 || timeline.Summary.Dashboard == 0 {
+		t.Fatalf("expected email, push, and dashboard delivery evidence: %+v", timeline.Summary)
+	}
+	if timeline.Summary.NotificationScore == 0 || timeline.Summary.RecommendedPaidTier == "" {
+		t.Fatalf("expected monetisable notification score and tier: %+v", timeline.Summary)
+	}
+	if !strings.Contains(timeline.PrivacyBoundary, "metadata-only") || !strings.Contains(timeline.PrivacyBoundary, "no passwords") {
+		t.Fatalf("expected strict delivery timeline privacy boundary: %q", timeline.PrivacyBoundary)
+	}
+	serialized := strings.ToLower(timelineResponse.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "screenshot_bytes", "raw_url", "alert_body"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("delivery timeline leaked forbidden marker %q: %s", forbidden, timelineResponse.Body.String())
+		}
+	}
+
+	filteredResponse := httptest.NewRecorder()
+	filteredPath := constants.RouteTenants + "/family-varadha/" + constants.RouteSegmentDeliveryTimeline + "?device_id=timeline-device-001&channel=email&status=delivered&provider=smtp&limit=2"
+	handler.ServeHTTP(filteredResponse, httptest.NewRequest(http.MethodGet, filteredPath, nil))
+	if filteredResponse.Code != http.StatusOK {
+		t.Fatalf("expected filtered delivery timeline 200, got %d: %s", filteredResponse.Code, filteredResponse.Body.String())
+	}
+	var filtered model.TenantDeliveryTimeline
+	if err := json.Unmarshal(filteredResponse.Body.Bytes(), &filtered); err != nil {
+		t.Fatalf("decode filtered delivery timeline: %v", err)
+	}
+	if filtered.Filters.Channel != constants.DeliveryChannelEmail || filtered.Filters.Status != constants.DeliveryStatusDelivered || filtered.Filters.Provider != constants.DeliveryProviderSMTP {
+		t.Fatalf("expected normalized delivery filters: %+v", filtered.Filters)
+	}
+	if len(filtered.Items) == 0 || len(filtered.Items) > 2 || filtered.Items[0].Channel != constants.DeliveryChannelEmail || filtered.Items[0].Status != constants.DeliveryStatusDelivered {
+		t.Fatalf("expected delivered email timeline items: %+v", filtered)
+	}
+
+	invalid := httptest.NewRecorder()
+	handler.ServeHTTP(invalid, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentDeliveryTimeline+"?status=open", nil))
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("expected invalid delivery timeline status 400, got %d: %s", invalid.Code, invalid.Body.String())
+	}
+}
+
 func TestTenantActivityViewsEndpoint(t *testing.T) {
 	t.Parallel()
 
