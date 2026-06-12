@@ -13,7 +13,7 @@ function Initialize-TraceDeckScriptLog {
     New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
     $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $script:TraceDeckLogFile = Join-Path $logDir "$Name-$timestamp.log"
+    $script:TraceDeckLogFile = Join-Path $logDir "$Name-$timestamp-$PID.log"
     $script:TraceDeckRepoRoot = $repoRoot
 
     Update-TraceDeckProcessPath
