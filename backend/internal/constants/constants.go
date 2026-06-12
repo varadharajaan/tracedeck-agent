@@ -33,6 +33,7 @@ const (
 	RouteSegmentDaily         = "daily"
 	RouteSegmentReports       = "reports"
 	RouteSegmentWeekly        = "weekly"
+	RouteSegmentPDF           = "pdf"
 	RouteSegmentOverview      = "overview"
 	RouteSegmentAuditEvents   = "audit-events"
 	RouteSegmentPolicyEvents  = "policy-violations"
@@ -45,6 +46,7 @@ const (
 const (
 	ContentTypeJSON = "application/json"
 	ContentTypeHTML = "text/html; charset=utf-8"
+	ContentTypePDF  = "application/pdf"
 )
 
 const (

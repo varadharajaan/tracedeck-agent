@@ -22,6 +22,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase11.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase12.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase13.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase14.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
@@ -129,6 +130,20 @@ file and API key, verifies missing-key rejection, creates a tenant, enrolls a
 host, confirms risk data exists, restarts the backend against the same state
 file, and verifies the host and alert delivery rows survived restart. Newman
 runs `postman/tracedeck-backend-phase11.postman_collection.json` against a live
+API-key-protected backend.
+
+Phase 14 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase14.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase14.ps1
+```
+
+The Phase 14 smoke builds and boots the backend on localhost, enrolls a host,
+verifies generated weekly report JSON, verifies the PDF endpoint returns
+`application/pdf`, confirms the dashboard weekly report panel still renders,
+and stops the backend. Newman runs
+`postman/tracedeck-backend-phase14.postman_collection.json` against a live
 API-key-protected backend.
 
 Phase 13 adds:

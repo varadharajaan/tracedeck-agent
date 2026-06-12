@@ -1,0 +1,184 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 14",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Without API Key",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is public', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Tenant With API Key",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-TraceDeck-API-Key",
+            "value": "{{apiKey}}"
+          },
+          {
+            "key": "X-TraceDeck-Tenant-ID",
+            "value": "family-varadha"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"name\":\"Family Varadha\",\"plan_id\":\"family_pro\",\"retention_tier_id\":\"family_cloud_90_365_archive\",\"primary_profile\":\"ai-btech-student\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/tenants"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('tenant created with api key', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().tenant_id).to.eql('family-varadha');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Enroll Device With API Key",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-TraceDeck-API-Key",
+            "value": "{{apiKey}}"
+          },
+          {
+            "key": "X-TraceDeck-Tenant-ID",
+            "value": "family-varadha"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"device_id\":\"postman-phase14-device\",\"host_name\":\"postman-phase14-host\",\"profile\":\"ai-btech-student\",\"os_name\":\"windows\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/devices/enroll"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('device enrolled with api key', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().device_id).to.eql('postman-phase14-device');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Weekly Report JSON",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-TraceDeck-API-Key",
+            "value": "{{apiKey}}"
+          },
+          {
+            "key": "X-TraceDeck-Tenant-ID",
+            "value": "family-varadha"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/devices/postman-phase14-device/reports/weekly"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('weekly report is generated and package-ready', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.generated).to.eql(true);",
+              "  pm.expect(body.email_ready).to.eql(true);",
+              "  pm.expect(body.pdf_ready).to.eql(true);",
+              "  pm.expect(body.highlights.length).to.be.above(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Weekly Report PDF",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-TraceDeck-API-Key",
+            "value": "{{apiKey}}"
+          },
+          {
+            "key": "X-TraceDeck-Tenant-ID",
+            "value": "family-varadha"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/devices/postman-phase14-device/reports/weekly/pdf"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('weekly report pdf is returned', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf');",
+              "  pm.expect(pm.response.text()).to.include('%PDF-1.4');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18080"
+    },
+    {
+      "key": "apiKey",
+      "value": "phase14-local-secret"
+    }
+  ]
+}

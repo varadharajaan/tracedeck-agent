@@ -652,17 +652,6 @@ func cloneHealthMap(input map[string]model.DeviceHealth) map[string]model.Device
 	return output
 }
 
-func WeeklyReport(deviceID string) model.WeeklyReport {
-	return model.WeeklyReport{
-		DeviceID:      strings.TrimSpace(deviceID),
-		Week:          time.Now().UTC().Format("2006-W01"),
-		Generated:     false,
-		GeneratedNote: "weekly report generation is reserved for the reporting phase",
-		Highlights:    []string{},
-		Risks:         []string{},
-	}
-}
-
 func PolicyTemplates() []model.PolicyTemplate {
 	return []model.PolicyTemplate{
 		{

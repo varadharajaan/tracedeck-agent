@@ -59,6 +59,7 @@ Current panels:
 - plan readiness and tenant packaging
 - notification operations for email, push, dashboard feed, and retry queue
 - product packaging for weekly report, policy marketplace, roles, and audit
+- weekly report email/PDF readiness
 - risk timeline
 - policy violation table
 - anomaly table
