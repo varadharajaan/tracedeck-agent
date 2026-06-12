@@ -390,6 +390,22 @@ proof. Newman runs
 `postman/tracedeck-backend-phase33.postman_collection.json` against the live
 dashboard demo and checks the same API/UI contract.
 
+Phase 34 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase34.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase34.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase34.ps1
+```
+
+The Phase 34 smoke live-boots an API-key protected backend, verifies the
+dashboard local access panel and session-storage wiring, confirms the served
+HTML does not embed the configured API key, checks protected APIs reject
+missing keys, and confirms authenticated tenant/device calls with dashboard
+headers. Newman runs
+`postman/tracedeck-backend-phase34.postman_collection.json` against the same
+protected live backend.
+
 Phase 13 adds:
 
 ```powershell

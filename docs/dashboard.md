@@ -103,6 +103,8 @@ For the selected host it reads:
 
 Current panels:
 
+- local dashboard access panel for API-key protected backends; the key is kept
+  in browser session storage and sent as `X-TraceDeck-API-Key`
 - host filter and host identity
 - monetisation launch deck for customer package, readiness, notification score,
   trust score, and conversion stage
@@ -197,6 +199,10 @@ Phase 11 persists the same backend dashboard state to
 `data/local/backend/backend-state.json` by default. If the backend is started
 with an API key, the dashboard shell still loads, but API requests require the
 configured `X-TraceDeck-API-Key` and tenant scope headers.
+
+Phase 34 adds a session-scoped local access panel so an API-key protected
+dashboard can unlock API requests without placing the key in the URL, HTML,
+logs, local backend state, or repo files.
 
 A future frontend phase can move this surface to a richer application shell with
 authentication, role-specific navigation, no-code alert rule editing, weekly

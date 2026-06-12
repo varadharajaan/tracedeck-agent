@@ -45,3 +45,9 @@ still requires explicit authentication and authorization work.
 Phase 22 delete requests are non-destructive workflow records. They do not
 delete tenant data automatically; hosted deletion execution requires stronger
 authorization, approval, and retention enforcement.
+
+Phase 34 dashboard API-key unlock stores the local key only in browser
+`sessionStorage` and attaches it as `X-TraceDeck-API-Key` for API calls. The key
+is not embedded in the served dashboard HTML, not written to backend state, and
+not logged by TraceDeck scripts. This is still a localhost development/admin
+mechanism, not hosted SSO or internet-exposed authentication.

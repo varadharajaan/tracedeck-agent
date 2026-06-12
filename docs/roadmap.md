@@ -112,3 +112,6 @@
     dashboard command-view and notification-proof panels; typed validation,
     audit events, Postman/Newman coverage, live dashboard smoke, and local
     verification.
+37. Phase 34: dashboard session auth. Session-scoped API-key unlock for the
+    embedded localhost dashboard, protected API smoke/Newman coverage, security
+    docs for session storage and header-based access, and local verification.

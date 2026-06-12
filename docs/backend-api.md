@@ -234,5 +234,12 @@ mail delivery proof, push retry watch, and sync/archive proof. Created views are
 persisted, audited, and validated against typed feed kind, severity, channel,
 status, limit, and paid-tier values.
 
+Phase 34 improves the embedded dashboard's local API-key workflow. The
+dashboard route remains loadable from localhost, while protected API calls keep
+using `X-TraceDeck-API-Key`, `X-TraceDeck-Tenant-ID`, and
+`X-TraceDeck-Actor-ID`. The browser shell stores the entered API key only in
+`sessionStorage` and sends it as a header; it is not embedded in dashboard HTML
+or backend state.
+
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.

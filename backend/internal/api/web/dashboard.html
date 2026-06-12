@@ -50,7 +50,7 @@
     h1 { font-size: 21px; font-weight: 750; }
     h2 { font-size: 15px; font-weight: 750; }
     h3 { font-size: 13px; font-weight: 750; }
-    button, select {
+    button, select, input {
       font: inherit;
       min-height: 36px;
       border: 1px solid var(--line);
@@ -71,6 +71,10 @@
     select {
       min-width: 260px;
       padding: 0 34px 0 12px;
+    }
+    input {
+      width: 100%;
+      padding: 0 12px;
     }
     .muted { color: var(--muted); }
     .toolbar {
@@ -104,6 +108,37 @@
       box-shadow: var(--shadow);
     }
     .panel { padding: 16px; }
+    .auth-panel {
+      background: #fffaf0;
+      border: 1px solid #fedf89;
+      border-left: 5px solid var(--amber);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+    .auth-panel[hidden] { display: none; }
+    .auth-grid {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(160px, 0.7fr) minmax(160px, 0.7fr) auto;
+      gap: 10px;
+      align-items: end;
+      margin-top: 12px;
+    }
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .auth-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
     .metric {
       min-height: 108px;
       padding: 14px;
@@ -616,6 +651,7 @@
       header { grid-template-columns: 1fr; }
       .toolbar { justify-content: stretch; }
       select, button { width: 100%; }
+      .auth-grid { grid-template-columns: 1fr; }
       .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .signal-grid { grid-template-columns: 1fr; }
       .route-grid { grid-template-columns: 1fr; }
@@ -644,6 +680,34 @@
     </div>
   </header>
   <main>
+    <section id="auth-panel" class="auth-panel" aria-label="local dashboard access" hidden>
+      <div class="section-head">
+        <div>
+          <h2>Local Dashboard Access</h2>
+          <p class="muted">Enter the local backend API key for this browser session. TraceDeck keeps it in session storage only and sends it as a request header.</p>
+        </div>
+        <span id="auth-state" class="badge pending">locked</span>
+      </div>
+      <div class="auth-grid">
+        <div class="field">
+          <label for="api-key-input">API Key</label>
+          <input id="api-key-input" type="password" autocomplete="off" placeholder="X-TraceDeck-API-Key">
+        </div>
+        <div class="field">
+          <label for="tenant-scope-input">Tenant Scope</label>
+          <input id="tenant-scope-input" type="text" autocomplete="off" placeholder="family-varadha">
+        </div>
+        <div class="field">
+          <label for="actor-id-input">Actor</label>
+          <input id="actor-id-input" type="text" autocomplete="off" placeholder="local-dashboard">
+        </div>
+        <div class="auth-actions">
+          <button id="save-auth-button" class="primary" type="button">Unlock</button>
+          <button id="clear-auth-button" type="button">Clear</button>
+        </div>
+      </div>
+    </section>
+
     <section class="launch-deck" aria-label="monetisation launch deck">
       <div class="launch-card">
         <div class="section-head">
@@ -1571,10 +1635,40 @@
     const RISK_CATEGORY = Object.freeze({
       riskySoftware: "risky_software"
     });
-    const state = { devices: [], selectedDeviceId: "" };
+    const AUTH_STORAGE = Object.freeze({
+      apiKey: "tracedeck.dashboard.apiKey",
+      tenantID: "tracedeck.dashboard.tenantID",
+      actorID: "tracedeck.dashboard.actorID"
+    });
+    const AUTH_HEADER = Object.freeze({
+      apiKey: "X-TraceDeck-API-Key",
+      tenantID: "X-TraceDeck-Tenant-ID",
+      actorID: "X-TraceDeck-Actor-ID"
+    });
+    const HTTP_STATUS = Object.freeze({
+      unauthorized: 401
+    });
+    const state = {
+      devices: [],
+      selectedDeviceId: "",
+      auth: {
+        apiKey: sessionStorage.getItem(AUTH_STORAGE.apiKey) || "",
+        tenantID: sessionStorage.getItem(AUTH_STORAGE.tenantID) || "family-varadha",
+        actorID: sessionStorage.getItem(AUTH_STORAGE.actorID) || "local-dashboard"
+      }
+    };
+
+    class AuthRequiredError extends Error {
+      constructor(path) {
+        super(path + " requires local API key");
+        this.name = "AuthRequiredError";
+        this.path = path;
+      }
+    }
 
     async function loadJSON(path) {
-      const response = await fetch(path);
+      const response = await fetch(path, { headers: dashboardHeaders() });
+      if (response.status === HTTP_STATUS.unauthorized) throw new AuthRequiredError(path);
       if (!response.ok) throw new Error(path + " failed with " + response.status);
       return response.json();
     }
@@ -1583,8 +1677,78 @@
       try {
         return await loadJSON(path);
       } catch (error) {
+        if (error instanceof AuthRequiredError) throw error;
         console.warn(path + " optional load failed", error);
         return null;
+      }
+    }
+
+    function dashboardHeaders() {
+      const headers = {};
+      if (state.auth.apiKey) headers[AUTH_HEADER.apiKey] = state.auth.apiKey;
+      if (state.auth.tenantID) headers[AUTH_HEADER.tenantID] = state.auth.tenantID;
+      if (state.auth.actorID) headers[AUTH_HEADER.actorID] = state.auth.actorID;
+      return headers;
+    }
+
+    function initializeAuthPanel() {
+      setInputValue("api-key-input", state.auth.apiKey);
+      setInputValue("tenant-scope-input", state.auth.tenantID);
+      setInputValue("actor-id-input", state.auth.actorID);
+      renderAuthState();
+    }
+
+    function setInputValue(id, value) {
+      const input = document.getElementById(id);
+      if (input) input.value = value || "";
+    }
+
+    function saveAuthSession() {
+      state.auth.apiKey = document.getElementById("api-key-input").value.trim();
+      state.auth.tenantID = document.getElementById("tenant-scope-input").value.trim();
+      state.auth.actorID = document.getElementById("actor-id-input").value.trim();
+      if (state.auth.apiKey) sessionStorage.setItem(AUTH_STORAGE.apiKey, state.auth.apiKey);
+      else sessionStorage.removeItem(AUTH_STORAGE.apiKey);
+      if (state.auth.tenantID) sessionStorage.setItem(AUTH_STORAGE.tenantID, state.auth.tenantID);
+      else sessionStorage.removeItem(AUTH_STORAGE.tenantID);
+      if (state.auth.actorID) sessionStorage.setItem(AUTH_STORAGE.actorID, state.auth.actorID);
+      else sessionStorage.removeItem(AUTH_STORAGE.actorID);
+      renderAuthState();
+      refresh().catch(showError);
+    }
+
+    function clearAuthSession() {
+      state.auth.apiKey = "";
+      sessionStorage.removeItem(AUTH_STORAGE.apiKey);
+      setInputValue("api-key-input", "");
+      renderAuthState();
+    }
+
+    function renderAuthState() {
+      const panel = document.getElementById("auth-panel");
+      const stateBadge = document.getElementById("auth-state");
+      if (!panel || !stateBadge) return;
+      const unlocked = Boolean(state.auth.apiKey);
+      panel.hidden = unlocked;
+      stateBadge.outerHTML = badge(unlocked ? "unlocked" : "locked").replace("<span", '<span id="auth-state"');
+    }
+
+    function showAuthPanel() {
+      const panel = document.getElementById("auth-panel");
+      if (panel) panel.hidden = false;
+      setInputValue("tenant-scope-input", state.auth.tenantID);
+      setInputValue("actor-id-input", state.auth.actorID);
+      document.getElementById("api-key-input").focus();
+      document.getElementById("auth-state").outerHTML =
+        badge("locked").replace("<span", '<span id="auth-state"');
+    }
+
+    function hideAuthPanel() {
+      const panel = document.getElementById("auth-panel");
+      if (panel && state.auth.apiKey) panel.hidden = true;
+      const authState = document.getElementById("auth-state");
+      if (authState) {
+        authState.outerHTML = badge(state.auth.apiKey ? "unlocked" : "open").replace("<span", '<span id="auth-state"');
       }
     }
 
@@ -2953,9 +3117,14 @@
 
     async function refresh() {
       const health = await loadJSON(API.health);
-      document.getElementById("backend-status").textContent = "Local backend " + health.status;
+      const backendStatus = document.getElementById("backend-status");
+      backendStatus.textContent = "Local backend " + health.status;
+      backendStatus.style.borderColor = "#abefc6";
+      backendStatus.style.background = "#ecfdf3";
+      backendStatus.style.color = "#027a48";
 
       const devices = await loadJSON(API.devices);
+      hideAuthPanel();
       state.devices = devices.items || [];
       if (!state.selectedDeviceId && state.devices.length > 0) {
         state.selectedDeviceId = state.devices[0].device_id;
@@ -3027,8 +3196,22 @@
       refresh().catch(showError);
     });
     document.getElementById("refresh-button").addEventListener("click", () => refresh().catch(showError));
+    document.getElementById("save-auth-button").addEventListener("click", saveAuthSession);
+    document.getElementById("clear-auth-button").addEventListener("click", clearAuthSession);
+    document.getElementById("api-key-input").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") saveAuthSession();
+    });
 
     function showError(error) {
+      if (error instanceof AuthRequiredError) {
+        showAuthPanel();
+        document.getElementById("backend-status").textContent = "Local backend locked";
+        document.getElementById("backend-status").style.borderColor = "#fedf89";
+        document.getElementById("backend-status").style.background = "#fffaeb";
+        document.getElementById("backend-status").style.color = "#b54708";
+        console.warn(error);
+        return;
+      }
       document.getElementById("backend-status").textContent = "Local backend error";
       document.getElementById("backend-status").style.borderColor = "#fecdca";
       document.getElementById("backend-status").style.background = "#fff4f2";
@@ -3036,6 +3219,7 @@
       console.error(error);
     }
 
+    initializeAuthPanel();
     refresh().catch(showError);
   </script>
 </body>
