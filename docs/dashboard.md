@@ -262,6 +262,14 @@ boundary, per-route rehearsal evidence, SLA promise, and next actions. Dry-run
 rehearsal is metadata-only and does not send live provider messages, store
 provider secrets, or persist alert body content.
 
+Phase 45 adds the Monetisation Command Center immediately after command
+navigation. It is the premium first-screen surface for a paid demo: anomaly
+inbox, push notification route, mail delivery proof, weekly report mail/PDF,
+fleet coverage, S3 archive retention, trust/audit, revenue package, delivery
+proof, and owner action queue are visible before deeper host panels. The panel
+uses existing tenant operations, monetisation summary, alert inbox, delivery
+drilldown, sync health, consent, weekly report, and per-host delivery APIs.
+
 A future frontend phase can move this surface to a richer application shell with
 role-specific onboarding, no-code alert rule editing, weekly report drilldowns,
 durable event search, and paid customer onboarding.

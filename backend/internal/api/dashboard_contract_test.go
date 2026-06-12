@@ -44,6 +44,10 @@ func TestDashboardDOMContract(t *testing.T) {
 
 	for _, marker := range []string{
 		"Command Navigation",
+		"Monetisation Command Center",
+		"Anomaly And Notification Inbox",
+		"Delivery And Mail Proof",
+		"Owner Action Queue",
 		"data-jump-target=\"paid-ops-section\"",
 		"data-jump-target=\"revenue-section\"",
 		"data-jump-target=\"notification-proof-section\"",
