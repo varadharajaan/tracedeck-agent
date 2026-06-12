@@ -47,6 +47,11 @@ signals, notification delivery score, and upgrade proof pack.
 Phase 24 hardens dashboard demo lifecycle scripts so stale TraceDeck listeners
 are stopped before live boot testing and the served dashboard is proven to come
 from the current build.
+Phase 27 adds a buyer-facing revenue control layer above the existing technical
+tables: package fit, paid proof, upgrade motion, renewal risk, commercial
+lever, anomaly assurance, email delivery, push delivery, and report mail
+readiness. The panels are populated from the existing typed tenant operations,
+tenant monetisation summary, alert delivery, weekly report, and host risk APIs.
 
 The dashboard reads the base backend endpoints:
 
@@ -84,6 +89,10 @@ Current panels:
 - notification promise for email, push, and dashboard delivery status
 - commercial readiness score for Family Pro, school, and business packaging
 - trust coverage across agent, archive, delivery, and audit signals
+- revenue control room for package fit, paid proof, upgrade motion, renewal
+  risk, and commercial lever
+- buyer notification assurance for anomaly alerting, email delivery, push
+  delivery, weekly report mail, last signal, and next action
 - customer operations cockpit for fleet, anomaly, mail delivery, push reach,
   and paid value
 - escalation workbench for tenant-level policy, anomaly, delivery, and archive
