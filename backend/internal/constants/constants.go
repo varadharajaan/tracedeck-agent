@@ -45,6 +45,7 @@ const (
 	RouteSegmentBusinessDash     = "business-dashboard"
 	RouteSegmentRoleExperience   = "role-experiences"
 	RouteSegmentExecutiveConsole = "executive-console"
+	RouteSegmentNotificationRev  = "notification-revenue-cockpit"
 	RouteSegmentNotificationCmd  = "notification-command-center"
 	RouteSegmentDeliveryTimeline = "delivery-timeline"
 	RouteSegmentDeliveryDrill    = "delivery-drilldown"
@@ -287,6 +288,7 @@ const (
 	DeliveryTimelinePrivacyNote       = "metadata-only delivery timeline: channel, provider label, recipient label, status, retry timing, host label, event id, and safe summary only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"
 	RoleExperiencePrivacyNote         = "metadata-only role experience center: role labels, dashboard scope, onboarding status, notification proof, archive/report readiness, consent controls, and paid-tier packaging only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"
 	ExecutiveConsolePrivacyNote       = "metadata-only executive console: product readiness, anomaly categories, host labels, email/push/dashboard delivery proof, weekly report readiness, archive status, role packaging, and owner actions only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"
+	NotificationRevenuePrivacyNote    = "metadata-only notification revenue cockpit: anomaly SLA categories, mail/push/dashboard delivery proof, buyer demo readiness, escalation state, paid-package levers, weekly report readiness, and owner actions only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"
 )
 
 const (

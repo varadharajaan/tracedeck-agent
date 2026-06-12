@@ -127,6 +127,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase53.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase53.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase53.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase54.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase54.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase54.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase49.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase49.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase49.ps1
@@ -207,3 +210,11 @@ screen so the product reads like a sellable endpoint productivity and risk
 observability console. It aggregates metadata-only proof and does not add
 password, screenshot, raw URL, page title, alert body, provider secret, token,
 cookie, or private-content collection.
+
+Phase 54 adds a typed Notification Revenue Cockpit at
+`/api/v1/tenants/{tenantId}/notification-revenue-cockpit`. It gives the UI a
+buyer-ready notification monetisation layer for anomaly SLA, mail proof, push
+proof, dashboard delivery, weekly report readiness, escalation policy,
+scenario templates, channel value, and upgrade action levers. It remains
+metadata-only and does not add password, screenshot, raw URL, page title, alert
+body, provider secret, token, cookie, or private-content collection.

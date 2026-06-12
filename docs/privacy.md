@@ -80,3 +80,10 @@ report readiness, archive status, role packaging, paid-tier labels, and owner
 actions. It does not add collectors and does not store SMTP passwords, push
 endpoint secrets, provider credentials, alert bodies, screenshots, raw URLs,
 page titles, cookies, tokens, private content, or endpoint payloads.
+
+Phase 54 notification revenue cockpit is metadata-only. It exposes anomaly SLA
+categories, mail/push/dashboard delivery proof, weekly report readiness,
+escalation state, scenario labels, channel value, paid-package levers, and
+owner actions. It does not add collectors and does not store SMTP passwords,
+push endpoint secrets, provider credentials, alert bodies, screenshots, raw
+URLs, page titles, cookies, tokens, private content, or endpoint payloads.

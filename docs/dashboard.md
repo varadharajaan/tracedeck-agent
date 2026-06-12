@@ -87,6 +87,11 @@ executive-console API. It is the first monetisation-grade surface on the page
 and shows sellable readiness, anomaly/open alert pressure, mail delivery proof,
 push reach, weekly report readiness, archive posture, role packaging, value
 tiles, provider-safe delivery proof, alert stream, and owner actions.
+Phase 54 adds a Notification Revenue Cockpit backed by the typed
+notification-revenue-cockpit API. It adds a buyer-ready notification
+monetisation layer for anomaly SLA, mail proof, push proof, dashboard delivery,
+weekly report readiness, escalation policy, scenario templates, channel proof
+matrix, and upgrade action levers.
 
 The dashboard reads the base backend endpoints:
 
@@ -106,6 +111,7 @@ For the selected host it reads:
 - `/api/v1/tenants/{tenantId}/delivery-timeline?device_id={deviceId}&limit=8`
 - `/api/v1/tenants/{tenantId}/role-experiences`
 - `/api/v1/tenants/{tenantId}/executive-console`
+- `/api/v1/tenants/{tenantId}/notification-revenue-cockpit`
 - `/api/v1/tenants/{tenantId}`
 - `/api/v1/plans`
 - `/api/v1/roles`
@@ -132,6 +138,10 @@ Current panels:
 - executive notification console for sellable readiness, anomaly urgency, mail
   proof, push reach, weekly report readiness, archive posture, role packaging,
   paid value tiles, alert stream, delivery proof, and owner actions
+- notification revenue cockpit for anomaly SLA, push notification proof, mail
+  delivery proof, dashboard delivery, weekly report readiness, escalation
+  policy, anomaly delivery scenarios, channel proof matrix, and upgrade action
+  levers
 - host filter and host identity
 - monetisation launch deck for customer package, readiness, notification score,
   trust score, and conversion stage

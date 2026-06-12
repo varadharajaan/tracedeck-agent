@@ -20,6 +20,13 @@ REQUIRED_IDS = (
     "executive-alert-list",
     "executive-delivery-list",
     "executive-action-list",
+    "notification-revenue-section",
+    "notification-revenue-status",
+    "notification-revenue-headline",
+    "notification-revenue-kpi-list",
+    "notification-revenue-scenario-list",
+    "notification-revenue-channel-list",
+    "notification-revenue-action-list",
     "business-dashboard-section",
     "business-dashboard-status",
     "business-dashboard-headline",
@@ -172,8 +179,8 @@ def main() -> int:
                             clientHeight: element.clientHeight
                           }));
                           checks.push({
-                            name: "command-navigation-has-nine-jumps",
-                            ok: jumpBoxes.length === 9,
+                            name: "command-navigation-has-ten-jumps",
+                            ok: jumpBoxes.length === 10,
                             detail: `${jumpBoxes.length} command jump buttons`
                           });
                           for (const item of jumpBoxes) {

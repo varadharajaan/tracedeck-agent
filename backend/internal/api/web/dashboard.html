@@ -113,6 +113,7 @@
     main > *,
     .command-nav,
     .executive-console,
+    .notification-revenue-cockpit,
     .growth-cockpit,
     .buyer-ops-brief,
     .paid-ops-console,
@@ -221,7 +222,7 @@
     }
     .command-nav-grid {
       display: grid;
-      grid-template-columns: repeat(9, minmax(78px, 1fr));
+      grid-template-columns: repeat(10, minmax(70px, 1fr));
       gap: 8px;
     }
     .command-jump {
@@ -426,6 +427,121 @@
     }
     .executive-item strong,
     .executive-item span {
+      overflow-wrap: anywhere;
+    }
+    .notification-revenue-cockpit {
+      display: grid;
+      grid-template-columns: minmax(340px, 0.9fr) minmax(0, 2.1fr);
+      gap: 16px;
+      min-width: 0;
+    }
+    .notification-revenue-focus {
+      min-width: 0;
+      width: auto;
+      max-width: 100%;
+      min-height: 420px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      align-content: space-between;
+      gap: 16px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--blue);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .notification-revenue-focus h2 {
+      font-size: 22px;
+      overflow-wrap: anywhere;
+    }
+    .notification-revenue-focus strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 34px;
+      line-height: 1.04;
+      overflow-wrap: anywhere;
+    }
+    .notification-revenue-focus p {
+      color: var(--muted);
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+    .notification-revenue-focus .section-head,
+    .notification-revenue-focus .section-head > div {
+      min-width: 0;
+      max-width: 100%;
+    }
+    .notification-revenue-meter {
+      display: grid;
+      gap: 8px;
+    }
+    .notification-revenue-meter-track {
+      height: 12px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #eef1f5;
+    }
+    .notification-revenue-meter-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--teal), var(--green));
+    }
+    .notification-revenue-kpis {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .notification-revenue-kpi {
+      min-width: 0;
+      min-height: 138px;
+      display: grid;
+      align-content: space-between;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .notification-revenue-kpi small {
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .notification-revenue-kpi strong {
+      font-size: 20px;
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+    }
+    .notification-revenue-kpi span {
+      overflow-wrap: anywhere;
+    }
+    .notification-revenue-board {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .notification-revenue-board > .panel {
+      min-width: 0;
+    }
+    .notification-revenue-list {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+    .notification-revenue-item {
+      display: grid;
+      gap: 7px;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+    }
+    .notification-revenue-item strong,
+    .notification-revenue-item span {
       overflow-wrap: anywhere;
     }
     .business-list {
@@ -1193,6 +1309,7 @@
       gap: 12px;
       align-items: start;
       margin-bottom: 12px;
+      min-width: 0;
     }
     .host-card {
       display: grid;
@@ -1452,6 +1569,9 @@
       .executive-console { grid-template-columns: 1fr; }
       .executive-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .executive-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .notification-revenue-cockpit { grid-template-columns: 1fr; }
+      .notification-revenue-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .notification-revenue-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .monetization-command-center { grid-template-columns: 1fr; }
       .command-center-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .command-center-board { grid-template-columns: 1fr; }
@@ -1492,6 +1612,13 @@
       .business-board { grid-template-columns: 1fr; }
       .executive-kpis { grid-template-columns: 1fr; }
       .executive-board { grid-template-columns: 1fr; }
+      .notification-revenue-kpis { grid-template-columns: 1fr; }
+      .notification-revenue-board { grid-template-columns: 1fr; }
+      .notification-revenue-focus { min-height: auto; padding: 12px; }
+      .notification-revenue-focus .section-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+      .notification-revenue-focus .badge { justify-self: start; }
+      .notification-revenue-focus h2 { font-size: 20px; }
+      .notification-revenue-focus strong { font-size: 28px; }
       .growth-grid { grid-template-columns: 1fr; }
       .command-center-grid { grid-template-columns: 1fr; }
       .buyer-ops-grid, .buyer-ops-board { grid-template-columns: 1fr; }
@@ -1626,6 +1753,85 @@
               <span id="executive-action-count" class="pill">0 actions</span>
             </div>
             <div id="executive-action-list" class="executive-list"><div class="empty">No executive owner actions yet.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="notification-revenue-section" class="notification-revenue-cockpit" aria-label="notification revenue cockpit">
+      <div class="notification-revenue-focus">
+        <div class="section-head">
+          <div>
+            <h2>Notification Revenue Cockpit</h2>
+            <p>Paid-package view for anomaly SLA, push notification proof, mail delivery proof, weekly report readiness, escalation policy, and buyer demo actions.</p>
+          </div>
+          <span id="notification-revenue-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Monetisation signal</span>
+          <strong id="notification-revenue-headline">No tenant loaded</strong>
+          <p id="notification-revenue-detail">Waiting for anomaly SLA, push, mail, dashboard, report, escalation, and upgrade proof.</p>
+        </div>
+        <div class="notification-revenue-meter">
+          <div class="score-meta"><span>Revenue readiness</span><span id="notification-revenue-score">0%</span></div>
+          <div class="notification-revenue-meter-track"><div id="notification-revenue-score-bar" class="notification-revenue-meter-fill"></div></div>
+        </div>
+        <div class="action-meta">
+          <span id="notification-revenue-package" class="pill">package pending</span>
+          <span id="notification-revenue-demo" class="pill">demo pending</span>
+          <span id="notification-revenue-next" class="pill">action pending</span>
+          <span id="notification-revenue-privacy" class="pill">metadata-only</span>
+        </div>
+      </div>
+      <div>
+        <div class="notification-revenue-kpis">
+          <div class="notification-revenue-kpi"><small>Revenue Ready</small><strong id="notification-revenue-kpi-revenue-readiness">-</strong><span id="notification-revenue-kpi-revenue-readiness-sub" class="muted">No readiness proof</span></div>
+          <div class="notification-revenue-kpi"><small>Anomaly SLA</small><strong id="notification-revenue-kpi-anomaly-sla">-</strong><span id="notification-revenue-kpi-anomaly-sla-sub" class="muted">No SLA proof</span></div>
+          <div class="notification-revenue-kpi"><small>Mail Proof</small><strong id="notification-revenue-kpi-mail-proof">-</strong><span id="notification-revenue-kpi-mail-proof-sub" class="muted">No mail proof</span></div>
+          <div class="notification-revenue-kpi"><small>Push Proof</small><strong id="notification-revenue-kpi-push-proof">-</strong><span id="notification-revenue-kpi-push-proof-sub" class="muted">No push proof</span></div>
+          <div class="notification-revenue-kpi"><small>Weekly Report</small><strong id="notification-revenue-kpi-weekly-report">-</strong><span id="notification-revenue-kpi-weekly-report-sub" class="muted">No report proof</span></div>
+          <div class="notification-revenue-kpi"><small>Escalation</small><strong id="notification-revenue-kpi-escalation-policy">-</strong><span id="notification-revenue-kpi-escalation-policy-sub" class="muted">No escalation proof</span></div>
+        </div>
+        <div class="notification-revenue-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Revenue KPI Proof</h2>
+                <p class="muted">Buyer-facing metrics for notification score, alert SLA, package readiness, report proof, and escalation policy.</p>
+              </div>
+              <span id="notification-revenue-kpi-count" class="pill">0 KPIs</span>
+            </div>
+            <div id="notification-revenue-kpi-list" class="notification-revenue-list"><div class="empty">No notification revenue KPIs yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Anomaly Delivery Scenarios</h2>
+                <p class="muted">Sellable workflows for non-study video, media after hours, risky software, and archive trust gaps.</p>
+              </div>
+              <span id="notification-revenue-scenario-count" class="pill">0 scenarios</span>
+            </div>
+            <div id="notification-revenue-scenario-list" class="notification-revenue-list"><div class="empty">No anomaly delivery scenarios yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Channel Proof Matrix</h2>
+                <p class="muted">Provider-safe mail, push, and dashboard proof with SLA and paid-plan value.</p>
+              </div>
+              <span id="notification-revenue-channel-count" class="pill">0 channels</span>
+            </div>
+            <div id="notification-revenue-channel-list" class="notification-revenue-list"><div class="empty">No notification channel proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Upgrade Action Levers</h2>
+                <p class="muted">Owner actions that turn notification proof into Family Pro, school, and business value.</p>
+              </div>
+              <span id="notification-revenue-action-count" class="pill">0 actions</span>
+            </div>
+            <div id="notification-revenue-action-list" class="notification-revenue-list"><div class="empty">No upgrade action levers yet.</div></div>
           </div>
         </div>
       </div>
@@ -1924,6 +2130,7 @@
       </div>
       <nav class="command-nav-grid" aria-label="dashboard sections">
         <button class="command-jump is-active" type="button" data-jump-target="executive-console-section">Executive<span id="nav-executive-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="notification-revenue-section">Notif Rev<span id="nav-notification-revenue-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="paid-ops-section">Paid Ops<span id="nav-paid-ops-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="revenue-section">Revenue<span id="nav-revenue-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="premium-notification-section">Notify Pro<span id="nav-premium-notification-meta">waiting</span></button>
@@ -3797,6 +4004,7 @@
       renderDeviceHealth(healthModel);
       renderTenantPlan(device, context);
       renderExecutiveConsole(context.executiveConsole);
+      renderNotificationRevenueCockpit(context.notificationRevenueCockpit);
       renderBusinessDashboard(context.businessDashboard);
       renderGrowthCockpit(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderNotificationPreferenceCenter(context.notificationPreferences);
@@ -3863,6 +4071,7 @@
       setText("command-nav-report", "report pending");
       setText("command-nav-archive", "archive pending");
       setText("nav-executive-meta", "waiting");
+      setText("nav-notification-revenue-meta", "waiting");
       setText("nav-paid-ops-meta", "waiting");
       setText("nav-revenue-meta", "waiting");
       setText("nav-premium-notification-meta", "waiting");
@@ -3911,6 +4120,8 @@
       const notificationSummary = notificationCommand.summary || {};
       const executive = context.executiveConsole || {};
       const executiveSummary = executive.summary || {};
+      const notificationRevenue = context.notificationRevenueCockpit || {};
+      const notificationRevenueSummary = notificationRevenue.summary || {};
       const weekly = context.weeklyReport || {};
       const alertInbox = context.alertInbox || {};
       const inboxSummary = alertInbox.summary || {};
@@ -3934,6 +4145,7 @@
       setText("command-nav-report", reportReady ? "report ready" : weekly.email_ready ? "email ready" : "report pending");
       setText("command-nav-archive", archiveProvider === "s3" ? `${archivePending} archive pending` : `${archiveProvider} pending`);
       setText("nav-executive-meta", executiveSummary.readiness_score ? `${executiveSummary.readiness_score}% ready` : `${readiness}% ready`);
+      setText("nav-notification-revenue-meta", notificationRevenueSummary.revenue_readiness ? `${notificationRevenueSummary.revenue_readiness}% rev` : `${deliveryScore}% proof`);
       setText("nav-paid-ops-meta", `${readiness}% ready`);
       setText("nav-revenue-meta", monetization.conversion_stage || operations.customer_health || "pilot");
       setText("nav-premium-notification-meta", notificationSummary.status || `${openAlerts} alerts`);
@@ -4385,6 +4597,112 @@
           </div>
         </div>
       `).join("");
+    }
+
+    function renderNotificationRevenueCockpit(cockpit) {
+      const model = cockpit || {};
+      const summary = model.summary || {};
+      const kpis = model.kpis || [];
+      const channels = model.channels || [];
+      const scenarios = model.scenarios || [];
+      const actions = model.actions || [];
+
+      document.getElementById("notification-revenue-status").outerHTML =
+        badge(summary.status || "pending").replace("<span", '<span id="notification-revenue-status"');
+      setText("notification-revenue-headline", summary.headline || "Notification revenue cockpit pending");
+      setText("notification-revenue-detail", summary.detail || "Waiting for anomaly SLA, push, mail, dashboard, report, escalation, and upgrade proof.");
+      setText("notification-revenue-score", `${summary.revenue_readiness || 0}%`);
+      setPercentBar("notification-revenue-score-bar", summary.revenue_readiness || 0);
+      setText("notification-revenue-package", summary.recommended_paid_package || model.plan_name || "package pending");
+      setText("notification-revenue-demo", summary.buyer_demo_ready ? "buyer demo ready" : "demo proof pending");
+      setText("notification-revenue-next", summary.next_best_action || "action pending");
+      setText("notification-revenue-privacy", model.privacy_boundary ? "metadata-only privacy" : "metadata-only");
+
+      for (const id of ["revenue-readiness", "anomaly-sla", "mail-proof", "push-proof", "weekly-report", "escalation-policy"]) {
+        const item = kpis.find((candidate) => candidate.id === id) || {};
+        setText(`notification-revenue-kpi-${id}`, item.value || "-");
+        setText(`notification-revenue-kpi-${id}-sub`, item.detail || "No proof yet");
+      }
+
+      setText("notification-revenue-kpi-count", `${kpis.length} KPI${kpis.length === 1 ? "" : "s"}`);
+      const kpiTarget = document.getElementById("notification-revenue-kpi-list");
+      if (kpis.length === 0) {
+        kpiTarget.innerHTML = '<div class="empty">No notification revenue KPIs yet.</div>';
+      } else {
+        kpiTarget.innerHTML = kpis.map((item) => `
+          <div class="notification-revenue-item">
+            <strong>${escapeHTML(item.label)}: ${escapeHTML(item.value)}</strong>
+            <span class="muted">${escapeHTML(item.detail)}</span>
+            <div class="action-meta">
+              ${badge(item.status || "pending")}
+              <span class="pill">${escapeHTML(item.paid_tier || "paid")}</span>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      setText("notification-revenue-scenario-count", `${scenarios.length} scenario${scenarios.length === 1 ? "" : "s"}`);
+      const scenarioTarget = document.getElementById("notification-revenue-scenario-list");
+      if (scenarios.length === 0) {
+        scenarioTarget.innerHTML = '<div class="empty">No anomaly delivery scenarios yet.</div>';
+      } else {
+        scenarioTarget.innerHTML = scenarios.map((item) => `
+          <div class="notification-revenue-item">
+            <strong>${escapeHTML(item.title)}</strong>
+            <span class="muted">${escapeHTML(item.detail)}</span>
+            <div class="action-meta">
+              ${badge(item.severity || "info")}
+              ${badge(item.status || "pending")}
+              <span class="pill">${escapeHTML(item.trigger || "trigger pending")}</span>
+              <span class="pill">${escapeHTML((item.channels || []).join(" + ") || "channels pending")}</span>
+              <span class="pill">${escapeHTML(item.paid_tier || "paid")}</span>
+            </div>
+            <span class="muted">${escapeHTML(item.example_outcome || "Outcome proof pending.")}</span>
+          </div>
+        `).join("");
+      }
+
+      setText("notification-revenue-channel-count", `${channels.length} channel${channels.length === 1 ? "" : "s"}`);
+      const channelTarget = document.getElementById("notification-revenue-channel-list");
+      if (channels.length === 0) {
+        channelTarget.innerHTML = '<div class="empty">No notification channel proof yet.</div>';
+      } else {
+        channelTarget.innerHTML = channels.map((item) => `
+          <div class="notification-revenue-item">
+            <strong>${escapeHTML(capitalize(item.channel))} ${escapeHTML(item.status || item.latest_delivery_status || "pending")}</strong>
+            <span class="muted">${escapeHTML(item.business_value || item.next_action || "Provider-safe route proof pending.")}</span>
+            <div class="action-meta">
+              ${badge(item.status || "pending")}
+              ${badge(item.proof_state || "needs_proof")}
+              <span class="pill">${escapeHTML(item.recipient_label || "recipient pending")}</span>
+              <span class="pill">${escapeHTML(item.provider || "provider pending")}</span>
+              <span class="pill">${escapeHTML(item.sla || "SLA pending")}</span>
+            </div>
+            <span class="muted">${escapeHTML(item.next_action || "Keep proof current before a paid demo.")}</span>
+          </div>
+        `).join("");
+      }
+
+      setText("notification-revenue-action-count", `${actions.length} action${actions.length === 1 ? "" : "s"}`);
+      const actionTarget = document.getElementById("notification-revenue-action-list");
+      if (actions.length === 0) {
+        actionTarget.innerHTML = '<div class="empty">No upgrade action levers yet.</div>';
+      } else {
+        actionTarget.innerHTML = actions.slice(0, 8).map((item) => `
+          <div class="notification-revenue-item">
+            <strong>${escapeHTML(item.title)}</strong>
+            <span class="muted">${escapeHTML(item.detail)}</span>
+            <div class="action-meta">
+              ${badge(item.severity || "info")}
+              ${badge(item.status || "pending")}
+              <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+              <span class="pill">${escapeHTML(item.sla || "SLA pending")}</span>
+              <span class="pill">${escapeHTML(item.conversion_lever || "conversion pending")}</span>
+              <span class="pill">${escapeHTML(item.source || "source pending")}</span>
+            </div>
+          </div>
+        `).join("");
+      }
     }
 
     function renderBusinessDashboard(dashboard) {
@@ -7049,6 +7367,7 @@
       setText("host-os", "-");
       setText("host-last-seen", "-");
       renderExecutiveConsole(null);
+      renderNotificationRevenueCockpit(null);
       renderBusinessDashboard(null);
       renderCommandNavigationEmpty();
     }
@@ -7106,6 +7425,7 @@
       const businessDashboard = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/business-dashboard`) : null;
       const roleExperience = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/role-experiences`) : null;
       const executiveConsole = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/executive-console`) : null;
+      const notificationRevenueCockpit = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-revenue-cockpit`) : null;
       const notificationCommandCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-command-center`) : null;
       const deliveryTimeline = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delivery-timeline?device_id=${encodeURIComponent(overview.device.device_id)}&limit=8`) : null;
       const syncHealth = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/sync-health`) : null;
@@ -7135,6 +7455,7 @@
         businessDashboard,
         roleExperience,
         executiveConsole,
+        notificationRevenueCockpit,
         notificationCommandCenter,
         deliveryTimeline,
         syncHealth,

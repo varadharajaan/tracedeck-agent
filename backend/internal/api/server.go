@@ -319,6 +319,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantRoleExperiences(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentExecutiveConsole && r.Method == http.MethodGet:
 		s.handleTenantExecutiveConsole(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentNotificationRev && r.Method == http.MethodGet:
+		s.handleTenantNotificationRevenueCockpit(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentNotificationCmd && r.Method == http.MethodGet:
 		s.handleTenantNotificationCommandCenter(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentDeliveryTimeline && r.Method == http.MethodGet:
@@ -639,6 +641,23 @@ func (s *Server) handleTenantExecutiveConsole(w http.ResponseWriter, r *http.Req
 		return
 	}
 	writeJSON(w, http.StatusOK, console)
+}
+
+func (s *Server) handleTenantNotificationRevenueCockpit(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	cockpit, err := s.store.TenantNotificationRevenueCockpit(r.Context(), tenantID)
+	if err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant notification revenue cockpit lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, cockpit)
 }
 
 func (s *Server) handleTenantNotificationCommandCenter(w http.ResponseWriter, r *http.Request, tenantID string) {
