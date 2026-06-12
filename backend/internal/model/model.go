@@ -1052,6 +1052,67 @@ type TenantBusinessDashboard struct {
 	GeneratedAt     time.Time                        `json:"generated_at"`
 }
 
+type TenantRoleExperienceSummary struct {
+	Status             string `json:"status"`
+	Headline           string `json:"headline"`
+	Detail             string `json:"detail"`
+	ReadinessScore     int    `json:"readiness_score"`
+	RolesTotal         int    `json:"roles_total"`
+	RolesReady         int    `json:"roles_ready"`
+	OwnerActions       int    `json:"owner_actions"`
+	NotificationScore  int    `json:"notification_score"`
+	TrustScore         int    `json:"trust_score"`
+	PrivacyVisible     bool   `json:"privacy_visible"`
+	RecommendedPackage string `json:"recommended_package"`
+}
+
+type TenantRoleExperienceMetric struct {
+	Label  string `json:"label"`
+	Value  string `json:"value"`
+	Detail string `json:"detail"`
+	Status string `json:"status"`
+}
+
+type TenantRoleExperienceRole struct {
+	RoleID               string                       `json:"role_id"`
+	Name                 string                       `json:"name"`
+	Audience             string                       `json:"audience"`
+	ViewMode             string                       `json:"view_mode"`
+	Status               string                       `json:"status"`
+	ReadinessScore       int                          `json:"readiness_score"`
+	PrimaryGoal          string                       `json:"primary_goal"`
+	VisiblePanels        []string                     `json:"visible_panels"`
+	NotificationPromise  string                       `json:"notification_promise"`
+	ArchiveReportPromise string                       `json:"archive_report_promise"`
+	ConsentControls      string                       `json:"consent_controls"`
+	PaidTier             string                       `json:"paid_tier"`
+	NextAction           string                       `json:"next_action"`
+	Metrics              []TenantRoleExperienceMetric `json:"metrics"`
+}
+
+type TenantRoleOnboardingItem struct {
+	ID       string `json:"id"`
+	Title    string `json:"title"`
+	Detail   string `json:"detail"`
+	Owner    string `json:"owner"`
+	Status   string `json:"status"`
+	PaidTier string `json:"paid_tier"`
+	Evidence string `json:"evidence"`
+}
+
+type TenantRoleExperience struct {
+	TenantID        string                      `json:"tenant_id"`
+	TenantName      string                      `json:"tenant_name"`
+	PlanID          string                      `json:"plan_id"`
+	PlanName        string                      `json:"plan_name"`
+	Audience        string                      `json:"audience"`
+	Summary         TenantRoleExperienceSummary `json:"summary"`
+	Roles           []TenantRoleExperienceRole  `json:"roles"`
+	Onboarding      []TenantRoleOnboardingItem  `json:"onboarding"`
+	PrivacyBoundary string                      `json:"privacy_boundary"`
+	GeneratedAt     time.Time                   `json:"generated_at"`
+}
+
 type Plan struct {
 	ID                 string   `json:"id"`
 	Name               string   `json:"name"`

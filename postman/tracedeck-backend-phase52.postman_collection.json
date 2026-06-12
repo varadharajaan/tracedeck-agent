@@ -1,0 +1,185 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 52",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Has Role Experience Center",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('dashboard contains role experience markers', function () {",
+              "  pm.response.to.have.status(200);",
+              "  var body = pm.response.text();",
+              "  ['Business Dashboard', 'Role Experience Center', 'Paid Onboarding Checklist', 'Notification Evidence Timeline', 'Delivery Audit Trail'].forEach(function (marker) {",
+              "    pm.expect(body).to.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Role Experiences",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/role-experiences"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('role experiences expose monetisable onboarding contract', function () {",
+              "  pm.response.to.have.status(200);",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.summary.readiness_score).to.be.above(0);",
+              "  pm.expect(json.summary.roles_total).to.eql(4);",
+              "  pm.expect(json.roles.length).to.eql(4);",
+              "  pm.expect(json.onboarding.length).to.be.at.least(4);",
+              "  ['parent', 'student', 'school_admin', 'business_manager'].forEach(function (role) {",
+              "    pm.expect(json.roles.some(function (item) { return item.role_id === role && item.paid_tier && item.next_action; })).to.eql(true);",
+              "  });",
+              "  pm.expect(json.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(json.privacy_boundary).to.include('no passwords');",
+              "  var serialized = JSON.stringify(json).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'screenshot_bytes', 'raw_url', 'alert_body'].forEach(function (marker) {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Delivery Timeline",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/delivery-timeline?limit=8"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('delivery timeline exposes notification evidence', function () {",
+              "  pm.response.to.have.status(200);",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.summary.total).to.be.at.least(3);",
+              "  pm.expect(json.summary.email).to.be.at.least(1);",
+              "  pm.expect(json.summary.push).to.be.at.least(1);",
+              "  pm.expect(json.summary.dashboard).to.be.at.least(1);",
+              "  pm.expect(json.summary.notification_score).to.be.above(0);",
+              "  pm.expect(json.summary.recommended_paid_tier).to.be.a('string').and.not.empty;",
+              "  pm.expect(json.items.length).to.be.at.least(3);",
+              "  pm.expect(json.items.some(function (item) { return item.channel === 'email' && item.status === 'delivered'; })).to.eql(true);",
+              "  pm.expect(json.items.some(function (item) { return item.channel === 'push'; })).to.eql(true);",
+              "  pm.expect(json.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(json.privacy_boundary).to.include('no passwords');",
+              "  var serialized = JSON.stringify(json).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'screenshot_bytes', 'raw_url', 'alert_body'].forEach(function (marker) {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Filtered Email Delivery Timeline",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/delivery-timeline?channel=email&status=delivered&provider=smtp&limit=2"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('delivery timeline filters delivered email evidence', function () {",
+              "  pm.response.to.have.status(200);",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.filters.channel).to.eql('email');",
+              "  pm.expect(json.filters.status).to.eql('delivered');",
+              "  pm.expect(json.filters.provider).to.eql('smtp');",
+              "  pm.expect(json.items.length).to.be.at.least(1);",
+              "  pm.expect(json.items.length).to.be.at.most(2);",
+              "  json.items.forEach(function (item) {",
+              "    pm.expect(item.channel).to.eql('email');",
+              "    pm.expect(item.status).to.eql('delivered');",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Business Dashboard",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/business-dashboard"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('business dashboard exposes monetisable product proof', function () {",
+              "  pm.response.to.have.status(200);",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.summary.product_score).to.be.above(0);",
+              "  pm.expect(json.summary.notification_score).to.be.above(0);",
+              "  pm.expect(json.summary.recommended_package).to.be.a('string').and.not.empty;",
+              "  pm.expect(json.summary.mail_delivered).to.be.above(0);",
+              "  pm.expect(json.summary.dashboard_delivered).to.be.above(0);",
+              "  pm.expect(json.metrics.length).to.be.at.least(8);",
+              "  pm.expect(json.alerts.length).to.be.at.least(1);",
+              "  pm.expect(json.channels.length).to.be.at.least(3);",
+              "  pm.expect(json.channels.some(function (channel) { return channel.channel === 'push' && channel.status; })).to.eql(true);",
+              "  pm.expect(json.packages.length).to.be.at.least(3);",
+              "  pm.expect(json.actions.length).to.be.at.least(1);",
+              "  pm.expect(json.privacy_boundary).to.include('no passwords');",
+              "  pm.expect(json.privacy_boundary).to.include('screenshots');",
+              "  var serialized = JSON.stringify(json).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'screenshot_bytes', 'raw_url', 'alert_body'].forEach(function (marker) {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

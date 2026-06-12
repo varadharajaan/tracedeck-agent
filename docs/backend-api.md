@@ -67,7 +67,10 @@ POST /api/v1/tenants/{tenantId}/notification-preferences
 GET  /api/v1/tenants/{tenantId}/consent-center
 GET  /api/v1/tenants/{tenantId}/operations-summary
 GET  /api/v1/tenants/{tenantId}/monetization-summary
+GET  /api/v1/tenants/{tenantId}/business-dashboard
+GET  /api/v1/tenants/{tenantId}/role-experiences
 GET  /api/v1/tenants/{tenantId}/notification-command-center
+GET  /api/v1/tenants/{tenantId}/delivery-timeline
 GET  /api/v1/tenants/{tenantId}/sync-health
 GET  /api/v1/tenants/{tenantId}/activity-feed
 GET  /api/v1/tenants/{tenantId}/data-exports
@@ -281,6 +284,16 @@ proof gaps, retry timing, last delivered time, source host count, paid-tier
 recommendation, and timestamped delivery rows. It is metadata-only and does not
 store provider secrets, alert bodies, screenshots, passwords, tokens, cookies,
 raw URLs, page titles, private content, or endpoint payloads.
+
+Phase 52 adds `GET /api/v1/tenants/{tenantId}/role-experiences`. It packages
+parent, student, school admin, and business manager dashboard experiences into
+one typed onboarding contract. The response includes role readiness score,
+ready role count, notification score, trust score, recommended package,
+per-role visible panels, notification promise, archive/report promise, consent
+controls, paid tier, next action, and role-specific onboarding items. It is
+metadata-only and does not store provider secrets, alert bodies, screenshots,
+passwords, tokens, cookies, raw URLs, page titles, private content, or endpoint
+payloads.
 
 Phase 31 adds `GET /api/v1/tenants/{tenantId}/sync-health` for buyer and admin
 proof that backend-visible telemetry is arriving per host. It returns reporting

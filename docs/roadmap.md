@@ -190,3 +190,8 @@
     push notification, dashboard inbox, retry timing, route proof gaps, paid
     tier recommendation, Postman/Newman coverage, screenshot-free layout guard,
     docs, and full local verification.
+55. Phase 52: role experiences. Typed tenant role-experiences API and
+    dashboard Role Experience Center for parent, student, school admin, and
+    business manager readiness, paid onboarding checklist, notification proof,
+    archive/report promise, consent controls, Postman/Newman coverage,
+    screenshot-free layout guard, docs, and full local verification.

@@ -77,6 +77,11 @@ delivery-timeline API. The panel shows selected-host delivery score, email
 proof, push retry evidence, dashboard inbox proof, route proof gaps, next retry
 timing, paid tier, metadata-only privacy boundary, and an audit trail of
 provider-safe delivery rows.
+Phase 52 adds a Role Experience Center backed by the typed role-experiences
+API. The panel packages parent, student, school admin, and business manager
+views with readiness scores, visible panels, notification promise,
+archive/report promise, consent controls, paid tier, next action, and a paid
+onboarding checklist.
 
 The dashboard reads the base backend endpoints:
 
@@ -94,6 +99,7 @@ For the selected host it reads:
 - `/api/v1/devices/{deviceId}/telemetry-status`
 - `/api/v1/devices/{deviceId}/reports/weekly`
 - `/api/v1/tenants/{tenantId}/delivery-timeline?device_id={deviceId}&limit=8`
+- `/api/v1/tenants/{tenantId}/role-experiences`
 - `/api/v1/tenants/{tenantId}`
 - `/api/v1/plans`
 - `/api/v1/roles`
@@ -323,6 +329,6 @@ business-dashboard API so the first screen shows whether anomalies are present,
 whether push/mail/dashboard delivery worked, what package value is proven, and
 what an owner should do next.
 
-A future frontend phase can move this surface to a richer application shell with
-role-specific onboarding, no-code alert rule editing, weekly report drilldowns,
-durable event search, and paid customer onboarding.
+Future frontend phases can move this surface to a richer application shell with
+no-code alert rule editing, weekly report drilldowns, durable event search, and
+paid customer onboarding workflows.

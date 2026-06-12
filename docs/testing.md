@@ -622,6 +622,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase51.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase51.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase51.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase52.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase52.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase52.ps1
 ```
 
 The Phase 47 smoke live-boots the seeded dashboard, verifies Premium
@@ -671,6 +674,14 @@ strict privacy/forbidden markers, and reruns the screenshot-free dashboard
 layout contract. Newman runs
 `postman/tracedeck-backend-phase51.postman_collection.json` against the same
 live demo and covers dashboard markers plus typed delivery timeline filtering.
+
+The Phase 52 smoke live-boots the seeded dashboard, verifies Role Experience
+Center and Paid Onboarding Checklist markers, checks the tenant
+`role-experiences` API, verifies four scored role views, onboarding items,
+notification/trust proof, paid-tier metadata, and strict privacy/forbidden
+markers, and reruns the screenshot-free dashboard layout contract. Newman runs
+`postman/tracedeck-backend-phase52.postman_collection.json` against the same
+live demo and covers dashboard markers plus typed role experience packaging.
 
 Phase 13 adds:
 

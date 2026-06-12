@@ -1686,6 +1686,40 @@
       </div>
     </section>
 
+    <section id="role-experience-section" class="content-grid" aria-label="role experience center">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Role Experience Center</h2>
+            <p class="muted">Parent, student, school admin, and business manager views packaged for paid onboarding without exposing private content.</p>
+          </div>
+          <span id="role-experience-status" class="badge pending">pending</span>
+        </div>
+        <div class="brief-grid">
+          <div class="brief-item"><small>Role Readiness</small><strong id="role-experience-score">-</strong><span id="role-experience-score-sub" class="muted">No role readiness</span></div>
+          <div class="brief-item"><small>Ready Roles</small><strong id="role-experience-ready">-</strong><span id="role-experience-ready-sub" class="muted">No role views</span></div>
+          <div class="brief-item"><small>Notifications</small><strong id="role-experience-notification">-</strong><span id="role-experience-notification-sub" class="muted">No notification proof</span></div>
+          <div class="brief-item"><small>Trust</small><strong id="role-experience-trust">-</strong><span id="role-experience-trust-sub" class="muted">No trust proof</span></div>
+        </div>
+        <div class="summary-list" style="margin-top: 12px;">
+          <div class="summary-line"><span>Headline</span><strong id="role-experience-headline">No role experience loaded</strong></div>
+          <div class="summary-line"><span>Package</span><strong id="role-experience-package">package pending</strong></div>
+          <div class="summary-line"><span>Boundary</span><strong id="role-experience-boundary">metadata-only role experience</strong></div>
+        </div>
+        <div id="role-experience-card-list" class="growth-list" style="margin-top: 12px;"><div class="empty">No role experience cards yet.</div></div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Paid Onboarding Checklist</h2>
+            <p class="muted">Role-specific setup steps for family, school, coaching center, and business packaging.</p>
+          </div>
+          <span id="role-onboarding-count" class="pill">0 actions</span>
+        </div>
+        <div id="role-onboarding-list" class="action-list"><div class="empty">No role onboarding actions yet.</div></div>
+      </div>
+    </section>
+
     <section id="command-navigation" class="command-nav" aria-label="command navigation">
       <div class="command-nav-summary">
         <div class="section-head">
@@ -3581,6 +3615,7 @@
       renderBusinessDashboard(context.businessDashboard);
       renderGrowthCockpit(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderNotificationPreferenceCenter(context.notificationPreferences);
+      renderRoleExperienceCenter(context.roleExperience);
       renderNotificationOperations(deliveries.items);
       renderAlertInbox(policy.items.concat(anomalies.items, tamper.items), deliveries.items);
       renderProductPackaging({ ...context, deliveries: deliveries.items });
@@ -4559,6 +4594,65 @@
           <strong>${escapeHTML(item.title)}</strong>
           <span class="muted">${escapeHTML(item.detail)}</span>
           <div class="action-meta">${badge(item.status)}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderRoleExperienceCenter(experience) {
+      const model = experience || {};
+      const summary = model.summary || {};
+      const roles = model.roles || [];
+      const onboarding = model.onboarding || [];
+      document.getElementById("role-experience-status").outerHTML =
+        badge(summary.status || "pending").replace("<span", '<span id="role-experience-status"');
+      setText("role-experience-score", summary.readiness_score ? `${summary.readiness_score}%` : "-");
+      setText("role-experience-score-sub", summary.detail || "No role readiness proof yet.");
+      setText("role-experience-ready", `${summary.roles_ready || 0}/${summary.roles_total || 0}`);
+      setText("role-experience-ready-sub", `${summary.owner_actions || 0} onboarding action${summary.owner_actions === 1 ? "" : "s"}`);
+      setText("role-experience-notification", summary.notification_score ? `${summary.notification_score}%` : "-");
+      setText("role-experience-notification-sub", "mail, push, dashboard, and timeline proof");
+      setText("role-experience-trust", summary.trust_score ? `${summary.trust_score}%` : "-");
+      setText("role-experience-trust-sub", summary.privacy_visible ? "privacy center visible" : "privacy proof pending");
+      setText("role-experience-headline", summary.headline || "No role experience loaded");
+      setText("role-experience-package", summary.recommended_package || "package pending");
+      setText("role-experience-boundary", model.privacy_boundary || "metadata-only role experience");
+
+      const roleTarget = document.getElementById("role-experience-card-list");
+      if (roles.length === 0) {
+        roleTarget.innerHTML = '<div class="empty">No role experience cards yet.</div>';
+      } else {
+        roleTarget.innerHTML = roles.map((role) => `
+          <div class="growth-item">
+            <strong>${escapeHTML(role.name || role.role_id)} - ${escapeHTML(role.readiness_score || 0)}%</strong>
+            <span class="muted">${escapeHTML(role.primary_goal || "Role view pending.")}</span>
+            <div class="action-meta">
+              ${badge(role.status || "pending")}
+              <span class="pill">${escapeHTML(role.view_mode || "view pending")}</span>
+              <span class="pill">${escapeHTML(role.paid_tier || "tier pending")}</span>
+              <span class="pill">${escapeHTML((role.visible_panels || []).length)} panels</span>
+            </div>
+            <span class="muted">${escapeHTML(role.notification_promise || "No notification promise yet.")}</span>
+            <span class="muted">${escapeHTML(role.next_action || "No next action loaded.")}</span>
+          </div>
+        `).join("");
+      }
+
+      setText("role-onboarding-count", `${onboarding.length} action${onboarding.length === 1 ? "" : "s"}`);
+      const onboardingTarget = document.getElementById("role-onboarding-list");
+      if (onboarding.length === 0) {
+        onboardingTarget.innerHTML = '<div class="empty">No role onboarding actions yet.</div>';
+        return;
+      }
+      onboardingTarget.innerHTML = onboarding.map((item) => `
+        <div class="action-item">
+          <strong>${escapeHTML(item.title || item.id)}</strong>
+          <span class="muted">${escapeHTML(item.detail || item.evidence || "Onboarding action pending.")}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+            <span class="pill">${escapeHTML(item.paid_tier || "tier pending")}</span>
+          </div>
+          <span class="muted">${escapeHTML(item.evidence || "No evidence loaded.")}</span>
         </div>
       `).join("");
     }
@@ -6694,6 +6788,7 @@
       const tenantOperations = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/operations-summary`) : null;
       const monetizationSummary = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/monetization-summary`) : null;
       const businessDashboard = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/business-dashboard`) : null;
+      const roleExperience = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/role-experiences`) : null;
       const notificationCommandCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-command-center`) : null;
       const deliveryTimeline = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delivery-timeline?device_id=${encodeURIComponent(overview.device.device_id)}&limit=8`) : null;
       const syncHealth = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/sync-health`) : null;
@@ -6721,6 +6816,7 @@
         tenantOperations,
         monetizationSummary,
         businessDashboard,
+        roleExperience,
         notificationCommandCenter,
         deliveryTimeline,
         syncHealth,

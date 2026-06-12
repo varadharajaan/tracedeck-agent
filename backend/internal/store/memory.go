@@ -784,6 +784,38 @@ func (m *Memory) TenantBusinessDashboard(ctx context.Context, tenantID string) (
 	return buildTenantBusinessDashboard(operations, monetization, inbox, commandCenter, preferences, drilldown, remediation, generatedAt), nil
 }
 
+func (m *Memory) TenantRoleExperiences(ctx context.Context, tenantID string) (model.TenantRoleExperience, error) {
+	generatedAt := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	operations, err := m.TenantOperationsSummary(ctx, tenantID)
+	if err != nil {
+		return model.TenantRoleExperience{}, err
+	}
+	monetization, err := m.TenantMonetizationSummary(ctx, tenantID)
+	if err != nil {
+		return model.TenantRoleExperience{}, err
+	}
+	business, err := m.TenantBusinessDashboard(ctx, tenantID)
+	if err != nil {
+		return model.TenantRoleExperience{}, err
+	}
+	preferences, err := m.TenantNotificationPreferences(ctx, tenantID)
+	if err != nil {
+		return model.TenantRoleExperience{}, err
+	}
+	timeline, err := m.TenantDeliveryTimeline(ctx, tenantID, model.TenantDeliveryTimelineFilter{Limit: 10})
+	if err != nil {
+		return model.TenantRoleExperience{}, err
+	}
+	syncHealth, err := m.TenantSyncHealth(ctx, tenantID)
+	if err != nil {
+		return model.TenantRoleExperience{}, err
+	}
+
+	return buildTenantRoleExperience(operations, monetization, business, preferences, timeline, syncHealth, generatedAt), nil
+}
+
 func (m *Memory) TenantAlertInbox(_ context.Context, tenantID string) (model.TenantAlertInbox, error) {
 	now := time.Now().UTC()
 	tenantID = strings.TrimSpace(tenantID)
@@ -4294,6 +4326,331 @@ func businessDashboardActions(commandActions []model.TenantNotificationCommandCe
 		})
 	}
 	return actions
+}
+
+func buildTenantRoleExperience(
+	operations model.TenantOperationsSummary,
+	monetization model.TenantMonetizationSummary,
+	business model.TenantBusinessDashboard,
+	preferences model.NotificationPreferenceCenter,
+	timeline model.TenantDeliveryTimeline,
+	syncHealth model.TenantSyncHealth,
+	generatedAt time.Time,
+) model.TenantRoleExperience {
+	roles := []model.TenantRoleExperienceRole{
+		roleExperienceParent(operations, monetization, business, preferences, timeline),
+		roleExperienceStudent(operations, monetization, preferences, syncHealth),
+		roleExperienceSchoolAdmin(operations, monetization, business, syncHealth),
+		roleExperienceBusinessManager(operations, monetization, business, timeline),
+	}
+	ready := 0
+	for _, role := range roles {
+		if role.ReadinessScore >= 70 {
+			ready++
+		}
+	}
+	onboarding := roleOnboardingItems(operations, monetization, business, preferences, timeline, syncHealth)
+	status := constants.StatusPending
+	score := averageRoleReadiness(roles)
+	switch {
+	case score >= 80 && ready == len(roles):
+		status = constants.StatusHealthy
+	case score >= 60:
+		status = constants.StatusWatch
+	default:
+		status = constants.StatusAttention
+	}
+	return model.TenantRoleExperience{
+		TenantID:   operations.TenantID,
+		TenantName: operations.TenantName,
+		PlanID:     operations.PlanID,
+		PlanName:   operations.PlanName,
+		Audience:   monetization.Audience,
+		Summary: model.TenantRoleExperienceSummary{
+			Status:             status,
+			Headline:           fmt.Sprintf("%d/%d role views ready for paid onboarding", ready, len(roles)),
+			Detail:             "Parent, student, school admin, and business manager experiences are packaged from notification, report, archive, consent, and delivery proof.",
+			ReadinessScore:     score,
+			RolesTotal:         len(roles),
+			RolesReady:         ready,
+			OwnerActions:       len(onboarding),
+			NotificationScore:  operations.NotificationScore,
+			TrustScore:         monetization.TrustScore,
+			PrivacyVisible:     true,
+			RecommendedPackage: firstNonEmpty(business.Summary.RecommendedPackage, monetization.PlanName, operations.PlanName),
+		},
+		Roles:           roles,
+		Onboarding:      onboarding,
+		PrivacyBoundary: constants.RoleExperiencePrivacyNote,
+		GeneratedAt:     generatedAt,
+	}
+}
+
+func roleExperienceParent(operations model.TenantOperationsSummary, monetization model.TenantMonetizationSummary, business model.TenantBusinessDashboard, preferences model.NotificationPreferenceCenter, timeline model.TenantDeliveryTimeline) model.TenantRoleExperienceRole {
+	checks := []bool{
+		operations.EmailDelivered > 0,
+		operations.DashboardDelivered > 0,
+		preferences.Summary.PreferenceScore >= 60,
+		timeline.Summary.Total > 0,
+		business.Summary.WeeklyReportReady,
+	}
+	score := readinessFromChecks(checks)
+	return model.TenantRoleExperienceRole{
+		RoleID:               constants.RoleParent,
+		Name:                 "Parent",
+		Audience:             "family buyer",
+		ViewMode:             "family_pro_guardian",
+		Status:               scoreStatus(score),
+		ReadinessScore:       score,
+		PrimaryGoal:          "See study-safe productivity, anomaly alerts, mail proof, push reach, and weekly reports without private content.",
+		VisiblePanels:        []string{"Business Dashboard", "Anomaly Notification Inbox", "Notification Evidence Timeline", "Weekly Report", "Consent Center"},
+		NotificationPromise:  monetization.NotificationPromise.Summary,
+		ArchiveReportPromise: fmt.Sprintf("%s report readiness with %d archive batches waiting", boolReady(business.Summary.WeeklyReportReady), operations.ArchiveBacklog),
+		ConsentControls:      "Visible monitoring disclosure, recipients, quiet hours, data export, and delete request metadata.",
+		PaidTier:             constants.PlanFamilyPro,
+		NextAction:           firstNonEmpty(parentNextAction(operations, preferences, timeline), "Use the parent view for the Family Pro onboarding demo."),
+		Metrics: []model.TenantRoleExperienceMetric{
+			roleMetric("Mail proof", fmt.Sprintf("%d delivered", operations.EmailDelivered), monetization.NotificationPromise.Email, deliveryValueStatus(operations.EmailDelivered)),
+			roleMetric("Push reach", fmt.Sprintf("%d delivered", operations.PushDelivered), monetization.NotificationPromise.Push, deliveryValueStatus(operations.PushDelivered)),
+			roleMetric("Preference policy", fmt.Sprintf("%d%%", preferences.Summary.PreferenceScore), fmt.Sprintf("%d typed rules", preferences.Summary.RulesTotal), scoreStatus(preferences.Summary.PreferenceScore)),
+		},
+	}
+}
+
+func roleExperienceStudent(_ model.TenantOperationsSummary, monetization model.TenantMonetizationSummary, preferences model.NotificationPreferenceCenter, syncHealth model.TenantSyncHealth) model.TenantRoleExperienceRole {
+	checks := []bool{
+		preferences.Summary.StudySuppressionRules > 0,
+		syncHealth.BackendVisible,
+		syncHealth.OfflineReplayReady,
+		monetization.TrustScore >= 60,
+	}
+	score := readinessFromChecks(checks)
+	return model.TenantRoleExperienceRole{
+		RoleID:               constants.RoleStudent,
+		Name:                 "Student",
+		Audience:             "transparent self-view",
+		ViewMode:             "study_self_view",
+		Status:               scoreStatus(score),
+		ReadinessScore:       score,
+		PrimaryGoal:          "Show what is collected, why study sessions are suppressed, and how productivity is summarized.",
+		VisiblePanels:        []string{"Telemetry Privacy Boundary", "Study-Safe Suppression", "Activity Mix", "Consent Center"},
+		NotificationPromise:  "Student view receives transparency, not private alert bodies.",
+		ArchiveReportPromise: syncHealth.OfflineReplaySummary,
+		ConsentControls:      "Monitoring status, collection categories, pause/export/delete metadata, and policy history remain visible.",
+		PaidTier:             constants.PlanFamilyPro,
+		NextAction:           "Keep student transparency visible before enabling stricter school or family policies.",
+		Metrics: []model.TenantRoleExperienceMetric{
+			roleMetric("Study-safe rules", fmt.Sprintf("%d", preferences.Summary.StudySuppressionRules), "Learning sessions can be quieted without hiding risk.", countStatus(preferences.Summary.StudySuppressionRules)),
+			roleMetric("Sync proof", fmt.Sprintf("%d/%d hosts", syncHealth.HostsReporting, syncHealth.HostsTotal), syncHealth.OfflineReplaySummary, countStatus(syncHealth.HostsReporting)),
+			roleMetric("Trust score", fmt.Sprintf("%d%%", monetization.TrustScore), "Consent, audit, export, and delete workflows support legitimacy.", scoreStatus(monetization.TrustScore)),
+		},
+	}
+}
+
+func roleExperienceSchoolAdmin(operations model.TenantOperationsSummary, monetization model.TenantMonetizationSummary, business model.TenantBusinessDashboard, syncHealth model.TenantSyncHealth) model.TenantRoleExperienceRole {
+	managedRollout := paidCapabilityStatus(monetization.PaidCapabilities, "Managed rollout")
+	checks := []bool{
+		operations.HostsTotal > 0,
+		managedRollout == constants.StatusHealthy,
+		syncHealth.HostsReporting > 0,
+		business.Summary.RoutesNeedingProof <= 1,
+	}
+	score := readinessFromChecks(checks)
+	return model.TenantRoleExperienceRole{
+		RoleID:               constants.RoleSchoolAdmin,
+		Name:                 "School Admin",
+		Audience:             "school or coaching center",
+		ViewMode:             "managed_cohort_admin",
+		Status:               scoreStatus(score),
+		ReadinessScore:       score,
+		PrimaryGoal:          "Manage cohorts, policy rollout, notification proof, archive retention, and audit history across devices.",
+		VisiblePanels:        []string{"Device Groups", "Policy Assignments", "Notification Evidence Timeline", "Offline Replay Health", "Audit Center"},
+		NotificationPromise:  fmt.Sprintf("%d/%d notification routes delivered", operations.DeliveryDelivered, operations.DeliveryTotal),
+		ArchiveReportPromise: fmt.Sprintf("%d reporting hosts and %d stored metadata events", syncHealth.HostsReporting, syncHealth.StoredEvents),
+		ConsentControls:      "Admin view stays metadata-only with role-scoped audit and data rights evidence.",
+		PaidTier:             constants.PlanSchool,
+		NextAction:           schoolNextAction(managedRollout, business),
+		Metrics: []model.TenantRoleExperienceMetric{
+			roleMetric("Fleet coverage", fmt.Sprintf("%d hosts", operations.HostsTotal), fmt.Sprintf("%d hosts need attention", operations.HostsAttention), countStatus(operations.HostsTotal)),
+			roleMetric("Managed rollout", managedRollout, "Device groups and policy assignments prove school packaging.", managedRollout),
+			roleMetric("Route proof", fmt.Sprintf("%d gaps", business.Summary.RoutesNeedingProof), "Notification evidence should be ready before rollout.", gapStatus(business.Summary.RoutesNeedingProof)),
+		},
+	}
+}
+
+func roleExperienceBusinessManager(operations model.TenantOperationsSummary, monetization model.TenantMonetizationSummary, business model.TenantBusinessDashboard, timeline model.TenantDeliveryTimeline) model.TenantRoleExperienceRole {
+	compliance := paidCapabilityStatus(monetization.PaidCapabilities, "Compliance export")
+	checks := []bool{
+		monetization.TrustScore >= 70,
+		compliance == constants.StatusHealthy,
+		operations.NotificationScore >= 60,
+		timeline.Summary.RouteProofGaps <= 2,
+	}
+	score := readinessFromChecks(checks)
+	return model.TenantRoleExperienceRole{
+		RoleID:               constants.RoleBusinessManager,
+		Name:                 "Business Manager",
+		Audience:             "small business buyer",
+		ViewMode:             "business_risk_observability",
+		Status:               scoreStatus(score),
+		ReadinessScore:       score,
+		PrimaryGoal:          "Show productivity, risky software, delivery assurance, archive retention, and compliance export proof.",
+		VisiblePanels:        []string{"Revenue Command Center", "Business Dashboard", "Delivery Audit Trail", "Risky Software", "Data Rights"},
+		NotificationPromise:  fmt.Sprintf("%d%% notification score with %d route gaps", operations.NotificationScore, timeline.Summary.RouteProofGaps),
+		ArchiveReportPromise: fmt.Sprintf("%s package with %d%% trust score", firstNonEmpty(business.Summary.RecommendedPackage, monetization.PlanName), monetization.TrustScore),
+		ConsentControls:      "Business view exposes audit and export metadata without raw content or provider secrets.",
+		PaidTier:             constants.PlanBusiness,
+		NextAction:           businessNextAction(compliance, timeline, monetization),
+		Metrics: []model.TenantRoleExperienceMetric{
+			roleMetric("Trust score", fmt.Sprintf("%d%%", monetization.TrustScore), "Audit, export, delete, and consent proof.", scoreStatus(monetization.TrustScore)),
+			roleMetric("Compliance export", compliance, "Export and audit records support business packaging.", compliance),
+			roleMetric("Delivery audit", fmt.Sprintf("%d events", timeline.Summary.Total), fmt.Sprintf("%d route proof gaps", timeline.Summary.RouteProofGaps), gapStatus(timeline.Summary.RouteProofGaps)),
+		},
+	}
+}
+
+func roleOnboardingItems(operations model.TenantOperationsSummary, monetization model.TenantMonetizationSummary, business model.TenantBusinessDashboard, preferences model.NotificationPreferenceCenter, timeline model.TenantDeliveryTimeline, syncHealth model.TenantSyncHealth) []model.TenantRoleOnboardingItem {
+	items := []model.TenantRoleOnboardingItem{
+		{
+			ID:       "parent-alert-proof",
+			Title:    "Parent alert proof",
+			Detail:   "Parent view should show delivered mail, push reach, dashboard inbox proof, and weekly report readiness.",
+			Owner:    constants.RoleParent,
+			Status:   scoreStatus(averageScore(deliveryValueScore(operations.EmailDelivered), deliveryValueScore(operations.PushDelivered), deliveryValueScore(operations.DashboardDelivered))),
+			PaidTier: constants.PlanFamilyPro,
+			Evidence: fmt.Sprintf("%d mail, %d push, %d dashboard deliveries", operations.EmailDelivered, operations.PushDelivered, operations.DashboardDelivered),
+		},
+		{
+			ID:       "student-transparency",
+			Title:    "Student transparency",
+			Detail:   "Student self-view should explain collection scope, study-safe suppression, sync proof, and data rights.",
+			Owner:    constants.RoleStudent,
+			Status:   scoreStatus(averageScore(scoreFromBool(preferences.Summary.StudySuppressionRules > 0), scoreFromBool(syncHealth.BackendVisible), monetization.TrustScore)),
+			PaidTier: constants.PlanFamilyPro,
+			Evidence: fmt.Sprintf("%d study-safe suppressions and %d reporting hosts", preferences.Summary.StudySuppressionRules, syncHealth.HostsReporting),
+		},
+		{
+			ID:       "school-rollout",
+			Title:    "School rollout",
+			Detail:   "School admin view should package cohorts, policy assignments, offline replay, and route proof.",
+			Owner:    constants.RoleSchoolAdmin,
+			Status:   paidCapabilityStatus(monetization.PaidCapabilities, "Managed rollout"),
+			PaidTier: constants.PlanSchool,
+			Evidence: fmt.Sprintf("%d hosts, %d route proof gaps", operations.HostsTotal, business.Summary.RoutesNeedingProof),
+		},
+		{
+			ID:       "business-compliance",
+			Title:    "Business compliance proof",
+			Detail:   "Business manager view should show productivity/risk evidence, delivery audit trail, archive trust, and export readiness.",
+			Owner:    constants.RoleBusinessManager,
+			Status:   paidCapabilityStatus(monetization.PaidCapabilities, "Compliance export"),
+			PaidTier: constants.PlanBusiness,
+			Evidence: fmt.Sprintf("%d%% trust and %d delivery timeline events", monetization.TrustScore, timeline.Summary.Total),
+		},
+	}
+	return items
+}
+
+func roleMetric(label string, value string, detail string, status string) model.TenantRoleExperienceMetric {
+	return model.TenantRoleExperienceMetric{
+		Label:  label,
+		Value:  value,
+		Detail: detail,
+		Status: status,
+	}
+}
+
+func readinessFromChecks(checks []bool) int {
+	if len(checks) == 0 {
+		return 0
+	}
+	passed := 0
+	for _, check := range checks {
+		if check {
+			passed++
+		}
+	}
+	return (passed * 100) / len(checks)
+}
+
+func averageRoleReadiness(roles []model.TenantRoleExperienceRole) int {
+	if len(roles) == 0 {
+		return 0
+	}
+	total := 0
+	for _, role := range roles {
+		total += role.ReadinessScore
+	}
+	return total / len(roles)
+}
+
+func parentNextAction(operations model.TenantOperationsSummary, preferences model.NotificationPreferenceCenter, timeline model.TenantDeliveryTimeline) string {
+	switch {
+	case operations.PushDelivered == 0:
+		return "Finish push route proof before pitching immediate anomaly notifications."
+	case preferences.Summary.PreferenceScore < 70:
+		return "Tune quiet hours, digest cadence, escalation, and study-safe suppression."
+	case timeline.Summary.RouteProofGaps > 0:
+		return "Review delivery timeline gaps with the parent before the weekly report."
+	default:
+		return "Use delivered mail, dashboard, report, and preference proof for Family Pro onboarding."
+	}
+}
+
+func schoolNextAction(managedRollout string, business model.TenantBusinessDashboard) string {
+	if managedRollout != constants.StatusHealthy {
+		return "Create or verify device groups and policy assignments before school onboarding."
+	}
+	if business.Summary.RoutesNeedingProof > 0 {
+		return "Resolve route proof gaps before promising school notification SLAs."
+	}
+	return "Use cohort rollout, offline replay, and notification evidence for the school package."
+}
+
+func businessNextAction(compliance string, timeline model.TenantDeliveryTimeline, monetization model.TenantMonetizationSummary) string {
+	if compliance != constants.StatusHealthy {
+		return "Prepare export and audit evidence before selling business compliance."
+	}
+	if timeline.Summary.RouteProofGaps > 0 {
+		return "Clear delivery audit gaps before a business review."
+	}
+	if monetization.TrustScore < 80 {
+		return "Strengthen consent, audit, export, and delete proof for business buyers."
+	}
+	return "Use delivery audit, trust score, and archive proof for Business packaging."
+}
+
+func paidCapabilityStatus(capabilities []model.TenantPaidCapability, name string) string {
+	for _, item := range capabilities {
+		if strings.EqualFold(strings.TrimSpace(item.Name), strings.TrimSpace(name)) {
+			return item.Status
+		}
+	}
+	return constants.StatusPending
+}
+
+func gapStatus(gaps int) string {
+	if gaps <= 0 {
+		return constants.StatusHealthy
+	}
+	if gaps <= 2 {
+		return constants.StatusWatch
+	}
+	return constants.StatusAttention
+}
+
+func scoreFromBool(value bool) int {
+	if value {
+		return 100
+	}
+	return 0
+}
+
+func deliveryValueScore(count int) int {
+	if count > 0 {
+		return 100
+	}
+	return 0
 }
 
 func averageScore(scores ...int) int {
