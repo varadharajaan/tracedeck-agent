@@ -1,0 +1,106 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 49",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Has Notification Preference Center",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard contains notification preference center markers', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Notification Preference Center');",
+        "  pm.expect(html).to.include('Preference Rule Matrix');",
+        "  pm.expect(html).to.include('Study-Safe Suppression');",
+        "  pm.expect(html).to.include('Preference Owner Actions');",
+        "  pm.expect(html).to.include('notification-preference-rule-list');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Tenant Notification Preferences Seeded",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/notification-preferences" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('notification preferences expose typed safe preference policy', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.privacy_boundary).to.include('no passwords');",
+        "  pm.expect(body.privacy_boundary).to.include('screenshots');",
+        "  pm.expect(body.summary.rules_total).to.be.at.least(3);",
+        "  pm.expect(body.summary.preference_score).to.be.at.least(1);",
+        "  pm.expect(body.summary.email_enabled).to.eql(true);",
+        "  pm.expect(body.summary.push_enabled).to.eql(true);",
+        "  pm.expect(body.summary.dashboard_enabled).to.eql(true);",
+        "  pm.expect(body.summary.study_suppression_rules).to.be.at.least(1);",
+        "  pm.expect(body.quiet_hours.enabled).to.eql(true);",
+        "  pm.expect(body.escalation.enabled).to.eql(true);",
+        "  const serialized = JSON.stringify(body).toLowerCase();",
+        "  pm.expect(serialized).to.not.include('smtp_password');",
+        "  pm.expect(serialized).to.not.include('provider_secret');",
+        "  pm.expect(serialized).to.not.include('screenshot_bytes');",
+        "  pm.expect(serialized).to.not.include('raw_url');",
+        "  pm.expect(serialized).to.not.include('alert_body');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Update Tenant Notification Preferences",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/notification-preferences",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"digest_cadence\": \"daily\",\n  \"quiet_hours\": { \"enabled\": true, \"start_local\": \"21:30\", \"end_local\": \"06:00\", \"timezone\": \"Asia/Calcutta\" },\n  \"escalation\": { \"enabled\": true, \"after_minutes\": 10, \"repeat_every_minutes\": 20, \"max_repeats\": 3, \"channels\": [\"email\", \"push\"], \"owner\": \"parent escalation\" },\n  \"rules\": [\n    { \"name\": \"High-risk software immediate alert\", \"event_type\": \"risky_software\", \"severity\": \"high\", \"channels\": [\"email\", \"push\", \"dashboard\"], \"mode\": \"immediate\", \"recipient_group\": \"parent escalation\", \"quiet_hours_bypass\": true, \"paid_tier\": \"family_pro\", \"delivery_sla\": \"10 minutes\", \"next_action\": \"Verify delivery proof before relying on this rule.\", \"retention_evidence\": \"metadata-only alert and delivery proof\" },\n    { \"name\": \"Study-safe digest\", \"event_type\": \"non_study_youtube\", \"severity\": \"low\", \"channels\": [\"dashboard\"], \"mode\": \"silent\", \"recipient_group\": \"dashboard archive\", \"suppression_label\": \"study topics suppressed\", \"study_safe\": true, \"paid_tier\": \"free\", \"delivery_sla\": \"dashboard only\", \"next_action\": \"Keep study-safe learning out of noisy alert paths.\", \"retention_evidence\": \"category metadata only\" }\n  ]\n}"
+        }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('notification preference update applies typed policy', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.digest_cadence).to.eql('daily');",
+        "  pm.expect(body.quiet_hours.start_local).to.eql('21:30');",
+        "  pm.expect(body.summary.rules_total).to.eql(2);",
+        "  pm.expect(body.summary.immediate_rules).to.eql(1);",
+        "  pm.expect(body.summary.silent_rules).to.eql(1);",
+        "  pm.expect(body.summary.study_suppression_rules).to.eql(1);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Reject Invalid Notification Preference Cadence",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/notification-preferences",
+        "body": { "mode": "raw", "raw": "{ \"digest_cadence\": \"hourly\" }" }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('invalid cadence is rejected', function () { pm.response.to.have.status(400); });"
+      ] } }]
+    },
+    {
+      "name": "Audit Contains Notification Preference Update",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/audit-events" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('audit has notification preference update', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const serialized = JSON.stringify(pm.response.json());",
+        "  pm.expect(serialized).to.include('notification_preferences.updated');",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

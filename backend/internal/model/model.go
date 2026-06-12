@@ -597,6 +597,81 @@ type CreateNotificationRouteRequest struct {
 	LastSummary    string `json:"last_summary"`
 }
 
+type NotificationQuietHours struct {
+	Enabled    bool   `json:"enabled"`
+	StartLocal string `json:"start_local"`
+	EndLocal   string `json:"end_local"`
+	Timezone   string `json:"timezone"`
+}
+
+type NotificationEscalationPolicy struct {
+	Enabled         bool     `json:"enabled"`
+	AfterMinutes    int      `json:"after_minutes"`
+	RepeatEveryMins int      `json:"repeat_every_minutes"`
+	MaxRepeats      int      `json:"max_repeats"`
+	Channels        []string `json:"channels"`
+	Owner           string   `json:"owner"`
+}
+
+type NotificationPreferenceRule struct {
+	ID                string    `json:"id"`
+	TenantID          string    `json:"tenant_id"`
+	Name              string    `json:"name"`
+	EventType         string    `json:"event_type"`
+	Severity          string    `json:"severity"`
+	Channels          []string  `json:"channels"`
+	Mode              string    `json:"mode"`
+	RecipientGroup    string    `json:"recipient_group"`
+	SuppressionLabel  string    `json:"suppression_label"`
+	StudySafe         bool      `json:"study_safe"`
+	QuietHoursBypass  bool      `json:"quiet_hours_bypass"`
+	PaidTier          string    `json:"paid_tier"`
+	DeliverySLA       string    `json:"delivery_sla"`
+	NextAction        string    `json:"next_action"`
+	RetentionEvidence string    `json:"retention_evidence"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
+type NotificationPreferenceCenterSummary struct {
+	Status                string `json:"status"`
+	PreferenceScore       int    `json:"preference_score"`
+	RulesTotal            int    `json:"rules_total"`
+	ImmediateRules        int    `json:"immediate_rules"`
+	DigestRules           int    `json:"digest_rules"`
+	SilentRules           int    `json:"silent_rules"`
+	EmailEnabled          bool   `json:"email_enabled"`
+	PushEnabled           bool   `json:"push_enabled"`
+	DashboardEnabled      bool   `json:"dashboard_enabled"`
+	QuietHoursEnabled     bool   `json:"quiet_hours_enabled"`
+	EscalationEnabled     bool   `json:"escalation_enabled"`
+	StudySuppressionRules int    `json:"study_suppression_rules"`
+	RoutesNeedingProof    int    `json:"routes_needing_proof"`
+	RecommendedPaidTier   string `json:"recommended_paid_tier"`
+}
+
+type NotificationPreferenceCenter struct {
+	TenantID        string                              `json:"tenant_id"`
+	TenantName      string                              `json:"tenant_name"`
+	PlanID          string                              `json:"plan_id"`
+	PlanName        string                              `json:"plan_name"`
+	Audience        string                              `json:"audience"`
+	DigestCadence   string                              `json:"digest_cadence"`
+	QuietHours      NotificationQuietHours              `json:"quiet_hours"`
+	Escalation      NotificationEscalationPolicy        `json:"escalation"`
+	Summary         NotificationPreferenceCenterSummary `json:"summary"`
+	Rules           []NotificationPreferenceRule        `json:"rules"`
+	PrivacyBoundary string                              `json:"privacy_boundary"`
+	GeneratedAt     time.Time                           `json:"generated_at"`
+	UpdatedAt       time.Time                           `json:"updated_at"`
+}
+
+type UpdateNotificationPreferencesRequest struct {
+	DigestCadence string                       `json:"digest_cadence"`
+	QuietHours    NotificationQuietHours       `json:"quiet_hours"`
+	Escalation    NotificationEscalationPolicy `json:"escalation"`
+	Rules         []NotificationPreferenceRule `json:"rules"`
+}
+
 type RunDeliveryDrilldownRequest struct {
 	Mode    string `json:"mode"`
 	Channel string `json:"channel"`

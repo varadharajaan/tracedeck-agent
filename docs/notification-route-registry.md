@@ -8,6 +8,8 @@ delivery readiness.
 ```text
 GET  /api/v1/tenants/{tenantId}/notification-routes
 POST /api/v1/tenants/{tenantId}/notification-routes
+GET  /api/v1/tenants/{tenantId}/notification-preferences
+POST /api/v1/tenants/{tenantId}/notification-preferences
 ```
 
 Routes are typed records containing:
@@ -35,6 +37,7 @@ The embedded dashboard now includes:
 
 - Notification Route Registry
 - Route Readiness Proof
+- Notification Preference Center
 
 These panels show configured routes, enabled count, verification count, and
 routes needing attention before a paid customer demo.
@@ -82,6 +85,21 @@ view and remains metadata-only: no provider secrets, SMTP passwords, push
 endpoint secrets, alert bodies, screenshots, tokens, cookies, raw URLs, page
 titles, or private content are stored.
 
+Phase 49 adds a notification preference center on top of routes and alert
+rules:
+
+```text
+GET  /api/v1/tenants/{tenantId}/notification-preferences
+POST /api/v1/tenants/{tenantId}/notification-preferences
+```
+
+The preference center stores digest cadence, quiet hours, escalation metadata,
+and immediate/digest/silent rules. It can mark study-safe suppression rules so
+learning-related activity is quieted while high-risk and tamper signals keep
+their urgent channel policy. It remains metadata-only: no provider secrets,
+SMTP passwords, push endpoint secrets, alert bodies, screenshots, raw URLs,
+page titles, cookies, tokens, or private content are stored.
+
 ## Verification
 
 ```powershell
@@ -94,4 +112,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase47.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase47.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase47.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase49.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase49.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase49.ps1
 ```

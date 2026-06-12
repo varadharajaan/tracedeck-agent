@@ -118,6 +118,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase48.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase48.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase48.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase49.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase49.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase49.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-service-manifests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-windows-task.ps1
 ```
@@ -169,3 +172,9 @@ monetisable endpoint productivity and risk observability product. It packages
 revenue readiness, anomaly notification ops, mail delivery, push reach, weekly
 report delivery, archive retention, trust/consent, and owner actions from
 existing typed APIs without adding sensitive collectors.
+
+Phase 49 adds a typed Notification Preference Center at
+`/api/v1/tenants/{tenantId}/notification-preferences`. It models channel
+policy, quiet hours, digest cadence, escalation, study-safe suppression, and
+owner actions with metadata-only privacy boundaries, plus dashboard, smoke,
+Newman, and verifier coverage.

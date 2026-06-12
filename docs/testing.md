@@ -613,6 +613,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase48.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase48.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase48.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase49.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase49.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase49.ps1
 ```
 
 The Phase 47 smoke live-boots the seeded dashboard, verifies Premium
@@ -633,6 +636,16 @@ contract. Newman runs
 `postman/tracedeck-backend-phase48.postman_collection.json` against the same
 live demo and covers dashboard markers plus the typed notification,
 monetisation, and operations data that powers the paid UI.
+
+The Phase 49 smoke live-boots the seeded dashboard, verifies Notification
+Preference Center, Preference Rule Matrix, Study-Safe Suppression, and
+Preference Owner Actions markers, checks seeded GET
+`notification-preferences`, posts a typed metadata-only preference update,
+verifies strict privacy/forbidden markers, and reruns the screenshot-free
+dashboard layout contract. Newman runs
+`postman/tracedeck-backend-phase49.postman_collection.json` against the same
+live demo and covers dashboard markers, seeded preferences, update validation,
+invalid cadence rejection, and audit proof.
 
 Phase 13 adds:
 

@@ -303,6 +303,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantAlertRules(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentNotifications:
 		s.handleTenantNotificationRoutes(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentNotificationPref:
+		s.handleTenantNotificationPreferences(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentConsentCenter && r.Method == http.MethodGet:
 		s.handleTenantConsentCenter(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentAlertInbox && r.Method == http.MethodGet:
@@ -453,6 +455,57 @@ func (s *Server) handleTenantNotificationRoutes(w http.ResponseWriter, r *http.R
 			return
 		}
 		writeJSON(w, http.StatusCreated, route)
+	default:
+		writeMethodNotAllowed(w)
+	}
+}
+
+func (s *Server) handleTenantNotificationPreferences(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	if _, err := s.store.GetTenant(r.Context(), tenantID); err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant lookup failed")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		preferences, err := s.store.TenantNotificationPreferences(r.Context(), tenantID)
+		if err != nil {
+			if errors.Is(err, store.ErrTenantNotFound) {
+				writeError(w, http.StatusNotFound, "tenant not found")
+				return
+			}
+			writeError(w, http.StatusInternalServerError, "tenant notification preference lookup failed")
+			return
+		}
+		writeJSON(w, http.StatusOK, preferences)
+	case http.MethodPost:
+		var req model.UpdateNotificationPreferencesRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid notification preference json")
+			return
+		}
+		if err := validateUpdateNotificationPreferencesRequest(req); err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		preferences, err := s.store.UpdateTenantNotificationPreferences(r.Context(), tenantID, req)
+		if err != nil {
+			if errors.Is(err, store.ErrTenantNotFound) {
+				writeError(w, http.StatusNotFound, "tenant not found")
+				return
+			}
+			writeError(w, http.StatusInternalServerError, "tenant notification preference update failed")
+			return
+		}
+		writeJSON(w, http.StatusOK, preferences)
 	default:
 		writeMethodNotAllowed(w)
 	}
@@ -1283,6 +1336,83 @@ func validateCreateNotificationRouteRequest(req model.CreateNotificationRouteReq
 	}
 }
 
+func validateUpdateNotificationPreferencesRequest(req model.UpdateNotificationPreferencesRequest) error {
+	if strings.TrimSpace(req.DigestCadence) != "" && !knownNotificationDigestCadence(req.DigestCadence) {
+		return errors.New("digest_cadence is unknown")
+	}
+	if err := validateNotificationQuietHours(req.QuietHours); err != nil {
+		return err
+	}
+	if err := validateNotificationEscalation(req.Escalation); err != nil {
+		return err
+	}
+	for index, rule := range req.Rules {
+		if err := validateNotificationPreferenceRule(index, rule); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateNotificationQuietHours(quiet model.NotificationQuietHours) error {
+	if strings.TrimSpace(quiet.StartLocal) == "" && strings.TrimSpace(quiet.EndLocal) == "" && strings.TrimSpace(quiet.Timezone) == "" {
+		return nil
+	}
+	switch {
+	case strings.TrimSpace(quiet.StartLocal) == "":
+		return errors.New("quiet_hours.start_local is required")
+	case strings.TrimSpace(quiet.EndLocal) == "":
+		return errors.New("quiet_hours.end_local is required")
+	case strings.TrimSpace(quiet.Timezone) == "":
+		return errors.New("quiet_hours.timezone is required")
+	default:
+		return nil
+	}
+}
+
+func validateNotificationEscalation(escalation model.NotificationEscalationPolicy) error {
+	if escalation.AfterMinutes == 0 && escalation.RepeatEveryMins == 0 && escalation.MaxRepeats == 0 && len(escalation.Channels) == 0 && strings.TrimSpace(escalation.Owner) == "" {
+		return nil
+	}
+	switch {
+	case escalation.AfterMinutes < 0:
+		return errors.New("escalation.after_minutes cannot be negative")
+	case escalation.RepeatEveryMins < 0:
+		return errors.New("escalation.repeat_every_minutes cannot be negative")
+	case escalation.MaxRepeats < 0:
+		return errors.New("escalation.max_repeats cannot be negative")
+	case len(escalation.Channels) > 0 && !knownChannels(escalation.Channels):
+		return errors.New("escalation channel is unknown")
+	default:
+		return nil
+	}
+}
+
+func validateNotificationPreferenceRule(index int, rule model.NotificationPreferenceRule) error {
+	switch {
+	case strings.TrimSpace(rule.Name) == "":
+		return fmt.Errorf("rules[%d].name is required", index)
+	case strings.TrimSpace(rule.EventType) == "":
+		return fmt.Errorf("rules[%d].event_type is required", index)
+	case strings.TrimSpace(rule.Severity) == "":
+		return fmt.Errorf("rules[%d].severity is required", index)
+	case !knownSeverity(rule.Severity):
+		return fmt.Errorf("rules[%d].severity is unknown", index)
+	case len(rule.Channels) == 0:
+		return fmt.Errorf("rules[%d].channels is required", index)
+	case !knownChannels(rule.Channels):
+		return fmt.Errorf("rules[%d].channel is unknown", index)
+	case strings.TrimSpace(rule.Mode) == "":
+		return fmt.Errorf("rules[%d].mode is required", index)
+	case !knownNotificationPreferenceMode(rule.Mode):
+		return fmt.Errorf("rules[%d].mode is unknown", index)
+	case strings.TrimSpace(rule.RecipientGroup) == "":
+		return fmt.Errorf("rules[%d].recipient_group is required", index)
+	default:
+		return nil
+	}
+}
+
 func validateRunDeliveryDrilldownRequest(req model.RunDeliveryDrilldownRequest) error {
 	mode := strings.TrimSpace(req.Mode)
 	channel := strings.TrimSpace(req.Channel)
@@ -1507,6 +1637,24 @@ func knownChannels(channels []string) bool {
 func knownDeliveryProvider(provider string) bool {
 	switch strings.TrimSpace(provider) {
 	case constants.DeliveryProviderSMTP, constants.DeliveryProviderWebPush, constants.DeliveryProviderLocalFeed:
+		return true
+	default:
+		return false
+	}
+}
+
+func knownNotificationPreferenceMode(mode string) bool {
+	switch strings.TrimSpace(mode) {
+	case constants.NotificationPreferenceModeImmediate, constants.NotificationPreferenceModeDigest, constants.NotificationPreferenceModeSilent:
+		return true
+	default:
+		return false
+	}
+}
+
+func knownNotificationDigestCadence(cadence string) bool {
+	switch strings.TrimSpace(cadence) {
+	case constants.NotificationDigestCadenceDaily, constants.NotificationDigestCadenceWeekly:
 		return true
 	default:
 		return false

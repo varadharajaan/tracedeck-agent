@@ -303,6 +303,12 @@ visible before host-level details. The panel is backed by the notification
 command center, monetisation summary, operations summary, alert inbox, weekly
 report, delivery drilldown, remediation, archive, and consent metadata.
 
+Phase 49 adds a Notification Preference Center. It shows preference score,
+channel policy, quiet hours, escalation, digest cadence, immediate/digest/silent
+rules, study-safe suppression, retention evidence, and owner actions. The
+dashboard reads from the typed tenant notification-preferences API and keeps the
+same metadata-only privacy boundary as the route registry and command center.
+
 A future frontend phase can move this surface to a richer application shell with
 role-specific onboarding, no-code alert rule editing, weekly report drilldowns,
 durable event search, and paid customer onboarding.

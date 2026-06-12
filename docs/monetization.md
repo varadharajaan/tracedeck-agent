@@ -202,3 +202,17 @@ This gives TraceDeck a stronger monetisable front door without adding new
 collectors. The panel aggregates existing typed, privacy-aware backend
 metadata and keeps passwords, screenshots, raw URLs, page titles, alert bodies,
 provider secrets, and private content out of scope.
+
+Phase 49 adds a Notification Preference Center:
+
+- immediate, digest, and silent notification policies
+- email, push, and dashboard channel coverage
+- quiet hours with critical bypass metadata
+- escalation owner and repeat policy
+- study-safe suppression for learning activity
+- paid-tier labels, retention evidence, and owner actions
+
+This is monetisable because parents, schools, coaching centers, and small
+businesses need confidence that alerting is configurable and explainable, not
+just noisy. The feature stores typed policy metadata only and avoids provider
+secrets, alert bodies, screenshots, raw URLs, page titles, and private content.

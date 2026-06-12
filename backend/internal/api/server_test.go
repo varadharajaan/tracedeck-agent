@@ -748,6 +748,122 @@ func TestNotificationRouteEndpoints(t *testing.T) {
 	}
 }
 
+func TestNotificationPreferenceEndpoints(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	preferenceURL := constants.RouteTenants + "/family-varadha/" + constants.RouteSegmentNotificationPref
+	initialResponse := httptest.NewRecorder()
+	handler.ServeHTTP(initialResponse, httptest.NewRequest(http.MethodGet, preferenceURL, nil))
+	if initialResponse.Code != http.StatusOK {
+		t.Fatalf("expected notification preferences 200, got %d: %s", initialResponse.Code, initialResponse.Body.String())
+	}
+	var initial model.NotificationPreferenceCenter
+	if err := json.Unmarshal(initialResponse.Body.Bytes(), &initial); err != nil {
+		t.Fatalf("decode notification preferences: %v", err)
+	}
+	if initial.Summary.RulesTotal < 3 || !initial.Summary.EmailEnabled || !initial.Summary.PushEnabled || !initial.Summary.DashboardEnabled {
+		t.Fatalf("expected seeded preference channel coverage: %+v", initial.Summary)
+	}
+	if initial.Summary.StudySuppressionRules == 0 || !initial.QuietHours.Enabled || !initial.Escalation.Enabled {
+		t.Fatalf("expected study suppression, quiet hours, and escalation: %+v", initial)
+	}
+	if !strings.Contains(initial.PrivacyBoundary, "no passwords") || !strings.Contains(initial.PrivacyBoundary, "screenshots") {
+		t.Fatalf("expected strict privacy boundary, got %q", initial.PrivacyBoundary)
+	}
+
+	updateBody := []byte(`{
+		"digest_cadence": "daily",
+		"quiet_hours": {
+			"enabled": true,
+			"start_local": "21:30",
+			"end_local": "06:00",
+			"timezone": "Asia/Calcutta"
+		},
+		"escalation": {
+			"enabled": true,
+			"after_minutes": 10,
+			"repeat_every_minutes": 20,
+			"max_repeats": 3,
+			"channels": ["email", "push"],
+			"owner": "parent escalation"
+		},
+		"rules": [
+			{
+				"name": "High-risk software immediate alert",
+				"event_type": "risky_software",
+				"severity": "high",
+				"channels": ["email", "push", "dashboard"],
+				"mode": "immediate",
+				"recipient_group": "parent escalation",
+				"quiet_hours_bypass": true,
+				"paid_tier": "family_pro",
+				"delivery_sla": "10 minutes",
+				"next_action": "Verify delivery proof before relying on this rule.",
+				"retention_evidence": "metadata-only alert and delivery proof"
+			},
+			{
+				"name": "Study-safe digest",
+				"event_type": "non_study_youtube",
+				"severity": "low",
+				"channels": ["dashboard"],
+				"mode": "silent",
+				"recipient_group": "dashboard archive",
+				"suppression_label": "study topics suppressed",
+				"study_safe": true,
+				"paid_tier": "free",
+				"delivery_sla": "dashboard only",
+				"next_action": "Keep study-safe learning out of noisy alert paths.",
+				"retention_evidence": "category metadata only"
+			}
+		]
+	}`)
+	updateResponse := httptest.NewRecorder()
+	handler.ServeHTTP(updateResponse, httptest.NewRequest(http.MethodPost, preferenceURL, bytes.NewReader(updateBody)))
+	if updateResponse.Code != http.StatusOK {
+		t.Fatalf("expected preference update 200, got %d: %s", updateResponse.Code, updateResponse.Body.String())
+	}
+	var updated model.NotificationPreferenceCenter
+	if err := json.Unmarshal(updateResponse.Body.Bytes(), &updated); err != nil {
+		t.Fatalf("decode updated preferences: %v", err)
+	}
+	if updated.DigestCadence != constants.NotificationDigestCadenceDaily || updated.QuietHours.StartLocal != "21:30" {
+		t.Fatalf("expected updated cadence and quiet hours: %+v", updated)
+	}
+	if updated.Summary.RulesTotal != 2 || updated.Summary.ImmediateRules != 1 || updated.Summary.SilentRules != 1 {
+		t.Fatalf("expected updated rule counts: %+v", updated.Summary)
+	}
+
+	invalidResponse := httptest.NewRecorder()
+	handler.ServeHTTP(invalidResponse, httptest.NewRequest(http.MethodPost, preferenceURL, strings.NewReader(`{"digest_cadence":"hourly"}`)))
+	if invalidResponse.Code != http.StatusBadRequest {
+		t.Fatalf("expected invalid preference 400, got %d: %s", invalidResponse.Code, invalidResponse.Body.String())
+	}
+
+	auditResponse := httptest.NewRecorder()
+	handler.ServeHTTP(auditResponse, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentAuditEvents, nil))
+	if auditResponse.Code != http.StatusOK {
+		t.Fatalf("expected audit events 200, got %d", auditResponse.Code)
+	}
+	if !strings.Contains(auditResponse.Body.String(), constants.AuditActionNotificationPref) {
+		t.Fatalf("expected notification preference audit event, got %s", auditResponse.Body.String())
+	}
+}
+
 func TestTenantDeliveryDrilldownEndpoint(t *testing.T) {
 	t.Parallel()
 

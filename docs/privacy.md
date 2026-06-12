@@ -47,3 +47,9 @@ combines existing alert inbox, delivery proof, remediation, operations, and
 monetisation metadata into a typed response for the dashboard. It does not add
 collectors and does not store provider secrets, alert bodies, screenshots,
 passwords, cookies, tokens, raw URLs, page titles, or private content.
+
+Phase 49 notification preferences are typed policy metadata only. They store
+channel choices, digest cadence, quiet hours, escalation owner labels,
+study-safe suppression labels, paid tier, and retention evidence. They do not
+store SMTP passwords, push endpoint secrets, provider credentials, alert bodies,
+screenshots, raw URLs, page titles, cookies, tokens, or private content.
