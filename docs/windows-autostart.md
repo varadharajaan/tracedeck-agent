@@ -35,10 +35,25 @@ To register and start immediately:
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/register-windows-task.ps1 -BuildAgent -StartAfterRegister
 ```
 
+Phase 15 also exposes the same flow through the cross-platform service manager:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/manage-agent-service.ps1 -Platform windows -Action install -BuildAgent
+```
+
 ## Query Status
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-windows-task-status.ps1
+```
+
+Equivalent wrapper commands:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/manage-agent-service.ps1 -Platform windows -Action status
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/manage-agent-service.ps1 -Platform windows -Action start
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/manage-agent-service.ps1 -Platform windows -Action stop
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/manage-agent-service.ps1 -Platform windows -Action uninstall
 ```
 
 The status script writes structured output to the console and logs under

@@ -66,8 +66,12 @@ Generated manifests are written under:
 data/local/service-manifests/phase7/
 ```
 
-They are not committed. Installer packaging and native service install/start
-commands remain future work.
+They are not committed. Phase 15 adds
+`scripts/local/manage-agent-service.ps1` as the native install/start/stop/status
+wrapper for Windows Task Scheduler, macOS launchd, and Linux systemd. Dry-run
+plans are written under `data/local/service-actions/phase15/`, and generated
+service manifests for install flows are written under
+`data/local/service-manifests/phase15/`.
 
 ## Windows Task Scheduler
 
@@ -97,3 +101,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-windows-
 
 The task starts the continuous agent at user logon after reboot. It launches the
 agent executable directly and logs through the agent's normal file logger.
+
+The cross-platform service wrapper can call the same Windows path:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/manage-agent-service.ps1 -Platform windows -Action install -BuildAgent
+```

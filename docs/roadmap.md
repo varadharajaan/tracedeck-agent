@@ -42,7 +42,10 @@
     JSON from host overview, email subject/preview readiness, lightweight PDF
     endpoint, dashboard readiness visibility, docs, Postman/Newman coverage,
     and local verification.
-18. Phase 16: monetisation dashboard upgrade. Embedded dashboard panels for
+18. Phase 15: native service management wrapper. One scripted command surface
+    for Windows Task Scheduler, macOS launchd, and Linux systemd
+    install/start/stop/status/uninstall dry-runs, docs, and local verification.
+19. Phase 16: monetisation dashboard upgrade. Embedded dashboard panels for
     anomaly notification inbox, mail delivery center, push routing, alert route
     SLA visibility, paid trigger, upgrade path, docs, Postman/Newman coverage,
     and local verification.
