@@ -30,6 +30,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase6
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase6.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase9.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase9.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/start-dashboard-demo.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-service-manifests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-windows-task.ps1
 ```
