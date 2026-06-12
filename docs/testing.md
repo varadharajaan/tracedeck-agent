@@ -20,6 +20,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase9.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase10.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase11.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase12.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
@@ -127,6 +128,21 @@ file and API key, verifies missing-key rejection, creates a tenant, enrolls a
 host, confirms risk data exists, restarts the backend against the same state
 file, and verifies the host and alert delivery rows survived restart. Newman
 runs `postman/tracedeck-backend-phase11.postman_collection.json` against a live
+API-key-protected backend.
+
+Phase 12 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-device-health.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase12.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase12.ps1
+```
+
+The Phase 12 smoke builds and boots the backend on localhost, creates a tenant,
+enrolls a host, verifies the standalone device-health API, confirms the health
+payload is included in host overview, checks monetisation-ready dashboard panels,
+and verifies weekly report readiness. Newman runs
+`postman/tracedeck-backend-phase12.postman_collection.json` against a live
 API-key-protected backend.
 
 `go test -race ./...` is run when the local Go toolchain supports it. On

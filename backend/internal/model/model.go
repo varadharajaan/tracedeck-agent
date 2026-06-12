@@ -70,6 +70,7 @@ type HostOverview struct {
 	Summary          DeviceSummary   `json:"summary"`
 	RiskLevel        string          `json:"risk_level"`
 	RiskScore        int             `json:"risk_score"`
+	Health           DeviceHealth    `json:"health"`
 	Archive          ArchiveStatus   `json:"archive"`
 	PolicyViolations []RiskEvent     `json:"policy_violations"`
 	Anomalies        []RiskEvent     `json:"anomalies"`
@@ -108,6 +109,23 @@ type AlertDelivery struct {
 	LastError        string     `json:"last_error,omitempty"`
 	SuppressedReason string     `json:"suppressed_reason,omitempty"`
 	Summary          string     `json:"summary"`
+}
+
+type DeviceHealth struct {
+	DeviceID             string    `json:"device_id"`
+	Score                int       `json:"score"`
+	Status               string    `json:"status"`
+	CPUPercent           float64   `json:"cpu_percent"`
+	MemoryPercent        float64   `json:"memory_percent"`
+	DiskPercent          float64   `json:"disk_percent"`
+	BatteryStatus        string    `json:"battery_status"`
+	BatteryPercent       int       `json:"battery_percent"`
+	StartupApps          int       `json:"startup_apps"`
+	AppCrashes24h        int       `json:"app_crashes_24h"`
+	AgentHealthy         bool      `json:"agent_healthy"`
+	AgentLastHeartbeatAt time.Time `json:"agent_last_heartbeat_at"`
+	ObservedAt           time.Time `json:"observed_at"`
+	Recommendation       string    `json:"recommendation"`
 }
 
 type WeeklyReport struct {

@@ -31,6 +31,7 @@ type Memory struct {
 	anomalyEvents   map[string][]model.RiskEvent
 	tamperEvents    map[string][]model.RiskEvent
 	alertDeliveries map[string][]model.AlertDelivery
+	healthScores    map[string]model.DeviceHealth
 }
 
 func NewMemory() *Memory {
@@ -41,6 +42,7 @@ func NewMemory() *Memory {
 		anomalyEvents:   make(map[string][]model.RiskEvent),
 		tamperEvents:    make(map[string][]model.RiskEvent),
 		alertDeliveries: make(map[string][]model.AlertDelivery),
+		healthScores:    make(map[string]model.DeviceHealth),
 	}
 }
 
@@ -231,6 +233,21 @@ func (m *Memory) ListPolicyViolations(_ context.Context, deviceID string) ([]mod
 	return cloneRiskEvents(m.policyEvents[device.DeviceID]), nil
 }
 
+func (m *Memory) DeviceHealth(_ context.Context, deviceID string) (model.DeviceHealth, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	device, ok := m.devices[strings.TrimSpace(deviceID)]
+	if !ok {
+		return model.DeviceHealth{}, ErrDeviceNotFound
+	}
+	m.seedDashboardForDeviceLocked(device)
+	if err := m.persistLocked(); err != nil {
+		return model.DeviceHealth{}, err
+	}
+	return m.healthScores[device.DeviceID], nil
+}
+
 func (m *Memory) ListAnomalies(_ context.Context, deviceID string) ([]model.RiskEvent, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -300,6 +317,7 @@ func (m *Memory) hostOverviewLocked(device model.Device) model.HostOverview {
 		Summary:   summary,
 		RiskLevel: constants.RiskLevelMedium,
 		RiskScore: 64,
+		Health:    m.healthScores[device.DeviceID],
 		Archive: model.ArchiveStatus{
 			Status:          constants.StatusPending,
 			Provider:        constants.ArchiveProviderS3,
@@ -315,7 +333,12 @@ func (m *Memory) hostOverviewLocked(device model.Device) model.HostOverview {
 }
 
 func (m *Memory) seedDashboardForDeviceLocked(device model.Device) {
-	if _, ok := m.policyEvents[device.DeviceID]; ok {
+	_, policyOK := m.policyEvents[device.DeviceID]
+	_, healthOK := m.healthScores[device.DeviceID]
+	_, anomaliesOK := m.anomalyEvents[device.DeviceID]
+	_, tamperOK := m.tamperEvents[device.DeviceID]
+	_, deliveriesOK := m.alertDeliveries[device.DeviceID]
+	if policyOK && anomaliesOK && tamperOK && deliveriesOK && healthOK {
 		return
 	}
 
@@ -330,123 +353,150 @@ func (m *Memory) seedDashboardForDeviceLocked(device model.Device) {
 	anomalyProductivityID := riskID(device.DeviceID, constants.RiskTypeAnomaly, 2)
 	tamperBacklogID := riskID(device.DeviceID, constants.RiskTypeTamper, 1)
 
-	m.policyEvents[device.DeviceID] = []model.RiskEvent{
-		{
-			ID:             policyMediaID,
-			DeviceID:       device.DeviceID,
-			Type:           constants.RiskTypePolicyViolation,
-			Severity:       constants.SeverityHigh,
-			Category:       constants.RiskCategoryMediaPlayback,
-			Source:         constants.RiskSourceProcess,
-			AppName:        "VLC media player",
-			ResourceLabel:  "sample-movie-file.mkv",
-			Reason:         "Entertainment media playback during study policy hours.",
-			Recommendation: "Review the usage window and tighten Exam Mode if this repeats.",
-			Status:         constants.RiskStatusOpen,
-			ObservedAt:     base.Add(-38 * time.Minute),
-		},
-		{
-			ID:             policyYouTubeID,
-			DeviceID:       device.DeviceID,
-			Type:           constants.RiskTypePolicyViolation,
-			Severity:       constants.SeverityMedium,
-			Category:       constants.RiskCategoryNonStudyYouTube,
-			Source:         constants.RiskSourceBrowser,
-			Domain:         "youtube.com",
-			ResourceLabel:  "non-study video category",
-			Reason:         "YouTube activity was categorized outside coding, math, system design, or coursework.",
-			Recommendation: "Suppress study videos automatically and alert only on repeated non-study sessions.",
-			Status:         constants.RiskStatusOpen,
-			ObservedAt:     base.Add(-64 * time.Minute),
-		},
+	if !policyOK {
+		m.policyEvents[device.DeviceID] = []model.RiskEvent{
+			{
+				ID:             policyMediaID,
+				DeviceID:       device.DeviceID,
+				Type:           constants.RiskTypePolicyViolation,
+				Severity:       constants.SeverityHigh,
+				Category:       constants.RiskCategoryMediaPlayback,
+				Source:         constants.RiskSourceProcess,
+				AppName:        "VLC media player",
+				ResourceLabel:  "sample-movie-file.mkv",
+				Reason:         "Entertainment media playback during study policy hours.",
+				Recommendation: "Review the usage window and tighten Exam Mode if this repeats.",
+				Status:         constants.RiskStatusOpen,
+				ObservedAt:     base.Add(-38 * time.Minute),
+			},
+			{
+				ID:             policyYouTubeID,
+				DeviceID:       device.DeviceID,
+				Type:           constants.RiskTypePolicyViolation,
+				Severity:       constants.SeverityMedium,
+				Category:       constants.RiskCategoryNonStudyYouTube,
+				Source:         constants.RiskSourceBrowser,
+				Domain:         "youtube.com",
+				ResourceLabel:  "non-study video category",
+				Reason:         "YouTube activity was categorized outside coding, math, system design, or coursework.",
+				Recommendation: "Suppress study videos automatically and alert only on repeated non-study sessions.",
+				Status:         constants.RiskStatusOpen,
+				ObservedAt:     base.Add(-64 * time.Minute),
+			},
+		}
 	}
 
-	m.anomalyEvents[device.DeviceID] = []model.RiskEvent{
-		{
-			ID:             anomalySoftwareID,
-			DeviceID:       device.DeviceID,
-			Type:           constants.RiskTypeAnomaly,
-			Severity:       constants.SeverityMedium,
-			Category:       constants.RiskCategoryRiskySoftware,
-			Source:         constants.RiskSourceProcess,
-			AppName:        "Unknown installer",
-			ResourceLabel:  "Downloads installer source",
-			Reason:         "New executable activity appeared from a downloads location.",
-			Recommendation: "Add signed publisher inventory and approval workflow in the software phase.",
-			Status:         constants.RiskStatusAcknowledged,
-			ObservedAt:     base.Add(-2 * time.Hour),
-		},
-		{
-			ID:             anomalyProductivityID,
-			DeviceID:       device.DeviceID,
-			Type:           constants.RiskTypeAnomaly,
-			Severity:       constants.SeverityLow,
-			Category:       constants.RiskCategoryProductivityShift,
-			Source:         constants.RiskSourceAgent,
-			ResourceLabel:  "late-night usage pattern",
-			Reason:         "Entertainment minutes increased compared with the study baseline.",
-			Recommendation: "Use weekly AI report thresholds before escalating low severity drift.",
-			Status:         constants.RiskStatusOpen,
-			ObservedAt:     base.Add(-4 * time.Hour),
-		},
+	if !anomaliesOK {
+		m.anomalyEvents[device.DeviceID] = []model.RiskEvent{
+			{
+				ID:             anomalySoftwareID,
+				DeviceID:       device.DeviceID,
+				Type:           constants.RiskTypeAnomaly,
+				Severity:       constants.SeverityMedium,
+				Category:       constants.RiskCategoryRiskySoftware,
+				Source:         constants.RiskSourceProcess,
+				AppName:        "Unknown installer",
+				ResourceLabel:  "Downloads installer source",
+				Reason:         "New executable activity appeared from a downloads location.",
+				Recommendation: "Add signed publisher inventory and approval workflow in the software phase.",
+				Status:         constants.RiskStatusAcknowledged,
+				ObservedAt:     base.Add(-2 * time.Hour),
+			},
+			{
+				ID:             anomalyProductivityID,
+				DeviceID:       device.DeviceID,
+				Type:           constants.RiskTypeAnomaly,
+				Severity:       constants.SeverityLow,
+				Category:       constants.RiskCategoryProductivityShift,
+				Source:         constants.RiskSourceAgent,
+				ResourceLabel:  "late-night usage pattern",
+				Reason:         "Entertainment minutes increased compared with the study baseline.",
+				Recommendation: "Use weekly AI report thresholds before escalating low severity drift.",
+				Status:         constants.RiskStatusOpen,
+				ObservedAt:     base.Add(-4 * time.Hour),
+			},
+		}
 	}
 
-	m.tamperEvents[device.DeviceID] = []model.RiskEvent{
-		{
-			ID:             tamperBacklogID,
-			DeviceID:       device.DeviceID,
-			Type:           constants.RiskTypeTamper,
-			Severity:       constants.SeverityLow,
-			Category:       constants.RiskCategoryArchiveHealth,
-			Source:         constants.RiskSourceArchive,
-			ResourceLabel:  "S3 upload backlog",
-			Reason:         "Two archive batches are waiting for the next online upload window.",
-			Recommendation: "Keep retry visible; alert only if backlog age crosses policy threshold.",
-			Status:         constants.RiskStatusOpen,
-			ObservedAt:     base.Add(-21 * time.Minute),
-		},
+	if !tamperOK {
+		m.tamperEvents[device.DeviceID] = []model.RiskEvent{
+			{
+				ID:             tamperBacklogID,
+				DeviceID:       device.DeviceID,
+				Type:           constants.RiskTypeTamper,
+				Severity:       constants.SeverityLow,
+				Category:       constants.RiskCategoryArchiveHealth,
+				Source:         constants.RiskSourceArchive,
+				ResourceLabel:  "S3 upload backlog",
+				Reason:         "Two archive batches are waiting for the next online upload window.",
+				Recommendation: "Keep retry visible; alert only if backlog age crosses policy threshold.",
+				Status:         constants.RiskStatusOpen,
+				ObservedAt:     base.Add(-21 * time.Minute),
+			},
+		}
 	}
 
 	retryAt := base.Add(12 * time.Minute)
-	m.alertDeliveries[device.DeviceID] = []model.AlertDelivery{
-		{
-			ID:            deliveryID(device.DeviceID, constants.DeliveryChannelEmail, 1),
-			DeviceID:      device.DeviceID,
-			EventID:       policyMediaID,
-			Channel:       constants.DeliveryChannelEmail,
-			Recipient:     "varathu09@gmail.com",
-			Provider:      constants.DeliveryProviderSMTP,
-			Status:        constants.DeliveryStatusDelivered,
-			Attempts:      1,
-			LastAttemptAt: base.Add(-36 * time.Minute),
-			Summary:       "High severity media playback alert delivered by email.",
-		},
-		{
-			ID:            deliveryID(device.DeviceID, constants.DeliveryChannelPush, 1),
-			DeviceID:      device.DeviceID,
-			EventID:       policyYouTubeID,
-			Channel:       constants.DeliveryChannelPush,
-			Recipient:     "parent mobile push subscription",
-			Provider:      constants.DeliveryProviderWebPush,
-			Status:        constants.DeliveryStatusRetrying,
-			Attempts:      2,
-			LastAttemptAt: base.Add(-5 * time.Minute),
-			NextRetryAt:   &retryAt,
-			LastError:     "push endpoint unavailable during demo retry window",
-			Summary:       "Non-study YouTube push alert is retrying.",
-		},
-		{
-			ID:            deliveryID(device.DeviceID, constants.DeliveryChannelDashboard, 1),
-			DeviceID:      device.DeviceID,
-			EventID:       tamperBacklogID,
-			Channel:       constants.DeliveryChannelDashboard,
-			Recipient:     "local dashboard",
-			Provider:      constants.DeliveryProviderLocalFeed,
-			Status:        constants.DeliveryStatusDelivered,
-			Attempts:      1,
-			LastAttemptAt: base.Add(-20 * time.Minute),
-			Summary:       "Archive backlog trust event is visible in dashboard.",
-		},
+	if !deliveriesOK {
+		m.alertDeliveries[device.DeviceID] = []model.AlertDelivery{
+			{
+				ID:            deliveryID(device.DeviceID, constants.DeliveryChannelEmail, 1),
+				DeviceID:      device.DeviceID,
+				EventID:       policyMediaID,
+				Channel:       constants.DeliveryChannelEmail,
+				Recipient:     "varathu09@gmail.com",
+				Provider:      constants.DeliveryProviderSMTP,
+				Status:        constants.DeliveryStatusDelivered,
+				Attempts:      1,
+				LastAttemptAt: base.Add(-36 * time.Minute),
+				Summary:       "High severity media playback alert delivered by email.",
+			},
+			{
+				ID:            deliveryID(device.DeviceID, constants.DeliveryChannelPush, 1),
+				DeviceID:      device.DeviceID,
+				EventID:       policyYouTubeID,
+				Channel:       constants.DeliveryChannelPush,
+				Recipient:     "parent mobile push subscription",
+				Provider:      constants.DeliveryProviderWebPush,
+				Status:        constants.DeliveryStatusRetrying,
+				Attempts:      2,
+				LastAttemptAt: base.Add(-5 * time.Minute),
+				NextRetryAt:   &retryAt,
+				LastError:     "push endpoint unavailable during demo retry window",
+				Summary:       "Non-study YouTube push alert is retrying.",
+			},
+			{
+				ID:            deliveryID(device.DeviceID, constants.DeliveryChannelDashboard, 1),
+				DeviceID:      device.DeviceID,
+				EventID:       tamperBacklogID,
+				Channel:       constants.DeliveryChannelDashboard,
+				Recipient:     "local dashboard",
+				Provider:      constants.DeliveryProviderLocalFeed,
+				Status:        constants.DeliveryStatusDelivered,
+				Attempts:      1,
+				LastAttemptAt: base.Add(-20 * time.Minute),
+				Summary:       "Archive backlog trust event is visible in dashboard.",
+			},
+		}
+	}
+
+	if !healthOK {
+		m.healthScores[device.DeviceID] = model.DeviceHealth{
+			DeviceID:             device.DeviceID,
+			Score:                78,
+			Status:               constants.HealthStatusWatch,
+			CPUPercent:           38.5,
+			MemoryPercent:        64.2,
+			DiskPercent:          71.8,
+			BatteryStatus:        "charging",
+			BatteryPercent:       86,
+			StartupApps:          11,
+			AppCrashes24h:        1,
+			AgentHealthy:         true,
+			AgentLastHeartbeatAt: base.Add(-3 * time.Minute),
+			ObservedAt:           base,
+			Recommendation:       "Review startup apps and disk usage if the score stays below 80.",
+		}
 	}
 }
 
@@ -494,6 +544,7 @@ type persistentState struct {
 	AnomalyEvents   map[string][]model.RiskEvent     `json:"anomaly_events"`
 	TamperEvents    map[string][]model.RiskEvent     `json:"tamper_events"`
 	AlertDeliveries map[string][]model.AlertDelivery `json:"alert_deliveries"`
+	HealthScores    map[string]model.DeviceHealth    `json:"health_scores"`
 }
 
 func (m *Memory) load() error {
@@ -520,6 +571,7 @@ func (m *Memory) load() error {
 	m.anomalyEvents = cloneRiskMap(state.AnomalyEvents)
 	m.tamperEvents = cloneRiskMap(state.TamperEvents)
 	m.alertDeliveries = cloneDeliveryMap(state.AlertDeliveries)
+	m.healthScores = cloneHealthMap(state.HealthScores)
 	return nil
 }
 
@@ -536,6 +588,7 @@ func (m *Memory) persistLocked() error {
 		AnomalyEvents:   cloneRiskMap(m.anomalyEvents),
 		TamperEvents:    cloneRiskMap(m.tamperEvents),
 		AlertDeliveries: cloneDeliveryMap(m.alertDeliveries),
+		HealthScores:    cloneHealthMap(m.healthScores),
 	}
 	data, err := json.MarshalIndent(state, "", "  ")
 	if err != nil {
@@ -549,7 +602,12 @@ func (m *Memory) persistLocked() error {
 		return fmt.Errorf("write backend state temp: %w", err)
 	}
 	if err := os.Rename(tmpPath, m.path); err != nil {
-		return fmt.Errorf("commit backend state: %w", err)
+		if removeErr := os.Remove(m.path); removeErr != nil && !errors.Is(removeErr, os.ErrNotExist) {
+			return fmt.Errorf("replace backend state: %w", removeErr)
+		}
+		if renameErr := os.Rename(tmpPath, m.path); renameErr != nil {
+			return fmt.Errorf("commit backend state: %w", renameErr)
+		}
 	}
 	return nil
 }
@@ -582,6 +640,14 @@ func cloneDeliveryMap(input map[string][]model.AlertDelivery) map[string][]model
 	output := make(map[string][]model.AlertDelivery, len(input))
 	for key, value := range input {
 		output[key] = append([]model.AlertDelivery(nil), value...)
+	}
+	return output
+}
+
+func cloneHealthMap(input map[string]model.DeviceHealth) map[string]model.DeviceHealth {
+	output := make(map[string]model.DeviceHealth, len(input))
+	for key, value := range input {
+		output[key] = value
 	}
 	return output
 }

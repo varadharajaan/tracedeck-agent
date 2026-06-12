@@ -29,3 +29,8 @@
 14. Phase 11: durable backend storage and auth groundwork. JSON-backed backend
     state, optional local API-key middleware, tenant-scoped access checks,
     restart persistence smoke, Postman/Newman coverage, and local verification.
+15. Phase 12: device health score and monetisation dashboard. Privacy-safe
+    endpoint health events, typed backend health API, persisted host health,
+    richer dashboard panels for notification operations, product packaging,
+    policy marketplace, retention plans, docs, Postman/Newman coverage, and
+    local verification.

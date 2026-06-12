@@ -45,6 +45,7 @@ func TestRunResultMerge(t *testing.T) {
 		Cycles:          1,
 		CollectedEvents: 5,
 		StoredEvents:    5,
+		HealthEvents:    1,
 	}
 	result.merge(RunResult{
 		Cycles:          1,
@@ -53,6 +54,7 @@ func TestRunResultMerge(t *testing.T) {
 		ArchiveBatch:    "archive.jsonl.gz",
 		AlertsRaised:    2,
 		AlertOutboxPath: "alert.json",
+		HealthEvents:    1,
 	})
 
 	if result.Cycles != 2 {
@@ -69,5 +71,8 @@ func TestRunResultMerge(t *testing.T) {
 	}
 	if result.AlertsRaised != 2 {
 		t.Fatalf("expected 2 alerts, got %d", result.AlertsRaised)
+	}
+	if result.HealthEvents != 2 {
+		t.Fatalf("expected 2 health events, got %d", result.HealthEvents)
 	}
 }

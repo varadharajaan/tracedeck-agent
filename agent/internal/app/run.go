@@ -10,6 +10,7 @@ import (
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/alert"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/archive"
 	browsercollector "github.com/varadharajaan/tracedeck-agent/agent/internal/collector/browser"
+	healthcollector "github.com/varadharajaan/tracedeck-agent/agent/internal/collector/health"
 	processcollector "github.com/varadharajaan/tracedeck-agent/agent/internal/collector/process"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/config"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/constants"
@@ -48,6 +49,7 @@ type RunResult struct {
 	AlertsRaised    int
 	AlertOutboxPath string
 	BrowserEvents   int
+	HealthEvents    int
 }
 
 func Run(ctx context.Context, opts RunOptions) (RunResult, error) {
@@ -168,6 +170,12 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 	}
 	events := processEvents
 
+	healthEvents, err := healthcollector.New(platformAdapter).Collect(ctx, r.policy)
+	if err != nil {
+		return RunResult{}, err
+	}
+	events = append(events, healthEvents...)
+
 	browserEvents := []event.Event{}
 	if !r.opts.DisableBrowserHistory {
 		browserCacheDir := r.opts.BrowserCacheDir
@@ -201,7 +209,7 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 		return RunResult{}, err
 	}
 
-	result := RunResult{Cycles: 1, CollectedEvents: len(events), StoredEvents: total, BrowserEvents: len(browserEvents)}
+	result := RunResult{Cycles: 1, CollectedEvents: len(events), StoredEvents: total, BrowserEvents: len(browserEvents), HealthEvents: len(healthEvents)}
 
 	if archiveEnabled {
 		batch, err := archive.NewWriter(r.opts.OutboxDir).WriteBatch(ctx, r.policy, events)
@@ -254,6 +262,7 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 		"operating_system", platformAdapter.Name(),
 		"collected_events", len(events),
 		"process_events", len(processEvents),
+		"health_events", len(healthEvents),
 		"browser_events", len(browserEvents),
 		"stored_events", total,
 	)
@@ -271,6 +280,7 @@ func (r *RunResult) merge(next RunResult) {
 	r.ArchiveUploaded = r.ArchiveUploaded || next.ArchiveUploaded
 	r.AlertsRaised += next.AlertsRaised
 	r.BrowserEvents += next.BrowserEvents
+	r.HealthEvents += next.HealthEvents
 	if next.AlertOutboxPath != "" {
 		r.AlertOutboxPath = next.AlertOutboxPath
 	}
@@ -289,11 +299,12 @@ func parseDurationOrDefault(value string, fallback string) (time.Duration, error
 
 func FormatRunResult(result RunResult) string {
 	return fmt.Sprintf(
-		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d browser_events=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_outbox=%s",
+		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d browser_events=%d health_events=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_outbox=%s",
 		result.Cycles,
 		result.CollectedEvents,
 		result.StoredEvents,
 		result.BrowserEvents,
+		result.HealthEvents,
 		result.ArchiveBatch,
 		result.ArchiveUploaded,
 		result.AlertsRaised,

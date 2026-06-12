@@ -65,4 +65,11 @@ func TestPersistentStoreSurvivesRestart(t *testing.T) {
 	if len(events) == 0 {
 		t.Fatal("expected persisted policy events after restart")
 	}
+	health, err := second.DeviceHealth(ctx, "persistent-device")
+	if err != nil {
+		t.Fatalf("load device health after restart: %v", err)
+	}
+	if health.Score == 0 || health.Status == "" {
+		t.Fatalf("expected persisted device health: %+v", health)
+	}
 }

@@ -39,6 +39,7 @@ const (
 	RouteSegmentAnomalies     = "anomalies"
 	RouteSegmentTamperEvents  = "tamper-events"
 	RouteSegmentAlertDelivery = "alert-deliveries"
+	RouteSegmentHealth        = "health"
 )
 
 const (
@@ -119,6 +120,12 @@ const (
 	RiskLevelLow    = "low"
 	RiskLevelMedium = "medium"
 	RiskLevelHigh   = "high"
+)
+
+const (
+	HealthStatusHealthy   = "healthy"
+	HealthStatusWatch     = "watch"
+	HealthStatusAttention = "attention"
 )
 
 const (
