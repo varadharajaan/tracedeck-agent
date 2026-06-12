@@ -554,6 +554,22 @@ credentials, or page content. Newman runs
 `postman/tracedeck-backend-phase43.postman_collection.json` against the same
 live demo.
 
+Phase 44 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase44.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase44.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase44.ps1
+```
+
+The Phase 44 smoke live-boots the seeded dashboard, verifies Provider-Safe
+Delivery Drilldown and Delivery Rehearsal Actions markers, checks the tenant
+delivery-drilldown API, runs a push dry-run rehearsal, verifies the rehearsal
+audit event, and reruns the screenshot-free dashboard layout contract. Newman
+runs `postman/tracedeck-backend-phase44.postman_collection.json` against the
+same live demo and covers current drilldown proof, dry-run rehearsal,
+invalid live-send rejection, and audit evidence.
+
 Phase 13 adds:
 
 ```powershell

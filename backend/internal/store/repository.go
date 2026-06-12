@@ -15,6 +15,8 @@ type Repository interface {
 	ListAlertRules(context.Context, string) []model.AlertRule
 	CreateNotificationRoute(context.Context, string, model.CreateNotificationRouteRequest) (model.NotificationRoute, error)
 	ListNotificationRoutes(context.Context, string) []model.NotificationRoute
+	TenantDeliveryDrilldown(context.Context, string) (model.TenantDeliveryDrilldown, error)
+	RunTenantDeliveryDrilldown(context.Context, string, model.RunDeliveryDrilldownRequest) (model.TenantDeliveryDrilldown, error)
 	TenantOperationsSummary(context.Context, string) (model.TenantOperationsSummary, error)
 	TenantMonetizationSummary(context.Context, string) (model.TenantMonetizationSummary, error)
 	TenantAlertInbox(context.Context, string) (model.TenantAlertInbox, error)

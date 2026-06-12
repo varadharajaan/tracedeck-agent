@@ -507,6 +507,52 @@ type CreateNotificationRouteRequest struct {
 	LastSummary    string `json:"last_summary"`
 }
 
+type RunDeliveryDrilldownRequest struct {
+	Mode    string `json:"mode"`
+	Channel string `json:"channel"`
+	Reason  string `json:"reason"`
+}
+
+type TenantDeliveryDrilldownSummary struct {
+	RoutesTotal        int        `json:"routes_total"`
+	EnabledRoutes      int        `json:"enabled_routes"`
+	HealthyRoutes      int        `json:"healthy_routes"`
+	RoutesNeedingProof int        `json:"routes_needing_proof"`
+	EmailReady         bool       `json:"email_ready"`
+	PushReady          bool       `json:"push_ready"`
+	DashboardReady     bool       `json:"dashboard_ready"`
+	DeliveryScore      int        `json:"delivery_score"`
+	RehearsalMode      string     `json:"rehearsal_mode"`
+	LastRehearsedAt    *time.Time `json:"last_rehearsed_at,omitempty"`
+}
+
+type TenantDeliveryDrilldownRoute struct {
+	RouteID              string     `json:"route_id"`
+	Channel              string     `json:"channel"`
+	Provider             string     `json:"provider"`
+	RecipientLabel       string     `json:"recipient_label"`
+	Enabled              bool       `json:"enabled"`
+	RouteStatus          string     `json:"route_status"`
+	LastVerifiedAt       *time.Time `json:"last_verified_at,omitempty"`
+	LatestDeliveryStatus string     `json:"latest_delivery_status"`
+	LatestDeliveryAt     *time.Time `json:"latest_delivery_at,omitempty"`
+	Attempts             int        `json:"attempts"`
+	ProofState           string     `json:"proof_state"`
+	RehearsalResult      string     `json:"rehearsal_result"`
+	SLA                  string     `json:"sla"`
+	NextAction           string     `json:"next_action"`
+	Evidence             string     `json:"evidence"`
+}
+
+type TenantDeliveryDrilldown struct {
+	TenantID        string                         `json:"tenant_id"`
+	GeneratedAt     time.Time                      `json:"generated_at"`
+	PrivacyBoundary string                         `json:"privacy_boundary"`
+	Summary         TenantDeliveryDrilldownSummary `json:"summary"`
+	Routes          []TenantDeliveryDrilldownRoute `json:"routes"`
+	Actions         []TenantOperationsSignal       `json:"actions"`
+}
+
 type ConsentCollectionItem struct {
 	Name        string `json:"name"`
 	Status      string `json:"status"`

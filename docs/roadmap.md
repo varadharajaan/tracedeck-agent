@@ -151,3 +151,7 @@
     command, package snapshot, and next commercial action, plus screenshot-free
     Playwright layout metrics across desktop, tablet, and mobile viewports,
     smoke/Newman coverage, docs, and full local verification.
+47. Phase 44: provider-safe delivery drilldown. Tenant API and dashboard panels
+    for email, push, and dashboard dry-run rehearsal, route score, channel
+    readiness, route evidence, next action, audit trail, Postman/Newman
+    coverage, screenshot-free layout guard, docs, and full local verification.

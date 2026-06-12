@@ -39,6 +39,18 @@ The embedded dashboard now includes:
 These panels show configured routes, enabled count, verification count, and
 routes needing attention before a paid customer demo.
 
+Phase 44 adds provider-safe delivery drilldown on top of the registry:
+
+```text
+GET  /api/v1/tenants/{tenantId}/delivery-drilldown
+POST /api/v1/tenants/{tenantId}/delivery-drilldown
+```
+
+The POST endpoint supports `mode: "dry_run"` only. It rehearses route metadata
+for email, push, or dashboard delivery, updates route verification status, and
+records an audit event. It does not send live messages and does not store SMTP
+passwords, push endpoint secrets, alert bodies, tokens, or endpoint payloads.
+
 ## Verification
 
 ```powershell

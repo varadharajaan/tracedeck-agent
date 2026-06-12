@@ -311,6 +311,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantOperationsSummary(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentMonetization && r.Method == http.MethodGet:
 		s.handleTenantMonetizationSummary(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentDeliveryDrill:
+		s.handleTenantDeliveryDrilldown(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentSyncHealth && r.Method == http.MethodGet:
 		s.handleTenantSyncHealth(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentActivityFeed && r.Method == http.MethodGet:
@@ -521,6 +523,49 @@ func (s *Server) handleTenantMonetizationSummary(w http.ResponseWriter, r *http.
 		return
 	}
 	writeJSON(w, http.StatusOK, summary)
+}
+
+func (s *Server) handleTenantDeliveryDrilldown(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		drilldown, err := s.store.TenantDeliveryDrilldown(r.Context(), tenantID)
+		if err != nil {
+			if errors.Is(err, store.ErrTenantNotFound) {
+				writeError(w, http.StatusNotFound, "tenant not found")
+				return
+			}
+			writeError(w, http.StatusInternalServerError, "tenant delivery drilldown lookup failed")
+			return
+		}
+		writeJSON(w, http.StatusOK, drilldown)
+	case http.MethodPost:
+		var req model.RunDeliveryDrilldownRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "invalid delivery drilldown json")
+			return
+		}
+		if err := validateRunDeliveryDrilldownRequest(req); err != nil {
+			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		drilldown, err := s.store.RunTenantDeliveryDrilldown(r.Context(), tenantID, req)
+		if err != nil {
+			if errors.Is(err, store.ErrTenantNotFound) {
+				writeError(w, http.StatusNotFound, "tenant not found")
+				return
+			}
+			writeError(w, http.StatusInternalServerError, "tenant delivery drilldown failed")
+			return
+		}
+		writeJSON(w, http.StatusAccepted, drilldown)
+	default:
+		writeMethodNotAllowed(w)
+	}
 }
 
 func (s *Server) handleTenantSyncHealth(w http.ResponseWriter, r *http.Request, tenantID string) {
@@ -1174,6 +1219,21 @@ func validateCreateNotificationRouteRequest(req model.CreateNotificationRouteReq
 	}
 }
 
+func validateRunDeliveryDrilldownRequest(req model.RunDeliveryDrilldownRequest) error {
+	mode := strings.TrimSpace(req.Mode)
+	channel := strings.TrimSpace(req.Channel)
+	switch {
+	case mode == "":
+		return errors.New("mode is required")
+	case !knownDeliveryDrillMode(mode):
+		return errors.New("mode is unknown")
+	case channel != "" && !knownChannels([]string{channel}):
+		return errors.New("channel is unknown")
+	default:
+		return nil
+	}
+}
+
 func validateCreateTenantActivityViewRequest(req model.CreateTenantActivityViewRequest) error {
 	filter := req.Filter
 	switch {
@@ -1382,6 +1442,10 @@ func providerAllowedForChannel(provider string, channel string) bool {
 	default:
 		return false
 	}
+}
+
+func knownDeliveryDrillMode(mode string) bool {
+	return strings.TrimSpace(mode) == constants.DeliveryDrillModeDryRun
 }
 
 func knownRouteStatus(status string) bool {

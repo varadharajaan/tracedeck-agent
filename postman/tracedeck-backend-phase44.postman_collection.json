@@ -1,0 +1,88 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 44",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Has Delivery Drilldown",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard contains delivery drilldown monetisation markers', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Provider-Safe Delivery Drilldown');",
+        "  pm.expect(html).to.include('Delivery Rehearsal Actions');",
+        "  pm.expect(html).to.include('delivery-drilldown-section');",
+        "  pm.expect(html).to.include('delivery-drill-route-list');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Delivery Drilldown Current Proof",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/delivery-drilldown" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('delivery drilldown exposes safe route proof', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.privacy_boundary).to.include('no provider secrets');",
+        "  pm.expect(body.summary.routes_total).to.be.at.least(3);",
+        "  pm.expect(body.routes.some((item) => item.channel === 'email')).to.eql(true);",
+        "  pm.expect(body.routes.some((item) => item.channel === 'push')).to.eql(true);",
+        "  pm.expect(body.routes.some((item) => item.channel === 'dashboard')).to.eql(true);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Run Push Dry Run Drilldown",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/delivery-drilldown",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"mode\":\"dry_run\",\"channel\":\"push\",\"reason\":\"postman phase44 rehearsal\"}" }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dry-run rehearsal updates push readiness without content payloads', function () {",
+        "  pm.response.to.have.status(202);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.summary.push_ready).to.eql(true);",
+        "  pm.expect(body.summary.last_rehearsed_at).to.be.a('string');",
+        "  pm.expect(JSON.stringify(body).toLowerCase()).to.not.include('smtp_password');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Reject Live Send Mode",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/delivery-drilldown",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"mode\":\"send_live\"}" }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('live send mode is rejected', function () { pm.response.to.have.status(400); });"
+      ] } }]
+    },
+    {
+      "name": "Audit Includes Drilldown Rehearsal",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/audit-events" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('audit records delivery drilldown rehearsal', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.items.some((item) => item.action === 'delivery_drilldown.rehearsed')).to.eql(true);",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

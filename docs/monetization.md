@@ -133,6 +133,8 @@ Phase 38 adds a Commercial Control Room as the first buyer-facing layer:
 - upgrade trigger and conversion-stage visibility
 - alert delivery evidence across anomaly, email, push, dashboard, and report
   proof
+- provider-safe delivery drilldown for dry-run email, push, and dashboard route
+  rehearsal without provider secrets or alert body storage
 - customer success queue for parent, school, coaching center, and business
   buyers
 

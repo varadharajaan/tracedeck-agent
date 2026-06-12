@@ -748,6 +748,85 @@ func TestNotificationRouteEndpoints(t *testing.T) {
 	}
 }
 
+func TestTenantDeliveryDrilldownEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "demo-study-laptop",
+		"host_name": "Demo Study Laptop",
+		"profile": "ai-btech-student",
+		"os_name": "Windows 11"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	drilldownResponse := httptest.NewRecorder()
+	handler.ServeHTTP(drilldownResponse, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentDeliveryDrill, nil))
+	if drilldownResponse.Code != http.StatusOK {
+		t.Fatalf("expected drilldown 200, got %d: %s", drilldownResponse.Code, drilldownResponse.Body.String())
+	}
+	var drilldown model.TenantDeliveryDrilldown
+	if err := json.Unmarshal(drilldownResponse.Body.Bytes(), &drilldown); err != nil {
+		t.Fatalf("decode delivery drilldown: %v", err)
+	}
+	if drilldown.Summary.RoutesTotal != 3 || len(drilldown.Routes) != 3 {
+		t.Fatalf("expected three drilldown routes: %+v", drilldown)
+	}
+	if !strings.Contains(drilldown.PrivacyBoundary, "no provider secrets") {
+		t.Fatalf("expected privacy boundary to deny provider secrets: %q", drilldown.PrivacyBoundary)
+	}
+	if drilldown.Routes[0].Evidence == "" || strings.Contains(strings.ToLower(drilldownResponse.Body.String()), "smtp_password") {
+		t.Fatalf("expected content-safe drilldown evidence, got %s", drilldownResponse.Body.String())
+	}
+
+	runBody := []byte(`{"mode":"dry_run","channel":"push","reason":"paid demo rehearsal"}`)
+	runResponse := httptest.NewRecorder()
+	handler.ServeHTTP(runResponse, httptest.NewRequest(http.MethodPost, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentDeliveryDrill, bytes.NewReader(runBody)))
+	if runResponse.Code != http.StatusAccepted {
+		t.Fatalf("expected drilldown run 202, got %d: %s", runResponse.Code, runResponse.Body.String())
+	}
+	var rehearsed model.TenantDeliveryDrilldown
+	if err := json.Unmarshal(runResponse.Body.Bytes(), &rehearsed); err != nil {
+		t.Fatalf("decode rehearsed delivery drilldown: %v", err)
+	}
+	if !rehearsed.Summary.PushReady || rehearsed.Summary.LastRehearsedAt == nil {
+		t.Fatalf("expected push route rehearsal proof: %+v", rehearsed.Summary)
+	}
+
+	invalid := httptest.NewRecorder()
+	handler.ServeHTTP(invalid, httptest.NewRequest(http.MethodPost, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentDeliveryDrill, strings.NewReader(`{"mode":"send_live"}`)))
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("expected invalid drilldown mode 400, got %d: %s", invalid.Code, invalid.Body.String())
+	}
+
+	audit := httptest.NewRecorder()
+	handler.ServeHTTP(audit, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentAuditEvents, nil))
+	if audit.Code != http.StatusOK {
+		t.Fatalf("expected audit 200, got %d", audit.Code)
+	}
+	if !strings.Contains(audit.Body.String(), constants.AuditActionDeliveryDrillRun) {
+		t.Fatalf("expected delivery drilldown audit event, got %s", audit.Body.String())
+	}
+}
+
 func TestConsentCenterEndpoint(t *testing.T) {
 	t.Parallel()
 

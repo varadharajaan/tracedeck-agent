@@ -58,6 +58,8 @@ func TestDashboardDOMContract(t *testing.T) {
 		"Buyer Demo Checklist",
 		"Mail Delivery Center",
 		"Push Notification Center",
+		"Provider-Safe Delivery Drilldown",
+		"Delivery Rehearsal Actions",
 		"Archive Retention",
 		"Tamper Trust",
 		"Backend Alert Inbox",
