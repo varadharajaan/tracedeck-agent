@@ -188,6 +188,9 @@ Current panels:
 - delete request queue for non-destructive data deletion workflows
 - revenue command center for paid-plan outcome, stage, plan, seats, and buyer
   readiness
+- commercial control room for host coverage, anomaly command, email proof,
+  push proof, weekly report mail, upgrade trigger, delivery evidence, and
+  customer success actions
 - monetisation value stack for fleet coverage, anomaly queue, mail delivery,
   push reach, weekly report, archive plan, trust center, and upgrade lever
 - notification proof rail for anomaly, email, push, dashboard, and weekly
@@ -223,6 +226,13 @@ dashboard, rejects duplicate DOM IDs, and verifies that JavaScript-rendered
 targets referenced by `getElementById`, text/metric/bar helpers, and badge
 replacement calls exist in the HTML. This catches missing panel IDs before a
 live demo.
+
+Phase 38 adds the Commercial Control Room ahead of the earlier launch deck so a
+paid demo opens on buyer-ready proof instead of only host panels. It rolls up
+tenant operations, monetisation summary, notification routes, weekly report
+mail/PDF readiness, host risk, anomaly urgency, email delivery, push delivery,
+and customer success actions into one first-screen surface. The phase adds
+presentation and verification only; it does not add sensitive collection.
 
 A future frontend phase can move this surface to a richer application shell with
 authentication, role-specific navigation, no-code alert rule editing, weekly

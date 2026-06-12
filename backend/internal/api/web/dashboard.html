@@ -206,6 +206,73 @@
       line-height: 1.45;
       overflow-wrap: anywhere;
     }
+    .commercial-room {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.9fr) minmax(0, 2.1fr);
+      gap: 16px;
+    }
+    .commercial-hero {
+      min-height: 334px;
+      display: grid;
+      align-content: space-between;
+      gap: 16px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--purple);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .commercial-hero h2 {
+      font-size: 20px;
+    }
+    .commercial-hero strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 32px;
+      line-height: 1.05;
+      overflow-wrap: anywhere;
+    }
+    .commercial-hero p {
+      color: var(--muted);
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+    .commercial-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .commercial-tile {
+      min-height: 146px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      display: grid;
+      align-content: space-between;
+      gap: 10px;
+    }
+    .commercial-tile small {
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .commercial-tile strong {
+      font-size: 21px;
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+    }
+    .commercial-tile span {
+      overflow-wrap: anywhere;
+    }
+    .commercial-board {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
     .launch-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -712,6 +779,9 @@
       .revenue-suite { grid-template-columns: 1fr; }
       .suite-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .proof-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .commercial-room { grid-template-columns: 1fr; }
+      .commercial-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .commercial-board { grid-template-columns: 1fr; }
       .launch-grid, .launch-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
@@ -729,6 +799,7 @@
       .ops-strip { grid-template-columns: 1fr; }
       .cockpit-grid { grid-template-columns: 1fr; }
       .suite-grid, .proof-rail { grid-template-columns: 1fr; }
+      .commercial-grid { grid-template-columns: 1fr; }
       .revenue-grid, .assurance-grid { grid-template-columns: 1fr; }
       .summary-line { grid-template-columns: 1fr; }
       .kv div { grid-template-columns: 1fr; }
@@ -773,6 +844,84 @@
         <div class="auth-actions">
           <button id="save-auth-button" class="primary" type="button">Unlock</button>
           <button id="clear-auth-button" type="button">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="commercial-room" aria-label="commercial control room">
+      <div class="commercial-hero">
+        <div class="section-head">
+          <div>
+            <h2>Commercial Control Room</h2>
+            <p>First-screen proof for a paid TraceDeck customer: host coverage, anomaly urgency, notification delivery, mail evidence, upgrade readiness, and trust status.</p>
+          </div>
+          <span id="commercial-room-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Buyer-Ready Outcome</span>
+          <strong id="commercial-headline">No tenant loaded</strong>
+          <p id="commercial-headline-sub">Waiting for anomaly, notification, and archive proof.</p>
+        </div>
+        <div class="action-meta">
+          <span id="commercial-plan" class="pill">plan pending</span>
+          <span id="commercial-audience" class="pill">audience pending</span>
+          <span id="commercial-sla" class="pill">delivery pending</span>
+        </div>
+      </div>
+      <div>
+        <div class="commercial-grid">
+          <div class="commercial-tile">
+            <small>Host Coverage</small>
+            <strong id="commercial-coverage">-</strong>
+            <span id="commercial-coverage-sub" class="muted">No enrolled hosts</span>
+          </div>
+          <div class="commercial-tile">
+            <small>Anomaly Command</small>
+            <strong id="commercial-anomaly">-</strong>
+            <span id="commercial-anomaly-sub" class="muted">No anomaly signal</span>
+          </div>
+          <div class="commercial-tile">
+            <small>Email Proof</small>
+            <strong id="commercial-email">-</strong>
+            <span id="commercial-email-sub" class="muted">No email delivery proof</span>
+          </div>
+          <div class="commercial-tile">
+            <small>Push Proof</small>
+            <strong id="commercial-push">-</strong>
+            <span id="commercial-push-sub" class="muted">No push delivery proof</span>
+          </div>
+          <div class="commercial-tile">
+            <small>Report Mail</small>
+            <strong id="commercial-report">-</strong>
+            <span id="commercial-report-sub" class="muted">No weekly report mail proof</span>
+          </div>
+          <div class="commercial-tile">
+            <small>Upgrade Trigger</small>
+            <strong id="commercial-upgrade">-</strong>
+            <span id="commercial-upgrade-sub" class="muted">No revenue trigger loaded</span>
+          </div>
+        </div>
+        <div class="commercial-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Alert Delivery Evidence</h2>
+                <p class="muted">What proves anomaly alerting, mail, push, and dashboard delivery are working.</p>
+              </div>
+              <span id="commercial-delivery-status" class="badge pending">pending</span>
+            </div>
+            <div id="commercial-delivery-list" class="action-list"><div class="empty">No delivery evidence yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Customer Success Queue</h2>
+                <p class="muted">The actions a parent, school, coaching center, or business buyer expects to see owned.</p>
+              </div>
+              <span id="commercial-success-status" class="badge pending">pending</span>
+            </div>
+            <div id="commercial-success-list" class="action-list"><div class="empty">No success actions yet.</div></div>
+          </div>
         </div>
       </div>
     </section>
@@ -2069,6 +2218,7 @@
       renderConsentCenter(context.consentCenter);
       renderTenantOperations(context.tenantOperations);
       renderMonetizationSummary(context.monetizationSummary);
+      renderCommercialControlRoom(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderBuyerMonetizationConsole(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderMonetisationLaunchDeck(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderRevenueCommandSuite(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
@@ -2600,6 +2750,166 @@
 
       renderTenantSignalList("tenant-escalation-list", "tenant-escalation-count", ops.priority_signals || [], "signal");
       renderTenantSignalList("tenant-upgrade-list", "tenant-upgrade-count", ops.upgrade_signals || [], "proof");
+    }
+
+    function renderCommercialControlRoom(overview, health, events, deliveries, context) {
+      const monetization = context.monetizationSummary || {};
+      const operations = context.tenantOperations || {};
+      const tenant = context.tenant || {};
+      const weekly = context.weeklyReport || {};
+      const sync = context.syncHealth || {};
+      const routes = (context.notificationRoutes && context.notificationRoutes.items) || [];
+      const plan = (context.plans.items || []).find((item) => item.id === (tenant.plan_id || monetization.plan_id || operations.plan_id)) || {};
+      const topEvent = topRiskEvent(events);
+      const email = latestDelivery(deliveryByChannel(deliveries, CHANNEL.email));
+      const push = latestDelivery(deliveryByChannel(deliveries, CHANNEL.push));
+      const dashboard = latestDelivery(deliveryByChannel(deliveries, CHANNEL.dashboard));
+      const delivered = deliveries.filter((item) => item.status === DELIVERY_STATUS.delivered).length;
+      const readiness = Number(monetization.readiness_score || operations.monetization_readiness || readinessScore(context, deliveries, overview.archive, health));
+      const notificationScore = Number(monetization.notification_score || operations.notification_score || 0);
+      const hostsTotal = Number(operations.hosts_total || sync.hosts_total || state.devices.length || 0);
+      const hostsAttention = Number(operations.hosts_attention || 0);
+      const anomalyCount = Number(operations.open_anomalies || events.filter((event) => event.type === "anomaly" && event.status !== "resolved").length || 0);
+      const routeChannels = new Set(routes.map((item) => item.channel).concat(deliveries.map((item) => item.channel)).filter(Boolean));
+      const revenueStatus = monetization.revenue_health || operations.customer_health || (readiness >= 80 ? "healthy" : readiness >= 55 ? "watch" : "attention");
+      const deliveryStatus = delivered === deliveries.length && deliveries.length > 0 ? "healthy" : delivered > 0 ? "watch" : "attention";
+      const actionPool = []
+        .concat(monetization.conversion_actions || [])
+        .concat(operations.priority_signals || [])
+        .concat(operations.upgrade_signals || []);
+
+      document.getElementById("commercial-room-status").outerHTML =
+        badge(revenueStatus).replace("<span", '<span id="commercial-room-status"');
+      document.getElementById("commercial-delivery-status").outerHTML =
+        badge(deliveryStatus).replace("<span", '<span id="commercial-delivery-status"');
+      document.getElementById("commercial-success-status").outerHTML =
+        badge(actionPool.length > 0 ? "watch" : readiness >= 80 ? "healthy" : "pending").replace("<span", '<span id="commercial-success-status"');
+
+      setText("commercial-headline", topEvent ? `${rowDetail(topEvent)} needs ${topEvent.severity} review` : `${monetization.plan_name || operations.plan_name || plan.name || "TraceDeck"} ready for paid review`);
+      setText("commercial-headline-sub", topEvent
+        ? `${topEvent.category}: ${topEvent.reason}`
+        : `${hostsTotal} host${hostsTotal === 1 ? "" : "s"}, ${delivered}/${deliveries.length} delivery proofs, ${readiness}% revenue readiness.`);
+      setText("commercial-plan", monetization.plan_name || operations.plan_name || plan.name || tenant.plan_id || "plan pending");
+      setText("commercial-audience", monetization.audience || plan.audience || tenant.primary_profile || "family, school, coaching, business");
+      setText("commercial-sla", `${notificationScore}% notification score`);
+
+      setText("commercial-coverage", `${hostsTotal} host${hostsTotal === 1 ? "" : "s"}`);
+      setText("commercial-coverage-sub", `${hostsAttention} need attention, ${routeChannels.size}/3 notification channels visible`);
+      setText("commercial-anomaly", `${anomalyCount} active`);
+      setText("commercial-anomaly-sub", topEvent ? `${topEvent.severity} ${topEvent.type}: ${rowDetail(topEvent)}` : "No open anomaly, policy, or tamper escalation.");
+      setText("commercial-email", email ? `${email.status} email` : "email missing");
+      setText("commercial-email-sub", email ? `${email.recipient} via ${email.provider}` : "Add SMTP or SES proof before a paid demo.");
+      setText("commercial-push", push ? `${push.status} push` : "push missing");
+      setText("commercial-push-sub", push ? `${push.recipient} via ${push.provider}` : "Push proof makes anomaly alerts feel immediate.");
+      setText("commercial-report", weekly.email_ready ? "mail ready" : "report pending");
+      setText("commercial-report-sub", weekly.pdf_ready ? "Weekly PDF attachment ready" : weekly.email_preview || weekly.generated_note || "Generate weekly report proof.");
+      const upgrade = actionPool[0] || {};
+      setText("commercial-upgrade", monetization.conversion_stage || upgrade.title || operations.customer_health || "Family Pro");
+      setText("commercial-upgrade-sub", upgrade.detail || "Show anomaly delivery, mail proof, push reach, archive retention, and audit trust.");
+
+      renderCommercialDeliveryEvidence([email, push, dashboard].filter(Boolean), routes, weekly, topEvent);
+      renderCommercialSuccessQueue(actionPool, topEvent, email, push, readiness);
+    }
+
+    function renderCommercialDeliveryEvidence(deliveries, routes, weekly, topEvent) {
+      const evidence = deliveries.map((delivery) => ({
+        title: `${capitalize(delivery.channel)} ${delivery.status}`,
+        detail: `${delivery.summary || delivery.recipient} via ${delivery.provider}`,
+        badges: [delivery.channel, delivery.status, `${delivery.attempts || 0} attempts`],
+        observedAt: delivery.last_attempt_at
+      }));
+      if (weekly.email_ready) {
+        evidence.push({
+          title: "Weekly report mail ready",
+          detail: weekly.email_preview || weekly.email_subject || "Weekly report can be mailed with PDF evidence.",
+          badges: ["weekly", weekly.pdf_ready ? "pdf ready" : "pdf pending"],
+          observedAt: weekly.generated_at
+        });
+      }
+      if (topEvent) {
+        evidence.unshift({
+          title: `${rowDetail(topEvent)} routed as ${topEvent.severity}`,
+          detail: topEvent.recommendation || topEvent.reason,
+          badges: [topEvent.type, topEvent.category, topEvent.status],
+          observedAt: topEvent.observed_at
+        });
+      }
+      if (evidence.length === 0 && routes.length > 0) {
+        evidence.push(...routes.slice(0, 3).map((route) => ({
+          title: `${capitalize(route.channel)} route ${route.status}`,
+          detail: route.last_summary || route.recipient_label,
+          badges: [route.channel, route.provider, route.enabled ? "enabled" : "disabled"],
+          observedAt: route.last_verified_at
+        })));
+      }
+
+      const target = document.getElementById("commercial-delivery-list");
+      if (evidence.length === 0) {
+        target.innerHTML = '<div class="empty">No delivery evidence yet.</div>';
+        return;
+      }
+      target.innerHTML = evidence.slice(0, 5).map((item) => `
+        <div class="action-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${item.badges.map((entry) => badge(entry)).join(" ")}
+            <span class="pill">${escapeHTML(formatAge(item.observedAt))}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderCommercialSuccessQueue(actions, topEvent, email, push, readiness) {
+      const queue = actions.slice(0, 5);
+      if (queue.length === 0 && topEvent) {
+        queue.push({
+          title: `Review ${rowDetail(topEvent)}`,
+          detail: topEvent.recommendation || topEvent.reason,
+          severity: topEvent.severity,
+          status: topEvent.status,
+          channel: "dashboard",
+          owner: topEvent.category,
+          observed_at: topEvent.observed_at
+        });
+      }
+      if (queue.length === 0 && (!email || !push)) {
+        queue.push({
+          title: "Complete notification proof",
+          detail: "Show delivered email and push routes before monetisation demos.",
+          severity: "medium",
+          status: "watch",
+          channel: "dashboard",
+          owner: "product",
+          observed_at: new Date().toISOString()
+        });
+      }
+      if (queue.length === 0) {
+        queue.push({
+          title: "Ready for buyer walkthrough",
+          detail: `${readiness}% readiness with notification, report, archive, and trust proof visible.`,
+          severity: "info",
+          status: "healthy",
+          channel: "dashboard",
+          owner: "business manager",
+          observed_at: new Date().toISOString()
+        });
+      }
+
+      const target = document.getElementById("commercial-success-list");
+      target.innerHTML = queue.map((item) => `
+        <div class="action-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.severity || "info")}
+            ${badge(item.status || "watch")}
+            <span class="pill">${escapeHTML(item.channel || "dashboard")}</span>
+            <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+            <span class="pill">${escapeHTML(formatAge(item.observed_at))}</span>
+          </div>
+        </div>
+      `).join("");
     }
 
     function renderMonetizationSummary(summary) {
