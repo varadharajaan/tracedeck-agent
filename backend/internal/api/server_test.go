@@ -2295,6 +2295,142 @@ func TestTenantRevenueOperationsCenterEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantDeploymentReadinessCenterEndpoint(t *testing.T) {
+	t.Parallel()
+
+	repo := store.NewMemory()
+	handler := NewServer(repo, slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	for _, body := range [][]byte{
+		[]byte(`{
+			"tenant_id": "family-varadha",
+			"device_id": "deploy-ready-device-001",
+			"host_name": "deploy-ready-windows-laptop",
+			"profile": "ai-btech-student",
+			"os_name": "windows"
+		}`),
+		[]byte(`{
+			"tenant_id": "family-varadha",
+			"device_id": "deploy-ready-device-002",
+			"host_name": "deploy-ready-linux-laptop",
+			"profile": "developer-workstation",
+			"os_name": "linux"
+		}`),
+	} {
+		enroll := httptest.NewRecorder()
+		handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(body)))
+		if enroll.Code != http.StatusCreated {
+			t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+		}
+	}
+
+	telemetryBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "deploy-ready-device-001",
+		"host_name": "deploy-ready-windows-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows",
+		"events": [
+			{
+				"id": "local-event-66",
+				"type": "health.snapshot",
+				"source": "collector.health",
+				"observed_at": "2026-06-12T08:00:00Z",
+				"metadata": { "agent_healthy": "true" }
+			}
+		]
+	}`)
+	ingest := httptest.NewRecorder()
+	handler.ServeHTTP(ingest, httptest.NewRequest(http.MethodPost, constants.RouteDevices+"/deploy-ready-device-001/"+constants.RouteSegmentTelemetry, bytes.NewReader(telemetryBody)))
+	if ingest.Code != http.StatusAccepted {
+		t.Fatalf("expected telemetry ingest 202, got %d: %s", ingest.Code, ingest.Body.String())
+	}
+
+	response := httptest.NewRecorder()
+	route := constants.RouteTenants + "/family-varadha/" + constants.RouteSegmentDeploymentReady
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, route, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected deployment readiness center 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var center model.TenantDeploymentReadinessCenter
+	if err := json.Unmarshal(response.Body.Bytes(), &center); err != nil {
+		t.Fatalf("decode deployment readiness center: %v", err)
+	}
+	if center.Summary.ReadinessScore == 0 || center.Summary.OwnerNextStep == "" || center.Summary.PlatformsTotal != 3 || center.Summary.ManifestsTotal != 3 {
+		t.Fatalf("expected deployment readiness summary with platform and manifest proof: %+v", center.Summary)
+	}
+	if center.Summary.HostsTotal < 2 || !center.Summary.LiveBootReady || !center.Summary.OfflineReplayReady || center.Summary.RecommendedPackage == "" {
+		t.Fatalf("expected live boot, offline replay, host, and package proof: %+v", center.Summary)
+	}
+	if len(center.Platforms) != 3 || len(center.Manifests) != 3 || len(center.Proof) < 5 || len(center.Actions) < 4 {
+		t.Fatalf("expected platforms, manifests, proof, and actions: %+v", center)
+	}
+	hasWindows := false
+	hasDarwin := false
+	hasLinux := false
+	for _, platform := range center.Platforms {
+		switch platform.Platform {
+		case constants.PlatformWindows:
+			hasWindows = platform.ServiceManager == constants.ServiceManagerTaskScheduler && platform.RegisterScript != "" && platform.StatusScript != ""
+		case constants.PlatformDarwin:
+			hasDarwin = platform.ServiceManager == constants.ServiceManagerLaunchd && platform.Manifest != ""
+		case constants.PlatformLinux:
+			hasLinux = platform.ServiceManager == constants.ServiceManagerSystemd && platform.Manifest != ""
+		}
+	}
+	if !hasWindows || !hasDarwin || !hasLinux {
+		t.Fatalf("expected Windows, macOS, and Linux deployment platform proof: %+v", center.Platforms)
+	}
+	hasTaskManifest := false
+	hasLaunchdManifest := false
+	hasSystemdManifest := false
+	for _, manifest := range center.Manifests {
+		if manifest.ID == "windows-task" && manifest.TemplatePath == constants.WindowsTaskTemplatePath {
+			hasTaskManifest = true
+		}
+		if manifest.ID == "macos-launchd" && manifest.TemplatePath == constants.DarwinLaunchdTemplate {
+			hasLaunchdManifest = true
+		}
+		if manifest.ID == "linux-systemd" && manifest.TemplatePath == constants.LinuxSystemdTemplate {
+			hasSystemdManifest = true
+		}
+	}
+	if !hasTaskManifest || !hasLaunchdManifest || !hasSystemdManifest {
+		t.Fatalf("expected Windows task, launchd, and systemd manifest proof: %+v", center.Manifests)
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "push_endpoint", "screenshot_bytes", "raw_url", "page_title", "alert_body", "card_number", "cvv", "payment_token", "keylogger"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("deployment readiness center leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+	if !strings.Contains(center.PrivacyBoundary, "metadata-only") || !strings.Contains(center.PrivacyBoundary, "no passwords") || !strings.Contains(center.PrivacyBoundary, "no screenshots") || !strings.Contains(center.PrivacyBoundary, "hidden collection bypasses") {
+		t.Fatalf("expected strict deployment readiness privacy boundary, got %q", center.PrivacyBoundary)
+	}
+
+	scopedHandler := NewServerWithAuth(repo, slog.Default(), AuthConfig{APIKey: "local-key", TenantID: "school-alpha"}).Handler()
+	scopedRequest := httptest.NewRequest(http.MethodGet, route, nil)
+	scopedRequest.Header.Set(constants.HeaderAPIKey, "local-key")
+	scopedResponse := httptest.NewRecorder()
+	scopedHandler.ServeHTTP(scopedResponse, scopedRequest)
+	if scopedResponse.Code != http.StatusForbidden {
+		t.Fatalf("expected tenant-scoped deployment readiness route to reject another tenant, got %d: %s", scopedResponse.Code, scopedResponse.Body.String())
+	}
+}
+
 func TestTenantNotificationRevenueCockpitEndpoint(t *testing.T) {
 	t.Parallel()
 

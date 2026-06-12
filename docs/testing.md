@@ -810,6 +810,19 @@ screenshot-free dashboard layout contract. Newman runs
 `postman/tracedeck-backend-phase65.postman_collection.json` against the same
 live demo and covers dashboard markers plus typed revenue operations proof.
 
+The Phase 66 smoke live-boots the seeded dashboard, verifies Deployment
+Readiness Center, Platform Service Proof, Service Manifest Proof, Boot And
+Replay Proof, Deployment Owner Actions, and Deploy command navigation markers,
+checks the tenant `deployment-readiness-center` API, verifies Windows/macOS/Linux
+platform proof, Task Scheduler/launchd/systemd manifest proof, boot/replay
+proof rows, owner actions, and strict privacy/forbidden markers, and reruns the
+screenshot-free dashboard layout contract. Newman runs
+`postman/tracedeck-backend-phase66.postman_collection.json` against the same
+live demo and covers dashboard markers plus typed deployment readiness proof.
+`scripts/verify/verify-phase66.ps1` also renders service manifests, checks the
+Windows task template, runs autostart assurance, runs service-manager dry-run
+verification, and runs cross-platform Windows/macOS/Linux builds locally.
+
 Phase 13 adds:
 
 ```powershell

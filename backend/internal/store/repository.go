@@ -30,6 +30,7 @@ type Repository interface {
 	TenantOnboardingCenter(context.Context, string) (model.TenantOnboardingCenter, error)
 	TenantCustomerSettingsCenter(context.Context, string) (model.TenantCustomerSettingsCenter, error)
 	TenantRevenueOperationsCenter(context.Context, string) (model.TenantRevenueOperationsCenter, error)
+	TenantDeploymentReadinessCenter(context.Context, string) (model.TenantDeploymentReadinessCenter, error)
 	TenantRoleExperiences(context.Context, string) (model.TenantRoleExperience, error)
 	TenantCustomerControlRoom(context.Context, string) (model.TenantCustomerControlRoom, error)
 	TenantCustomerSuccessPacket(context.Context, string) (model.TenantCustomerSuccessPacket, error)

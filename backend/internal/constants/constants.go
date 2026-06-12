@@ -47,6 +47,7 @@ const (
 	RouteSegmentOnboardingCenter = "onboarding-center"
 	RouteSegmentCustomerSettings = "customer-settings-center"
 	RouteSegmentRevenueOps       = "revenue-operations-center"
+	RouteSegmentDeploymentReady  = "deployment-readiness-center"
 	RouteSegmentRoleExperience   = "role-experiences"
 	RouteSegmentCustomerControl  = "customer-control-room"
 	RouteSegmentSuccessPacket    = "customer-success-packet"
@@ -184,6 +185,27 @@ const (
 )
 
 const (
+	PlatformWindows = "windows"
+	PlatformDarwin  = "darwin"
+	PlatformLinux   = "linux"
+)
+
+const (
+	ServiceManagerTaskScheduler = "task_scheduler"
+	ServiceManagerLaunchd       = "launchd"
+	ServiceManagerSystemd       = "systemd"
+)
+
+const (
+	WindowsTaskTemplatePath = "deployments/service/windows/tracedeck-agent-task.xml.tmpl"
+	WindowsTaskOutputPath   = "data/local/service-manifests/phase66/windows/tracedeck-agent-task.xml"
+	DarwinLaunchdTemplate   = "deployments/service/darwin/io.tracedeck.agent.plist.tmpl"
+	DarwinLaunchdOutput     = "data/local/service-manifests/phase66/darwin/io.tracedeck.agent.plist"
+	LinuxSystemdTemplate    = "deployments/service/linux/tracedeck-agent.service.tmpl"
+	LinuxSystemdOutput      = "data/local/service-manifests/phase66/linux/tracedeck-agent.service"
+)
+
+const (
 	StatusOK        = "ok"
 	StatusEmpty     = "empty"
 	StatusPending   = "pending"
@@ -303,6 +325,7 @@ const (
 	OnboardingCenterPrivacyNote       = "metadata-only onboarding center: setup step labels, host counts, service/autostart readiness labels, role readiness, notification proof, archive posture, package labels, owner actions, and privacy guardrails only; no passwords, no screenshots, raw URLs, page titles, alert bodies, provider secrets, push endpoints, tokens, cookies, private content, endpoint payloads, invoices, payment card data, or raw provider payloads are collected or stored"
 	CustomerSettingsPrivacyNote       = "metadata-only customer settings center: plan labels, retention tier labels, notification preference status, route proof state, role settings, archive posture, autostart readiness, data-rights state, and owner actions only; no passwords, no screenshots, raw URLs, page titles, alert bodies, provider secrets, push endpoints, tokens, cookies, private content, endpoint payloads, invoices, payment card data, or raw provider payloads are collected or stored"
 	RevenueOperationsPrivacyNote      = "metadata-only revenue operations center: tenant labels, host counts, anomaly categories, notification delivery proof, mail/push/dashboard route state, weekly report readiness, archive backlog, setup readiness, package labels, commercial levers, owner actions, and trust guardrails only; no passwords, no screenshots, raw URLs, page titles, alert bodies, provider secrets, push endpoints, tokens, cookies, private content, endpoint payloads, invoices, payment card data, or raw provider payloads are collected or stored"
+	DeploymentReadinessPrivacyNote    = "metadata-only deployment readiness center: tenant labels, host counts, platform names, service manager labels, manifest paths, dry-run command labels, autostart status, live boot proof labels, offline replay/backlog counts, owner actions, and setup evidence only; no passwords, no screenshots, raw URLs, page titles, alert bodies, provider secrets, push endpoints, tokens, cookies, private content, endpoint payloads, invoices, payment card data, raw provider payloads, or hidden collection bypasses are collected or stored"
 	BusinessDashboardPrivacyNote      = "metadata-only business dashboard: customer health, notification route proof, anomaly categories, paid-plan packaging, archive/report readiness, and owner actions only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"
 	DeliveryTimelinePrivacyNote       = "metadata-only delivery timeline: channel, provider label, recipient label, status, retry timing, host label, event id, and safe summary only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"
 	RoleExperiencePrivacyNote         = "metadata-only role experience center: role labels, dashboard scope, onboarding status, notification proof, archive/report readiness, consent controls, and paid-tier packaging only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"

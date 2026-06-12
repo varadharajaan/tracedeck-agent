@@ -107,3 +107,15 @@ The cross-platform service wrapper can call the same Windows path:
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/manage-agent-service.ps1 -Platform windows -Action install -BuildAgent
 ```
+
+## Deployment Readiness Center
+
+Phase 66 exposes the existing service-management proof through
+`GET /api/v1/tenants/{tenantId}/deployment-readiness-center` and the dashboard
+Deploy panel. The center summarizes Windows Task Scheduler, macOS launchd, and
+Linux systemd readiness, committed service templates, local rendered manifest
+paths under `data/local/service-manifests/phase66/`, live boot status, autostart
+status, background startup status, offline replay readiness, archive backlog,
+and owner actions. The verifier renders manifests, checks the Windows task
+template, runs autostart assurance, and dry-runs service manager flows without
+mutating the host.

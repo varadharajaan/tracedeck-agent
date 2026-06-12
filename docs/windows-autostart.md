@@ -86,3 +86,12 @@ The task runs the agent in the background to avoid a console-window flicker, but
 this is not a covert-monitoring feature. TraceDeck policy still requires
 transparent, consent-based monitoring and a visible indicator before expanding
 interactive collection behavior.
+
+## Deployment Readiness Center
+
+Phase 66 surfaces Windows reboot-persistence proof in the
+`deployment-readiness-center` API and dashboard panel. It shows the Task
+Scheduler service manager label, XML template path, rendered output path,
+registration script, status query script, UAC/admin-approved install mode,
+background startup proof, and owner action. It is a readiness view only; actual
+registration still requires running the explicit Windows scripts.
