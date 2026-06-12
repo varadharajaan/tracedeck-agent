@@ -69,6 +69,7 @@ GET  /api/v1/tenants/{tenantId}/operations-summary
 GET  /api/v1/tenants/{tenantId}/monetization-summary
 GET  /api/v1/tenants/{tenantId}/business-dashboard
 GET  /api/v1/tenants/{tenantId}/role-experiences
+GET  /api/v1/tenants/{tenantId}/executive-console
 GET  /api/v1/tenants/{tenantId}/notification-command-center
 GET  /api/v1/tenants/{tenantId}/delivery-timeline
 GET  /api/v1/tenants/{tenantId}/sync-health
@@ -294,6 +295,17 @@ controls, paid tier, next action, and role-specific onboarding items. It is
 metadata-only and does not store provider secrets, alert bodies, screenshots,
 passwords, tokens, cookies, raw URLs, page titles, private content, or endpoint
 payloads.
+
+Phase 53 adds `GET /api/v1/tenants/{tenantId}/executive-console`. It composes
+operations, monetisation, business dashboard, role experience, notification
+command center, and delivery timeline proof into a typed first-screen product
+contract. The response includes sellable readiness, anomaly/open alert counts,
+mail/push/dashboard delivery proof, route proof gaps, weekly report readiness,
+archive backlog, role-view readiness, recommended paid package, next best
+action, value tiles, alert stream rows, delivery proof rows, owner actions, and
+a strict metadata-only privacy boundary. It does not store provider secrets,
+alert bodies, screenshots, passwords, tokens, cookies, raw URLs, page titles,
+private content, or endpoint payloads.
 
 Phase 31 adds `GET /api/v1/tenants/{tenantId}/sync-health` for buyer and admin
 proof that backend-visible telemetry is arriving per host. It returns reporting

@@ -816,6 +816,38 @@ func (m *Memory) TenantRoleExperiences(ctx context.Context, tenantID string) (mo
 	return buildTenantRoleExperience(operations, monetization, business, preferences, timeline, syncHealth, generatedAt), nil
 }
 
+func (m *Memory) TenantExecutiveConsole(ctx context.Context, tenantID string) (model.TenantExecutiveConsole, error) {
+	generatedAt := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	operations, err := m.TenantOperationsSummary(ctx, tenantID)
+	if err != nil {
+		return model.TenantExecutiveConsole{}, err
+	}
+	monetization, err := m.TenantMonetizationSummary(ctx, tenantID)
+	if err != nil {
+		return model.TenantExecutiveConsole{}, err
+	}
+	business, err := m.TenantBusinessDashboard(ctx, tenantID)
+	if err != nil {
+		return model.TenantExecutiveConsole{}, err
+	}
+	roles, err := m.TenantRoleExperiences(ctx, tenantID)
+	if err != nil {
+		return model.TenantExecutiveConsole{}, err
+	}
+	commandCenter, err := m.TenantNotificationCommandCenter(ctx, tenantID)
+	if err != nil {
+		return model.TenantExecutiveConsole{}, err
+	}
+	timeline, err := m.TenantDeliveryTimeline(ctx, tenantID, model.TenantDeliveryTimelineFilter{Limit: 8})
+	if err != nil {
+		return model.TenantExecutiveConsole{}, err
+	}
+
+	return buildTenantExecutiveConsole(operations, monetization, business, roles, commandCenter, timeline, generatedAt), nil
+}
+
 func (m *Memory) TenantAlertInbox(_ context.Context, tenantID string) (model.TenantAlertInbox, error) {
 	now := time.Now().UTC()
 	tenantID = strings.TrimSpace(tenantID)
@@ -4384,6 +4416,319 @@ func buildTenantRoleExperience(
 		PrivacyBoundary: constants.RoleExperiencePrivacyNote,
 		GeneratedAt:     generatedAt,
 	}
+}
+
+func buildTenantExecutiveConsole(
+	operations model.TenantOperationsSummary,
+	monetization model.TenantMonetizationSummary,
+	business model.TenantBusinessDashboard,
+	roles model.TenantRoleExperience,
+	commandCenter model.TenantNotificationCommandCenter,
+	timeline model.TenantDeliveryTimeline,
+	generatedAt time.Time,
+) model.TenantExecutiveConsole {
+	readiness := averageScore(business.Summary.ProductScore, monetization.ReadinessScore, roles.Summary.ReadinessScore)
+	status := executiveConsoleStatus(business.Summary, commandCenter.Summary, readiness)
+	nextAction := executiveNextAction(business.Actions, roles.Onboarding, commandCenter.Actions)
+	summary := model.TenantExecutiveConsoleSummary{
+		Status:                 status,
+		Headline:               executiveHeadline(business.Summary, commandCenter.Summary, roles.Summary, readiness),
+		Detail:                 executiveDetail(business.Summary, commandCenter.Summary, roles.Summary, timeline.Summary),
+		ReadinessScore:         readiness,
+		NotificationScore:      business.Summary.NotificationScore,
+		TrustScore:             business.Summary.TrustScore,
+		OpenAlerts:             business.Summary.OpenAlerts,
+		HighPriorityAlerts:     business.Summary.HighPriorityAlerts,
+		HostsTotal:             business.Summary.HostsTotal,
+		HostsAttention:         business.Summary.HostsAttention,
+		EmailDelivered:         business.Summary.MailDelivered,
+		PushDelivered:          business.Summary.PushDelivered,
+		DashboardDelivered:     business.Summary.DashboardDelivered,
+		DeliveryFailed:         commandCenter.Summary.DeliveryFailed,
+		DeliveryRetrying:       commandCenter.Summary.DeliveryRetrying,
+		RoutesNeedingProof:     business.Summary.RoutesNeedingProof,
+		WeeklyReportReady:      business.Summary.WeeklyReportReady,
+		ArchiveBacklog:         business.Summary.ArchiveBacklog,
+		RolesReady:             roles.Summary.RolesReady,
+		RolesTotal:             roles.Summary.RolesTotal,
+		RecommendedPaidPackage: firstNonEmpty(business.Summary.RecommendedPackage, commandCenter.Summary.RecommendedPaidPackage, monetization.PlanName, operations.PlanName),
+		NextBestAction:         nextAction,
+	}
+
+	return model.TenantExecutiveConsole{
+		TenantID:        operations.TenantID,
+		TenantName:      operations.TenantName,
+		PlanID:          operations.PlanID,
+		PlanName:        operations.PlanName,
+		Audience:        monetization.Audience,
+		Summary:         summary,
+		Tiles:           executiveConsoleTiles(summary, business, roles, timeline),
+		Alerts:          executiveConsoleAlerts(business.Alerts),
+		Deliveries:      executiveConsoleDeliveries(commandCenter.Channels),
+		Actions:         executiveConsoleActions(business.Actions, roles.Onboarding, commandCenter.Actions, generatedAt),
+		PrivacyBoundary: constants.ExecutiveConsolePrivacyNote,
+		GeneratedAt:     generatedAt,
+	}
+}
+
+func executiveConsoleStatus(business model.TenantBusinessDashboardSummary, command model.TenantNotificationCommandCenterSummary, readiness int) string {
+	switch {
+	case command.DeliveryFailed > 0 || business.HighPriorityAlerts > 0:
+		return constants.StatusAttention
+	case business.RoutesNeedingProof > 0 || command.DeliveryRetrying > 0 || business.HostsAttention > 0:
+		return constants.StatusWatch
+	case readiness >= 75 && business.NotificationScore >= 65:
+		return constants.StatusHealthy
+	default:
+		return constants.StatusPending
+	}
+}
+
+func executiveHeadline(business model.TenantBusinessDashboardSummary, command model.TenantNotificationCommandCenterSummary, roles model.TenantRoleExperienceSummary, readiness int) string {
+	if business.HighPriorityAlerts > 0 {
+		return fmt.Sprintf("%d high-priority alert%s need notification proof", business.HighPriorityAlerts, pluralSuffix(business.HighPriorityAlerts))
+	}
+	if command.DeliveryFailed+command.DeliveryRetrying > 0 {
+		total := command.DeliveryFailed + command.DeliveryRetrying
+		return fmt.Sprintf("%d delivery route%s need buyer-visible assurance", total, pluralSuffix(total))
+	}
+	if roles.RolesReady < roles.RolesTotal {
+		return fmt.Sprintf("%d/%d role views ready for paid onboarding", roles.RolesReady, roles.RolesTotal)
+	}
+	return fmt.Sprintf("%s is %d%% ready for a paid walkthrough", firstNonEmpty(business.RecommendedPackage, command.RecommendedPaidPackage, "TraceDeck"), readiness)
+}
+
+func executiveDetail(business model.TenantBusinessDashboardSummary, command model.TenantNotificationCommandCenterSummary, roles model.TenantRoleExperienceSummary, timeline model.TenantDeliveryTimelineSummary) string {
+	return fmt.Sprintf("%d open alerts, %d mail, %d push, %d dashboard deliveries, %d route proof gaps, %d/%d role views, %d timeline events, report %s, archive backlog %d.",
+		business.OpenAlerts,
+		business.MailDelivered,
+		business.PushDelivered,
+		business.DashboardDelivered,
+		firstNonZero(business.RoutesNeedingProof, timeline.RouteProofGaps),
+		roles.RolesReady,
+		roles.RolesTotal,
+		firstNonZero(timeline.Total, command.RoutesTotal),
+		boolReady(business.WeeklyReportReady),
+		business.ArchiveBacklog,
+	)
+}
+
+func executiveNextAction(businessActions []model.TenantBusinessDashboardAction, roleOnboarding []model.TenantRoleOnboardingItem, commandActions []model.TenantNotificationCommandCenterAction) string {
+	if len(businessActions) > 0 {
+		return businessActions[0].Title
+	}
+	if len(commandActions) > 0 {
+		return commandActions[0].Title
+	}
+	if len(roleOnboarding) > 0 {
+		return roleOnboarding[0].Title
+	}
+	return "Use the executive console for the paid customer walkthrough."
+}
+
+func executiveConsoleTiles(summary model.TenantExecutiveConsoleSummary, business model.TenantBusinessDashboard, roles model.TenantRoleExperience, timeline model.TenantDeliveryTimeline) []model.TenantExecutiveConsoleTile {
+	return []model.TenantExecutiveConsoleTile{
+		{
+			ID:       "commercial-readiness",
+			Label:    "Commercial Readiness",
+			Value:    fmt.Sprintf("%d%%", summary.ReadinessScore),
+			Detail:   fmt.Sprintf("%s for %s", summary.RecommendedPaidPackage, business.Audience),
+			Status:   scoreStatus(summary.ReadinessScore),
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "anomaly-stream",
+			Label:    "Anomaly Stream",
+			Value:    fmt.Sprintf("%d open", summary.OpenAlerts),
+			Detail:   fmt.Sprintf("%d high-priority, %d hosts need attention", summary.HighPriorityAlerts, summary.HostsAttention),
+			Status:   countStatus(summary.OpenAlerts),
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "mail-delivery",
+			Label:    "Mail Delivery",
+			Value:    fmt.Sprintf("%d delivered", summary.EmailDelivered),
+			Detail:   "Email proof for alerts, weekly reports, and buyer trust.",
+			Status:   deliveryValueStatus(summary.EmailDelivered),
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "push-reach",
+			Label:    "Push Reach",
+			Value:    fmt.Sprintf("%d delivered", summary.PushDelivered),
+			Detail:   "Push proof for urgent anomaly notification.",
+			Status:   deliveryValueStatus(summary.PushDelivered),
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "weekly-report",
+			Label:    "Weekly Report",
+			Value:    boolReady(summary.WeeklyReportReady),
+			Detail:   "Study, coding, entertainment, anomaly, archive, and mail summary.",
+			Status:   archiveValueStatus(summary.ArchiveBacklog, summary.WeeklyReportReady),
+			PaidTier: constants.PlanSchool,
+		},
+		{
+			ID:       "archive-trust",
+			Label:    "Archive Trust",
+			Value:    fmt.Sprintf("%d pending", summary.ArchiveBacklog),
+			Detail:   fmt.Sprintf("%d delivery timeline events with metadata-only proof", timeline.Summary.Total),
+			Status:   gapStatus(summary.ArchiveBacklog),
+			PaidTier: constants.PlanSchool,
+		},
+		{
+			ID:       "role-views",
+			Label:    "Role Views",
+			Value:    fmt.Sprintf("%d/%d ready", summary.RolesReady, summary.RolesTotal),
+			Detail:   roles.Summary.Detail,
+			Status:   roles.Summary.Status,
+			PaidTier: constants.PlanBusiness,
+		},
+		{
+			ID:       "route-proof",
+			Label:    "Route Proof",
+			Value:    fmt.Sprintf("%d gaps", summary.RoutesNeedingProof),
+			Detail:   fmt.Sprintf("%d%% notification score, %d retrying, %d failed", summary.NotificationScore, summary.DeliveryRetrying, summary.DeliveryFailed),
+			Status:   gapStatus(summary.RoutesNeedingProof),
+			PaidTier: constants.PlanBusiness,
+		},
+	}
+}
+
+func executiveConsoleAlerts(alerts []model.TenantBusinessDashboardAlert) []model.TenantExecutiveConsoleAlert {
+	items := make([]model.TenantExecutiveConsoleAlert, 0, len(alerts))
+	for _, alert := range alerts {
+		items = append(items, model.TenantExecutiveConsoleAlert{
+			ID:              alert.ID,
+			Title:           alert.Title,
+			Detail:          alert.Detail,
+			Severity:        alert.Severity,
+			Status:          alert.Status,
+			HostName:        alert.HostName,
+			Category:        alert.Category,
+			EmailStatus:     alert.EmailStatus,
+			PushStatus:      alert.PushStatus,
+			DashboardStatus: alert.DashboardStatus,
+			NextAction:      alert.NextAction,
+			PaidTier:        alert.PaidTier,
+			ObservedAt:      alert.ObservedAt,
+		})
+	}
+	if len(items) > 6 {
+		return items[:6]
+	}
+	return items
+}
+
+func executiveConsoleDeliveries(channels []model.TenantNotificationCommandCenterChannel) []model.TenantExecutiveConsoleDelivery {
+	items := make([]model.TenantExecutiveConsoleDelivery, 0, len(channels))
+	for _, channel := range channels {
+		items = append(items, model.TenantExecutiveConsoleDelivery{
+			Channel:        channel.Channel,
+			Provider:       channel.Provider,
+			Status:         firstNonEmpty(channel.LatestDeliveryStatus, channel.RouteStatus),
+			ProofState:     channel.ProofState,
+			RecipientLabel: channel.Recipient,
+			Attempts:       channel.Attempts,
+			LastDeliveryAt: channel.LastDeliveryAt,
+			SLA:            channel.SLA,
+			Evidence:       channel.Evidence,
+			NextAction:     channel.NextAction,
+			PaidTier:       channel.PaidTier,
+		})
+	}
+	return items
+}
+
+func executiveConsoleActions(
+	businessActions []model.TenantBusinessDashboardAction,
+	roleOnboarding []model.TenantRoleOnboardingItem,
+	commandActions []model.TenantNotificationCommandCenterAction,
+	generatedAt time.Time,
+) []model.TenantExecutiveConsoleAction {
+	actions := make([]model.TenantExecutiveConsoleAction, 0, 8)
+	for _, action := range businessActions {
+		if len(actions) >= 4 {
+			break
+		}
+		actions = append(actions, model.TenantExecutiveConsoleAction{
+			Title:      action.Title,
+			Detail:     action.Detail,
+			Severity:   action.Severity,
+			Status:     action.Status,
+			Owner:      action.Owner,
+			Channel:    action.Channel,
+			SLA:        action.SLA,
+			PaidTier:   action.PaidTier,
+			Source:     action.Source,
+			ObservedAt: action.ObservedAt,
+		})
+	}
+	for _, action := range commandActions {
+		if len(actions) >= 6 {
+			break
+		}
+		actions = append(actions, model.TenantExecutiveConsoleAction{
+			Title:      action.Title,
+			Detail:     action.Detail,
+			Severity:   action.Severity,
+			Status:     action.Status,
+			Owner:      action.Owner,
+			Channel:    action.Channel,
+			SLA:        action.SLA,
+			PaidTier:   action.PaidTier,
+			Source:     "notification command center",
+			ObservedAt: action.ObservedAt,
+		})
+	}
+	for _, item := range roleOnboarding {
+		if len(actions) >= 8 {
+			break
+		}
+		actions = append(actions, model.TenantExecutiveConsoleAction{
+			Title:      item.Title,
+			Detail:     item.Detail,
+			Severity:   constants.SeverityInfo,
+			Status:     item.Status,
+			Owner:      item.Owner,
+			Channel:    constants.DeliveryChannelDashboard,
+			SLA:        "before onboarding",
+			PaidTier:   item.PaidTier,
+			Source:     "role experience center",
+			ObservedAt: generatedAt,
+		})
+	}
+	if len(actions) == 0 {
+		actions = append(actions, model.TenantExecutiveConsoleAction{
+			Title:      "Executive console ready",
+			Detail:     "Anomaly stream, push reach, mail proof, weekly reports, archive trust, and paid package evidence are visible.",
+			Severity:   constants.SeverityInfo,
+			Status:     constants.StatusHealthy,
+			Owner:      constants.RoleBusinessManager,
+			Channel:    constants.DeliveryChannelDashboard,
+			SLA:        "weekly review",
+			PaidTier:   constants.PlanFamilyPro,
+			Source:     "executive console",
+			ObservedAt: generatedAt,
+		})
+	}
+	return actions
+}
+
+func pluralSuffix(count int) string {
+	if count == 1 {
+		return ""
+	}
+	return "s"
+}
+
+func firstNonZero(values ...int) int {
+	for _, value := range values {
+		if value != 0 {
+			return value
+		}
+	}
+	return 0
 }
 
 func roleExperienceParent(operations model.TenantOperationsSummary, monetization model.TenantMonetizationSummary, business model.TenantBusinessDashboard, preferences model.NotificationPreferenceCenter, timeline model.TenantDeliveryTimeline) model.TenantRoleExperienceRole {

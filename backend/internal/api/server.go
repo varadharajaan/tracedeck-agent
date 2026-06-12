@@ -317,6 +317,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantBusinessDashboard(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentRoleExperience && r.Method == http.MethodGet:
 		s.handleTenantRoleExperiences(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentExecutiveConsole && r.Method == http.MethodGet:
+		s.handleTenantExecutiveConsole(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentNotificationCmd && r.Method == http.MethodGet:
 		s.handleTenantNotificationCommandCenter(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentDeliveryTimeline && r.Method == http.MethodGet:
@@ -620,6 +622,23 @@ func (s *Server) handleTenantRoleExperiences(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	writeJSON(w, http.StatusOK, experience)
+}
+
+func (s *Server) handleTenantExecutiveConsole(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	console, err := s.store.TenantExecutiveConsole(r.Context(), tenantID)
+	if err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant executive console lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, console)
 }
 
 func (s *Server) handleTenantNotificationCommandCenter(w http.ResponseWriter, r *http.Request, tenantID string) {

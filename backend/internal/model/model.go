@@ -1113,6 +1113,98 @@ type TenantRoleExperience struct {
 	GeneratedAt     time.Time                   `json:"generated_at"`
 }
 
+type TenantExecutiveConsoleSummary struct {
+	Status                 string `json:"status"`
+	Headline               string `json:"headline"`
+	Detail                 string `json:"detail"`
+	ReadinessScore         int    `json:"readiness_score"`
+	NotificationScore      int    `json:"notification_score"`
+	TrustScore             int    `json:"trust_score"`
+	OpenAlerts             int    `json:"open_alerts"`
+	HighPriorityAlerts     int    `json:"high_priority_alerts"`
+	HostsTotal             int    `json:"hosts_total"`
+	HostsAttention         int    `json:"hosts_attention"`
+	EmailDelivered         int    `json:"email_delivered"`
+	PushDelivered          int    `json:"push_delivered"`
+	DashboardDelivered     int    `json:"dashboard_delivered"`
+	DeliveryFailed         int    `json:"delivery_failed"`
+	DeliveryRetrying       int    `json:"delivery_retrying"`
+	RoutesNeedingProof     int    `json:"routes_needing_proof"`
+	WeeklyReportReady      bool   `json:"weekly_report_ready"`
+	ArchiveBacklog         int    `json:"archive_backlog"`
+	RolesReady             int    `json:"roles_ready"`
+	RolesTotal             int    `json:"roles_total"`
+	RecommendedPaidPackage string `json:"recommended_paid_package"`
+	NextBestAction         string `json:"next_best_action"`
+}
+
+type TenantExecutiveConsoleTile struct {
+	ID       string `json:"id"`
+	Label    string `json:"label"`
+	Value    string `json:"value"`
+	Detail   string `json:"detail"`
+	Status   string `json:"status"`
+	PaidTier string `json:"paid_tier"`
+}
+
+type TenantExecutiveConsoleAlert struct {
+	ID              string    `json:"id"`
+	Title           string    `json:"title"`
+	Detail          string    `json:"detail"`
+	Severity        string    `json:"severity"`
+	Status          string    `json:"status"`
+	HostName        string    `json:"host_name"`
+	Category        string    `json:"category"`
+	EmailStatus     string    `json:"email_status"`
+	PushStatus      string    `json:"push_status"`
+	DashboardStatus string    `json:"dashboard_status"`
+	NextAction      string    `json:"next_action"`
+	PaidTier        string    `json:"paid_tier"`
+	ObservedAt      time.Time `json:"observed_at"`
+}
+
+type TenantExecutiveConsoleDelivery struct {
+	Channel        string     `json:"channel"`
+	Provider       string     `json:"provider"`
+	Status         string     `json:"status"`
+	ProofState     string     `json:"proof_state"`
+	RecipientLabel string     `json:"recipient_label"`
+	Attempts       int        `json:"attempts"`
+	LastDeliveryAt *time.Time `json:"last_delivery_at,omitempty"`
+	SLA            string     `json:"sla"`
+	Evidence       string     `json:"evidence"`
+	NextAction     string     `json:"next_action"`
+	PaidTier       string     `json:"paid_tier"`
+}
+
+type TenantExecutiveConsoleAction struct {
+	Title      string    `json:"title"`
+	Detail     string    `json:"detail"`
+	Severity   string    `json:"severity"`
+	Status     string    `json:"status"`
+	Owner      string    `json:"owner"`
+	Channel    string    `json:"channel"`
+	SLA        string    `json:"sla"`
+	PaidTier   string    `json:"paid_tier"`
+	Source     string    `json:"source"`
+	ObservedAt time.Time `json:"observed_at"`
+}
+
+type TenantExecutiveConsole struct {
+	TenantID        string                           `json:"tenant_id"`
+	TenantName      string                           `json:"tenant_name"`
+	PlanID          string                           `json:"plan_id"`
+	PlanName        string                           `json:"plan_name"`
+	Audience        string                           `json:"audience"`
+	Summary         TenantExecutiveConsoleSummary    `json:"summary"`
+	Tiles           []TenantExecutiveConsoleTile     `json:"tiles"`
+	Alerts          []TenantExecutiveConsoleAlert    `json:"alerts"`
+	Deliveries      []TenantExecutiveConsoleDelivery `json:"deliveries"`
+	Actions         []TenantExecutiveConsoleAction   `json:"actions"`
+	PrivacyBoundary string                           `json:"privacy_boundary"`
+	GeneratedAt     time.Time                        `json:"generated_at"`
+}
+
 type Plan struct {
 	ID                 string   `json:"id"`
 	Name               string   `json:"name"`
