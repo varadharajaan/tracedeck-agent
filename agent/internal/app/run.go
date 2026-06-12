@@ -42,18 +42,19 @@ type RunOptions struct {
 }
 
 type RunResult struct {
-	Cycles          int
-	CollectedEvents int
-	StoredEvents    int
-	ArchiveBatch    string
-	ArchiveUploaded bool
-	AlertsRaised    int
-	AlertOutboxPath string
-	AlertDelivered  bool
-	BrowserEvents   int
-	HealthEvents    int
-	TelemetrySynced bool
-	TelemetryEvents int
+	Cycles           int
+	CollectedEvents  int
+	StoredEvents     int
+	ArchiveBatch     string
+	ArchiveUploaded  bool
+	AlertsRaised     int
+	AlertOutboxPath  string
+	AlertDelivered   bool
+	BrowserEvents    int
+	HealthEvents     int
+	TelemetrySynced  bool
+	TelemetryEvents  int
+	TelemetryBacklog int
 }
 
 func Run(ctx context.Context, opts RunOptions) (RunResult, error) {
@@ -216,35 +217,17 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 	result := RunResult{Cycles: 1, CollectedEvents: len(events), StoredEvents: total, BrowserEvents: len(browserEvents), HealthEvents: len(healthEvents)}
 
 	if r.policy.BackendSync.Enabled {
-		syncEvents := events
-		if r.policy.BackendSync.BatchLimit > 0 && len(syncEvents) > r.policy.BackendSync.BatchLimit {
-			syncEvents = syncEvents[:r.policy.BackendSync.BatchLimit]
-		}
-		timeout, err := parseDurationOrDefault(r.policy.BackendSync.RequestTimeout, constants.DefaultBackendSyncTimeout)
+		syncOutcome, err := r.syncBackendTelemetry(ctx, platformAdapter)
+		result.TelemetrySynced = syncOutcome.Synced
+		result.TelemetryEvents = syncOutcome.AcceptedEvents
+		result.TelemetryBacklog = syncOutcome.PendingAfter
 		if err != nil {
-			return RunResult{}, err
+			r.logger.Warn("backend telemetry sync deferred",
+				"error", err,
+				"pending_events", syncOutcome.PendingBefore,
+				"last_cursor", syncOutcome.LastCursor,
+			)
 		}
-		client, err := syncer.NewClient(r.policy.BackendSync.BaseURL, timeout)
-		if err != nil {
-			return RunResult{}, err
-		}
-		hostName, err := platformAdapter.Hostname(ctx)
-		if err != nil {
-			hostName = constants.UnknownHost
-		}
-		syncResult, err := client.IngestEvents(ctx, r.policy, hostName, platformAdapter.Name(), syncEvents)
-		if err != nil {
-			return RunResult{}, err
-		}
-		result.TelemetrySynced = true
-		result.TelemetryEvents = syncResult.AcceptedEvents
-		r.logger.Info("backend telemetry synced",
-			"tenant_id", syncResult.TenantID,
-			"device_id", syncResult.DeviceID,
-			"accepted_events", syncResult.AcceptedEvents,
-			"stored_events", syncResult.StoredEvents,
-			"privacy_boundary", syncResult.PrivacyBoundary,
-		)
 	}
 
 	if archiveEnabled {
@@ -309,6 +292,91 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 	return result, nil
 }
 
+type backendSyncOutcome struct {
+	Synced         bool
+	AcceptedEvents int
+	StoredEvents   int
+	PendingBefore  int
+	PendingAfter   int
+	LastCursor     int64
+}
+
+func (r *cycleRunner) syncBackendTelemetry(ctx context.Context, platformAdapter platform.Adapter) (backendSyncOutcome, error) {
+	timeout, err := parseDurationOrDefault(r.policy.BackendSync.RequestTimeout, constants.DefaultBackendSyncTimeout)
+	if err != nil {
+		return backendSyncOutcome{}, err
+	}
+	client, err := syncer.NewClient(r.policy.BackendSync.BaseURL, timeout)
+	if err != nil {
+		return backendSyncOutcome{}, err
+	}
+	cursor, err := r.store.BackendSyncCursor(ctx, constants.BackendSyncCursorName)
+	if err != nil {
+		return backendSyncOutcome{}, err
+	}
+	pending, err := r.store.PendingBackendSyncEvents(ctx, cursor, r.policy.BackendSync.BatchLimit)
+	if err != nil {
+		return backendSyncOutcome{LastCursor: cursor}, err
+	}
+	outcome := backendSyncOutcome{
+		PendingBefore: len(pending),
+		PendingAfter:  len(pending),
+		LastCursor:    cursor,
+	}
+	if len(pending) == 0 {
+		r.logger.Info("backend telemetry sync idle", "last_cursor", cursor)
+		return outcome, nil
+	}
+
+	hostName, err := platformAdapter.Hostname(ctx)
+	if err != nil || hostName == "" {
+		hostName = constants.UnknownHost
+	}
+	syncEvents := make([]event.Event, 0, len(pending))
+	for _, stored := range pending {
+		syncEvents = append(syncEvents, stored.Event)
+	}
+	syncResult, err := client.IngestEvents(ctx, r.policy, hostName, platformAdapter.Name(), syncEvents)
+	if err != nil {
+		return outcome, err
+	}
+	acceptedEvents := syncResult.AcceptedEvents
+	if acceptedEvents < 0 {
+		acceptedEvents = 0
+	}
+	if acceptedEvents > len(pending) {
+		acceptedEvents = len(pending)
+	}
+	if acceptedEvents > 0 {
+		outcome.LastCursor = pending[acceptedEvents-1].LocalID
+		if err := r.store.MarkBackendSyncCursor(ctx, constants.BackendSyncCursorName, outcome.LastCursor); err != nil {
+			return outcome, err
+		}
+	}
+	outcome.Synced = acceptedEvents > 0
+	outcome.AcceptedEvents = acceptedEvents
+	outcome.StoredEvents = syncResult.StoredEvents
+	outcome.PendingAfter = len(pending) - acceptedEvents
+	r.logger.Info("backend telemetry backlog synced",
+		"tenant_id", syncResult.TenantID,
+		"device_id", syncResult.DeviceID,
+		"accepted_events", acceptedEvents,
+		"stored_events", syncResult.StoredEvents,
+		"pending_before", outcome.PendingBefore,
+		"pending_after", outcome.PendingAfter,
+		"last_cursor", outcome.LastCursor,
+		"privacy_boundary", syncResult.PrivacyBoundary,
+	)
+	if acceptedEvents < len(pending) {
+		r.logger.Warn("backend telemetry partial ingest",
+			"accepted_events", acceptedEvents,
+			"attempted_events", len(pending),
+			"last_cursor", outcome.LastCursor,
+		)
+	}
+	return outcome, nil
+}
+
 func (r *cycleRunner) alertNotifier() (alert.Notifier, string, error) {
 	if r.opts.AlertDryRun {
 		return alert.NewLocalNotifier(r.opts.OutboxDir), "local_outbox", nil
@@ -337,6 +405,7 @@ func (r *RunResult) merge(next RunResult) {
 	r.AlertDelivered = r.AlertDelivered || next.AlertDelivered
 	r.TelemetrySynced = r.TelemetrySynced || next.TelemetrySynced
 	r.TelemetryEvents += next.TelemetryEvents
+	r.TelemetryBacklog = next.TelemetryBacklog
 }
 
 func parseDurationOrDefault(value string, fallback string) (time.Duration, error) {
@@ -352,7 +421,7 @@ func parseDurationOrDefault(value string, fallback string) (time.Duration, error
 
 func FormatRunResult(result RunResult) string {
 	return fmt.Sprintf(
-		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d browser_events=%d health_events=%d telemetry_synced=%t telemetry_events=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_delivery=%s alert_delivered=%t",
+		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d browser_events=%d health_events=%d telemetry_synced=%t telemetry_events=%d telemetry_backlog=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_delivery=%s alert_delivered=%t",
 		result.Cycles,
 		result.CollectedEvents,
 		result.StoredEvents,
@@ -360,6 +429,7 @@ func FormatRunResult(result RunResult) string {
 		result.HealthEvents,
 		result.TelemetrySynced,
 		result.TelemetryEvents,
+		result.TelemetryBacklog,
 		result.ArchiveBatch,
 		result.ArchiveUploaded,
 		result.AlertsRaised,

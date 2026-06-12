@@ -38,6 +38,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase27.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase28.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase29.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase30.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
@@ -326,6 +327,22 @@ Newman runs
 `postman/tracedeck-backend-phase29.postman_collection.json` against a live
 dashboard demo and checks the same buyer-ready notification and paid packaging
 contract.
+
+Phase 30 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase30.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase30.ps1
+```
+
+The Phase 30 smoke runs the real agent once with backend sync pointed at an
+offline localhost port, verifies the run succeeds with an unsynced telemetry
+backlog, starts the backend, reruns the agent with the same SQLite data
+directory, and verifies the backlog replay reaches
+`/api/v1/devices/{deviceId}/telemetry-status`. Newman runs
+`postman/tracedeck-backend-phase30.postman_collection.json` against a live
+dashboard demo and verifies duplicate stable telemetry event IDs are
+acknowledged without duplicate backend storage.
 
 Phase 13 adds:
 

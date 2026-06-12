@@ -42,9 +42,17 @@ backend_sync:
 ```
 
 When enabled, the agent syncs after the local SQLite write succeeds. The local
-store remains the first durability boundary. The Phase 28 slice syncs the
-current cycle batch; a later backlog phase can add durable unsynced cursor
-tracking and retry queues.
+store remains the first durability boundary.
+
+Phase 30 adds durable backlog replay. The agent reads unsynced SQLite rows by
+local event ID, posts up to `backend_sync.batch_limit`, and advances the
+`backend_telemetry` cursor only after the backend accepts the payload. If the
+backend is offline, the cycle still succeeds after local storage and the next
+online cycle replays the backlog.
+
+Stable replay IDs use the `local-event-{sqlite_row_id}` shape. The backend
+acknowledges duplicate stable IDs without storing duplicate telemetry rows, so
+cursor retry remains idempotent.
 
 Dashboard support:
 
@@ -59,6 +67,7 @@ Verification:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase28.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase30.ps1
 ```
 
 The verifier regenerates the policy schema, runs backend tests, runs agent

@@ -48,15 +48,16 @@ func TestRunResultMerge(t *testing.T) {
 		HealthEvents:    1,
 	}
 	result.merge(RunResult{
-		Cycles:          1,
-		CollectedEvents: 7,
-		StoredEvents:    12,
-		ArchiveBatch:    "archive.jsonl.gz",
-		AlertsRaised:    2,
-		AlertOutboxPath: "alert.json",
-		HealthEvents:    1,
-		TelemetrySynced: true,
-		TelemetryEvents: 4,
+		Cycles:           1,
+		CollectedEvents:  7,
+		StoredEvents:     12,
+		ArchiveBatch:     "archive.jsonl.gz",
+		AlertsRaised:     2,
+		AlertOutboxPath:  "alert.json",
+		HealthEvents:     1,
+		TelemetrySynced:  true,
+		TelemetryEvents:  4,
+		TelemetryBacklog: 3,
 	})
 
 	if result.Cycles != 2 {
@@ -79,5 +80,8 @@ func TestRunResultMerge(t *testing.T) {
 	}
 	if !result.TelemetrySynced || result.TelemetryEvents != 4 {
 		t.Fatalf("expected telemetry sync merge, got %+v", result)
+	}
+	if result.TelemetryBacklog != 3 {
+		t.Fatalf("expected telemetry backlog to reflect latest cycle, got %+v", result)
 	}
 }

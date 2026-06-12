@@ -1,0 +1,71 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 30",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Ingest Replay Event",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/v1/devices/newman-replay-device/telemetry-events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"device_id\":\"newman-replay-device\",\"host_name\":\"newman-replay-host\",\"profile\":\"ai-btech-student\",\"os_name\":\"windows\",\"events\":[{\"id\":\"local-event-1\",\"type\":\"process.observed\",\"source\":\"collector.process\",\"observed_at\":\"2026-06-12T08:00:00Z\",\"app_name\":\"Code.exe\",\"process_id\":101,\"path_hash\":\"hash-only\",\"metadata\":{\"category\":\"coding\"}}]}"
+        }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('first replay event is accepted and stored', function () {",
+        "  pm.response.to.have.status(202);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.accepted_events).to.eql(1);",
+        "  pm.expect(body.stored_events).to.eql(1);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Replay Same Event Is Idempotent",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/v1/devices/newman-replay-device/telemetry-events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"device_id\":\"newman-replay-device\",\"host_name\":\"newman-replay-host\",\"profile\":\"ai-btech-student\",\"os_name\":\"windows\",\"events\":[{\"id\":\"local-event-1\",\"type\":\"process.observed\",\"source\":\"collector.process\",\"observed_at\":\"2026-06-12T08:00:00Z\",\"app_name\":\"Code.exe\",\"process_id\":101,\"path_hash\":\"hash-only\",\"metadata\":{\"category\":\"coding\"}}]}"
+        }
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('duplicate replay is acknowledged without duplicate storage', function () {",
+        "  pm.response.to.have.status(202);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.accepted_events).to.eql(1);",
+        "  pm.expect(body.stored_events).to.eql(1);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Telemetry Status Has One Replay Event",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/devices/newman-replay-device/telemetry-status" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('status keeps one stable replay event', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.stored_events).to.eql(1);",
+        "  pm.expect(body.recent_events[0].id).to.eql('local-event-1');",
+        "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

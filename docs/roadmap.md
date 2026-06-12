@@ -95,3 +95,7 @@
     assurance, weekly report proof, host risk command, S3 archive retention,
     notification revenue stream, Postman/Newman coverage, and local
     verification.
+33. Phase 30: offline backend sync. Durable SQLite sync cursor/backlog replay,
+    offline-tolerant agent sync behavior, idempotent backend telemetry ingest by
+    stable event ID, Postman/Newman coverage, offline-to-online live smoke, and
+    local verification.
