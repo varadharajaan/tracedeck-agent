@@ -2042,6 +2042,94 @@
       </div>
     </section>
 
+    <section id="revenue-operations-section" class="executive-console" aria-label="revenue operations center">
+      <div class="executive-focus">
+        <div class="section-head">
+          <div>
+            <h2>Revenue Operations Center</h2>
+            <p>Monetisation-grade command surface for anomaly queue, mail delivery, push notification, dashboard fallback, weekly reports, archive retention, onboarding, settings, package readiness, provider proof, and owner actions.</p>
+          </div>
+          <span id="revenue-operations-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Paid product operations</span>
+          <strong id="revenue-operations-headline">No tenant loaded</strong>
+          <p id="revenue-operations-detail">Waiting for anomaly, notification, archive, package, setup, settings, provider, and trust proof.</p>
+        </div>
+        <div class="executive-meter">
+          <div class="score-meta"><span>Revenue readiness</span><span id="revenue-operations-score">0%</span></div>
+          <div class="executive-meter-track"><div id="revenue-operations-score-bar" class="executive-meter-fill"></div></div>
+        </div>
+        <div class="action-meta">
+          <span id="revenue-operations-package" class="pill">package pending</span>
+          <span id="revenue-operations-next" class="pill">action pending</span>
+          <span id="revenue-operations-privacy" class="pill">metadata-only</span>
+        </div>
+      </div>
+      <div>
+        <div class="executive-kpis">
+          <div class="executive-kpi"><small>Anomaly Queue</small><strong id="revenue-kpi-alerts">-</strong><span id="revenue-kpi-alerts-sub" class="muted">No anomaly proof</span></div>
+          <div class="executive-kpi"><small>Mail Delivery</small><strong id="revenue-kpi-mail">-</strong><span id="revenue-kpi-mail-sub" class="muted">No mail proof</span></div>
+          <div class="executive-kpi"><small>Push Notification</small><strong id="revenue-kpi-push">-</strong><span id="revenue-kpi-push-sub" class="muted">No push proof</span></div>
+          <div class="executive-kpi"><small>Report And Archive</small><strong id="revenue-kpi-report">-</strong><span id="revenue-kpi-report-sub" class="muted">No report/archive proof</span></div>
+          <div class="executive-kpi"><small>Package Fit</small><strong id="revenue-kpi-package">-</strong><span id="revenue-kpi-package-sub" class="muted">No package proof</span></div>
+          <div class="executive-kpi"><small>Trust And Setup</small><strong id="revenue-kpi-trust">-</strong><span id="revenue-kpi-trust-sub" class="muted">No setup proof</span></div>
+        </div>
+        <div class="executive-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Revenue Signals</h2>
+                <p class="muted">Sellable proof across anomaly command, mail, push, dashboard fallback, weekly reports, archive, setup, settings, package, and provider simulation.</p>
+              </div>
+              <span id="revenue-signal-count" class="pill">0 signals</span>
+            </div>
+            <div id="revenue-signal-list" class="executive-list"><div class="empty">No revenue signals yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Anomaly And Delivery Wall</h2>
+                <p class="muted">Policy, anomaly, and tamper rows with mail, push, and dashboard delivery state.</p>
+              </div>
+              <span id="revenue-alert-count" class="pill">0 alerts</span>
+            </div>
+            <div id="revenue-alert-list" class="executive-list"><div class="empty">No revenue alert rows yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Mail, Push, Dashboard Proof</h2>
+                <p class="muted">Provider-safe route status, proof state, attempts, SLA, and next action without secrets or payloads.</p>
+              </div>
+              <span id="revenue-delivery-count" class="pill">0 routes</span>
+            </div>
+            <div id="revenue-delivery-list" class="executive-list"><div class="empty">No revenue delivery proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Commercial Levers</h2>
+                <p class="muted">Plan package, push activation, onboarding, settings, provider simulation, and archive/report levers for family, school, and business buyers.</p>
+              </div>
+              <span id="revenue-lever-count" class="pill">0 levers</span>
+            </div>
+            <div id="revenue-lever-list" class="executive-list"><div class="empty">No revenue levers yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Revenue Owner Actions</h2>
+                <p class="muted">Priority actions for alert reliability, push reach, mail proof, settings, package readiness, provider rehearsal, and retention confidence.</p>
+              </div>
+              <span id="revenue-action-count" class="pill">0 actions</span>
+            </div>
+            <div id="revenue-action-list" class="executive-list"><div class="empty">No revenue owner actions yet.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="customer-control-section" class="executive-console" aria-label="customer control room">
       <div class="executive-focus">
         <div class="section-head">
@@ -3029,6 +3117,7 @@
       <nav class="command-nav-grid" aria-label="dashboard sections">
         <button class="command-jump" type="button" data-jump-target="onboarding-center-section">Onboard<span id="nav-onboarding-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="customer-settings-section">Settings<span id="nav-settings-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="revenue-operations-section">Rev Ops<span id="nav-revenue-ops-meta">waiting</span></button>
         <button class="command-jump is-active" type="button" data-jump-target="customer-control-section">Control<span id="nav-customer-control-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="customer-success-section">Success<span id="nav-customer-success-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="push-activation-section">Push<span id="nav-push-activation-meta">waiting</span></button>
@@ -4914,6 +5003,7 @@
       renderMonetisationOverview(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderTenantOnboardingCenter(context.onboardingCenter);
       renderTenantCustomerSettingsCenter(context.customerSettingsCenter);
+      renderRevenueOperationsCenter(context.revenueOperationsCenter);
       renderCustomerControlRoom(context.customerControlRoom);
       renderCustomerSuccessPacket(context.customerSuccessPacket);
       renderPushActivationCenter(context.pushActivationCenter);
@@ -4990,6 +5080,7 @@
       setText("command-nav-archive", "archive pending");
       setText("nav-onboarding-meta", "waiting");
       setText("nav-settings-meta", "waiting");
+      setText("nav-revenue-ops-meta", "waiting");
       setText("nav-customer-control-meta", "waiting");
       setText("nav-customer-success-meta", "waiting");
       setText("nav-push-activation-meta", "waiting");
@@ -5065,6 +5156,8 @@
       const onboardingSummary = onboarding.summary || {};
       const settingsCenter = context.customerSettingsCenter || {};
       const settingsSummary = settingsCenter.summary || {};
+      const revenueOps = context.revenueOperationsCenter || {};
+      const revenueOpsSummary = revenueOps.summary || {};
       const weekly = context.weeklyReport || {};
       const alertInbox = context.alertInbox || {};
       const inboxSummary = alertInbox.summary || {};
@@ -5089,6 +5182,7 @@
       setText("command-nav-archive", archiveProvider === "s3" ? `${archivePending} archive pending` : `${archiveProvider} pending`);
       setText("nav-onboarding-meta", onboardingSummary.readiness_score ? `${onboardingSummary.readiness_score}% setup` : `${onboardingSummary.setup_steps_ready || 0}/${onboardingSummary.setup_steps_total || 0} steps`);
       setText("nav-settings-meta", settingsSummary.settings_score ? `${settingsSummary.settings_score}% set` : `${settingsSummary.configured_settings || 0}/${settingsSummary.settings_total || 0} set`);
+      setText("nav-revenue-ops-meta", revenueOpsSummary.revenue_score ? `${revenueOpsSummary.revenue_score}% rev` : `${openAlerts} alerts`);
       setText("nav-customer-control-meta", customerControlSummary.product_score ? `${customerControlSummary.product_score}% control` : `${deliveryScore}% proof`);
       setText("nav-push-activation-meta", pushActivationSummary.activation_score ? `${pushActivationSummary.activation_score}% push` : `${pushActivationSummary.push_retrying || 0} retry`);
       setText("nav-portfolio-meta", portfolioSummary.portfolio_score ? `${portfolioSummary.portfolio_score}% fleet` : `${state.devices.length} hosts`);
@@ -5703,6 +5797,159 @@
             ${badge(item.status || "pending")}
             <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
             <span class="pill">${escapeHTML(item.source || "settings")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderRevenueOperationsCenter(center) {
+      const model = center || {};
+      const summary = model.summary || {};
+      const signals = model.signals || [];
+      const alerts = model.alerts || [];
+      const deliveries = model.deliveries || [];
+      const levers = model.levers || [];
+      const actions = model.actions || [];
+      const score = Number(summary.revenue_score || 0);
+
+      document.getElementById("revenue-operations-status").outerHTML =
+        badge(summary.status || "pending").replace("<span", '<span id="revenue-operations-status"');
+      setText("revenue-operations-headline", summary.headline || "No tenant loaded");
+      setText("revenue-operations-detail", summary.detail || "Waiting for anomaly, notification, archive, package, setup, settings, provider, and trust proof.");
+      setText("revenue-operations-score", `${score}%`);
+      setPercentBar("revenue-operations-score-bar", score);
+      setText("revenue-operations-package", summary.recommended_paid_package || model.plan_name || "package pending");
+      setText("revenue-operations-next", summary.owner_next_step || "action pending");
+      setText("revenue-operations-privacy", model.privacy_boundary ? "metadata-only guard" : "metadata-only");
+
+      setText("revenue-kpi-alerts", `${summary.open_alerts || 0} open`);
+      setText("revenue-kpi-alerts-sub", `${summary.high_priority_alerts || 0} high priority, ${summary.hosts_attention || 0}/${summary.hosts_total || 0} hosts`);
+      setText("revenue-kpi-mail", `${summary.mail_delivered || 0} delivered`);
+      setText("revenue-kpi-mail-sub", `${summary.notification_score || 0}% notification score`);
+      setText("revenue-kpi-push", `${summary.push_delivered || 0} delivered`);
+      setText("revenue-kpi-push-sub", `${summary.routes_needing_proof || 0} route proof gap${summary.routes_needing_proof === 1 ? "" : "s"}`);
+      setText("revenue-kpi-report", summary.weekly_report_ready ? "report ready" : "report pending");
+      setText("revenue-kpi-report-sub", `${summary.archive_backlog || 0} archive batch${summary.archive_backlog === 1 ? "" : "es"} pending`);
+      setText("revenue-kpi-package", `${summary.package_score || 0}%`);
+      setText("revenue-kpi-package-sub", `${summary.billing_ready ? "billing ready" : "billing proof pending"}; ${summary.provider_ready ? "provider ready" : "provider proof pending"}`);
+      setText("revenue-kpi-trust", `${summary.trust_score || 0}%`);
+      setText("revenue-kpi-trust-sub", `${summary.onboarding_score || 0}% setup, ${summary.settings_score || 0}% settings`);
+
+      renderRevenueOperationSignals(signals);
+      renderRevenueOperationAlerts(alerts);
+      renderRevenueOperationDeliveries(deliveries);
+      renderRevenueOperationLevers(levers);
+      renderRevenueOperationActions(actions);
+    }
+
+    function renderRevenueOperationSignals(signals) {
+      const items = (signals || []).slice(0, 10);
+      setText("revenue-signal-count", `${items.length} signal${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("revenue-signal-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No revenue signals yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.label)}: ${escapeHTML(item.value)}</strong>
+          <span class="muted">${escapeHTML(item.detail || "Revenue proof pending.")}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            ${item.channel ? `<span class="pill">${escapeHTML(item.channel)}</span>` : ""}
+            <span class="pill">${escapeHTML(item.paid_tier || "paid")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderRevenueOperationAlerts(alerts) {
+      const items = (alerts || []).slice(0, 8);
+      setText("revenue-alert-count", `${items.length} alert${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("revenue-alert-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No revenue alert rows yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.title || "Alert")}</strong>
+          <span class="muted">${escapeHTML(item.host_name || "host pending")} - ${escapeHTML(item.detail || item.next_action || "Review alert.")}</span>
+          <div class="action-meta">
+            ${badge(item.severity || "info")}
+            ${badge(item.status || "open")}
+            <span class="pill">email ${escapeHTML(item.email_status || "pending")}</span>
+            <span class="pill">push ${escapeHTML(item.push_status || "pending")}</span>
+            <span class="pill">dashboard ${escapeHTML(item.dashboard_status || "pending")}</span>
+            <span class="pill">${escapeHTML(formatAge(item.observed_at))}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderRevenueOperationDeliveries(deliveries) {
+      const items = (deliveries || []).slice(0, 6);
+      setText("revenue-delivery-count", `${items.length} route${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("revenue-delivery-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No revenue delivery proof yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(capitalize(item.channel))} ${escapeHTML(item.status || "pending")}</strong>
+          <span class="muted">${escapeHTML(item.recipient_label || "recipient pending")} via ${escapeHTML(item.provider || "provider pending")}</span>
+          <div class="action-meta">
+            ${badge(item.proof_state || "needs_proof")}
+            <span class="pill">${escapeHTML(item.attempts || 0)} attempts</span>
+            <span class="pill">${escapeHTML(item.sla || "SLA pending")}</span>
+            <span class="pill">${escapeHTML(item.paid_tier || "paid")}</span>
+          </div>
+          <span class="muted">${escapeHTML(item.next_action || item.evidence || "Keep route proof current.")}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderRevenueOperationLevers(levers) {
+      const items = (levers || []).slice(0, 8);
+      setText("revenue-lever-count", `${items.length} lever${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("revenue-lever-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No revenue levers yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.name)}: ${escapeHTML(item.value)}</strong>
+          <span class="muted">${escapeHTML(item.buyer_outcome || "Buyer outcome pending.")}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.tier || "tier pending")}</span>
+            <span class="pill">${escapeHTML(item.next_action || "review lever")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderRevenueOperationActions(actions) {
+      const items = (actions || []).slice(0, 10);
+      setText("revenue-action-count", `${items.length} action${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("revenue-action-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No revenue owner actions yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail || "Action detail pending.")}</span>
+          <div class="action-meta">
+            ${badge(item.severity || "info")}
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+            <span class="pill">${escapeHTML(item.sla || "SLA pending")}</span>
+            <span class="pill">${escapeHTML(item.paid_tier || "paid")}</span>
+            <span class="pill">${escapeHTML(item.source || "revenue ops")}</span>
           </div>
         </div>
       `).join("");
@@ -9629,6 +9876,7 @@
       renderMonetisationOverview(null, {}, [], [], {});
       renderTenantOnboardingCenter(null);
       renderTenantCustomerSettingsCenter(null);
+      renderRevenueOperationsCenter(null);
       renderCustomerControlRoom(null);
       renderCustomerSuccessPacket(null);
       renderPushActivationCenter(null);
@@ -9705,6 +9953,7 @@
       const packageBillingReadiness = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/package-billing-readiness`) : null;
       const onboardingCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/onboarding-center`) : null;
       const customerSettingsCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/customer-settings-center`) : null;
+      const revenueOperationsCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/revenue-operations-center`) : null;
       const notificationCommandCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-command-center`) : null;
       const deliveryTimeline = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delivery-timeline?device_id=${encodeURIComponent(overview.device.device_id)}&limit=8`) : null;
       const syncHealth = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/sync-health`) : null;
@@ -9744,6 +9993,7 @@
         packageBillingReadiness,
         onboardingCenter,
         customerSettingsCenter,
+        revenueOperationsCenter,
         notificationCommandCenter,
         deliveryTimeline,
         syncHealth,
