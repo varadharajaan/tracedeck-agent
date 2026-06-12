@@ -86,6 +86,7 @@ type AlertPolicy struct {
 
 type EmailPolicy struct {
 	Provider        EmailProvider `json:"provider" yaml:"provider"`
+	From            string        `json:"from" yaml:"from" jsonschema:"format=email"`
 	To              []string      `json:"to" yaml:"to"`
 	MinSeverity     Severity      `json:"min_severity" yaml:"min_severity"`
 	CooldownMinutes int           `json:"cooldown_minutes" yaml:"cooldown_minutes" jsonschema:"minimum=1"`

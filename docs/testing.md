@@ -25,6 +25,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase14.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase15.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase16.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase17.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
@@ -177,6 +178,20 @@ delivery center, push routing, route SLA, paid trigger, marketplace, and
 retention panels. Newman runs
 `postman/tracedeck-backend-phase16.postman_collection.json` against a live
 API-key-protected backend.
+
+Phase 17 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-email-notifier.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase17.ps1
+```
+
+The Phase 17 smoke builds a local fake SMTP helper under `data/local/`, starts
+it hidden on localhost, runs the agent once with `--alert-dry-run=false`,
+captures the delivered `.eml`, verifies alert content, and confirms forbidden
+URL and SMTP secret markers are not leaked. The verifier also regenerates the
+policy schema, runs focused mail tests, runs cross-platform builds, and checks
+root artifact hygiene.
 
 Phase 13 adds:
 

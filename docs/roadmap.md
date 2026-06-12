@@ -49,3 +49,7 @@
     anomaly notification inbox, mail delivery center, push routing, alert route
     SLA visibility, paid trigger, upgrade path, docs, Postman/Newman coverage,
     and local verification.
+20. Phase 17: provider-backed email alerts. SMTP and AWS SESv2 notifier
+    adapters, required typed sender policy, env-only provider credentials,
+    fake-SMTP live smoke, schema/docs updates, cross-platform builds, and local
+    verification.
