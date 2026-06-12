@@ -17,7 +17,7 @@ try {
 
     Invoke-TraceDeckLoggedCommand -Label "gofmt write" -Command {
         $files = @()
-        foreach ($path in @("agent", "scripts/tools")) {
+        foreach ($path in @("agent", "backend", "scripts/tools")) {
             if (Test-Path $path) {
                 $files += Get-ChildItem -Path $path -Recurse -Filter "*.go" | ForEach-Object { $_.FullName }
             }
@@ -29,7 +29,7 @@ try {
     if ($goimports) {
         Invoke-TraceDeckLoggedCommand -Label "goimports write" -Command {
             $files = @()
-            foreach ($path in @("agent", "scripts/tools")) {
+            foreach ($path in @("agent", "backend", "scripts/tools")) {
                 if (Test-Path $path) {
                     $files += Get-ChildItem -Path $path -Recurse -Filter "*.go" | ForEach-Object { $_.FullName }
                 }

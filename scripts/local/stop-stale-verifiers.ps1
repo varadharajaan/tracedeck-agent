@@ -16,12 +16,20 @@ try {
         "*verify-phase1b.ps1*",
         "*verify-phase2.ps1*",
         "*verify-phase2b.ps1*",
+        "*verify-phase3.ps1*",
+        "*verify-phase4.ps1*",
+        "*verify-phase5.ps1*",
         "*smoke-phase0.ps1*",
         "*smoke-phase1.ps1*",
         "*smoke-phase2.ps1*",
         "*smoke-phase2b.ps1*",
+        "*smoke-phase3.ps1*",
+        "*smoke-phase4.ps1*",
+        "*smoke-phase5.ps1*",
         "*./agent/cmd/tracedeck-agent*",
-        "*.\agent\cmd\tracedeck-agent*"
+        "*.\agent\cmd\tracedeck-agent*",
+        "*./backend/cmd/tracedeck-backend*",
+        "*.\backend\cmd\tracedeck-backend*"
     )
     $staleProcesses = Get-CimInstance Win32_Process |
         Where-Object {
@@ -31,7 +39,7 @@ try {
             elseif ($_.ProcessId -eq $PID) {
                 $false
             }
-            elseif ($_.Name -notin @("powershell.exe", "pwsh.exe", "go.exe", "gosec.exe", "govulncheck.exe", "golangci-lint.exe", "tracedeck-agent.exe")) {
+            elseif ($_.Name -notin @("powershell.exe", "pwsh.exe", "go.exe", "gosec.exe", "govulncheck.exe", "golangci-lint.exe", "tracedeck-agent.exe", "tracedeck-backend.exe", "newman.exe", "node.exe")) {
                 $false
             }
             else {
@@ -43,7 +51,7 @@ try {
                         break
                     }
                 }
-                $matchesOrphanAgent = $IncludeAgentExecutables -and $_.Name -eq "tracedeck-agent.exe"
+                $matchesOrphanAgent = $IncludeAgentExecutables -and $_.Name -in @("tracedeck-agent.exe", "tracedeck-backend.exe")
 
                 $matchesRepoRoot -or $matchesTraceDeckScript -or $matchesOrphanAgent
             }

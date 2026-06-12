@@ -8,13 +8,13 @@ Initialize-TraceDeckScriptLog -Name "check-gofmt" -LogRoot "logs/local/verify" |
 
 try {
     $files = @()
-    foreach ($path in @("agent", "scripts/tools")) {
+    foreach ($path in @("agent", "backend", "scripts/tools")) {
         if (Test-Path $path) {
             $files += Get-ChildItem -Path $path -Recurse -Filter "*.go" | ForEach-Object { $_.FullName }
         }
     }
     if (-not $files) {
-        Write-TraceDeckLog -Level "WARN" -Message "No Go files found under agent or scripts/tools"
+        Write-TraceDeckLog -Level "WARN" -Message "No Go files found under agent, backend, or scripts/tools"
         Complete-TraceDeckScriptLog
         exit 0
     }

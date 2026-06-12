@@ -27,18 +27,31 @@ try {
         $env:GOARCH = $target.GOARCH
         $env:CGO_ENABLED = "0"
 
-        $fileName = "tracedeck-agent-$($target.GOOS)-$($target.GOARCH)$($target.Extension)"
-        $outputPath = Join-Path $outputRoot $fileName
+        $agentFileName = "tracedeck-agent-$($target.GOOS)-$($target.GOARCH)$($target.Extension)"
+        $agentOutputPath = Join-Path $outputRoot $agentFileName
 
-        Invoke-TraceDeckLoggedCommand -Label "Cross-build $($target.GOOS)/$($target.GOARCH)" -Command {
-            go build -trimpath -o $outputPath ./agent/cmd/tracedeck-agent
+        Invoke-TraceDeckLoggedCommand -Label "Cross-build agent $($target.GOOS)/$($target.GOARCH)" -Command {
+            go build -trimpath -o $agentOutputPath ./agent/cmd/tracedeck-agent
         }
 
-        if (-not (Test-Path $outputPath)) {
-            Write-TraceDeckLog -Level "ERROR" -Message "Expected build output was not created: $outputPath"
+        if (-not (Test-Path $agentOutputPath)) {
+            Write-TraceDeckLog -Level "ERROR" -Message "Expected build output was not created: $agentOutputPath"
             exit 1
         }
-        Write-TraceDeckLog -Level "INFO" -Message "Build output exists: $outputPath"
+        Write-TraceDeckLog -Level "INFO" -Message "Build output exists: $agentOutputPath"
+
+        $backendFileName = "tracedeck-backend-$($target.GOOS)-$($target.GOARCH)$($target.Extension)"
+        $backendOutputPath = Join-Path $outputRoot $backendFileName
+
+        Invoke-TraceDeckLoggedCommand -Label "Cross-build backend $($target.GOOS)/$($target.GOARCH)" -Command {
+            go build -trimpath -o $backendOutputPath ./backend/cmd/tracedeck-backend
+        }
+
+        if (-not (Test-Path $backendOutputPath)) {
+            Write-TraceDeckLog -Level "ERROR" -Message "Expected build output was not created: $backendOutputPath"
+            exit 1
+        }
+        Write-TraceDeckLog -Level "INFO" -Message "Build output exists: $backendOutputPath"
     }
 
     Complete-TraceDeckScriptLog

@@ -1,0 +1,215 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 5",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Version",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/version"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('version exposes backend service', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().service).to.eql('tracedeck-backend');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Enroll Device",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"device_id\":\"postman-device-001\",\"host_name\":\"postman-host\",\"profile\":\"ai-btech-student\",\"os_name\":\"windows\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/devices/enroll"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('device enrolled', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().device_id).to.eql('postman-device-001');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List Devices",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('device list includes enrollment', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.count).to.be.above(0);",
+              "  pm.expect(body.items.some((device) => device.device_id === 'postman-device-001')).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Device",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/postman-device-001"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('device lookup succeeds', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().device_id).to.eql('postman-device-001');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Daily Summary",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/postman-device-001/summary/daily"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('daily summary is available', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().device_id).to.eql('postman-device-001');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Policy Templates",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/policy-templates"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('policy templates exist', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().count).to.be.above(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Archive Status",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/archive/status"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('archive status is s3 backed', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().provider).to.eql('s3');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('dashboard is served', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.text()).to.include('TraceDeck');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18080"
+    }
+  ]
+}
