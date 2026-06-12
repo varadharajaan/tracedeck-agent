@@ -428,6 +428,14 @@ archive posture, package/revenue fit, owner actions, and trust guardrails are
 visible immediately. The section reuses existing typed APIs rather than adding
 new collectors.
 
+Phase 63 adds a Tenant Onboarding Center near the dashboard front door. It
+renders the typed `onboarding-center` API as a paid activation checklist with
+setup readiness, host reporting, autostart proof, anomaly notification policy,
+mail/push/dashboard delivery proof, archive posture, role handoff, package
+readiness, privacy guard, and owner actions. The command navigation includes an
+Onboard target so a buyer/admin can answer whether deployment, alerts, archive,
+reports, and roles are ready before moving into host-level drilldowns.
+
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
 paid customer onboarding workflows.

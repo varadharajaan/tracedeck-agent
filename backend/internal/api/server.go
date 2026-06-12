@@ -341,6 +341,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantMonetizationSummary(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentBusinessDash && r.Method == http.MethodGet:
 		s.handleTenantBusinessDashboard(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentOnboardingCenter && r.Method == http.MethodGet:
+		s.handleTenantOnboardingCenter(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentRoleExperience && r.Method == http.MethodGet:
 		s.handleTenantRoleExperiences(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentCustomerControl && r.Method == http.MethodGet:
@@ -662,6 +664,23 @@ func (s *Server) handleTenantRoleExperiences(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	writeJSON(w, http.StatusOK, experience)
+}
+
+func (s *Server) handleTenantOnboardingCenter(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	center, err := s.store.TenantOnboardingCenter(r.Context(), tenantID)
+	if err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant onboarding center lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, center)
 }
 
 func (s *Server) handleTenantExecutiveConsole(w http.ResponseWriter, r *http.Request, tenantID string) {

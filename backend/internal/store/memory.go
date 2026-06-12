@@ -1100,6 +1100,38 @@ func (m *Memory) TenantRoleExperiences(ctx context.Context, tenantID string) (mo
 	return buildTenantRoleExperience(operations, monetization, business, preferences, timeline, syncHealth, generatedAt), nil
 }
 
+func (m *Memory) TenantOnboardingCenter(ctx context.Context, tenantID string) (model.TenantOnboardingCenter, error) {
+	generatedAt := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	roles, err := m.TenantRoleExperiences(ctx, tenantID)
+	if err != nil {
+		return model.TenantOnboardingCenter{}, err
+	}
+	packageBilling, err := m.TenantPackageBillingReadiness(ctx, tenantID)
+	if err != nil {
+		return model.TenantOnboardingCenter{}, err
+	}
+	portfolio, err := m.TenantPortfolioCenter(ctx, tenantID)
+	if err != nil {
+		return model.TenantOnboardingCenter{}, err
+	}
+	push, err := m.TenantPushActivationCenter(ctx, tenantID)
+	if err != nil {
+		return model.TenantOnboardingCenter{}, err
+	}
+	preferences, err := m.TenantNotificationPreferences(ctx, tenantID)
+	if err != nil {
+		return model.TenantOnboardingCenter{}, err
+	}
+	syncHealth, err := m.TenantSyncHealth(ctx, tenantID)
+	if err != nil {
+		return model.TenantOnboardingCenter{}, err
+	}
+
+	return buildTenantOnboardingCenter(roles, packageBilling, portfolio, push, preferences, syncHealth, generatedAt), nil
+}
+
 func (m *Memory) TenantExecutiveConsole(ctx context.Context, tenantID string) (model.TenantExecutiveConsole, error) {
 	generatedAt := time.Now().UTC()
 	tenantID = strings.TrimSpace(tenantID)
@@ -5066,6 +5098,258 @@ func buildTenantRoleExperience(
 		PrivacyBoundary: constants.RoleExperiencePrivacyNote,
 		GeneratedAt:     generatedAt,
 	}
+}
+
+func buildTenantOnboardingCenter(
+	roles model.TenantRoleExperience,
+	packageBilling model.TenantPackageBillingReadiness,
+	portfolio model.TenantPortfolioCenter,
+	push model.TenantPushActivationCenter,
+	preferences model.NotificationPreferenceCenter,
+	syncHealth model.TenantSyncHealth,
+	generatedAt time.Time,
+) model.TenantOnboardingCenter {
+	installReady := syncHealth.HostsReporting > 0 && portfolio.Summary.HostsTotal > 0
+	autostartReady := syncHealth.OfflineReplayReady && syncHealth.HostsReporting > 0
+	notificationReady := push.Summary.NotificationScore >= 60 && push.Summary.MailDelivered > 0 && push.Summary.DashboardDelivered > 0
+	archiveReady := packageBilling.Summary.ArchiveReady && portfolio.Summary.ArchiveBacklog == 0
+	packageReady := packageBilling.Summary.PackageScore >= 60 && packageBilling.Summary.FeatureGatesReady > 0
+	privacyReady := roles.Summary.PrivacyVisible && packageBilling.Summary.TrustScore >= 60
+
+	steps := tenantOnboardingSteps(packageBilling, portfolio, push, preferences, syncHealth, installReady, autostartReady, notificationReady, archiveReady, packageReady, privacyReady)
+	readySteps := 0
+	for _, step := range steps {
+		if step.Status == constants.StatusHealthy {
+			readySteps++
+		}
+	}
+	readiness := 0
+	if len(steps) > 0 {
+		readiness = (readySteps * 100) / len(steps)
+	}
+	readiness = averageScore(readiness, roles.Summary.ReadinessScore, packageBilling.Summary.PackageScore, push.Summary.ActivationScore)
+	summary := model.TenantOnboardingSummary{
+		ReadinessScore:     readiness,
+		SetupStepsReady:    readySteps,
+		SetupStepsTotal:    len(steps),
+		HostsTotal:         portfolio.Summary.HostsTotal,
+		HostsReporting:     syncHealth.HostsReporting,
+		InstallReady:       installReady,
+		AutostartReady:     autostartReady,
+		NotificationReady:  notificationReady,
+		ArchiveReady:       archiveReady,
+		PackageReady:       packageReady,
+		RolesReady:         roles.Summary.RolesReady,
+		RolesTotal:         roles.Summary.RolesTotal,
+		PrivacyReady:       privacyReady,
+		RecommendedPackage: firstNonEmpty(packageBilling.Summary.RecommendedPackage, roles.Summary.RecommendedPackage, portfolio.Summary.RecommendedPaidPackage),
+		OwnerNextStep:      tenantOnboardingNextStep(steps),
+	}
+	summary.Status = tenantOnboardingStatus(summary)
+	summary.Headline, summary.Detail = tenantOnboardingNarrative(summary)
+
+	return model.TenantOnboardingCenter{
+		TenantID:        roles.TenantID,
+		TenantName:      roles.TenantName,
+		PlanID:          roles.PlanID,
+		PlanName:        roles.PlanName,
+		Audience:        roles.Audience,
+		Summary:         summary,
+		Steps:           steps,
+		Roles:           tenantOnboardingRoles(roles.Roles),
+		Proof:           tenantOnboardingProof(summary, packageBilling, portfolio, push, syncHealth),
+		Actions:         tenantOnboardingActions(steps, roles.Onboarding, packageBilling.Actions),
+		PrivacyBoundary: constants.OnboardingCenterPrivacyNote,
+		GeneratedAt:     generatedAt,
+	}
+}
+
+func tenantOnboardingSteps(
+	packageBilling model.TenantPackageBillingReadiness,
+	portfolio model.TenantPortfolioCenter,
+	push model.TenantPushActivationCenter,
+	preferences model.NotificationPreferenceCenter,
+	syncHealth model.TenantSyncHealth,
+	installReady bool,
+	autostartReady bool,
+	notificationReady bool,
+	archiveReady bool,
+	packageReady bool,
+	privacyReady bool,
+) []model.TenantOnboardingStep {
+	return []model.TenantOnboardingStep{
+		tenantOnboardingStep("agent-install", "Install endpoint agent", installReady, constants.RoleBusinessManager, fmt.Sprintf("%d/%d hosts reporting", syncHealth.HostsReporting, portfolio.Summary.HostsTotal), "Use the signed agent build and local config profile before assigning production policy.", constants.PlanFamilyPro, true),
+		tenantOnboardingStep("autostart", "Enable reboot persistence", autostartReady, constants.RoleBusinessManager, "Windows Task Scheduler, macOS launchd, and Linux systemd manifests are managed by scripts.", "Confirm the agent starts after restart and local outbox retry remains enabled.", constants.PlanFamilyPro, true),
+		tenantOnboardingStep("notification-policy", "Configure notification policy", preferences.Summary.PreferenceScore >= 60, constants.RoleParent, fmt.Sprintf("%d rules across email=%t push=%t dashboard=%t", preferences.Summary.RulesTotal, preferences.Summary.EmailEnabled, preferences.Summary.PushEnabled, preferences.Summary.DashboardEnabled), "Immediate, digest, silent, quiet-hours, and escalation settings should match the buyer role.", constants.PlanFamilyPro, true),
+		tenantOnboardingStep("mail-push-proof", "Prove mail and push delivery", notificationReady, constants.RoleParent, fmt.Sprintf("%d mail delivered, %d push delivered, %d dashboard delivered", push.Summary.MailDelivered, push.Summary.PushDelivered, push.Summary.DashboardDelivered), "Verify anomaly alerts reach the owner and dashboard fallback before production rollout.", constants.PlanFamilyPro, true),
+		tenantOnboardingStep("archive-retention", "Confirm archive retention", archiveReady, constants.RoleSchoolAdmin, fmt.Sprintf("%d archive batches pending", portfolio.Summary.ArchiveBacklog), "S3 lifecycle and local TTL proof should be ready before selling retention value.", constants.PlanFamilyPro, false),
+		tenantOnboardingStep("role-dashboards", "Assign role dashboards", packageBilling.Summary.FeatureGatesReady > 0 && packageBilling.Summary.NotificationReady, constants.RoleBusinessManager, fmt.Sprintf("%d/%d feature gates ready", packageBilling.Summary.FeatureGatesReady, packageBilling.Summary.FeatureGatesTotal), "Parent, student, school admin, and business manager views should be visible for onboarding.", constants.PlanSchool, false),
+		tenantOnboardingStep("package-readiness", "Review package readiness", packageReady, constants.RoleBusinessManager, fmt.Sprintf("%d%% package score for %s", packageBilling.Summary.PackageScore, packageBilling.Summary.RecommendedPackage), "Use feature gates, plan fit, milestones, and owner actions for the paid handoff.", constants.PlanFamilyPro, false),
+		tenantOnboardingStep("privacy-guard", "Review privacy and data rights", privacyReady, constants.RoleBusinessManager, fmt.Sprintf("%d%% trust score", packageBilling.Summary.TrustScore), "Confirm metadata-only collection, visible monitoring, export, delete request, and audit proof.", constants.PlanBusiness, true),
+	}
+}
+
+func tenantOnboardingStep(id string, title string, ready bool, owner string, evidence string, detail string, paidTier string, blocking bool) model.TenantOnboardingStep {
+	status := constants.StatusAttention
+	if ready {
+		status = constants.StatusHealthy
+	} else if !blocking {
+		status = constants.StatusWatch
+	}
+	return model.TenantOnboardingStep{
+		ID:       id,
+		Title:    title,
+		Detail:   detail,
+		Owner:    owner,
+		Status:   status,
+		Evidence: evidence,
+		PaidTier: paidTier,
+		Blocking: blocking,
+	}
+}
+
+func tenantOnboardingStatus(summary model.TenantOnboardingSummary) string {
+	switch {
+	case summary.SetupStepsReady == summary.SetupStepsTotal && summary.ReadinessScore >= 80:
+		return constants.StatusHealthy
+	case !summary.InstallReady || !summary.AutostartReady || !summary.NotificationReady || !summary.PrivacyReady:
+		return constants.StatusAttention
+	case summary.ReadinessScore >= 60:
+		return constants.StatusWatch
+	default:
+		return constants.StatusPending
+	}
+}
+
+func tenantOnboardingNarrative(summary model.TenantOnboardingSummary) (string, string) {
+	if !summary.InstallReady || !summary.AutostartReady {
+		return "Endpoint deployment needs boot persistence proof",
+			fmt.Sprintf("%d/%d setup steps ready with %d/%d hosts reporting.", summary.SetupStepsReady, summary.SetupStepsTotal, summary.HostsReporting, summary.HostsTotal)
+	}
+	if !summary.NotificationReady {
+		return "Notification proof is blocking production onboarding",
+			"Mail, push, dashboard fallback, and alert policy proof must be visible before owner handoff."
+	}
+	if !summary.PrivacyReady {
+		return "Privacy and data-rights proof needs review",
+			"Visible monitoring, audit, export, delete request, and metadata-only guardrails should be confirmed."
+	}
+	return fmt.Sprintf("%s onboarding is %d%% ready", summary.RecommendedPackage, summary.ReadinessScore),
+		fmt.Sprintf("%d/%d setup steps, %d/%d role views, archive=%t, package=%t.", summary.SetupStepsReady, summary.SetupStepsTotal, summary.RolesReady, summary.RolesTotal, summary.ArchiveReady, summary.PackageReady)
+}
+
+func tenantOnboardingNextStep(steps []model.TenantOnboardingStep) string {
+	for _, step := range steps {
+		if step.Blocking && step.Status != constants.StatusHealthy {
+			return step.Title
+		}
+	}
+	for _, step := range steps {
+		if step.Status != constants.StatusHealthy {
+			return step.Title
+		}
+	}
+	return "Run the customer onboarding review and keep evidence fresh."
+}
+
+func tenantOnboardingRoles(roles []model.TenantRoleExperienceRole) []model.TenantOnboardingRole {
+	rows := make([]model.TenantOnboardingRole, 0, len(roles))
+	for _, role := range roles {
+		rows = append(rows, model.TenantOnboardingRole{
+			RoleID:     role.RoleID,
+			Name:       role.Name,
+			Status:     role.Status,
+			ViewMode:   role.ViewMode,
+			PaidTier:   role.PaidTier,
+			NextAction: role.NextAction,
+		})
+	}
+	return rows
+}
+
+func tenantOnboardingProof(
+	summary model.TenantOnboardingSummary,
+	packageBilling model.TenantPackageBillingReadiness,
+	portfolio model.TenantPortfolioCenter,
+	push model.TenantPushActivationCenter,
+	syncHealth model.TenantSyncHealth,
+) []model.TenantOnboardingProof {
+	return []model.TenantOnboardingProof{
+		{ID: "setup", Label: "Setup steps", Value: fmt.Sprintf("%d/%d ready", summary.SetupStepsReady, summary.SetupStepsTotal), Detail: summary.OwnerNextStep, Status: summary.Status, PaidTier: constants.PlanFamilyPro},
+		{ID: "hosts", Label: "Host reporting", Value: fmt.Sprintf("%d/%d hosts", syncHealth.HostsReporting, portfolio.Summary.HostsTotal), Detail: syncHealth.OfflineReplaySummary, Status: syncHealth.Status, PaidTier: constants.PlanFamilyPro},
+		{ID: "notifications", Label: "Notification proof", Value: fmt.Sprintf("%d%%", push.Summary.NotificationScore), Detail: fmt.Sprintf("%d mail, %d push, %d dashboard delivered", push.Summary.MailDelivered, push.Summary.PushDelivered, push.Summary.DashboardDelivered), Status: push.Summary.Status, PaidTier: constants.PlanFamilyPro},
+		{ID: "archive", Label: "Archive posture", Value: fmt.Sprintf("%d pending", portfolio.Summary.ArchiveBacklog), Detail: packageBilling.RetentionName, Status: boolStatus(summary.ArchiveReady), PaidTier: constants.PlanFamilyPro},
+		{ID: "package", Label: "Package readiness", Value: fmt.Sprintf("%d%%", packageBilling.Summary.PackageScore), Detail: packageBilling.Summary.RecommendedPackage, Status: packageBilling.Summary.Status, PaidTier: constants.PlanFamilyPro},
+		{ID: "privacy", Label: "Privacy guard", Value: boolReady(summary.PrivacyReady), Detail: constants.OnboardingCenterPrivacyNote, Status: boolStatus(summary.PrivacyReady), PaidTier: constants.PlanBusiness},
+	}
+}
+
+func tenantOnboardingActions(steps []model.TenantOnboardingStep, roleActions []model.TenantRoleOnboardingItem, packageActions []model.TenantPackageBillingAction) []model.TenantOnboardingAction {
+	actions := make([]model.TenantOnboardingAction, 0, 8)
+	for _, step := range steps {
+		if step.Status == constants.StatusHealthy {
+			continue
+		}
+		actions = append(actions, model.TenantOnboardingAction{
+			Title:    step.Title,
+			Detail:   step.Detail,
+			Owner:    step.Owner,
+			Status:   step.Status,
+			Severity: onboardingSeverity(step),
+			PaidTier: step.PaidTier,
+			Source:   "onboarding step",
+		})
+		if len(actions) >= 4 {
+			break
+		}
+	}
+	for _, action := range roleActions {
+		if len(actions) >= 6 {
+			break
+		}
+		actions = append(actions, model.TenantOnboardingAction{
+			Title:    action.Title,
+			Detail:   action.Detail,
+			Owner:    action.Owner,
+			Status:   action.Status,
+			Severity: constants.SeverityMedium,
+			PaidTier: action.PaidTier,
+			Source:   "role onboarding",
+		})
+	}
+	for _, action := range packageActions {
+		if len(actions) >= 8 {
+			break
+		}
+		actions = append(actions, model.TenantOnboardingAction{
+			Title:    action.Title,
+			Detail:   firstNonEmpty(action.NextAction, action.Detail, action.ConversionLever),
+			Owner:    action.Owner,
+			Status:   action.Status,
+			Severity: constants.SeverityMedium,
+			PaidTier: action.PaidTier,
+			Source:   "package billing",
+		})
+	}
+	if len(actions) == 0 {
+		actions = append(actions, model.TenantOnboardingAction{
+			Title:    "Run onboarding review",
+			Detail:   "All core setup proof is ready. Review package, privacy, notification, archive, and role evidence with the owner.",
+			Owner:    constants.RoleBusinessManager,
+			Status:   constants.StatusHealthy,
+			Severity: constants.SeverityInfo,
+			PaidTier: constants.PlanFamilyPro,
+			Source:   "onboarding center",
+		})
+	}
+	return actions
+}
+
+func onboardingSeverity(step model.TenantOnboardingStep) string {
+	if step.Blocking {
+		return constants.SeverityHigh
+	}
+	return constants.SeverityMedium
 }
 
 func buildTenantExecutiveConsole(

@@ -153,3 +153,11 @@ guardrails. It does not add collectors and does not store passwords,
 screenshots, raw URLs, page titles, alert bodies, provider secrets, push
 endpoints, endpoint payloads, private content, invoices, tokens, cookies,
 payment card data, or raw provider payloads.
+
+Phase 63 tenant onboarding center is metadata-only. It exposes setup step
+labels, host counts, autostart readiness, notification policy status,
+mail/push/dashboard delivery counts, archive posture, role view labels, package
+readiness, proof rows, and owner actions. It does not add collectors and does
+not store passwords, screenshots, raw URLs, page titles, alert bodies, provider
+secrets, push endpoints, endpoint payloads, private content, invoices, tokens,
+cookies, payment card data, or raw provider payloads.
