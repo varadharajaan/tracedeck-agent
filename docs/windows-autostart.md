@@ -27,7 +27,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/register-win
 
 The script requests UAC elevation when needed because registering a reliable
 logon task can require administrator approval. The `-BuildAgent` option writes
-the scheduled-task executable under `data/local/install/windows/`.
+the scheduled-task executable under `data/local/install/windows/`. The elevated
+PowerShell relaunch requests a hidden window after the UAC prompt, and the
+agent build uses the Windows GUI subsystem so normal scheduled starts do not
+flash a console window.
 
 To register and start immediately:
 
@@ -45,6 +48,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/manage-agent
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-windows-task-status.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-windows-task-status.ps1 -OutputPath data/local/service-status/windows-task.json
 ```
 
 Equivalent wrapper commands:
@@ -56,8 +60,25 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/manage-agent
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/manage-agent-service.ps1 -Platform windows -Action uninstall
 ```
 
-The status script writes structured output to the console and logs under
-`logs/local/service/`.
+The status script writes structured JSON to the console and logs under
+`logs/local/service/`. With `-OutputPath`, it also writes the same JSON under
+`data/local/`. With `-AllowMissing`, it returns a typed missing-task object
+instead of failing, including `present=false`, `state=missing`,
+`last_task_result`, `next_run_time`, and missed-run fields so future status
+checks can distinguish "not installed yet" from a broken query.
+
+## Assurance Test
+
+Phase 39 adds a stronger local assurance script:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-autostart-assurance.ps1
+```
+
+The script renders the Task Scheduler XML under `data/local/`, parses it, and
+verifies hidden startup, logon delay, continuous agent mode, restart-on-failure,
+start-when-available, battery behavior, structured missing-task status JSON,
+and Windows service-manager dry-run install/status plans.
 
 ## Transparency Boundary
 
