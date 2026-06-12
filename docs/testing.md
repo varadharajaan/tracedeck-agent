@@ -406,6 +406,20 @@ headers. Newman runs
 `postman/tracedeck-backend-phase34.postman_collection.json` against the same
 protected live backend.
 
+Phase 35 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-policy-schema.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase35.ps1
+```
+
+The Phase 35 schema check generates the versioned `v1alpha1` policy schema
+under `data/local/schema-check/phase35/`, SHA-256 compares normalized schema
+text with the checked-in schema file, and fails on drift. The verifier also
+runs gofmt, agent tests, backend API tests, dashboard JavaScript syntax checks,
+the Phase 34 authenticated dashboard Newman guard, cross-platform builds, and
+root artifact hygiene.
+
 Phase 13 adds:
 
 ```powershell

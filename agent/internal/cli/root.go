@@ -48,12 +48,17 @@ func newValidateConfigCommand() *cobra.Command {
 
 func newSchemaCommand() *cobra.Command {
 	var outputPath string
+	var version string
 
 	cmd := &cobra.Command{
 		Use:   constants.CommandSchema,
 		Short: "Generate TraceDeck policy JSON Schema",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			data, err := schema.GeneratePolicy(schema.PolicySchemaV1Alpha1)
+			policyVersion, err := schema.ParsePolicyVersion(version)
+			if err != nil {
+				return err
+			}
+			data, err := schema.GeneratePolicy(policyVersion)
 			if err != nil {
 				return err
 			}
@@ -68,6 +73,7 @@ func newSchemaCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&outputPath, "out", "", "schema output path")
+	cmd.Flags().StringVar(&version, "version", string(schema.LatestPolicyVersion()), "policy schema version")
 	return cmd
 }
 

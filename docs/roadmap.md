@@ -115,3 +115,6 @@
 37. Phase 34: dashboard session auth. Session-scoped API-key unlock for the
     embedded localhost dashboard, protected API smoke/Newman coverage, security
     docs for session storage and header-based access, and local verification.
+38. Phase 35: versioned policy schema checks. Typed policy-schema version
+    registry, `schema --version` CLI support, checked-in schema drift tests,
+    local schema verification script, docs, and local verification.

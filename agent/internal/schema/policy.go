@@ -15,6 +15,26 @@ const (
 	PolicySchemaV1Alpha1 PolicySchemaVersion = constants.PolicySchemaVersionV1Alpha1
 )
 
+func LatestPolicyVersion() PolicySchemaVersion {
+	return PolicySchemaV1Alpha1
+}
+
+func SupportedPolicyVersions() []PolicySchemaVersion {
+	return []PolicySchemaVersion{
+		PolicySchemaV1Alpha1,
+	}
+}
+
+func ParsePolicyVersion(value string) (PolicySchemaVersion, error) {
+	version := PolicySchemaVersion(value)
+	for _, supported := range SupportedPolicyVersions() {
+		if version == supported {
+			return version, nil
+		}
+	}
+	return "", fmt.Errorf("unsupported policy schema version %q", value)
+}
+
 func GeneratePolicy(version PolicySchemaVersion) ([]byte, error) {
 	doc, err := BuildPolicy(version)
 	if err != nil {
