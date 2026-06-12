@@ -14,6 +14,37 @@ Default base URL:
 http://127.0.0.1:18080
 ```
 
+Backend state is durable by default in Phase 11:
+
+```text
+data/local/backend/backend-state.json
+```
+
+The backend can still run in memory only with:
+
+```powershell
+go run ./backend/cmd/tracedeck-backend --memory-store
+```
+
+Optional local API-key protection can be enabled with:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/start-backend-dev.ps1 `
+  -ApiKey "local-secret" `
+  -ApiKeyTenantId "family-varadha"
+```
+
+When enabled, API routes require:
+
+```text
+X-TraceDeck-API-Key: local-secret
+X-TraceDeck-Tenant-ID: family-varadha
+```
+
+`GET /health` and `GET /` remain available for local status and dashboard shell
+loading. Tenant-scoped API keys can only create, list, and read resources for
+their configured tenant.
+
 Current endpoints:
 
 ```text
@@ -79,9 +110,11 @@ Phase 9 adds typed host dashboard APIs:
 - tamper and trust events
 - alert delivery routes for email, push, and dashboard channels
 
-Phase 9 uses in-memory demo risk data seeded for enrolled devices. Durable
-backend event storage, tenant authorization, remote auth, and persistent alert
-delivery history remain later SaaS phases.
+Phase 9 introduced in-memory demo risk data for enrolled devices. Phase 11
+persists backend tenants, devices, audit events, host risk events, tamper events,
+and alert delivery rows to the local backend state file. Remote auth, durable
+database migrations, and production push-provider delivery history remain later
+SaaS phases.
 
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.

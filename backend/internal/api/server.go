@@ -22,12 +22,13 @@ import (
 var dashboardFS embed.FS
 
 type Server struct {
-	store     *store.Memory
+	store     store.Repository
 	logger    *slog.Logger
 	startedAt time.Time
+	auth      AuthConfig
 }
 
-func NewServer(repo *store.Memory, logger *slog.Logger) *Server {
+func NewServer(repo store.Repository, logger *slog.Logger) *Server {
 	if repo == nil {
 		repo = store.NewMemory()
 	}
@@ -39,6 +40,12 @@ func NewServer(repo *store.Memory, logger *slog.Logger) *Server {
 		logger:    logger,
 		startedAt: time.Now().UTC(),
 	}
+}
+
+func NewServerWithAuth(repo store.Repository, logger *slog.Logger, auth AuthConfig) *Server {
+	server := NewServer(repo, logger)
+	server.auth = auth
+	return server
 }
 
 func (s *Server) Handler() http.Handler {
@@ -57,7 +64,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc(constants.RouteAuditEvents, s.handleAuditEvents)
 	mux.HandleFunc(constants.RoutePolicyTemplates, s.handlePolicyTemplates)
 	mux.HandleFunc(constants.RouteArchiveStatus, s.handleArchiveStatus)
-	return requestLogger(s.logger, mux)
+	return requestLogger(s.logger, s.authMiddleware(mux))
 }
 
 func Serve(ctx context.Context, addr string, handler http.Handler, logger *slog.Logger) error {
@@ -163,6 +170,10 @@ func (s *Server) handleDeviceEnroll(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	if !tenantAllowed(r.Context(), req.TenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
 
 	device, err := s.store.EnrollDevice(r.Context(), req)
 	if err != nil {
@@ -182,6 +193,7 @@ func (s *Server) handleDevices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	devices := s.store.ListDevices(r.Context())
+	devices = filterDevicesForPrincipal(r.Context(), devices)
 	writeJSON(w, http.StatusOK, model.ListResponse[model.Device]{
 		Items: devices,
 		Count: len(devices),
@@ -203,6 +215,9 @@ func (s *Server) handleDeviceRoutes(w http.ResponseWriter, r *http.Request) {
 	case len(parts) == 3 && parts[1] == constants.RouteSegmentSummary && parts[2] == constants.RouteSegmentDaily && r.Method == http.MethodGet:
 		s.handleDailySummary(w, r, deviceID)
 	case len(parts) == 3 && parts[1] == constants.RouteSegmentReports && parts[2] == constants.RouteSegmentWeekly && r.Method == http.MethodGet:
+		if !s.deviceAllowed(w, r, deviceID) {
+			return
+		}
 		s.handleWeeklyReport(w, r, deviceID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentOverview && r.Method == http.MethodGet:
 		s.handleHostOverview(w, r, deviceID)
@@ -227,6 +242,7 @@ func (s *Server) handleTenants(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		tenants := s.store.ListTenants(r.Context())
+		tenants = filterTenantsForPrincipal(r.Context(), tenants)
 		writeJSON(w, http.StatusOK, model.ListResponse[model.Tenant]{
 			Items: tenants,
 			Count: len(tenants),
@@ -239,6 +255,10 @@ func (s *Server) handleTenants(w http.ResponseWriter, r *http.Request) {
 		}
 		if err := validateCreateTenantRequest(req); err != nil {
 			writeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		if !tenantAllowed(r.Context(), req.TenantID) {
+			writeError(w, http.StatusForbidden, "tenant scope is not allowed")
 			return
 		}
 		tenant, err := s.store.CreateTenant(r.Context(), req)
@@ -281,10 +301,18 @@ func (s *Server) handleTenant(w http.ResponseWriter, r *http.Request, tenantID s
 		writeError(w, http.StatusInternalServerError, "tenant lookup failed")
 		return
 	}
+	if !tenantAllowed(r.Context(), tenant.TenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
 	writeJSON(w, http.StatusOK, tenant)
 }
 
 func (s *Server) handleTenantAuditEvents(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
 	if _, err := s.store.GetTenant(r.Context(), tenantID); err != nil {
 		if errors.Is(err, store.ErrTenantNotFound) {
 			writeError(w, http.StatusNotFound, "tenant not found")
@@ -294,6 +322,7 @@ func (s *Server) handleTenantAuditEvents(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	events := s.store.ListAuditEvents(r.Context(), tenantID)
+	events = filterAuditEventsForPrincipal(r.Context(), events)
 	writeJSON(w, http.StatusOK, model.ListResponse[model.AuditEvent]{
 		Items: events,
 		Count: len(events),
@@ -310,10 +339,17 @@ func (s *Server) handleDevice(w http.ResponseWriter, r *http.Request, deviceID s
 		writeError(w, http.StatusInternalServerError, "device lookup failed")
 		return
 	}
+	if !tenantAllowed(r.Context(), device.TenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
 	writeJSON(w, http.StatusOK, device)
 }
 
 func (s *Server) handleDailySummary(w http.ResponseWriter, r *http.Request, deviceID string) {
+	if !s.deviceAllowed(w, r, deviceID) {
+		return
+	}
 	summary, err := s.store.DailySummary(r.Context(), deviceID, r.URL.Query().Get("date"))
 	if err != nil {
 		if errors.Is(err, store.ErrDeviceNotFound) {
@@ -327,6 +363,9 @@ func (s *Server) handleDailySummary(w http.ResponseWriter, r *http.Request, devi
 }
 
 func (s *Server) handleHostOverview(w http.ResponseWriter, r *http.Request, deviceID string) {
+	if !s.deviceAllowed(w, r, deviceID) {
+		return
+	}
 	overview, err := s.store.HostOverview(r.Context(), deviceID)
 	if err != nil {
 		if errors.Is(err, store.ErrDeviceNotFound) {
@@ -340,6 +379,9 @@ func (s *Server) handleHostOverview(w http.ResponseWriter, r *http.Request, devi
 }
 
 func (s *Server) handlePolicyViolations(w http.ResponseWriter, r *http.Request, deviceID string) {
+	if !s.deviceAllowed(w, r, deviceID) {
+		return
+	}
 	events, err := s.store.ListPolicyViolations(r.Context(), deviceID)
 	if err != nil {
 		if errors.Is(err, store.ErrDeviceNotFound) {
@@ -353,6 +395,9 @@ func (s *Server) handlePolicyViolations(w http.ResponseWriter, r *http.Request, 
 }
 
 func (s *Server) handleAnomalies(w http.ResponseWriter, r *http.Request, deviceID string) {
+	if !s.deviceAllowed(w, r, deviceID) {
+		return
+	}
 	events, err := s.store.ListAnomalies(r.Context(), deviceID)
 	if err != nil {
 		if errors.Is(err, store.ErrDeviceNotFound) {
@@ -366,6 +411,9 @@ func (s *Server) handleAnomalies(w http.ResponseWriter, r *http.Request, deviceI
 }
 
 func (s *Server) handleTamperEvents(w http.ResponseWriter, r *http.Request, deviceID string) {
+	if !s.deviceAllowed(w, r, deviceID) {
+		return
+	}
 	events, err := s.store.ListTamperEvents(r.Context(), deviceID)
 	if err != nil {
 		if errors.Is(err, store.ErrDeviceNotFound) {
@@ -379,6 +427,9 @@ func (s *Server) handleTamperEvents(w http.ResponseWriter, r *http.Request, devi
 }
 
 func (s *Server) handleAlertDeliveries(w http.ResponseWriter, r *http.Request, deviceID string) {
+	if !s.deviceAllowed(w, r, deviceID) {
+		return
+	}
 	deliveries, err := s.store.ListAlertDeliveries(r.Context(), deviceID)
 	if err != nil {
 		if errors.Is(err, store.ErrDeviceNotFound) {
@@ -449,6 +500,7 @@ func (s *Server) handleAuditEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	events := s.store.ListAuditEvents(r.Context(), "")
+	events = filterAuditEventsForPrincipal(r.Context(), events)
 	writeJSON(w, http.StatusOK, model.ListResponse[model.AuditEvent]{
 		Items: events,
 		Count: len(events),
@@ -461,6 +513,23 @@ func (s *Server) handleArchiveStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, store.ArchiveStatus())
+}
+
+func (s *Server) deviceAllowed(w http.ResponseWriter, r *http.Request, deviceID string) bool {
+	device, err := s.store.GetDevice(r.Context(), deviceID)
+	if err != nil {
+		if errors.Is(err, store.ErrDeviceNotFound) {
+			writeError(w, http.StatusNotFound, "device not found")
+			return false
+		}
+		writeError(w, http.StatusInternalServerError, "device lookup failed")
+		return false
+	}
+	if !tenantAllowed(r.Context(), device.TenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return false
+	}
+	return true
 }
 
 func validateCreateTenantRequest(req model.CreateTenantRequest) error {

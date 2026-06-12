@@ -144,6 +144,84 @@ func TestHostDashboardRiskEndpointNotFound(t *testing.T) {
 	}
 }
 
+func TestAPIKeyMiddlewareAndTenantScope(t *testing.T) {
+	t.Parallel()
+
+	repo := store.NewMemory()
+	handler := NewServerWithAuth(repo, slog.Default(), AuthConfig{
+		APIKey:   "local-secret",
+		TenantID: "tenant-a",
+		ActorID:  "local-test",
+		RoleID:   constants.RoleParent,
+	}).Handler()
+
+	noKey := httptest.NewRecorder()
+	handler.ServeHTTP(noKey, httptest.NewRequest(http.MethodGet, constants.RouteDevices, nil))
+	if noKey.Code != http.StatusUnauthorized {
+		t.Fatalf("expected missing api key 401, got %d", noKey.Code)
+	}
+
+	tenantABody := []byte(`{
+		"tenant_id": "tenant-a",
+		"name": "Tenant A",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+	createTenant := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantABody))
+	req.Header.Set(constants.HeaderAPIKey, "local-secret")
+	handler.ServeHTTP(createTenant, req)
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	forbiddenTenantBody := []byte(`{
+		"tenant_id": "tenant-b",
+		"name": "Tenant B",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+	forbidden := httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(forbiddenTenantBody))
+	req.Header.Set(constants.HeaderAPIKey, "local-secret")
+	handler.ServeHTTP(forbidden, req)
+	if forbidden.Code != http.StatusForbidden {
+		t.Fatalf("expected tenant scope 403, got %d", forbidden.Code)
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "tenant-a",
+		"device_id": "tenant-a-device",
+		"host_name": "tenant-a-host",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody))
+	req.Header.Set(constants.HeaderAPIKey, "local-secret")
+	handler.ServeHTTP(enroll, req)
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected scoped device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	list := httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodGet, constants.RouteDevices, nil)
+	req.Header.Set(constants.HeaderAPIKey, "local-secret")
+	handler.ServeHTTP(list, req)
+	if list.Code != http.StatusOK {
+		t.Fatalf("expected scoped list 200, got %d", list.Code)
+	}
+	var devices model.ListResponse[model.Device]
+	if err := json.Unmarshal(list.Body.Bytes(), &devices); err != nil {
+		t.Fatalf("decode scoped device list: %v", err)
+	}
+	if devices.Count != 1 || devices.Items[0].TenantID != "tenant-a" {
+		t.Fatalf("unexpected scoped devices: %+v", devices)
+	}
+}
+
 func TestDeviceEnrollmentValidation(t *testing.T) {
 	t.Parallel()
 

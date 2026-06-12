@@ -2,8 +2,11 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -20,6 +23,7 @@ var (
 
 type Memory struct {
 	mu              sync.RWMutex
+	path            string
 	devices         map[string]model.Device
 	tenants         map[string]model.Tenant
 	auditEvents     []model.AuditEvent
@@ -38,6 +42,18 @@ func NewMemory() *Memory {
 		tamperEvents:    make(map[string][]model.RiskEvent),
 		alertDeliveries: make(map[string][]model.AlertDelivery),
 	}
+}
+
+func NewPersistent(path string) (*Memory, error) {
+	memory := NewMemory()
+	memory.path = strings.TrimSpace(path)
+	if memory.path == "" {
+		return memory, nil
+	}
+	if err := memory.load(); err != nil {
+		return nil, err
+	}
+	return memory, nil
 }
 
 func (m *Memory) EnrollDevice(_ context.Context, req model.EnrollDeviceRequest) (model.Device, error) {
@@ -59,6 +75,9 @@ func (m *Memory) EnrollDevice(_ context.Context, req model.EnrollDeviceRequest) 
 	}
 	m.devices[device.DeviceID] = device
 	m.seedDashboardForDeviceLocked(device)
+	if err := m.persistLocked(); err != nil {
+		return model.Device{}, err
+	}
 	return device, nil
 }
 
@@ -93,6 +112,9 @@ func (m *Memory) CreateTenant(_ context.Context, req model.CreateTenantRequest) 
 		Summary:   "tenant readiness profile created",
 		CreatedAt: now,
 	})
+	if err := m.persistLocked(); err != nil {
+		return model.Tenant{}, err
+	}
 	return tenant, nil
 }
 
@@ -188,6 +210,9 @@ func (m *Memory) HostOverview(_ context.Context, deviceID string) (model.HostOve
 		return model.HostOverview{}, ErrDeviceNotFound
 	}
 	m.seedDashboardForDeviceLocked(device)
+	if err := m.persistLocked(); err != nil {
+		return model.HostOverview{}, err
+	}
 	return m.hostOverviewLocked(device), nil
 }
 
@@ -200,6 +225,9 @@ func (m *Memory) ListPolicyViolations(_ context.Context, deviceID string) ([]mod
 		return nil, ErrDeviceNotFound
 	}
 	m.seedDashboardForDeviceLocked(device)
+	if err := m.persistLocked(); err != nil {
+		return nil, err
+	}
 	return cloneRiskEvents(m.policyEvents[device.DeviceID]), nil
 }
 
@@ -212,6 +240,9 @@ func (m *Memory) ListAnomalies(_ context.Context, deviceID string) ([]model.Risk
 		return nil, ErrDeviceNotFound
 	}
 	m.seedDashboardForDeviceLocked(device)
+	if err := m.persistLocked(); err != nil {
+		return nil, err
+	}
 	return cloneRiskEvents(m.anomalyEvents[device.DeviceID]), nil
 }
 
@@ -224,6 +255,9 @@ func (m *Memory) ListTamperEvents(_ context.Context, deviceID string) ([]model.R
 		return nil, ErrDeviceNotFound
 	}
 	m.seedDashboardForDeviceLocked(device)
+	if err := m.persistLocked(); err != nil {
+		return nil, err
+	}
 	return cloneRiskEvents(m.tamperEvents[device.DeviceID]), nil
 }
 
@@ -236,6 +270,9 @@ func (m *Memory) ListAlertDeliveries(_ context.Context, deviceID string) ([]mode
 		return nil, ErrDeviceNotFound
 	}
 	m.seedDashboardForDeviceLocked(device)
+	if err := m.persistLocked(); err != nil {
+		return nil, err
+	}
 	return cloneAlertDeliveries(m.alertDeliveries[device.DeviceID]), nil
 }
 
@@ -446,6 +483,107 @@ func archiveKey(device model.Device, uploadedAt time.Time) string {
 		"batch.json.gz",
 	}
 	return strings.Join(parts, "/")
+}
+
+type persistentState struct {
+	Version         string                           `json:"version"`
+	Tenants         map[string]model.Tenant          `json:"tenants"`
+	Devices         map[string]model.Device          `json:"devices"`
+	AuditEvents     []model.AuditEvent               `json:"audit_events"`
+	PolicyEvents    map[string][]model.RiskEvent     `json:"policy_events"`
+	AnomalyEvents   map[string][]model.RiskEvent     `json:"anomaly_events"`
+	TamperEvents    map[string][]model.RiskEvent     `json:"tamper_events"`
+	AlertDeliveries map[string][]model.AlertDelivery `json:"alert_deliveries"`
+}
+
+func (m *Memory) load() error {
+	if strings.TrimSpace(m.path) == "" {
+		return nil
+	}
+	data, err := os.ReadFile(m.path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		return fmt.Errorf("read backend state: %w", err)
+	}
+
+	var state persistentState
+	if err := json.Unmarshal(data, &state); err != nil {
+		return fmt.Errorf("decode backend state: %w", err)
+	}
+
+	m.tenants = cloneTenantMap(state.Tenants)
+	m.devices = cloneDeviceMap(state.Devices)
+	m.auditEvents = append([]model.AuditEvent(nil), state.AuditEvents...)
+	m.policyEvents = cloneRiskMap(state.PolicyEvents)
+	m.anomalyEvents = cloneRiskMap(state.AnomalyEvents)
+	m.tamperEvents = cloneRiskMap(state.TamperEvents)
+	m.alertDeliveries = cloneDeliveryMap(state.AlertDeliveries)
+	return nil
+}
+
+func (m *Memory) persistLocked() error {
+	if strings.TrimSpace(m.path) == "" {
+		return nil
+	}
+	state := persistentState{
+		Version:         constants.BackendVersion,
+		Tenants:         cloneTenantMap(m.tenants),
+		Devices:         cloneDeviceMap(m.devices),
+		AuditEvents:     append([]model.AuditEvent(nil), m.auditEvents...),
+		PolicyEvents:    cloneRiskMap(m.policyEvents),
+		AnomalyEvents:   cloneRiskMap(m.anomalyEvents),
+		TamperEvents:    cloneRiskMap(m.tamperEvents),
+		AlertDeliveries: cloneDeliveryMap(m.alertDeliveries),
+	}
+	data, err := json.MarshalIndent(state, "", "  ")
+	if err != nil {
+		return fmt.Errorf("encode backend state: %w", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(m.path), 0o750); err != nil {
+		return fmt.Errorf("create backend state dir: %w", err)
+	}
+	tmpPath := m.path + ".tmp"
+	if err := os.WriteFile(tmpPath, data, 0o600); err != nil {
+		return fmt.Errorf("write backend state temp: %w", err)
+	}
+	if err := os.Rename(tmpPath, m.path); err != nil {
+		return fmt.Errorf("commit backend state: %w", err)
+	}
+	return nil
+}
+
+func cloneTenantMap(input map[string]model.Tenant) map[string]model.Tenant {
+	output := make(map[string]model.Tenant, len(input))
+	for key, value := range input {
+		output[key] = value
+	}
+	return output
+}
+
+func cloneDeviceMap(input map[string]model.Device) map[string]model.Device {
+	output := make(map[string]model.Device, len(input))
+	for key, value := range input {
+		output[key] = value
+	}
+	return output
+}
+
+func cloneRiskMap(input map[string][]model.RiskEvent) map[string][]model.RiskEvent {
+	output := make(map[string][]model.RiskEvent, len(input))
+	for key, value := range input {
+		output[key] = append([]model.RiskEvent(nil), value...)
+	}
+	return output
+}
+
+func cloneDeliveryMap(input map[string][]model.AlertDelivery) map[string][]model.AlertDelivery {
+	output := make(map[string][]model.AlertDelivery, len(input))
+	for key, value := range input {
+		output[key] = append([]model.AlertDelivery(nil), value...)
+	}
+	return output
 }
 
 func WeeklyReport(deviceID string) model.WeeklyReport {

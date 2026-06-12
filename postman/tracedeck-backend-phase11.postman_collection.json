@@ -1,0 +1,240 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 11",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Without API Key",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is public', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Devices Require API Key",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('devices reject missing api key', function () {",
+              "  pm.response.to.have.status(401);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Tenant With API Key",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-TraceDeck-API-Key",
+            "value": "{{apiKey}}"
+          },
+          {
+            "key": "X-TraceDeck-Tenant-ID",
+            "value": "family-varadha"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"name\":\"Family Varadha\",\"plan_id\":\"family_pro\",\"retention_tier_id\":\"family_cloud_90_365_archive\",\"primary_profile\":\"ai-btech-student\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/tenants"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('tenant created with api key', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().tenant_id).to.eql('family-varadha');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Forbidden Tenant Scope",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-TraceDeck-API-Key",
+            "value": "{{apiKey}}"
+          },
+          {
+            "key": "X-TraceDeck-Tenant-ID",
+            "value": "family-varadha"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"other-tenant\",\"name\":\"Other Tenant\",\"plan_id\":\"family_pro\",\"retention_tier_id\":\"family_cloud_90_365_archive\",\"primary_profile\":\"ai-btech-student\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/tenants"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('tenant scope rejects other tenant', function () {",
+              "  pm.response.to.have.status(403);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Enroll Device With API Key",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-TraceDeck-API-Key",
+            "value": "{{apiKey}}"
+          },
+          {
+            "key": "X-TraceDeck-Tenant-ID",
+            "value": "family-varadha"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"device_id\":\"postman-phase11-device\",\"host_name\":\"postman-phase11-host\",\"profile\":\"ai-btech-student\",\"os_name\":\"windows\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/devices/enroll"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('device enrolled with api key', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().device_id).to.eql('postman-phase11-device');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Host Overview With API Key",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-TraceDeck-API-Key",
+            "value": "{{apiKey}}"
+          },
+          {
+            "key": "X-TraceDeck-Tenant-ID",
+            "value": "family-varadha"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/devices/postman-phase11-device/overview"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('host overview works with api key', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.device.device_id).to.eql('postman-phase11-device');",
+              "  pm.expect(body.policy_violations.length).to.be.above(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List Devices With API Key",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-TraceDeck-API-Key",
+            "value": "{{apiKey}}"
+          },
+          {
+            "key": "X-TraceDeck-Tenant-ID",
+            "value": "family-varadha"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/devices"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('scoped devices include postman host', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.items.some((device) => device.device_id === 'postman-phase11-device')).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18080"
+    },
+    {
+      "key": "apiKey",
+      "value": "phase11-local-secret"
+    }
+  ]
+}

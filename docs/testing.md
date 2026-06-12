@@ -19,6 +19,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase8.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase9.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase10.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase11.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
@@ -113,6 +114,20 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/start-dashbo
 The Phase 10 verifier starts the backend with seeded demo host data on
 localhost, verifies the host overview and dashboard HTML, checks root hygiene,
 and stops the demo backend.
+
+Phase 11 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase11.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase11.ps1
+```
+
+The Phase 11 smoke builds the backend, boots it with an isolated JSON state
+file and API key, verifies missing-key rejection, creates a tenant, enrolls a
+host, confirms risk data exists, restarts the backend against the same state
+file, and verifies the host and alert delivery rows survived restart. Newman
+runs `postman/tracedeck-backend-phase11.postman_collection.json` against a live
+API-key-protected backend.
 
 `go test -race ./...` is run when the local Go toolchain supports it. On
 Windows shells where CGO is disabled or no race-capable C toolchain is active,

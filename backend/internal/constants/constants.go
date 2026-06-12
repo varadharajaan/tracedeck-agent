@@ -9,6 +9,7 @@ const (
 	DefaultBackendAddr = "127.0.0.1:18080"
 	DefaultLogDir      = "logs/local/backend"
 	DefaultLogLevel    = "info"
+	DefaultDataPath    = "data/local/backend/backend-state.json"
 )
 
 const (
@@ -43,6 +44,12 @@ const (
 const (
 	ContentTypeJSON = "application/json"
 	ContentTypeHTML = "text/html; charset=utf-8"
+)
+
+const (
+	HeaderAPIKey   = "X-TraceDeck-API-Key"
+	HeaderTenantID = "X-TraceDeck-Tenant-ID"
+	HeaderActorID  = "X-TraceDeck-Actor-ID"
 )
 
 const (
