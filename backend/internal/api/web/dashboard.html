@@ -1937,6 +1937,104 @@
       </div>
     </section>
 
+    <section id="portfolio-center-section" class="executive-console" aria-label="portfolio center">
+      <div class="executive-focus">
+        <div class="section-head">
+          <div>
+            <h2>Portfolio Center</h2>
+            <p>Multi-host command view for owner/admin reviews: host health, risk, anomaly counts, notification proof, archive/sync posture, paid package readiness, and next actions.</p>
+          </div>
+          <span id="portfolio-center-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Fleet and customer portfolio</span>
+          <strong id="portfolio-center-headline">No tenant loaded</strong>
+          <p id="portfolio-center-detail">Waiting for host rows, alert queue, delivery proof, archive backlog, sync posture, and owner actions.</p>
+        </div>
+        <div class="executive-meter">
+          <div class="score-meta"><span>Portfolio score</span><span id="portfolio-center-score">0%</span></div>
+          <div class="executive-meter-track"><div id="portfolio-center-score-bar" class="executive-meter-fill"></div></div>
+        </div>
+        <div class="action-meta">
+          <span id="portfolio-center-package" class="pill">package pending</span>
+          <span id="portfolio-center-next" class="pill">action pending</span>
+          <span id="portfolio-center-privacy" class="pill">metadata-only</span>
+        </div>
+      </div>
+      <div>
+        <div class="executive-kpis">
+          <div class="executive-kpi"><small>Hosts</small><strong id="portfolio-kpi-hosts">-</strong><span id="portfolio-kpi-hosts-sub" class="muted">No host proof</span></div>
+          <div class="executive-kpi"><small>Open Alerts</small><strong id="portfolio-kpi-alerts">-</strong><span id="portfolio-kpi-alerts-sub" class="muted">No alert proof</span></div>
+          <div class="executive-kpi"><small>Notification Score</small><strong id="portfolio-kpi-notification">-</strong><span id="portfolio-kpi-notification-sub" class="muted">No delivery proof</span></div>
+          <div class="executive-kpi"><small>Mail And Push</small><strong id="portfolio-kpi-delivery">-</strong><span id="portfolio-kpi-delivery-sub" class="muted">No route proof</span></div>
+          <div class="executive-kpi"><small>Archive And Sync</small><strong id="portfolio-kpi-sync">-</strong><span id="portfolio-kpi-sync-sub" class="muted">No sync proof</span></div>
+          <div class="executive-kpi"><small>Trust</small><strong id="portfolio-kpi-trust">-</strong><span id="portfolio-kpi-trust-sub" class="muted">No trust proof</span></div>
+        </div>
+        <div class="executive-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Portfolio Alert Notifications</h2>
+                <p class="muted">Owner-ready anomaly, policy, and tamper notifications with mail, push, dashboard, host, category, and paid-tier proof.</p>
+              </div>
+              <span id="portfolio-alert-count" class="pill">0 alerts</span>
+            </div>
+            <div id="portfolio-alert-list" class="executive-list"><div class="empty">No portfolio alert notifications yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Portfolio Delivery Proof</h2>
+                <p class="muted">Mail delivery, push notification reach, dashboard fallback, weekly report/archive, and host coverage proof for paid demos.</p>
+              </div>
+              <span id="portfolio-delivery-proof-count" class="pill">0 proofs</span>
+            </div>
+            <div id="portfolio-delivery-proof-list" class="executive-list"><div class="empty">No portfolio delivery proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Host Portfolio Rows</h2>
+                <p class="muted">Each host row shows risk, health, alert counts, archive backlog, delivery status, and next action from typed metadata.</p>
+              </div>
+              <span id="portfolio-host-count" class="pill">0 hosts</span>
+            </div>
+            <div id="portfolio-host-list" class="executive-list"><div class="empty">No portfolio hosts yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Portfolio Segments</h2>
+                <p class="muted">Fleet coverage, risk queue, notification proof, archive/sync, and package readiness for paid demos.</p>
+              </div>
+              <span id="portfolio-segment-count" class="pill">0 segments</span>
+            </div>
+            <div id="portfolio-segment-list" class="executive-list"><div class="empty">No portfolio segments yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Portfolio Owner Actions</h2>
+                <p class="muted">Owner/admin actions that make multi-host monitoring easier to sell, trust, and renew.</p>
+              </div>
+              <span id="portfolio-action-count" class="pill">0 actions</span>
+            </div>
+            <div id="portfolio-action-list" class="executive-list"><div class="empty">No portfolio actions yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Portfolio Privacy Guard</h2>
+                <p class="muted">Portfolio proof stays at host labels, scores, counts, delivery status, archive/sync posture, and owner actions.</p>
+              </div>
+              <span id="portfolio-guard-status" class="pill">metadata-only</span>
+            </div>
+            <div id="portfolio-guard-list" class="executive-list"><div class="empty">No portfolio privacy guard yet.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="executive-console-section" class="executive-console" aria-label="executive notification console">
       <div class="executive-focus">
         <div class="section-head">
@@ -2525,6 +2623,7 @@
         <button class="command-jump is-active" type="button" data-jump-target="customer-control-section">Control<span id="nav-customer-control-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="customer-success-section">Success<span id="nav-customer-success-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="push-activation-section">Push<span id="nav-push-activation-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="portfolio-center-section">Portfolio<span id="nav-portfolio-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="executive-console-section">Executive<span id="nav-executive-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="notification-revenue-section">Notif Rev<span id="nav-notification-revenue-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="provider-simulation-section">Provider<span id="nav-provider-simulation-meta">waiting</span></button>
@@ -4404,6 +4503,7 @@
       renderCustomerControlRoom(context.customerControlRoom);
       renderCustomerSuccessPacket(context.customerSuccessPacket);
       renderPushActivationCenter(context.pushActivationCenter);
+      renderPortfolioCenter(context.portfolioCenter);
       renderExecutiveConsole(context.executiveConsole);
       renderNotificationRevenueCockpit(context.notificationRevenueCockpit);
       renderProviderSimulationLab(context.providerSimulationLab);
@@ -4476,6 +4576,7 @@
       setText("nav-customer-control-meta", "waiting");
       setText("nav-customer-success-meta", "waiting");
       setText("nav-push-activation-meta", "waiting");
+      setText("nav-portfolio-meta", "waiting");
       setText("nav-executive-meta", "waiting");
       setText("nav-notification-revenue-meta", "waiting");
       setText("nav-provider-simulation-meta", "waiting");
@@ -4530,6 +4631,8 @@
       const customerSuccessSummary = customerSuccess.summary || {};
       const pushActivation = context.pushActivationCenter || {};
       const pushActivationSummary = pushActivation.summary || {};
+      const portfolio = context.portfolioCenter || {};
+      const portfolioSummary = portfolio.summary || {};
       const notificationCommand = context.notificationCommandCenter || {};
       const notificationSummary = notificationCommand.summary || {};
       const executive = context.executiveConsole || {};
@@ -4564,6 +4667,7 @@
       setText("command-nav-archive", archiveProvider === "s3" ? `${archivePending} archive pending` : `${archiveProvider} pending`);
       setText("nav-customer-control-meta", customerControlSummary.product_score ? `${customerControlSummary.product_score}% control` : `${deliveryScore}% proof`);
       setText("nav-push-activation-meta", pushActivationSummary.activation_score ? `${pushActivationSummary.activation_score}% push` : `${pushActivationSummary.push_retrying || 0} retry`);
+      setText("nav-portfolio-meta", portfolioSummary.portfolio_score ? `${portfolioSummary.portfolio_score}% fleet` : `${state.devices.length} hosts`);
       setText("nav-executive-meta", executiveSummary.readiness_score ? `${executiveSummary.readiness_score}% ready` : `${readiness}% ready`);
       setText("nav-notification-revenue-meta", notificationRevenueSummary.revenue_readiness ? `${notificationRevenueSummary.revenue_readiness}% rev` : `${deliveryScore}% proof`);
       setText("nav-provider-simulation-meta", providerSimulationSummary.readiness_score ? `${providerSimulationSummary.readiness_score}% sim` : `${routes.length || 0} routes`);
@@ -5256,6 +5360,188 @@
         { title: "Escalation policy", detail: summary.push_escalation_enabled ? "Urgent anomaly escalation includes push." : "Add push to escalation before selling immediate alerting.", status: summary.push_escalation_enabled ? "healthy" : "watch" },
         { title: "Quiet hours", detail: summary.quiet_hours_protected ? "Quiet-hour policy is visible for study-safe alerting." : "Quiet-hour policy proof is pending.", status: summary.quiet_hours_protected ? "healthy" : "watch" },
         { title: "Simulation readiness", detail: `${readyRoutes}/${totalRoutes} push routes ready; simulation ${summary.push_simulation_ready ? "ready" : "needs proof"}.`, status: summary.push_simulation_ready && readyRoutes === totalRoutes ? "healthy" : "watch" }
+      ];
+      target.innerHTML = rows.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">${badge(item.status)}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderPortfolioCenter(center) {
+      const model = center || {};
+      const summary = model.summary || {};
+      const hosts = model.hosts || [];
+      const segments = model.segments || [];
+      const alertNotifications = model.alert_notifications || [];
+      const deliveryProof = model.delivery_proof || [];
+      const actions = model.actions || [];
+      const status = summary.status || "pending";
+
+      document.getElementById("portfolio-center-status").outerHTML =
+        badge(status).replace("<span", '<span id="portfolio-center-status"');
+      setText("portfolio-center-headline", summary.headline || "Portfolio center pending");
+      setText("portfolio-center-detail", summary.detail || "Waiting for host rows, alert queue, delivery proof, archive backlog, sync posture, and owner actions.");
+      setText("portfolio-center-score", `${summary.portfolio_score || 0}%`);
+      setPercentBar("portfolio-center-score-bar", summary.portfolio_score || 0);
+      setText("portfolio-center-package", summary.recommended_paid_package || model.plan_name || "package pending");
+      setText("portfolio-center-next", summary.owner_next_step || "action pending");
+      setText("portfolio-center-privacy", model.privacy_boundary ? "metadata-only" : "privacy pending");
+
+      setText("portfolio-kpi-hosts", `${summary.hosts_reporting || 0}/${summary.hosts_total || 0}`);
+      setText("portfolio-kpi-hosts-sub", `${summary.hosts_attention || 0} need attention, ${summary.hosts_pending || 0} pending`);
+      setText("portfolio-kpi-alerts", `${summary.open_alerts || 0}`);
+      setText("portfolio-kpi-alerts-sub", `${summary.high_priority_alerts || 0} high priority`);
+      setText("portfolio-kpi-notification", `${summary.notification_score || 0}%`);
+      setText("portfolio-kpi-notification-sub", `${summary.routes_needing_proof || 0} route proof gaps`);
+      setText("portfolio-kpi-delivery", `${summary.mail_delivered || 0}/${summary.push_delivered || 0}`);
+      setText("portfolio-kpi-delivery-sub", `${summary.push_retrying || 0} push retrying, ${summary.dashboard_delivered || 0} dashboard`);
+      setText("portfolio-kpi-sync", `${summary.stored_telemetry_events || 0}`);
+      setText("portfolio-kpi-sync-sub", `${summary.archive_backlog || 0} archive batches pending`);
+      setText("portfolio-kpi-trust", `${summary.trust_score || 0}%`);
+      setText("portfolio-kpi-trust-sub", `${summary.risk_score || 0} risk score`);
+
+      renderPortfolioAlerts(alertNotifications);
+      renderPortfolioDeliveryProof(deliveryProof);
+      renderPortfolioHosts(hosts);
+      renderPortfolioSegments(segments);
+      renderPortfolioActions(actions);
+      renderPortfolioGuard(summary, model.privacy_boundary);
+    }
+
+    function renderPortfolioAlerts(alerts) {
+      setText("portfolio-alert-count", `${alerts.length} alert${alerts.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("portfolio-alert-list");
+      if (alerts.length === 0) {
+        target.innerHTML = '<div class="empty">No portfolio alert notifications yet.</div>';
+        return;
+      }
+      target.innerHTML = alerts.slice(0, 8).map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.title || "Portfolio alert notification")}</strong>
+          <span class="muted">${escapeHTML(item.host_name || "portfolio host")} - ${escapeHTML(item.detail || item.next_action || "Notification proof pending.")}</span>
+          <div class="action-meta">
+            ${badge(item.severity || "info")}
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.category || "portfolio")}</span>
+            <span class="pill">mail ${escapeHTML(item.email_status || "pending")}</span>
+            <span class="pill">push ${escapeHTML(item.push_status || "pending")}</span>
+            <span class="pill">dashboard ${escapeHTML(item.dashboard_status || "pending")}</span>
+            <span class="pill">${escapeHTML(item.paid_tier || "paid tier pending")}</span>
+            <span class="pill">${escapeHTML(formatAge(item.observed_at))}</span>
+          </div>
+          <span class="muted">${escapeHTML(item.next_action || "Keep anomaly notification proof ready for the owner.")}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderPortfolioDeliveryProof(proofs) {
+      setText("portfolio-delivery-proof-count", `${proofs.length} proof${proofs.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("portfolio-delivery-proof-list");
+      if (proofs.length === 0) {
+        target.innerHTML = '<div class="empty">No portfolio delivery proof yet.</div>';
+        return;
+      }
+      target.innerHTML = proofs.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.label || "delivery proof")}: ${escapeHTML(item.value || "-")}</strong>
+          <span class="muted">${escapeHTML(item.detail || item.next_action || "Delivery proof pending.")}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            ${badge(item.proof_state || "needs_proof")}
+            <span class="pill">${escapeHTML(item.channel || "dashboard")}</span>
+            <span class="pill">${escapeHTML(item.paid_tier || "paid tier pending")}</span>
+            <span class="pill">${escapeHTML(formatAge(item.observed_at))}</span>
+          </div>
+          <span class="muted">${escapeHTML(item.next_action || "Keep mail, push, and dashboard proof current.")}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderPortfolioHosts(hosts) {
+      setText("portfolio-host-count", `${hosts.length} host${hosts.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("portfolio-host-list");
+      if (hosts.length === 0) {
+        target.innerHTML = '<div class="empty">No portfolio hosts yet.</div>';
+        return;
+      }
+      target.innerHTML = hosts.slice(0, 10).map((host) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(host.host_name)} (${escapeHTML(host.device_id)})</strong>
+          <span class="muted">${escapeHTML(host.profile || "profile pending")} on ${escapeHTML(host.os_name || "OS pending")} - ${escapeHTML(host.metadata_proof_summary || "metadata proof pending")}</span>
+          <div class="action-meta">
+            ${badge(host.status || "pending")}
+            ${badge(host.risk_level || "risk pending")}
+            <span class="pill">risk ${escapeHTML(host.risk_score || 0)}</span>
+            <span class="pill">health ${escapeHTML(host.health_score || 0)}%</span>
+            <span class="pill">policy ${escapeHTML(host.policy_violations || 0)}</span>
+            <span class="pill">anomaly ${escapeHTML(host.anomalies || 0)}</span>
+            <span class="pill">tamper ${escapeHTML(host.tamper_signals || 0)}</span>
+          </div>
+          <div class="action-meta">
+            <span class="pill">mail ${escapeHTML(host.email_status || "pending")}</span>
+            <span class="pill">push ${escapeHTML(host.push_status || "pending")}</span>
+            <span class="pill">dashboard ${escapeHTML(host.dashboard_status || "pending")}</span>
+            <span class="pill">archive ${escapeHTML(host.archive_backlog || 0)}</span>
+            <span class="pill">${escapeHTML(formatAge(host.last_seen_at))}</span>
+          </div>
+          <span class="muted">${escapeHTML(host.next_action || "Keep portfolio host proof current.")}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderPortfolioSegments(segments) {
+      setText("portfolio-segment-count", `${segments.length} segment${segments.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("portfolio-segment-list");
+      if (segments.length === 0) {
+        target.innerHTML = '<div class="empty">No portfolio segments yet.</div>';
+        return;
+      }
+      target.innerHTML = segments.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.label)}: ${escapeHTML(item.value)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.paid_tier || "paid tier pending")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderPortfolioActions(actions) {
+      setText("portfolio-action-count", `${actions.length} action${actions.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("portfolio-action-list");
+      if (actions.length === 0) {
+        target.innerHTML = '<div class="empty">No portfolio actions yet.</div>';
+        return;
+      }
+      target.innerHTML = actions.slice(0, 8).map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.severity || "info")}
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+            <span class="pill">${escapeHTML(item.sla || "SLA pending")}</span>
+            <span class="pill">${escapeHTML(item.paid_tier || "paid tier pending")}</span>
+            <span class="pill">${escapeHTML(item.source || "portfolio center")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderPortfolioGuard(summary, privacyBoundary) {
+      const target = document.getElementById("portfolio-guard-list");
+      document.getElementById("portfolio-guard-status").textContent = privacyBoundary ? "metadata-only" : "privacy pending";
+      const rows = [
+        { title: "Collection boundary", detail: privacyBoundary || "Metadata-only portfolio boundary pending.", status: privacyBoundary ? "healthy" : "pending" },
+        { title: "Host proof", detail: `${summary.hosts_total || 0} host labels with risk, health, delivery, archive, and sync counts only.`, status: summary.hosts_total > 0 ? "healthy" : "pending" },
+        { title: "Notification proof", detail: `${summary.mail_delivered || 0} mail, ${summary.push_delivered || 0} push, ${summary.push_retrying || 0} push retrying, ${summary.dashboard_delivered || 0} dashboard rows.`, status: summary.push_retrying > 0 || summary.routes_needing_proof > 0 ? "watch" : "healthy" },
+        { title: "Owner review", detail: summary.owner_next_step || "Owner next step pending.", status: summary.owner_next_step ? "healthy" : "pending" }
       ];
       target.innerHTML = rows.map((item) => `
         <div class="executive-item">
@@ -8365,6 +8651,7 @@
       renderCustomerControlRoom(null);
       renderCustomerSuccessPacket(null);
       renderPushActivationCenter(null);
+      renderPortfolioCenter(null);
       renderExecutiveConsole(null);
       renderNotificationRevenueCockpit(null);
       renderProviderSimulationLab(null);
@@ -8428,6 +8715,7 @@
       const customerControlRoom = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/customer-control-room`) : null;
       const customerSuccessPacket = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/customer-success-packet`) : null;
       const pushActivationCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/push-activation-center`) : null;
+      const portfolioCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/portfolio-center`) : null;
       const executiveConsole = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/executive-console`) : null;
       const notificationRevenueCockpit = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-revenue-cockpit`) : null;
       const providerSimulationLab = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/provider-simulation-lab`) : null;
@@ -8463,6 +8751,7 @@
         customerControlRoom,
         customerSuccessPacket,
         pushActivationCenter,
+        portfolioCenter,
         executiveConsole,
         notificationRevenueCockpit,
         providerSimulationLab,

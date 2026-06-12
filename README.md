@@ -274,3 +274,13 @@ actions, and privacy guard. It is metadata-only and does not collect passwords,
 screenshots, raw URLs, page titles, alert bodies, provider secrets, push
 endpoints, endpoint payloads, private content, invoices, payment card data, or
 raw provider payloads.
+
+Phase 60 adds a typed Portfolio Center at
+`/api/v1/tenants/{tenantId}/portfolio-center`. It gives parents, school admins,
+and business managers a multi-host command view with portfolio score, alert
+notification rows, mail delivery proof, push notification proof, dashboard
+fallback, host rows, health/risk/alert counts, archive/sync posture, package
+readiness, owner actions, and privacy guard. It is metadata-only and
+does not collect passwords, screenshots, raw URLs, page titles, alert bodies,
+provider secrets, push endpoints, endpoint payloads, private content,
+invoices, payment card data, tokens, cookies, or raw provider payloads.

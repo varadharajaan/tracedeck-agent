@@ -47,6 +47,7 @@ const (
 	RouteSegmentCustomerControl  = "customer-control-room"
 	RouteSegmentSuccessPacket    = "customer-success-packet"
 	RouteSegmentPushActivation   = "push-activation-center"
+	RouteSegmentPortfolioCenter  = "portfolio-center"
 	RouteSegmentExecutiveConsole = "executive-console"
 	RouteSegmentNotificationRev  = "notification-revenue-cockpit"
 	RouteSegmentProviderSim      = "provider-simulation-lab"
@@ -301,6 +302,7 @@ const (
 	CustomerControlPrivacyNote        = "metadata-only customer control room: host labels, anomaly categories, notification route status, mail and push proof, report readiness, archive posture, package fit, provider simulation state, and owner actions only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, endpoint payloads, or payment card data are collected or stored"
 	CustomerSuccessPacketPrivacyNote  = "metadata-only customer success packet: customer-ready scores, anomaly categories, host labels, mail and push delivery proof, report/archive readiness, package fit, provider simulation state, privacy assurances, objections, and next actions only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, endpoint payloads, invoices, or payment card data are collected or stored"
 	PushActivationPrivacyNote         = "metadata-only push activation center: push route labels, subscription labels, proof state, retry posture, simulation readiness, preference coverage, escalation metadata, and owner actions only; no push endpoints, provider secrets, alert bodies, screenshots, raw URLs, tokens, cookies, no passwords, private content, endpoint payloads, invoices, or payment card data are collected or stored"
+	PortfolioCenterPrivacyNote        = "metadata-only portfolio center: host labels, profiles, OS labels, health scores, risk counts, notification status, archive backlog, sync posture, paid-tier labels, and owner actions only; no passwords, no screenshots, raw URLs, page titles, alert bodies, provider secrets, push endpoints, tokens, cookies, private content, endpoint payloads, invoices, payment card data, or raw provider payloads are collected or stored"
 	ExecutiveConsolePrivacyNote       = "metadata-only executive console: product readiness, anomaly categories, host labels, email/push/dashboard delivery proof, weekly report readiness, archive status, role packaging, and owner actions only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"
 	NotificationRevenuePrivacyNote    = "metadata-only notification revenue cockpit: anomaly SLA categories, mail/push/dashboard delivery proof, buyer demo readiness, escalation state, paid-package levers, weekly report readiness, and owner actions only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"
 	PackageBillingPrivacyNote         = "metadata-only package billing readiness: plan labels, feature gates, seat counts, retention tier, billing setup status, report/archive value, notification proof, and upgrade actions only; no payment card data, no invoices, no provider secrets, no passwords, no screenshots, no raw URLs, no page titles, no alert bodies, no tokens, no cookies, no private content, and no endpoint payloads are collected or stored"
@@ -389,4 +391,13 @@ const (
 	ActivityViewEmailProof   = "email-proof"
 	ActivityViewPushRetry    = "push-retry"
 	ActivityViewSyncProof    = "sync-proof"
+)
+
+const (
+	PortfolioProofAlertInbox        = "alert-notifications"
+	PortfolioProofMailDelivery      = "mail-delivery"
+	PortfolioProofPushNotifications = "push-notifications"
+	PortfolioProofDashboardFallback = "dashboard-fallback"
+	PortfolioProofWeeklyArchive     = "weekly-report-archive"
+	PortfolioProofHostCoverage      = "host-coverage"
 )

@@ -94,6 +94,15 @@ REQUIRED_IDS = (
     "push-scenario-list",
     "push-action-list",
     "push-guard-list",
+    "portfolio-center-section",
+    "portfolio-center-status",
+    "portfolio-center-headline",
+    "portfolio-alert-list",
+    "portfolio-delivery-proof-list",
+    "portfolio-host-list",
+    "portfolio-segment-list",
+    "portfolio-action-list",
+    "portfolio-guard-list",
     "mail-report-section",
     "archive-proof-section",
     "trust-proof-section",
@@ -199,8 +208,8 @@ def main() -> int:
                             clientHeight: element.clientHeight
                           }));
                           checks.push({
-                            name: "command-navigation-has-fifteen-jumps",
-                            ok: jumpBoxes.length === 15,
+                            name: "command-navigation-has-sixteen-jumps",
+                            ok: jumpBoxes.length === 16,
                             detail: `${jumpBoxes.length} command jump buttons`
                           });
                           for (const item of jumpBoxes) {

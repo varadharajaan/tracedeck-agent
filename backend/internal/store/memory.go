@@ -687,6 +687,62 @@ func (m *Memory) TenantPushActivationCenter(ctx context.Context, tenantID string
 	return buildTenantPushActivationCenter(operations, preferences, drilldown, provider, remediation, inbox, timeline, packageBilling, generatedAt), nil
 }
 
+func (m *Memory) TenantPortfolioCenter(ctx context.Context, tenantID string) (model.TenantPortfolioCenter, error) {
+	generatedAt := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	operations, err := m.TenantOperationsSummary(ctx, tenantID)
+	if err != nil {
+		return model.TenantPortfolioCenter{}, err
+	}
+	business, err := m.TenantBusinessDashboard(ctx, tenantID)
+	if err != nil {
+		return model.TenantPortfolioCenter{}, err
+	}
+	syncHealth, err := m.TenantSyncHealth(ctx, tenantID)
+	if err != nil {
+		return model.TenantPortfolioCenter{}, err
+	}
+	inbox, err := m.TenantAlertInbox(ctx, tenantID)
+	if err != nil {
+		return model.TenantPortfolioCenter{}, err
+	}
+	timeline, err := m.TenantDeliveryTimeline(ctx, tenantID, model.TenantDeliveryTimelineFilter{Limit: 30})
+	if err != nil {
+		return model.TenantPortfolioCenter{}, err
+	}
+	packageBilling, err := m.TenantPackageBillingReadiness(ctx, tenantID)
+	if err != nil {
+		return model.TenantPortfolioCenter{}, err
+	}
+
+	devices := m.ListDevices(ctx)
+	hosts := make([]model.TenantPortfolioHost, 0)
+	for _, device := range devices {
+		if device.TenantID != tenantID {
+			continue
+		}
+		overview, err := m.HostOverview(ctx, device.DeviceID)
+		if err != nil {
+			return model.TenantPortfolioCenter{}, err
+		}
+		hosts = append(hosts, tenantPortfolioHost(overview, timeline.Items))
+	}
+	sort.Slice(hosts, func(i, j int) bool {
+		leftRank := statusRankValue(hosts[i].Status)
+		rightRank := statusRankValue(hosts[j].Status)
+		if leftRank != rightRank {
+			return leftRank > rightRank
+		}
+		if hosts[i].RiskScore != hosts[j].RiskScore {
+			return hosts[i].RiskScore > hosts[j].RiskScore
+		}
+		return hosts[i].HostName < hosts[j].HostName
+	})
+
+	return buildTenantPortfolioCenter(operations, business, syncHealth, inbox, timeline, packageBilling, hosts, generatedAt), nil
+}
+
 func (m *Memory) deliveriesForTenantLocked(tenantID string) []model.AlertDelivery {
 	deliveries := make([]model.AlertDelivery, 0)
 	for _, device := range m.devices {
@@ -6209,6 +6265,550 @@ func stringSliceHas(values []string, expected string) bool {
 		}
 	}
 	return false
+}
+
+func buildTenantPortfolioCenter(
+	operations model.TenantOperationsSummary,
+	business model.TenantBusinessDashboard,
+	syncHealth model.TenantSyncHealth,
+	inbox model.TenantAlertInbox,
+	timeline model.TenantDeliveryTimeline,
+	packageBilling model.TenantPackageBillingReadiness,
+	hosts []model.TenantPortfolioHost,
+	generatedAt time.Time,
+) model.TenantPortfolioCenter {
+	summary := tenantPortfolioSummary(operations, business, syncHealth, inbox, timeline, packageBilling, hosts)
+	summary.Status = tenantPortfolioStatus(summary)
+	summary.Headline = tenantPortfolioHeadline(summary)
+	summary.Detail = tenantPortfolioDetail(summary)
+	summary.OwnerNextStep = tenantPortfolioNextStep(summary)
+
+	return model.TenantPortfolioCenter{
+		TenantID:           operations.TenantID,
+		TenantName:         operations.TenantName,
+		PlanID:             operations.PlanID,
+		PlanName:           operations.PlanName,
+		Audience:           firstNonEmpty(packageBilling.Audience, business.Audience, constants.PlanFamilyPro),
+		Summary:            summary,
+		Hosts:              hosts,
+		Segments:           tenantPortfolioSegments(summary, syncHealth),
+		AlertNotifications: tenantPortfolioAlertNotifications(business.Alerts, hosts, generatedAt),
+		DeliveryProof:      tenantPortfolioDeliveryProof(summary, business.Channels, business.Summary, generatedAt),
+		Actions:            tenantPortfolioActions(summary, hosts, generatedAt),
+		PrivacyBoundary:    constants.PortfolioCenterPrivacyNote,
+		GeneratedAt:        generatedAt,
+	}
+}
+
+func tenantPortfolioSummary(
+	operations model.TenantOperationsSummary,
+	business model.TenantBusinessDashboard,
+	syncHealth model.TenantSyncHealth,
+	inbox model.TenantAlertInbox,
+	timeline model.TenantDeliveryTimeline,
+	packageBilling model.TenantPackageBillingReadiness,
+	hosts []model.TenantPortfolioHost,
+) model.TenantPortfolioSummary {
+	hostsAttention := operations.HostsAttention
+	for _, host := range hosts {
+		if host.Status == constants.StatusAttention {
+			hostsAttention++
+		}
+	}
+	if hostsAttention > len(hosts) {
+		hostsAttention = len(hosts)
+	}
+
+	summary := model.TenantPortfolioSummary{
+		NotificationScore:      firstPositive(operations.NotificationScore, business.Summary.NotificationScore, timeline.Summary.NotificationScore),
+		TrustScore:             business.Summary.TrustScore,
+		RiskScore:              operations.RiskScore,
+		HostsTotal:             firstPositive(operations.HostsTotal, len(hosts), syncHealth.HostsTotal),
+		HostsAttention:         hostsAttention,
+		HostsReporting:         syncHealth.HostsReporting,
+		HostsPending:           syncHealth.HostsPending,
+		OpenAlerts:             inbox.Summary.Open,
+		HighPriorityAlerts:     inbox.Summary.HighOrCritical,
+		MailDelivered:          operations.EmailDelivered,
+		PushDelivered:          operations.PushDelivered,
+		DashboardDelivered:     operations.DashboardDelivered,
+		ArchiveBacklog:         operations.ArchiveBacklog,
+		StoredTelemetryEvents:  syncHealth.StoredEvents,
+		RoutesNeedingProof:     firstPositive(business.Summary.RoutesNeedingProof, timeline.Summary.RouteProofGaps),
+		RecommendedPaidPackage: firstNonEmpty(packageBilling.Summary.RecommendedPackage, business.Summary.RecommendedPackage, operations.PlanName, constants.PlanFamilyPro),
+	}
+	for _, item := range timeline.Items {
+		if item.Channel == constants.DeliveryChannelPush && item.Status == constants.DeliveryStatusRetrying {
+			summary.PushRetrying++
+		}
+	}
+	summary.PortfolioScore = averageScore(
+		operations.MonetizationReadiness,
+		business.Summary.ProductScore,
+		summary.NotificationScore,
+		summary.TrustScore,
+		ratioScore(summary.HostsReporting, summary.HostsTotal),
+		100-summary.RiskScore,
+	)
+	return summary
+}
+
+func tenantPortfolioHost(overview model.HostOverview, timelineItems []model.TenantDeliveryTimelineItem) model.TenantPortfolioHost {
+	emailStatus, emailAt := hostDeliveryStatus(overview.AlertDeliveries, constants.DeliveryChannelEmail)
+	pushStatus, pushAt := hostDeliveryStatus(overview.AlertDeliveries, constants.DeliveryChannelPush)
+	dashboardStatus, dashboardAt := hostDeliveryStatus(overview.AlertDeliveries, constants.DeliveryChannelDashboard)
+	latestDeliveryAt := latestTime(emailAt, pushAt, dashboardAt)
+
+	status := constants.StatusHealthy
+	if overview.RiskScore >= 75 || len(overview.TamperEvents) > 0 {
+		status = constants.StatusAttention
+	} else if len(overview.Anomalies) > 0 || overview.Summary.ArchiveBacklog > 0 || pushStatus == constants.DeliveryStatusRetrying || overview.Health.Score < 80 {
+		status = constants.StatusWatch
+	}
+	if hostHasFailedDelivery(overview.AlertDeliveries) {
+		status = constants.StatusAttention
+	}
+
+	return model.TenantPortfolioHost{
+		DeviceID:             overview.Device.DeviceID,
+		HostName:             overview.Device.HostName,
+		Profile:              overview.Device.Profile,
+		OSName:               overview.Device.OSName,
+		Status:               status,
+		RiskLevel:            overview.RiskLevel,
+		RiskScore:            overview.RiskScore,
+		HealthScore:          overview.Health.Score,
+		ComplianceScore:      overview.Summary.ComplianceScore,
+		PolicyViolations:     len(overview.PolicyViolations),
+		Anomalies:            len(overview.Anomalies),
+		TamperSignals:        len(overview.TamperEvents),
+		ArchiveBacklog:       overview.Summary.ArchiveBacklog,
+		DataCompletenessPct:  overview.Summary.DataCompletenessPct,
+		EmailStatus:          firstNonEmpty(emailStatus, constants.StatusPending),
+		PushStatus:           firstNonEmpty(pushStatus, constants.StatusPending),
+		DashboardStatus:      firstNonEmpty(dashboardStatus, constants.StatusPending),
+		LastSeenAt:           overview.Device.LastSeenAt,
+		LastDeliveryAt:       latestDeliveryAt,
+		NextAction:           tenantPortfolioHostNextAction(overview, pushStatus),
+		PaidTier:             constants.PlanFamilyPro,
+		MetadataProofSummary: hostMetadataProofSummary(overview, timelineItems),
+	}
+}
+
+func tenantPortfolioStatus(summary model.TenantPortfolioSummary) string {
+	switch {
+	case summary.HighPriorityAlerts > 0 || summary.HostsAttention > 0:
+		return constants.StatusAttention
+	case summary.PushRetrying > 0 || summary.RoutesNeedingProof > 0 || summary.HostsPending > 0 || summary.ArchiveBacklog > 0:
+		return constants.StatusWatch
+	case summary.PortfolioScore >= 80:
+		return constants.StatusHealthy
+	default:
+		return constants.StatusPending
+	}
+}
+
+func tenantPortfolioHeadline(summary model.TenantPortfolioSummary) string {
+	switch {
+	case summary.HighPriorityAlerts > 0:
+		return fmt.Sprintf("%d high-priority alert%s need owner review across the portfolio", summary.HighPriorityAlerts, pluralSuffix(summary.HighPriorityAlerts))
+	case summary.HostsAttention > 0:
+		return fmt.Sprintf("%d host%s need attention before the next customer review", summary.HostsAttention, pluralSuffix(summary.HostsAttention))
+	case summary.PushRetrying > 0:
+		return fmt.Sprintf("%d push notification%s are retrying with mail/dashboard fallback visible", summary.PushRetrying, pluralSuffix(summary.PushRetrying))
+	case summary.HostsTotal > 0:
+		return fmt.Sprintf("%d host%s are visible in the portfolio command view", summary.HostsTotal, pluralSuffix(summary.HostsTotal))
+	default:
+		return "Portfolio center is waiting for enrolled hosts"
+	}
+}
+
+func tenantPortfolioDetail(summary model.TenantPortfolioSummary) string {
+	return fmt.Sprintf("%d/%d hosts reporting, %d open alerts, %d mail delivered, %d push delivered, %d push retrying, %d dashboard delivered, %d archive batches pending, %d route proof gaps.",
+		summary.HostsReporting,
+		summary.HostsTotal,
+		summary.OpenAlerts,
+		summary.MailDelivered,
+		summary.PushDelivered,
+		summary.PushRetrying,
+		summary.DashboardDelivered,
+		summary.ArchiveBacklog,
+		summary.RoutesNeedingProof,
+	)
+}
+
+func tenantPortfolioNextStep(summary model.TenantPortfolioSummary) string {
+	switch {
+	case summary.HighPriorityAlerts > 0:
+		return "Review high-priority host rows and confirm owner notification proof."
+	case summary.PushRetrying > 0:
+		return "Close push retry proof while keeping mail and dashboard fallback visible."
+	case summary.RoutesNeedingProof > 0:
+		return "Run provider-safe delivery rehearsal for routes that still need proof."
+	case summary.HostsPending > 0:
+		return "Confirm offline replay and startup status for hosts that have not reported."
+	case summary.ArchiveBacklog > 0:
+		return "Flush local archive backlog before the next weekly review."
+	default:
+		return "Use the portfolio center as the parent, school, or business admin opening view."
+	}
+}
+
+func tenantPortfolioSegments(summary model.TenantPortfolioSummary, syncHealth model.TenantSyncHealth) []model.TenantPortfolioSegment {
+	return []model.TenantPortfolioSegment{
+		{
+			ID:       "fleet-coverage",
+			Label:    "Fleet coverage",
+			Value:    fmt.Sprintf("%d/%d hosts", summary.HostsReporting, summary.HostsTotal),
+			Detail:   syncHealth.OfflineReplaySummary,
+			Status:   gapStatus(summary.HostsPending),
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "risk-queue",
+			Label:    "Risk queue",
+			Value:    fmt.Sprintf("%d open", summary.OpenAlerts),
+			Detail:   fmt.Sprintf("%d high priority and %d hosts needing attention", summary.HighPriorityAlerts, summary.HostsAttention),
+			Status:   tenantPortfolioStatus(summary),
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "notification-proof",
+			Label:    "Notification proof",
+			Value:    fmt.Sprintf("%d%%", summary.NotificationScore),
+			Detail:   fmt.Sprintf("%d mail, %d push, %d dashboard delivered; %d push retrying", summary.MailDelivered, summary.PushDelivered, summary.DashboardDelivered, summary.PushRetrying),
+			Status:   gapStatus(summary.PushRetrying + summary.RoutesNeedingProof),
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			ID:       "archive-sync",
+			Label:    "Archive and sync",
+			Value:    fmt.Sprintf("%d events", summary.StoredTelemetryEvents),
+			Detail:   fmt.Sprintf("%d archive batches pending", summary.ArchiveBacklog),
+			Status:   gapStatus(summary.ArchiveBacklog),
+			PaidTier: constants.PlanSchool,
+		},
+		{
+			ID:       "package-readiness",
+			Label:    "Package readiness",
+			Value:    fmt.Sprintf("%d%%", summary.PortfolioScore),
+			Detail:   fmt.Sprintf("%s supports portfolio packaging", summary.RecommendedPaidPackage),
+			Status:   tenantPortfolioStatus(summary),
+			PaidTier: firstNonEmpty(summary.RecommendedPaidPackage, constants.PlanFamilyPro),
+		},
+	}
+}
+
+func tenantPortfolioAlertNotifications(alerts []model.TenantBusinessDashboardAlert, hosts []model.TenantPortfolioHost, generatedAt time.Time) []model.TenantPortfolioAlertNotification {
+	items := make([]model.TenantPortfolioAlertNotification, 0, len(alerts)+1)
+	for _, alert := range alerts {
+		items = append(items, model.TenantPortfolioAlertNotification{
+			Title:           alert.Title,
+			Detail:          alert.Detail,
+			Severity:        alert.Severity,
+			Status:          alert.Status,
+			HostName:        alert.HostName,
+			Category:        alert.Category,
+			EmailStatus:     firstNonEmpty(alert.EmailStatus, constants.StatusPending),
+			PushStatus:      firstNonEmpty(alert.PushStatus, constants.StatusPending),
+			DashboardStatus: firstNonEmpty(alert.DashboardStatus, constants.StatusPending),
+			NextAction:      firstNonEmpty(alert.NextAction, "Review this anomaly and confirm owner notification proof."),
+			PaidTier:        firstNonEmpty(alert.PaidTier, constants.PlanFamilyPro),
+			ObservedAt:      alert.ObservedAt,
+		})
+	}
+	if len(items) > 0 || len(hosts) == 0 {
+		return items
+	}
+	attentionHost := hosts[0]
+	for _, host := range hosts {
+		if statusRankValue(host.Status) > statusRankValue(attentionHost.Status) {
+			attentionHost = host
+		}
+	}
+	return append(items, model.TenantPortfolioAlertNotification{
+		Title:           "Portfolio anomaly notifications ready",
+		Detail:          fmt.Sprintf("%s has host-level policy, anomaly, tamper, mail, push, and dashboard proof available.", attentionHost.HostName),
+		Severity:        constants.SeverityInfo,
+		Status:          constants.StatusHealthy,
+		HostName:        attentionHost.HostName,
+		Category:        constants.PortfolioProofAlertInbox,
+		EmailStatus:     attentionHost.EmailStatus,
+		PushStatus:      attentionHost.PushStatus,
+		DashboardStatus: attentionHost.DashboardStatus,
+		NextAction:      "Use this notification queue as the paid owner review surface.",
+		PaidTier:        attentionHost.PaidTier,
+		ObservedAt:      generatedAt,
+	})
+}
+
+func tenantPortfolioDeliveryProof(summary model.TenantPortfolioSummary, channels []model.TenantBusinessDashboardChannel, businessSummary model.TenantBusinessDashboardSummary, generatedAt time.Time) []model.TenantPortfolioDeliveryProof {
+	proofs := make([]model.TenantPortfolioDeliveryProof, 0, 6)
+	channelByName := make(map[string]model.TenantBusinessDashboardChannel, len(channels))
+	for _, channel := range channels {
+		channelByName[channel.Channel] = channel
+	}
+	proofs = append(proofs,
+		tenantPortfolioChannelProof(
+			constants.PortfolioProofMailDelivery,
+			fmt.Sprintf("%d delivered", summary.MailDelivered),
+			"Critical anomaly mail proof for owners, parents, school admins, and business managers.",
+			constants.DeliveryChannelEmail,
+			channelByName[constants.DeliveryChannelEmail],
+			summary.RoutesNeedingProof,
+			generatedAt,
+		),
+		tenantPortfolioChannelProof(
+			constants.PortfolioProofPushNotifications,
+			fmt.Sprintf("%d delivered, %d retrying", summary.PushDelivered, summary.PushRetrying),
+			"Push notification reach with mail and dashboard fallback visible when provider delivery retries.",
+			constants.DeliveryChannelPush,
+			channelByName[constants.DeliveryChannelPush],
+			summary.PushRetrying,
+			generatedAt,
+		),
+		tenantPortfolioChannelProof(
+			constants.PortfolioProofDashboardFallback,
+			fmt.Sprintf("%d delivered", summary.DashboardDelivered),
+			"Dashboard fallback keeps anomaly evidence visible even when external providers need proof.",
+			constants.DeliveryChannelDashboard,
+			channelByName[constants.DeliveryChannelDashboard],
+			0,
+			generatedAt,
+		),
+	)
+	proofs = append(proofs,
+		model.TenantPortfolioDeliveryProof{
+			Label:      constants.PortfolioProofAlertInbox,
+			Value:      fmt.Sprintf("%d open, %d high", summary.OpenAlerts, summary.HighPriorityAlerts),
+			Detail:     "Owner-facing anomaly, policy, and tamper queue packaged for paid reviews.",
+			Channel:    constants.DeliveryChannelDashboard,
+			Status:     tenantPortfolioStatus(summary),
+			ProofState: gapStatus(summary.HighPriorityAlerts),
+			PaidTier:   constants.PlanFamilyPro,
+			NextAction: tenantPortfolioNextStep(summary),
+			ObservedAt: &generatedAt,
+		},
+		model.TenantPortfolioDeliveryProof{
+			Label:      constants.PortfolioProofWeeklyArchive,
+			Value:      boolReady(businessSummary.WeeklyReportReady),
+			Detail:     fmt.Sprintf("%d archive batches pending and %d stored telemetry events for weekly reports.", summary.ArchiveBacklog, summary.StoredTelemetryEvents),
+			Channel:    constants.DeliveryChannelEmail,
+			Status:     gapStatus(summary.ArchiveBacklog),
+			ProofState: boolProofState(businessSummary.WeeklyReportReady),
+			PaidTier:   constants.PlanFamilyPro,
+			NextAction: "Keep weekly PDF/email report and archive retention proof ready for renewals.",
+			ObservedAt: &generatedAt,
+		},
+		model.TenantPortfolioDeliveryProof{
+			Label:      constants.PortfolioProofHostCoverage,
+			Value:      fmt.Sprintf("%d/%d reporting", summary.HostsReporting, summary.HostsTotal),
+			Detail:     fmt.Sprintf("%d hosts need attention and %d hosts are pending replay.", summary.HostsAttention, summary.HostsPending),
+			Channel:    constants.DeliveryChannelDashboard,
+			Status:     gapStatus(summary.HostsPending + summary.HostsAttention),
+			ProofState: gapStatus(summary.HostsPending),
+			PaidTier:   constants.PlanSchool,
+			NextAction: "Use host coverage proof for family, school, and business expansion.",
+			ObservedAt: &generatedAt,
+		},
+	)
+	return proofs
+}
+
+func tenantPortfolioChannelProof(label string, value string, detail string, channelName string, channel model.TenantBusinessDashboardChannel, gapCount int, generatedAt time.Time) model.TenantPortfolioDeliveryProof {
+	observedAt := channel.LastDeliveryAt
+	if observedAt == nil {
+		observedAt = &generatedAt
+	}
+	return model.TenantPortfolioDeliveryProof{
+		Label:      label,
+		Value:      value,
+		Detail:     detail,
+		Channel:    channelName,
+		Status:     firstNonEmpty(channel.Status, gapStatus(gapCount)),
+		ProofState: firstNonEmpty(channel.ProofState, gapStatus(gapCount)),
+		PaidTier:   firstNonEmpty(channel.PaidTier, constants.PlanFamilyPro),
+		NextAction: firstNonEmpty(channel.NextAction, "Keep provider-safe delivery proof current for paid demos."),
+		ObservedAt: observedAt,
+	}
+}
+
+func boolProofState(value bool) string {
+	if value {
+		return constants.StatusHealthy
+	}
+	return constants.StatusPending
+}
+
+func tenantPortfolioActions(summary model.TenantPortfolioSummary, hosts []model.TenantPortfolioHost, generatedAt time.Time) []model.TenantPortfolioAction {
+	actions := make([]model.TenantPortfolioAction, 0, 6)
+	for _, host := range hosts {
+		if len(actions) >= 3 {
+			break
+		}
+		if host.Status == constants.StatusHealthy {
+			continue
+		}
+		actions = append(actions, model.TenantPortfolioAction{
+			Title:      "Review host portfolio row",
+			Detail:     fmt.Sprintf("%s: %s", host.HostName, host.NextAction),
+			Owner:      host.HostName,
+			Status:     host.Status,
+			Severity:   constants.SeverityMedium,
+			SLA:        "before next review",
+			PaidTier:   constants.PlanFamilyPro,
+			Source:     "portfolio host row",
+			ObservedAt: generatedAt,
+		})
+	}
+	if summary.PushRetrying > 0 {
+		actions = append(actions, model.TenantPortfolioAction{
+			Title:      "Close push retry proof",
+			Detail:     "Run provider-safe push rehearsal and keep mail/dashboard fallback visible in the portfolio.",
+			Owner:      constants.RoleParent,
+			Status:     constants.StatusWatch,
+			Severity:   constants.SeverityMedium,
+			SLA:        "same day",
+			PaidTier:   constants.PlanFamilyPro,
+			Source:     "portfolio notification proof",
+			ObservedAt: generatedAt,
+		})
+	}
+	if summary.HostsPending > 0 {
+		actions = append(actions, model.TenantPortfolioAction{
+			Title:      "Confirm reporting hosts",
+			Detail:     "Check startup/autostart and offline replay for hosts that are not reporting.",
+			Owner:      constants.RoleBusinessManager,
+			Status:     constants.StatusWatch,
+			Severity:   constants.SeverityMedium,
+			SLA:        "before weekly report",
+			PaidTier:   constants.PlanSchool,
+			Source:     "portfolio sync coverage",
+			ObservedAt: generatedAt,
+		})
+	}
+	if len(actions) == 0 {
+		actions = append(actions, model.TenantPortfolioAction{
+			Title:      "Use portfolio proof in onboarding",
+			Detail:     "Open with host coverage, notification proof, archive posture, and paid package readiness.",
+			Owner:      constants.RoleBusinessManager,
+			Status:     constants.StatusHealthy,
+			Severity:   constants.SeverityInfo,
+			SLA:        "weekly review",
+			PaidTier:   firstNonEmpty(summary.RecommendedPaidPackage, constants.PlanFamilyPro),
+			Source:     "portfolio center",
+			ObservedAt: generatedAt,
+		})
+	}
+	return actions
+}
+
+func hostDeliveryStatus(deliveries []model.AlertDelivery, channel string) (string, time.Time) {
+	var latest model.AlertDelivery
+	found := false
+	for _, delivery := range deliveries {
+		if delivery.Channel != channel {
+			continue
+		}
+		if !found || delivery.LastAttemptAt.After(latest.LastAttemptAt) {
+			latest = delivery
+			found = true
+		}
+	}
+	if !found {
+		return "", time.Time{}
+	}
+	return latest.Status, latest.LastAttemptAt
+}
+
+func latestTime(values ...time.Time) time.Time {
+	var latest time.Time
+	for _, value := range values {
+		if value.After(latest) {
+			latest = value
+		}
+	}
+	return latest
+}
+
+func hostHasFailedDelivery(deliveries []model.AlertDelivery) bool {
+	for _, delivery := range deliveries {
+		if delivery.Status == constants.DeliveryStatusFailed {
+			return true
+		}
+	}
+	return false
+}
+
+func tenantPortfolioHostNextAction(overview model.HostOverview, pushStatus string) string {
+	switch {
+	case len(overview.TamperEvents) > 0:
+		return "Review tamper trust and archive posture for this host."
+	case overview.RiskScore >= 75 || len(overview.Anomalies) > 0:
+		return "Review anomaly queue and notification proof for this host."
+	case pushStatus == constants.DeliveryStatusRetrying:
+		return "Verify push retry proof while mail and dashboard fallback remain visible."
+	case overview.Summary.ArchiveBacklog > 0:
+		return "Let the host sync archive backlog when it is online."
+	case overview.Health.Score < 80:
+		return "Review device health before relying on continuous monitoring."
+	default:
+		return "Use this host as clean portfolio proof."
+	}
+}
+
+func hostMetadataProofSummary(overview model.HostOverview, timelineItems []model.TenantDeliveryTimelineItem) string {
+	hostDeliveries := 0
+	for _, item := range timelineItems {
+		if item.DeviceID == overview.Device.DeviceID {
+			hostDeliveries++
+		}
+	}
+	return fmt.Sprintf("%d policy, %d anomaly, %d tamper, %d delivery, %d timeline proof rows",
+		len(overview.PolicyViolations),
+		len(overview.Anomalies),
+		len(overview.TamperEvents),
+		len(overview.AlertDeliveries),
+		hostDeliveries,
+	)
+}
+
+func firstPositive(values ...int) int {
+	for _, value := range values {
+		if value > 0 {
+			return value
+		}
+	}
+	return 0
+}
+
+func ratioScore(value int, total int) int {
+	if total <= 0 {
+		return 0
+	}
+	score := (value * 100) / total
+	if score > 100 {
+		return 100
+	}
+	if score < 0 {
+		return 0
+	}
+	return score
+}
+
+func statusRankValue(status string) int {
+	switch status {
+	case constants.StatusAttention:
+		return 4
+	case constants.StatusWatch:
+		return 3
+	case constants.StatusPending:
+		return 2
+	case constants.StatusHealthy:
+		return 1
+	default:
+		return 0
+	}
 }
 
 func pluralSuffix(count int) string {

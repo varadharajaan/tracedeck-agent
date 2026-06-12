@@ -1802,6 +1802,100 @@ func TestTenantPushActivationCenterEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantPortfolioCenterEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	for _, body := range [][]byte{
+		[]byte(`{
+			"tenant_id": "family-varadha",
+			"device_id": "portfolio-device-001",
+			"host_name": "portfolio-study-laptop",
+			"profile": "ai-btech-student",
+			"os_name": "windows"
+		}`),
+		[]byte(`{
+			"tenant_id": "family-varadha",
+			"device_id": "portfolio-device-002",
+			"host_name": "portfolio-lab-laptop",
+			"profile": "developer-workstation",
+			"os_name": "linux"
+		}`),
+	} {
+		enroll := httptest.NewRecorder()
+		handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(body)))
+		if enroll.Code != http.StatusCreated {
+			t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+		}
+	}
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentPortfolioCenter, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected portfolio center 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var center model.TenantPortfolioCenter
+	if err := json.Unmarshal(response.Body.Bytes(), &center); err != nil {
+		t.Fatalf("decode portfolio center: %v", err)
+	}
+	if center.Summary.PortfolioScore == 0 || center.Summary.NotificationScore == 0 || center.Summary.HostsTotal < 2 || center.Summary.RecommendedPaidPackage == "" || center.Summary.OwnerNextStep == "" {
+		t.Fatalf("expected scored portfolio summary: %+v", center.Summary)
+	}
+	if center.Summary.MailDelivered == 0 || center.Summary.DashboardDelivered == 0 || center.Summary.PushRetrying == 0 || center.Summary.HostsPending == 0 {
+		t.Fatalf("expected notification fallback, push retry, and sync proof: %+v", center.Summary)
+	}
+	if len(center.Hosts) < 2 || len(center.Segments) < 5 || len(center.AlertNotifications) == 0 || len(center.DeliveryProof) < 5 || len(center.Actions) == 0 {
+		t.Fatalf("expected host rows, notification proof, portfolio segments, and actions: %+v", center)
+	}
+	hasMailProof := false
+	hasPushProof := false
+	for _, proof := range center.DeliveryProof {
+		if proof.Channel == constants.DeliveryChannelEmail && proof.Status != "" && proof.NextAction != "" {
+			hasMailProof = true
+		}
+		if proof.Channel == constants.DeliveryChannelPush && proof.Status != "" && proof.NextAction != "" {
+			hasPushProof = true
+		}
+	}
+	if !hasMailProof || !hasPushProof {
+		t.Fatalf("expected mail and push delivery proof in portfolio center: %+v", center.DeliveryProof)
+	}
+	alert := center.AlertNotifications[0]
+	if alert.EmailStatus == "" || alert.PushStatus == "" || alert.DashboardStatus == "" || alert.NextAction == "" {
+		t.Fatalf("expected alert notification route proof: %+v", alert)
+	}
+	host := center.Hosts[0]
+	if host.DeviceID == "" || host.HostName == "" || host.Profile == "" || host.Status == "" || host.MetadataProofSummary == "" || host.NextAction == "" {
+		t.Fatalf("expected typed metadata-only host row: %+v", host)
+	}
+	if host.EmailStatus == "" || host.PushStatus == "" || host.DashboardStatus == "" {
+		t.Fatalf("expected host delivery channel status: %+v", host)
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "push_endpoint", "screenshot_bytes", "raw_url", "page_title", "alert_body", "card_number", "cvv", "payment_token"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("portfolio center leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+	if !strings.Contains(center.PrivacyBoundary, "metadata-only") || !strings.Contains(center.PrivacyBoundary, "no passwords") || !strings.Contains(center.PrivacyBoundary, "no screenshots") || !strings.Contains(center.PrivacyBoundary, "push endpoints") {
+		t.Fatalf("expected strict portfolio privacy boundary, got %q", center.PrivacyBoundary)
+	}
+}
+
 func TestTenantNotificationRevenueCockpitEndpoint(t *testing.T) {
 	t.Parallel()
 

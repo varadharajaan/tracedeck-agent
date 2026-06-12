@@ -235,3 +235,9 @@
     escalation coverage, anomaly push/mail scenarios, owner actions,
     Postman/Newman coverage, screenshot-free layout guard, docs, and full local
     verification.
+63. Phase 60: portfolio center. Typed tenant portfolio-center API and dashboard
+    surface for multi-host portfolio rows, health/risk/alert counts, anomaly
+    alert notification rows, mail delivery proof, push notification proof,
+    dashboard fallback proof, archive/sync posture, package readiness, owner
+    actions, privacy guard, Postman/Newman coverage, screenshot-free layout
+    guard, docs, and full local verification.

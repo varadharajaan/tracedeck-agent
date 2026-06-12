@@ -1,0 +1,108 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 60",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Has Portfolio Center",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('dashboard contains portfolio center markers', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('Portfolio Center');",
+              "  pm.expect(html).to.include('Portfolio Alert Notifications');",
+              "  pm.expect(html).to.include('Portfolio Delivery Proof');",
+              "  pm.expect(html).to.include('Host Portfolio Rows');",
+              "  pm.expect(html).to.include('Portfolio Segments');",
+              "  pm.expect(html).to.include('Portfolio Owner Actions');",
+              "  pm.expect(html).to.include('Portfolio Privacy Guard');",
+              "  pm.expect(html).to.include('data-jump-target=\"portfolio-center-section\"');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Portfolio Center",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/portfolio-center"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('portfolio center exposes monetisable multi-host proof', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.summary.portfolio_score).to.be.above(0);",
+              "  pm.expect(body.summary.notification_score).to.be.above(0);",
+              "  pm.expect(body.summary.hosts_total).to.be.at.least(1);",
+              "  pm.expect(body.summary.mail_delivered).to.be.at.least(1);",
+              "  pm.expect(body.summary.dashboard_delivered).to.be.at.least(1);",
+              "  pm.expect(body.summary.owner_next_step).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.hosts.length).to.be.at.least(1);",
+              "  pm.expect(body.segments.length).to.be.at.least(5);",
+              "  pm.expect(body.actions.length).to.be.at.least(1);",
+              "  pm.expect(body.hosts[0].host_name).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.hosts[0].metadata_proof_summary).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.hosts[0].email_status).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.hosts[0].push_status).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.hosts[0].dashboard_status).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.alert_notifications.length).to.be.at.least(1);",
+              "  pm.expect(body.delivery_proof.length).to.be.at.least(5);",
+              "  const alert = body.alert_notifications[0];",
+              "  pm.expect(alert.email_status).to.be.a('string').and.not.empty;",
+              "  pm.expect(alert.push_status).to.be.a('string').and.not.empty;",
+              "  pm.expect(alert.dashboard_status).to.be.a('string').and.not.empty;",
+              "  pm.expect(alert.next_action).to.be.a('string').and.not.empty;",
+              "  const mailProof = body.delivery_proof.find(function (proof) { return proof.channel === 'email' && proof.status && proof.next_action; });",
+              "  const pushProof = body.delivery_proof.find(function (proof) { return proof.channel === 'push' && proof.status && proof.next_action; });",
+              "  pm.expect(mailProof).to.be.an('object');",
+              "  pm.expect(pushProof).to.be.an('object');",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(body.privacy_boundary).to.include('no passwords');",
+              "  pm.expect(body.privacy_boundary).to.include('no screenshots');",
+              "  const serialized = JSON.stringify(body).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'push_endpoint', 'screenshot_bytes', 'raw_url', 'page_title', 'alert_body', 'card_number', 'cvv', 'payment_token'].forEach(function (marker) {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

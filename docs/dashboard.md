@@ -404,6 +404,15 @@ privacy guard. The command navigation includes a Push jump target so a demo can
 answer "will I actually get notified?" without exposing raw endpoints, alert
 bodies, screenshots, page titles, URLs, passwords, or provider secrets.
 
+Phase 60 adds the Portfolio Center after Push Activation. It renders the typed
+`portfolio-center` API as the multi-host owner/admin view: portfolio score,
+host coverage, open/high-priority alerts, notification score, mail and push
+proof, dashboard fallback, archive/sync posture, trust score, alert
+notification rows, delivery proof cards, host portfolio rows, portfolio
+segments, owner actions, and privacy guard. The command
+navigation includes a Portfolio jump target so parents, school admins, and
+business managers can compare hosts without opening every host panel.
+
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
 paid customer onboarding workflows.
