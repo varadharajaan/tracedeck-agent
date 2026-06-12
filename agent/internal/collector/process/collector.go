@@ -11,6 +11,7 @@ import (
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/domain/event"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/domain/redaction"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/platform"
+	"github.com/varadharajaan/tracedeck-agent/agent/internal/software"
 )
 
 type Collector struct {
@@ -53,6 +54,14 @@ func (c *Collector) Collect(ctx context.Context, policy *config.Policy) ([]event
 		}
 
 		exe, _ := proc.ExeWithContext(ctx)
+		metadata := map[string]string{
+			constants.EventMetadataProfile:         policy.Profile,
+			constants.EventMetadataOperatingSystem: capabilities.OperatingSystem,
+		}
+		if risk, ok := software.ClassifyProcess(name, exe); ok {
+			metadata[constants.EventMetadataSoftwareRiskCategory] = risk.Category
+			metadata[constants.EventMetadataSoftwareRiskReason] = risk.Reason
+		}
 		events = append(events, event.Event{
 			Type:      constants.EventTypeProcessObserved,
 			Source:    constants.EventSourceProcessCollector,
@@ -63,10 +72,7 @@ func (c *Collector) Collect(ctx context.Context, policy *config.Policy) ([]event
 			AppName:   name,
 			ProcessID: proc.Pid,
 			PathHash:  redaction.HashPath(exe),
-			Metadata: map[string]string{
-				constants.EventMetadataProfile:         policy.Profile,
-				constants.EventMetadataOperatingSystem: capabilities.OperatingSystem,
-			},
+			Metadata:  metadata,
 		})
 	}
 

@@ -557,6 +557,22 @@
         <section class="panel">
           <div class="section-head">
             <div>
+              <h2>Risky Software Watchlist</h2>
+              <p class="muted">Torrent, VPN/proxy, game launcher, browser, and installer risk signals</p>
+            </div>
+            <span id="software-risk-count" class="pill">0 signals</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Severity</th><th>App Or Signal</th><th>Category</th><th>Recommendation</th><th>Status</th></tr></thead>
+              <tbody id="software-risk-table"><tr><td colspan="5" class="muted">No risky software signals yet.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-head">
+            <div>
               <h2>Tamper And Trust</h2>
               <p class="muted">Agent, policy, archive, and service integrity</p>
             </div>
@@ -615,6 +631,9 @@
       retrying: "retrying",
       failed: "failed",
       pending: "pending"
+    });
+    const RISK_CATEGORY = Object.freeze({
+      riskySoftware: "risky_software"
     });
     const state = { devices: [], selectedDeviceId: "" };
 
@@ -756,6 +775,7 @@
       renderTimeline(policy.items.concat(anomalies.items, tamper.items));
       renderRiskTable("policy-table", policy.items, ["severity", "category", "source", "reason", "status"]);
       renderRiskTable("anomaly-table", anomalies.items, ["severity", "category", "source", "reason"]);
+      renderRiskySoftware(anomalies.items);
       renderTamperTable(tamper.items);
       renderDeliveries(deliveries.items);
 
@@ -908,6 +928,25 @@
             if (column === "severity" || column === "status") return `<td>${badge(value)}</td>`;
             return `<td>${escapeHTML(value)}</td>`;
           }).join("")}
+        </tr>
+      `).join("");
+    }
+
+    function renderRiskySoftware(events) {
+      const items = events.filter((event) => event.category === RISK_CATEGORY.riskySoftware);
+      setText("software-risk-count", `${items.length} signal${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("software-risk-table");
+      if (items.length === 0) {
+        target.innerHTML = '<tr><td colspan="5" class="muted">No risky software signals yet.</td></tr>';
+        return;
+      }
+      target.innerHTML = items.map((event) => `
+        <tr>
+          <td>${badge(event.severity)}</td>
+          <td><strong>${escapeHTML(rowDetail(event))}</strong><br><span class="muted">${escapeHTML(event.reason)}</span></td>
+          <td>${escapeHTML(event.category)}</td>
+          <td>${escapeHTML(event.recommendation)}</td>
+          <td>${badge(event.status)}</td>
         </tr>
       `).join("");
     }

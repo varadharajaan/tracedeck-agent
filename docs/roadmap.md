@@ -34,3 +34,7 @@
     richer dashboard panels for notification operations, product packaging,
     policy marketplace, retention plans, docs, Postman/Newman coverage, and
     local verification.
+16. Phase 13: risky software detection. Process telemetry classification for
+    torrent clients, VPN/proxy tools, game launchers, non-standard browsers,
+    downloads installers, alert evaluator rule, dashboard watchlist, docs,
+    Postman/Newman coverage, and local verification.
