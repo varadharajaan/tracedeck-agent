@@ -68,3 +68,32 @@ data/local/service-manifests/phase7/
 
 They are not committed. Installer packaging and native service install/start
 commands remain future work.
+
+## Windows Task Scheduler
+
+Phase 8 adds a Windows Task Scheduler template:
+
+```text
+deployments/service/windows/tracedeck-agent-task.xml.tmpl
+```
+
+Render and validate the XML locally with:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-windows-task.ps1
+```
+
+Register the task with UAC elevation when needed:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/register-windows-task.ps1 -BuildAgent
+```
+
+Query the registered task:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-windows-task-status.ps1
+```
+
+The task starts the continuous agent at user logon after reboot. It launches the
+agent executable directly and logs through the agent's normal file logger.

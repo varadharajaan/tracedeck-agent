@@ -17,3 +17,6 @@
 10. Phase 7: macOS and Linux endpoint support hardening. Typed platform
     capability metadata, unsupported-capability errors, launchd/systemd service
     templates, render script, docs, tests, and cross-platform verification.
+11. Phase 8: Windows scheduled-task autostart. Task Scheduler XML, render,
+    register, status/query scripts, reboot persistence docs, and local
+    verification.

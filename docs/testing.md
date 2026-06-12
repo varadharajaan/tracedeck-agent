@@ -16,6 +16,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase5.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase6.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase7.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase8.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
@@ -73,6 +74,20 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-servi
 The Phase 7 verifier checks platform support tests, renders macOS launchd and
 Linux systemd manifests under `data/local/service-manifests/phase7/`, runs
 cross-platform builds, and verifies root artifact hygiene.
+
+Phase 8 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-windows-task-template.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-windows-task.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-windows-task-status.ps1 -AllowMissing
+```
+
+The Phase 8 verifier renders and parses the Windows Task Scheduler XML,
+confirms the logon trigger and continuous agent arguments, runs cross-platform
+builds, and verifies root artifact hygiene. It does not register the task; the
+registration script intentionally requests UAC elevation as an explicit local
+operator action.
 
 `go test -race ./...` is run when the local Go toolchain supports it. On
 Windows shells where CGO is disabled or no race-capable C toolchain is active,
