@@ -1,0 +1,93 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 48",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('health is ok', function () { pm.response.to.have.status(200); pm.expect(pm.response.json().status).to.eql('ok'); });"
+      ] } }]
+    },
+    {
+      "name": "Dashboard Has Growth Cockpit",
+      "request": { "method": "GET", "url": "{{baseUrl}}/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('dashboard contains monetisation-grade growth cockpit markers', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const html = pm.response.text();",
+        "  pm.expect(html).to.include('Growth Cockpit');",
+        "  pm.expect(html).to.include('Paid product promise');",
+        "  pm.expect(html).to.include('Anomaly Notification Ops');",
+        "  pm.expect(html).to.include('Notification Delivery Proof');",
+        "  pm.expect(html).to.include('Monetisation Owner Actions');",
+        "  pm.expect(html).to.include('growth-cockpit-section');",
+        "  pm.expect(html).to.include('growth-alert-ops-list');",
+        "  pm.expect(html).to.include('growth-delivery-proof-list');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Tenant Notification Command Center Powers Growth Cockpit",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/notification-command-center" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('notification command center exposes paid alert delivery state safely', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.privacy_boundary).to.include('no passwords');",
+        "  pm.expect(body.privacy_boundary).to.include('screenshots');",
+        "  pm.expect(body.summary.open_alerts).to.be.at.least(1);",
+        "  pm.expect(body.summary.notification_score).to.be.at.least(1);",
+        "  pm.expect(body.summary.recommended_paid_package).to.be.a('string');",
+        "  pm.expect(body.channels.length).to.be.at.least(3);",
+        "  pm.expect(body.alerts.length).to.be.at.least(1);",
+        "  pm.expect(body.actions.length).to.be.at.least(1);",
+        "  pm.expect(body.channels.some((item) => item.channel === 'email')).to.eql(true);",
+        "  pm.expect(body.channels.some((item) => item.channel === 'push')).to.eql(true);",
+        "  pm.expect(body.alerts[0].email_status).to.be.a('string');",
+        "  pm.expect(body.alerts[0].push_status).to.be.a('string');",
+        "  const serialized = JSON.stringify(body).toLowerCase();",
+        "  pm.expect(serialized).to.not.include('smtp_password');",
+        "  pm.expect(serialized).to.not.include('provider_secret');",
+        "  pm.expect(serialized).to.not.include('screenshot_bytes');",
+        "  pm.expect(serialized).to.not.include('raw_url');",
+        "  pm.expect(serialized).to.not.include('alert_body');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Tenant Monetization Summary Still Feeds Paid UI",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/monetization-summary" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('monetization summary exposes readiness, notification, trust, and conversion actions', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.readiness_score).to.be.at.least(1);",
+        "  pm.expect(body.notification_score).to.be.at.least(1);",
+        "  pm.expect(body.trust_score).to.be.at.least(1);",
+        "  pm.expect(body.value_panels.length).to.be.at.least(1);",
+        "  pm.expect(body.conversion_actions.length).to.be.at.least(1);",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Tenant Operations Summary Keeps Mail And Push Proof",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/operations-summary" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('operations summary exposes delivery and alert proof', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.delivery_total).to.be.at.least(1);",
+        "  pm.expect(body.email_delivered).to.be.at.least(1);",
+        "  pm.expect(body.open_anomalies).to.be.at.least(1);",
+        "  pm.expect(body.notification_score).to.be.at.least(1);",
+        "});"
+      ] } }]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

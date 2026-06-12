@@ -115,6 +115,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase47.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase47.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase47.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase48.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase48.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase48.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-service-manifests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-windows-task.ps1
 ```
@@ -160,3 +163,9 @@ proof, remediation SLA state, paid-tier labels, and owner actions into a
 buyer-facing dashboard surface. It remains metadata-only and does not collect
 or store provider secrets, alert bodies, screenshots, passwords, tokens,
 cookies, raw URLs, page titles, or private content.
+
+Phase 48 adds a first-screen Growth Cockpit so the dashboard reads like a
+monetisable endpoint productivity and risk observability product. It packages
+revenue readiness, anomaly notification ops, mail delivery, push reach, weekly
+report delivery, archive retention, trust/consent, and owner actions from
+existing typed APIs without adding sensitive collectors.

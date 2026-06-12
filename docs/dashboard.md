@@ -295,6 +295,14 @@ proof, remediation SLA state, paid-tier labels, and customer owner actions.
 The view is an aggregate presentation layer and does not add sensitive
 collectors or live provider sends.
 
+Phase 48 adds a first-screen Growth Cockpit above command navigation. It turns
+the existing typed API data into a monetisation-grade product view:
+revenue readiness, anomaly notification ops, mail delivery, push delivery,
+weekly report proof, archive retention, trust/consent, and owner actions are
+visible before host-level details. The panel is backed by the notification
+command center, monetisation summary, operations summary, alert inbox, weekly
+report, delivery drilldown, remediation, archive, and consent metadata.
+
 A future frontend phase can move this surface to a richer application shell with
 role-specific onboarding, no-code alert rule editing, weekly report drilldowns,
 durable event search, and paid customer onboarding.
