@@ -30,6 +30,7 @@ type Memory struct {
 	auditEvents        []model.AuditEvent
 	alertRules         map[string][]model.AlertRule
 	notificationRoutes map[string][]model.NotificationRoute
+	activityViews      map[string][]model.TenantActivityView
 	dataExports        map[string][]model.TenantDataExport
 	deleteRequests     map[string][]model.DeleteRequest
 	deviceGroups       map[string][]model.DeviceGroup
@@ -48,6 +49,7 @@ func NewMemory() *Memory {
 		tenants:            make(map[string]model.Tenant),
 		alertRules:         make(map[string][]model.AlertRule),
 		notificationRoutes: make(map[string][]model.NotificationRoute),
+		activityViews:      make(map[string][]model.TenantActivityView),
 		dataExports:        make(map[string][]model.TenantDataExport),
 		deleteRequests:     make(map[string][]model.DeleteRequest),
 		deviceGroups:       make(map[string][]model.DeviceGroup),
@@ -280,6 +282,68 @@ func (m *Memory) ListNotificationRoutes(_ context.Context, tenantID string) []mo
 		return routes[i].TenantID < routes[j].TenantID
 	})
 	return append([]model.NotificationRoute(nil), routes...)
+}
+
+func (m *Memory) CreateTenantActivityView(_ context.Context, tenantID string, req model.CreateTenantActivityViewRequest) (model.TenantActivityView, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	tenant, ok := m.tenants[tenantID]
+	if !ok {
+		return model.TenantActivityView{}, ErrTenantNotFound
+	}
+	m.seedActivityViewsForTenantLocked(tenant)
+
+	view := model.TenantActivityView{
+		ID:          activityViewID(req.ID, tenantID, len(m.activityViews[tenantID])+1),
+		TenantID:    tenantID,
+		Name:        strings.TrimSpace(req.Name),
+		Description: strings.TrimSpace(req.Description),
+		Filter:      normalizeActivityFeedFilter(req.Filter),
+		PaidTier:    fallbackString(req.PaidTier, constants.PlanFamilyPro),
+		SortOrder:   req.SortOrder,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+	if view.SortOrder <= 0 {
+		view.SortOrder = len(m.activityViews[tenantID]) + 1
+	}
+	m.activityViews[tenantID] = append(m.activityViews[tenantID], view)
+	m.auditEvents = append(m.auditEvents, model.AuditEvent{
+		ID:        auditID(tenantID, len(m.auditEvents)+1, now),
+		TenantID:  tenantID,
+		Category:  constants.AuditCategoryTenant,
+		Action:    constants.AuditActionActivityViewCreated,
+		Actor:     constants.AuditActorLocalAPI,
+		ActorRole: constants.RoleBusinessManager,
+		Summary:   "tenant activity view created",
+		CreatedAt: now,
+	})
+	if err := m.persistLocked(); err != nil {
+		return model.TenantActivityView{}, err
+	}
+	return view, nil
+}
+
+func (m *Memory) ListTenantActivityViews(_ context.Context, tenantID string) []model.TenantActivityView {
+	tenantID = strings.TrimSpace(tenantID)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if tenant, ok := m.tenants[tenantID]; ok {
+		m.seedActivityViewsForTenantLocked(tenant)
+		_ = m.persistLocked()
+	}
+	views := append([]model.TenantActivityView(nil), m.activityViews[tenantID]...)
+	sort.Slice(views, func(i, j int) bool {
+		if views[i].SortOrder != views[j].SortOrder {
+			return views[i].SortOrder < views[j].SortOrder
+		}
+		return views[i].Name < views[j].Name
+	})
+	return views
 }
 
 func (m *Memory) TenantOperationsSummary(_ context.Context, tenantID string) (model.TenantOperationsSummary, error) {
@@ -1271,6 +1335,78 @@ func (m *Memory) seedNotificationRoutesForTenantLocked(tenant model.Tenant) {
 	}
 }
 
+func (m *Memory) seedActivityViewsForTenantLocked(tenant model.Tenant) {
+	tenantID := strings.TrimSpace(tenant.TenantID)
+	if tenantID == "" || len(m.activityViews[tenantID]) > 0 {
+		return
+	}
+	now := time.Now().UTC()
+	m.activityViews[tenantID] = []model.TenantActivityView{
+		{
+			ID:          constants.ActivityViewHighRiskOpen,
+			TenantID:    tenantID,
+			Name:        "Open high-risk anomalies",
+			Description: "Prioritise open policy, anomaly, and tamper signals that need a human decision.",
+			Filter: model.TenantActivityFeedFilter{
+				Kind:     constants.ActivityFeedKindRisk,
+				Severity: constants.SeverityHigh,
+				Status:   constants.RiskStatusOpen,
+				Limit:    constants.ActivityFeedDefaultLimit,
+			},
+			PaidTier:  constants.PlanFamilyPro,
+			SortOrder: 1,
+			CreatedAt: now,
+			UpdatedAt: now,
+		},
+		{
+			ID:          constants.ActivityViewEmailProof,
+			TenantID:    tenantID,
+			Name:        "Mail delivery proof",
+			Description: "Show delivered email evidence for anomaly alerts and weekly report packaging.",
+			Filter: model.TenantActivityFeedFilter{
+				Kind:    constants.ActivityFeedKindDelivery,
+				Channel: constants.DeliveryChannelEmail,
+				Status:  constants.DeliveryStatusDelivered,
+				Limit:   constants.ActivityFeedDefaultLimit,
+			},
+			PaidTier:  constants.PlanFamilyPro,
+			SortOrder: 2,
+			CreatedAt: now.Add(time.Millisecond),
+			UpdatedAt: now.Add(time.Millisecond),
+		},
+		{
+			ID:          constants.ActivityViewPushRetry,
+			TenantID:    tenantID,
+			Name:        "Push retry watch",
+			Description: "Surface push routes that are configured but still need delivered anomaly proof.",
+			Filter: model.TenantActivityFeedFilter{
+				Kind:    constants.ActivityFeedKindDelivery,
+				Channel: constants.DeliveryChannelPush,
+				Status:  constants.DeliveryStatusRetrying,
+				Limit:   constants.ActivityFeedDefaultLimit,
+			},
+			PaidTier:  constants.PlanFamilyPro,
+			SortOrder: 3,
+			CreatedAt: now.Add(2 * time.Millisecond),
+			UpdatedAt: now.Add(2 * time.Millisecond),
+		},
+		{
+			ID:          constants.ActivityViewSyncProof,
+			TenantID:    tenantID,
+			Name:        "Sync and archive proof",
+			Description: "Verify metadata replay, dashboard visibility, and S3-backed archive readiness.",
+			Filter: model.TenantActivityFeedFilter{
+				Kind:  constants.ActivityFeedKindTelemetry,
+				Limit: constants.ActivityFeedDefaultLimit,
+			},
+			PaidTier:  constants.PlanSchool,
+			SortOrder: 4,
+			CreatedAt: now.Add(3 * time.Millisecond),
+			UpdatedAt: now.Add(3 * time.Millisecond),
+		},
+	}
+}
+
 func (m *Memory) seedDeviceGroupsForTenantLocked(tenant model.Tenant) {
 	tenantID := strings.TrimSpace(tenant.TenantID)
 	if tenantID == "" || len(m.deviceGroups[tenantID]) > 0 {
@@ -1783,6 +1919,17 @@ func notificationRouteID(tenantID string, sequence int, createdAt time.Time) str
 	}, "-")
 }
 
+func activityViewID(requestedID string, tenantID string, sequence int) string {
+	if id := strings.TrimSpace(requestedID); id != "" {
+		return id
+	}
+	return strings.Join([]string{
+		strings.TrimSpace(tenantID),
+		"activity-view",
+		fmt.Sprintf("%03d", sequence),
+	}, "-")
+}
+
 func deviceGroupID(tenantID string, sequence int, createdAt time.Time) string {
 	return strings.Join([]string{
 		strings.TrimSpace(tenantID),
@@ -1933,22 +2080,23 @@ func archiveKey(device model.Device, uploadedAt time.Time) string {
 }
 
 type persistentState struct {
-	Version            string                               `json:"version"`
-	Tenants            map[string]model.Tenant              `json:"tenants"`
-	Devices            map[string]model.Device              `json:"devices"`
-	AuditEvents        []model.AuditEvent                   `json:"audit_events"`
-	AlertRules         map[string][]model.AlertRule         `json:"alert_rules"`
-	NotificationRoutes map[string][]model.NotificationRoute `json:"notification_routes"`
-	DataExports        map[string][]model.TenantDataExport  `json:"data_exports"`
-	DeleteRequests     map[string][]model.DeleteRequest     `json:"delete_requests"`
-	DeviceGroups       map[string][]model.DeviceGroup       `json:"device_groups"`
-	PolicyAssigns      map[string][]model.PolicyAssignment  `json:"policy_assignments"`
-	PolicyEvents       map[string][]model.RiskEvent         `json:"policy_events"`
-	AnomalyEvents      map[string][]model.RiskEvent         `json:"anomaly_events"`
-	TamperEvents       map[string][]model.RiskEvent         `json:"tamper_events"`
-	AlertDeliveries    map[string][]model.AlertDelivery     `json:"alert_deliveries"`
-	HealthScores       map[string]model.DeviceHealth        `json:"health_scores"`
-	TelemetryEvents    map[string][]model.TelemetryEvent    `json:"telemetry_events"`
+	Version            string                                `json:"version"`
+	Tenants            map[string]model.Tenant               `json:"tenants"`
+	Devices            map[string]model.Device               `json:"devices"`
+	AuditEvents        []model.AuditEvent                    `json:"audit_events"`
+	AlertRules         map[string][]model.AlertRule          `json:"alert_rules"`
+	NotificationRoutes map[string][]model.NotificationRoute  `json:"notification_routes"`
+	ActivityViews      map[string][]model.TenantActivityView `json:"activity_views"`
+	DataExports        map[string][]model.TenantDataExport   `json:"data_exports"`
+	DeleteRequests     map[string][]model.DeleteRequest      `json:"delete_requests"`
+	DeviceGroups       map[string][]model.DeviceGroup        `json:"device_groups"`
+	PolicyAssigns      map[string][]model.PolicyAssignment   `json:"policy_assignments"`
+	PolicyEvents       map[string][]model.RiskEvent          `json:"policy_events"`
+	AnomalyEvents      map[string][]model.RiskEvent          `json:"anomaly_events"`
+	TamperEvents       map[string][]model.RiskEvent          `json:"tamper_events"`
+	AlertDeliveries    map[string][]model.AlertDelivery      `json:"alert_deliveries"`
+	HealthScores       map[string]model.DeviceHealth         `json:"health_scores"`
+	TelemetryEvents    map[string][]model.TelemetryEvent     `json:"telemetry_events"`
 }
 
 func (m *Memory) load() error {
@@ -1973,6 +2121,7 @@ func (m *Memory) load() error {
 	m.auditEvents = append([]model.AuditEvent(nil), state.AuditEvents...)
 	m.alertRules = cloneAlertRuleMap(state.AlertRules)
 	m.notificationRoutes = cloneNotificationRouteMap(state.NotificationRoutes)
+	m.activityViews = cloneActivityViewMap(state.ActivityViews)
 	m.dataExports = cloneDataExportMap(state.DataExports)
 	m.deleteRequests = cloneDeleteRequestMap(state.DeleteRequests)
 	m.deviceGroups = cloneDeviceGroupMap(state.DeviceGroups)
@@ -1997,6 +2146,7 @@ func (m *Memory) persistLocked() error {
 		AuditEvents:        append([]model.AuditEvent(nil), m.auditEvents...),
 		AlertRules:         cloneAlertRuleMap(m.alertRules),
 		NotificationRoutes: cloneNotificationRouteMap(m.notificationRoutes),
+		ActivityViews:      cloneActivityViewMap(m.activityViews),
 		DataExports:        cloneDataExportMap(m.dataExports),
 		DeleteRequests:     cloneDeleteRequestMap(m.deleteRequests),
 		DeviceGroups:       cloneDeviceGroupMap(m.deviceGroups),
@@ -2066,6 +2216,18 @@ func cloneNotificationRouteMap(input map[string][]model.NotificationRoute) map[s
 	output := make(map[string][]model.NotificationRoute, len(input))
 	for key, value := range input {
 		output[key] = append([]model.NotificationRoute(nil), value...)
+	}
+	return output
+}
+
+func cloneActivityViews(input []model.TenantActivityView) []model.TenantActivityView {
+	return append([]model.TenantActivityView(nil), input...)
+}
+
+func cloneActivityViewMap(input map[string][]model.TenantActivityView) map[string][]model.TenantActivityView {
+	output := make(map[string][]model.TenantActivityView, len(input))
+	for key, value := range input {
+		output[key] = cloneActivityViews(value)
 	}
 	return output
 }

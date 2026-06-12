@@ -271,6 +271,80 @@ func TestTenantActivityFeedEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantActivityViewsEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	seededViews := httptest.NewRecorder()
+	handler.ServeHTTP(seededViews, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentActivityViews, nil))
+	if seededViews.Code != http.StatusOK {
+		t.Fatalf("expected seeded activity views 200, got %d: %s", seededViews.Code, seededViews.Body.String())
+	}
+	var views model.ListResponse[model.TenantActivityView]
+	if err := json.Unmarshal(seededViews.Body.Bytes(), &views); err != nil {
+		t.Fatalf("decode activity views: %v", err)
+	}
+	if views.Count != 4 || views.Items[0].ID != constants.ActivityViewHighRiskOpen {
+		t.Fatalf("expected seeded monetisation command views: %+v", views)
+	}
+	if views.Items[1].Filter.Channel != constants.DeliveryChannelEmail || views.Items[2].Filter.Channel != constants.DeliveryChannelPush {
+		t.Fatalf("expected email and push saved filters: %+v", views.Items)
+	}
+
+	viewBody := []byte(`{
+		"name": "Dashboard delivery misses",
+		"description": "Watch dashboard delivery gaps before a paid demo",
+		"paid_tier": "business",
+		"sort_order": 9,
+		"filter": {
+			"kind": "delivery",
+			"channel": "dashboard",
+			"status": "failed",
+			"limit": 10
+		}
+	}`)
+	createView := httptest.NewRecorder()
+	handler.ServeHTTP(createView, httptest.NewRequest(http.MethodPost, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentActivityViews, bytes.NewReader(viewBody)))
+	if createView.Code != http.StatusCreated {
+		t.Fatalf("expected activity view create 201, got %d: %s", createView.Code, createView.Body.String())
+	}
+	var created model.TenantActivityView
+	if err := json.Unmarshal(createView.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode created activity view: %v", err)
+	}
+	if created.ID == "" || created.Filter.Channel != constants.DeliveryChannelDashboard || created.PaidTier != constants.PlanBusiness {
+		t.Fatalf("unexpected created activity view: %+v", created)
+	}
+
+	invalid := httptest.NewRecorder()
+	handler.ServeHTTP(invalid, httptest.NewRequest(http.MethodPost, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentActivityViews, strings.NewReader(`{"name":"bad","filter":{"kind":"random"}}`)))
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("expected invalid activity view 400, got %d: %s", invalid.Code, invalid.Body.String())
+	}
+
+	audit := httptest.NewRecorder()
+	handler.ServeHTTP(audit, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentAuditEvents, nil))
+	if audit.Code != http.StatusOK {
+		t.Fatalf("expected audit 200, got %d", audit.Code)
+	}
+	if !strings.Contains(audit.Body.String(), constants.AuditActionActivityViewCreated) {
+		t.Fatalf("expected activity view audit event, got %s", audit.Body.String())
+	}
+}
+
 func TestHostDashboardRiskEndpoints(t *testing.T) {
 	t.Parallel()
 

@@ -375,6 +375,21 @@ and verifies telemetry sync proof appears in the same feed. Newman runs
 `postman/tracedeck-backend-phase32.postman_collection.json` against the live
 dashboard demo and checks the same API/UI contract.
 
+Phase 33 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase33.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase33.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase33.ps1
+```
+
+The Phase 33 smoke live-boots the seeded dashboard, verifies Monetisation
+Command Views and Notification Monetisation Proof markers, checks seeded
+activity views, creates a custom business dashboard view, and confirms audit
+proof. Newman runs
+`postman/tracedeck-backend-phase33.postman_collection.json` against the live
+dashboard demo and checks the same API/UI contract.
+
 Phase 13 adds:
 
 ```powershell

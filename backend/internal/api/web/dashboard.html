@@ -817,6 +817,34 @@
       <div class="panel">
         <div class="section-head">
           <div>
+            <h2>Monetisation Command Views</h2>
+            <p class="muted">Saved buyer workflows for anomaly triage, mail proof, push retries, and sync/archive evidence</p>
+          </div>
+          <span id="activity-view-count" class="pill">0 views</span>
+        </div>
+        <div id="activity-view-list" class="catalog-list"><div class="empty">No saved command views yet.</div></div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Notification Monetisation Proof</h2>
+            <p class="muted">Paid-plan story for push immediacy, email trust, dashboard audit, and report packaging</p>
+          </div>
+          <span id="notification-proof-status" class="badge pending">pending</span>
+        </div>
+        <div class="brief-grid">
+          <div class="brief-item"><small>Saved Filters</small><strong id="proof-saved-filters">-</strong><span id="proof-saved-filters-sub" class="muted">No saved filters</span></div>
+          <div class="brief-item"><small>Alert Reach</small><strong id="proof-alert-reach">-</strong><span id="proof-alert-reach-sub" class="muted">No delivery proof</span></div>
+          <div class="brief-item"><small>Buyer Trust</small><strong id="proof-buyer-trust">-</strong><span id="proof-buyer-trust-sub" class="muted">No trust score</span></div>
+          <div class="brief-item"><small>Next Pitch</small><strong id="proof-next-pitch">-</strong><span id="proof-next-pitch-sub" class="muted">No action loaded</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <div class="panel">
+        <div class="section-head">
+          <div>
             <h2>Live Agent Telemetry</h2>
             <p class="muted">Metadata-only ingest proof from endpoint agent cycles</p>
           </div>
@@ -1723,6 +1751,7 @@
       renderBuyerAssuranceWall(overview, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderTenantSyncHealth(context.syncHealth);
       renderTenantActivityFeed(context.activityFeed);
+      renderActivityViews(context.activityViews, context.monetizationSummary, context.tenantOperations);
       renderTelemetryStatus(context.telemetryStatus);
       renderNotificationRoutes(context.notificationRoutes);
       renderDataExports(context.dataExports);
@@ -2572,6 +2601,56 @@
       `).join("");
     }
 
+    function renderActivityViews(viewsResponse, monetization, operations) {
+      const views = (viewsResponse && viewsResponse.items) || [];
+      const model = monetization || {};
+      const ops = operations || {};
+      const readiness = Number(model.readiness_score || ops.monetization_readiness || 0);
+      const notificationScore = Number(model.notification_score || ops.notification_score || 0);
+      const trustScore = Number(model.trust_score || 0);
+      const healthy = views.length >= 4 && notificationScore >= 50 && readiness >= 50;
+
+      setText("activity-view-count", `${views.length} view${views.length === 1 ? "" : "s"}`);
+      document.getElementById("notification-proof-status").outerHTML =
+        badge(healthy ? "healthy" : views.length > 0 ? "watch" : "pending").replace("<span", '<span id="notification-proof-status"');
+      setText("proof-saved-filters", views.length);
+      setText("proof-saved-filters-sub", views.length ? "role-ready command workflows" : "create command views for buyer demos");
+      setText("proof-alert-reach", `${notificationScore}%`);
+      setText("proof-alert-reach-sub", `${ops.email_delivered || 0} email, ${ops.push_delivered || 0} push delivered`);
+      setText("proof-buyer-trust", trustScore ? `${trustScore}%` : `${readiness}% ready`);
+      setText("proof-buyer-trust-sub", model.revenue_health || ops.customer_health || "trust signal pending");
+      const action = ((model.conversion_actions || [])[0]) || ((ops.priority_signals || [])[0]) || {};
+      setText("proof-next-pitch", action.title || model.conversion_stage || "Package Family Pro");
+      setText("proof-next-pitch-sub", action.detail || "Use anomaly views, mail proof, push proof, reports, and archive trust.");
+
+      const target = document.getElementById("activity-view-list");
+      if (views.length === 0) {
+        target.innerHTML = '<div class="empty">No saved command views yet.</div>';
+        return;
+      }
+      target.innerHTML = views.map((view) => {
+        const filter = view.filter || {};
+        const parts = [
+          filter.kind ? `kind ${filter.kind}` : "",
+          filter.severity ? `severity ${filter.severity}` : "",
+          filter.channel ? `channel ${filter.channel}` : "",
+          filter.status ? `status ${filter.status}` : "",
+          filter.query ? `query ${filter.query}` : "",
+          filter.limit ? `limit ${filter.limit}` : ""
+        ].filter(Boolean);
+        return `
+          <div class="catalog-item">
+            <strong>${escapeHTML(view.name)}</strong>
+            <span class="muted">${escapeHTML(view.description || "Saved command view.")}</span>
+            <div class="action-meta">
+              <span class="pill">${escapeHTML(view.paid_tier || "family_pro")}</span>
+              <span class="pill">${escapeHTML(parts.join(", ") || "default feed")}</span>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
     function countMatching(counts, token) {
       return Object.entries(counts || {}).reduce((total, entry) => {
         const [key, value] = entry;
@@ -2915,6 +2994,7 @@
       const monetizationSummary = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/monetization-summary`) : null;
       const syncHealth = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/sync-health`) : null;
       const activityFeed = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/activity-feed?device_id=${encodeURIComponent(overview.device.device_id)}&limit=10`) : null;
+      const activityViews = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/activity-views`) : null;
       const dataExports = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/data-exports`) : null;
       const deleteRequests = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delete-requests`) : null;
       renderOverview(overview, deviceHealth, policy, anomalies, tamper, deliveries, {
@@ -2934,6 +3014,7 @@
         monetizationSummary,
         syncHealth,
         activityFeed,
+        activityViews,
         dataExports,
         deleteRequests,
         auditEvents,
