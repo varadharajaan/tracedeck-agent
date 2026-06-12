@@ -13,19 +13,20 @@ const (
 )
 
 const (
-	APIPrefix            = "/api/v1"
-	RouteDashboard       = "/"
-	RouteHealth          = "/health"
-	RouteVersion         = APIPrefix + "/version"
-	RouteDevices         = APIPrefix + "/devices"
-	RouteDeviceEnroll    = APIPrefix + "/devices/enroll"
-	RouteTenants         = APIPrefix + "/tenants"
-	RoutePlans           = APIPrefix + "/plans"
-	RouteRoles           = APIPrefix + "/roles"
-	RouteRetentionTiers  = APIPrefix + "/retention-tiers"
-	RouteAuditEvents     = APIPrefix + "/audit-events"
-	RoutePolicyTemplates = APIPrefix + "/policy-templates"
-	RouteArchiveStatus   = APIPrefix + "/archive/status"
+	APIPrefix               = "/api/v1"
+	RouteDashboard          = "/"
+	RouteHealth             = "/health"
+	RouteVersion            = APIPrefix + "/version"
+	RouteDevices            = APIPrefix + "/devices"
+	RouteDeviceEnroll       = APIPrefix + "/devices/enroll"
+	RouteTenants            = APIPrefix + "/tenants"
+	RoutePlans              = APIPrefix + "/plans"
+	RouteRoles              = APIPrefix + "/roles"
+	RouteRetentionTiers     = APIPrefix + "/retention-tiers"
+	RouteAuditEvents        = APIPrefix + "/audit-events"
+	RoutePolicyTemplates    = APIPrefix + "/policy-templates"
+	RouteAlertRuleTemplates = APIPrefix + "/alert-rule-templates"
+	RouteArchiveStatus      = APIPrefix + "/archive/status"
 )
 
 const (
@@ -36,6 +37,7 @@ const (
 	RouteSegmentPDF           = "pdf"
 	RouteSegmentOverview      = "overview"
 	RouteSegmentAuditEvents   = "audit-events"
+	RouteSegmentAlertRules    = "alert-rules"
 	RouteSegmentPolicyEvents  = "policy-violations"
 	RouteSegmentAnomalies     = "anomalies"
 	RouteSegmentTamperEvents  = "tamper-events"
@@ -90,8 +92,9 @@ const (
 )
 
 const (
-	AuditActionTenantCreated = "tenant.created"
-	AuditActorLocalAPI       = "local_backend"
+	AuditActionTenantCreated    = "tenant.created"
+	AuditActionAlertRuleCreated = "alert_rule.created"
+	AuditActorLocalAPI          = "local_backend"
 )
 
 const (
@@ -172,4 +175,33 @@ const (
 	DeliveryProviderSMTP      = "smtp"
 	DeliveryProviderWebPush   = "web_push"
 	DeliveryProviderLocalFeed = "local_dashboard"
+)
+
+const (
+	AlertRuleTemplateNonStudyYouTube = "non_study_youtube_over_limit"
+	AlertRuleTemplateMediaAfterHours = "media_after_hours"
+	AlertRuleTemplateRiskySoftware   = "risky_software_detected"
+	AlertRuleTemplateTamperBacklog   = "archive_backlog_over_limit"
+)
+
+const (
+	AlertTriggerNonStudyYouTube = "non_study_youtube"
+	AlertTriggerMediaPlayback   = "media_playback"
+	AlertTriggerRiskySoftware   = "risky_software"
+	AlertTriggerArchiveBacklog  = "archive_backlog"
+)
+
+const (
+	AlertConditionSubjectDomain         = "domain"
+	AlertConditionSubjectApp            = "app"
+	AlertConditionSubjectCategory       = "category"
+	AlertConditionSubjectArchiveBacklog = "archive_backlog"
+	AlertConditionSubjectUsageMinutes   = "usage_minutes"
+)
+
+const (
+	AlertConditionOperatorEquals      = "equals"
+	AlertConditionOperatorContains    = "contains"
+	AlertConditionOperatorGreaterThan = "greater_than"
+	AlertConditionOperatorAfterLocal  = "after_local_time"
 )

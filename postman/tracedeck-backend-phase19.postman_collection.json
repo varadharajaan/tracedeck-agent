@@ -1,0 +1,180 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 19",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Without API Key",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is public', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Tenant",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"name\":\"Family Varadha\",\"plan_id\":\"family_pro\",\"retention_tier_id\":\"family_cloud_90_365_archive\",\"primary_profile\":\"ai-btech-student\"}"
+        },
+        "url": "{{baseUrl}}/api/v1/tenants"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('tenant created', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().tenant_id).to.eql('family-varadha');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Alert Rule Template Catalog",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "url": "{{baseUrl}}/api/v1/alert-rule-templates"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('alert rule templates are available', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.count).to.be.above(3);",
+              "  pm.expect(body.items.some((item) => item.id === 'media_after_hours')).to.eql(true);",
+              "  pm.expect(body.items.some((item) => item.channels.includes('email'))).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Seeded Tenant Alert Rules",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/alert-rules"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('tenant starts with no-code alert rules', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.count).to.be.above(1);",
+              "  pm.expect(body.items.some((item) => item.trigger === 'media_playback')).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Custom Alert Rule",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-TraceDeck-API-Key", "value": "{{apiKey}}" },
+          { "key": "X-TraceDeck-Tenant-ID", "value": "family-varadha" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"template_id\":\"risky_software_detected\",\"name\":\"Email when risky software appears\",\"trigger\":\"risky_software\",\"severity\":\"high\",\"channels\":[\"email\",\"dashboard\"],\"condition\":{\"subject\":\"category\",\"operator\":\"equals\",\"value\":\"torrent_client\"},\"enabled\":true}"
+        },
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/alert-rules"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('custom alert rule is created', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.name).to.eql('Email when risky software appears');",
+              "  pm.expect(body.channels).to.include('email');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Contains Alert Rule Builder",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('dashboard exposes no-code alert rule builder panels', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('No-Code Alert Rules');",
+              "  pm.expect(html).to.include('Rule Builder Recipes');",
+              "  pm.expect(html).to.include('Saved tenant automations');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18080"
+    },
+    {
+      "key": "apiKey",
+      "value": "phase19-local-secret"
+    }
+  ]
+}

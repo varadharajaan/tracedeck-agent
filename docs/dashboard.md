@@ -32,6 +32,8 @@ Phase 18 upgrades the first screen into a product-grade command center with a
 priority action board, notification promise, commercial readiness score, trust
 coverage, executive briefing, and notification action queue before the deeper
 technical tables.
+Phase 19 adds no-code alert rule builder panels for saved tenant automations
+and paid rule recipes.
 
 The dashboard reads the base backend endpoints:
 
@@ -53,6 +55,8 @@ For the selected host it reads:
 - `/api/v1/retention-tiers`
 - `/api/v1/audit-events`
 - `/api/v1/policy-templates`
+- `/api/v1/alert-rule-templates`
+- `/api/v1/tenants/{tenantId}/alert-rules`
 
 Current panels:
 
@@ -89,6 +93,8 @@ Current panels:
 - email, push, and dashboard alert delivery table
 - policy template marketplace
 - retention and archive plan catalog
+- no-code alert rules for saved tenant automations
+- rule builder recipes for paid alert templates
 
 API-provided text is escaped before rendering.
 

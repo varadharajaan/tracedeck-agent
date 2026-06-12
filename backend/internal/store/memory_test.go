@@ -46,6 +46,25 @@ func TestPersistentStoreSurvivesRestart(t *testing.T) {
 	if _, err := first.HostOverview(ctx, device.DeviceID); err != nil {
 		t.Fatalf("seed host overview: %v", err)
 	}
+	rule, err := first.CreateAlertRule(ctx, "family-varadha", model.CreateAlertRuleRequest{
+		TemplateID: constants.AlertRuleTemplateRiskySoftware,
+		Name:       "Persist risky software rule",
+		Trigger:    constants.AlertTriggerRiskySoftware,
+		Severity:   constants.SeverityHigh,
+		Channels:   []string{constants.DeliveryChannelEmail, constants.DeliveryChannelDashboard},
+		Condition: model.AlertRuleCondition{
+			Subject:  constants.AlertConditionSubjectCategory,
+			Operator: constants.AlertConditionOperatorEquals,
+			Value:    "torrent_client",
+		},
+		Enabled: true,
+	})
+	if err != nil {
+		t.Fatalf("create alert rule: %v", err)
+	}
+	if rule.ID == "" {
+		t.Fatalf("expected alert rule id: %+v", rule)
+	}
 
 	second, err := NewPersistent(statePath)
 	if err != nil {
@@ -71,5 +90,9 @@ func TestPersistentStoreSurvivesRestart(t *testing.T) {
 	}
 	if health.Score == 0 || health.Status == "" {
 		t.Fatalf("expected persisted device health: %+v", health)
+	}
+	rules := second.ListAlertRules(ctx, "family-varadha")
+	if len(rules) < 3 {
+		t.Fatalf("expected seeded and custom alert rules after restart: %+v", rules)
 	}
 }

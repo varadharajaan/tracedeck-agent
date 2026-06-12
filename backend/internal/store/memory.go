@@ -27,6 +27,7 @@ type Memory struct {
 	devices         map[string]model.Device
 	tenants         map[string]model.Tenant
 	auditEvents     []model.AuditEvent
+	alertRules      map[string][]model.AlertRule
 	policyEvents    map[string][]model.RiskEvent
 	anomalyEvents   map[string][]model.RiskEvent
 	tamperEvents    map[string][]model.RiskEvent
@@ -38,6 +39,7 @@ func NewMemory() *Memory {
 	return &Memory{
 		devices:         make(map[string]model.Device),
 		tenants:         make(map[string]model.Tenant),
+		alertRules:      make(map[string][]model.AlertRule),
 		policyEvents:    make(map[string][]model.RiskEvent),
 		anomalyEvents:   make(map[string][]model.RiskEvent),
 		tamperEvents:    make(map[string][]model.RiskEvent),
@@ -104,6 +106,7 @@ func (m *Memory) CreateTenant(_ context.Context, req model.CreateTenantRequest) 
 		tenant.CreatedAt = current.CreatedAt
 	}
 	m.tenants[tenantID] = tenant
+	m.seedAlertRulesForTenantLocked(tenant)
 	m.auditEvents = append(m.auditEvents, model.AuditEvent{
 		ID:        auditID(tenantID, len(m.auditEvents)+1, now),
 		TenantID:  tenantID,
@@ -118,6 +121,73 @@ func (m *Memory) CreateTenant(_ context.Context, req model.CreateTenantRequest) 
 		return model.Tenant{}, err
 	}
 	return tenant, nil
+}
+
+func (m *Memory) CreateAlertRule(_ context.Context, tenantID string, req model.CreateAlertRuleRequest) (model.AlertRule, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.tenants[tenantID]; !ok {
+		return model.AlertRule{}, ErrTenantNotFound
+	}
+	rule := model.AlertRule{
+		ID:         alertRuleID(tenantID, len(m.alertRules[tenantID])+1, now),
+		TenantID:   tenantID,
+		TemplateID: strings.TrimSpace(req.TemplateID),
+		Name:       strings.TrimSpace(req.Name),
+		Trigger:    strings.TrimSpace(req.Trigger),
+		Severity:   strings.TrimSpace(req.Severity),
+		Channels:   normalizeStrings(req.Channels),
+		Condition: model.AlertRuleCondition{
+			Subject:       strings.TrimSpace(req.Condition.Subject),
+			Operator:      strings.TrimSpace(req.Condition.Operator),
+			Value:         strings.TrimSpace(req.Condition.Value),
+			WindowMinutes: req.Condition.WindowMinutes,
+			Threshold:     req.Condition.Threshold,
+		},
+		Enabled:   req.Enabled,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+	m.alertRules[tenantID] = append(m.alertRules[tenantID], rule)
+	m.auditEvents = append(m.auditEvents, model.AuditEvent{
+		ID:        auditID(tenantID, len(m.auditEvents)+1, now),
+		TenantID:  tenantID,
+		Category:  constants.AuditCategoryPolicy,
+		Action:    constants.AuditActionAlertRuleCreated,
+		Actor:     constants.AuditActorLocalAPI,
+		ActorRole: constants.RoleParent,
+		Summary:   "alert rule created: " + rule.Name,
+		CreatedAt: now,
+	})
+	if err := m.persistLocked(); err != nil {
+		return model.AlertRule{}, err
+	}
+	return rule, nil
+}
+
+func (m *Memory) ListAlertRules(_ context.Context, tenantID string) []model.AlertRule {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	tenantID = strings.TrimSpace(tenantID)
+	rules := make([]model.AlertRule, 0)
+	if tenantID == "" {
+		for _, tenantRules := range m.alertRules {
+			rules = append(rules, tenantRules...)
+		}
+	} else {
+		rules = append(rules, m.alertRules[tenantID]...)
+	}
+	sort.Slice(rules, func(i, j int) bool {
+		if rules[i].TenantID == rules[j].TenantID {
+			return rules[i].CreatedAt.Before(rules[j].CreatedAt)
+		}
+		return rules[i].TenantID < rules[j].TenantID
+	})
+	return rules
 }
 
 func (m *Memory) ListTenants(_ context.Context) []model.Tenant {
@@ -216,6 +286,52 @@ func (m *Memory) HostOverview(_ context.Context, deviceID string) (model.HostOve
 		return model.HostOverview{}, err
 	}
 	return m.hostOverviewLocked(device), nil
+}
+
+func (m *Memory) seedAlertRulesForTenantLocked(tenant model.Tenant) {
+	tenantID := strings.TrimSpace(tenant.TenantID)
+	if tenantID == "" || len(m.alertRules[tenantID]) > 0 {
+		return
+	}
+	now := time.Now().UTC()
+	m.alertRules[tenantID] = []model.AlertRule{
+		{
+			ID:         alertRuleID(tenantID, 1, now),
+			TenantID:   tenantID,
+			TemplateID: constants.AlertRuleTemplateMediaAfterHours,
+			Name:       "Alert on VLC or media playback after 10 PM",
+			Trigger:    constants.AlertTriggerMediaPlayback,
+			Severity:   constants.SeverityHigh,
+			Channels:   []string{constants.DeliveryChannelEmail, constants.DeliveryChannelDashboard},
+			Condition: model.AlertRuleCondition{
+				Subject:  constants.AlertConditionSubjectApp,
+				Operator: constants.AlertConditionOperatorAfterLocal,
+				Value:    "22:00",
+			},
+			Enabled:   true,
+			CreatedAt: now,
+			UpdatedAt: now,
+		},
+		{
+			ID:         alertRuleID(tenantID, 2, now.Add(time.Millisecond)),
+			TenantID:   tenantID,
+			TemplateID: constants.AlertRuleTemplateNonStudyYouTube,
+			Name:       "Alert when non-study YouTube crosses 30 minutes",
+			Trigger:    constants.AlertTriggerNonStudyYouTube,
+			Severity:   constants.SeverityMedium,
+			Channels:   []string{constants.DeliveryChannelPush, constants.DeliveryChannelDashboard},
+			Condition: model.AlertRuleCondition{
+				Subject:       constants.AlertConditionSubjectUsageMinutes,
+				Operator:      constants.AlertConditionOperatorGreaterThan,
+				Value:         "30",
+				WindowMinutes: 60,
+				Threshold:     30,
+			},
+			Enabled:   true,
+			CreatedAt: now.Add(time.Millisecond),
+			UpdatedAt: now.Add(time.Millisecond),
+		},
+	}
 }
 
 func (m *Memory) ListPolicyViolations(_ context.Context, deviceID string) ([]model.RiskEvent, error) {
@@ -524,6 +640,29 @@ func deliveryID(deviceID string, channel string, sequence int) string {
 	return strings.Join([]string{strings.TrimSpace(deviceID), channel, "delivery", fmt.Sprintf("%03d", sequence)}, "-")
 }
 
+func alertRuleID(tenantID string, sequence int, createdAt time.Time) string {
+	return strings.Join([]string{
+		strings.TrimSpace(tenantID),
+		"alert-rule",
+		fmt.Sprintf("%03d", sequence),
+		createdAt.Format("20060102T150405Z"),
+	}, "-")
+}
+
+func normalizeStrings(values []string) []string {
+	normalized := make([]string, 0, len(values))
+	seen := make(map[string]bool, len(values))
+	for _, value := range values {
+		clean := strings.TrimSpace(value)
+		if clean == "" || seen[clean] {
+			continue
+		}
+		seen[clean] = true
+		normalized = append(normalized, clean)
+	}
+	return normalized
+}
+
 func archiveKey(device model.Device, uploadedAt time.Time) string {
 	parts := []string{
 		"tenant=" + strings.TrimSpace(device.TenantID),
@@ -540,6 +679,7 @@ type persistentState struct {
 	Tenants         map[string]model.Tenant          `json:"tenants"`
 	Devices         map[string]model.Device          `json:"devices"`
 	AuditEvents     []model.AuditEvent               `json:"audit_events"`
+	AlertRules      map[string][]model.AlertRule     `json:"alert_rules"`
 	PolicyEvents    map[string][]model.RiskEvent     `json:"policy_events"`
 	AnomalyEvents   map[string][]model.RiskEvent     `json:"anomaly_events"`
 	TamperEvents    map[string][]model.RiskEvent     `json:"tamper_events"`
@@ -567,6 +707,7 @@ func (m *Memory) load() error {
 	m.tenants = cloneTenantMap(state.Tenants)
 	m.devices = cloneDeviceMap(state.Devices)
 	m.auditEvents = append([]model.AuditEvent(nil), state.AuditEvents...)
+	m.alertRules = cloneAlertRuleMap(state.AlertRules)
 	m.policyEvents = cloneRiskMap(state.PolicyEvents)
 	m.anomalyEvents = cloneRiskMap(state.AnomalyEvents)
 	m.tamperEvents = cloneRiskMap(state.TamperEvents)
@@ -584,6 +725,7 @@ func (m *Memory) persistLocked() error {
 		Tenants:         cloneTenantMap(m.tenants),
 		Devices:         cloneDeviceMap(m.devices),
 		AuditEvents:     append([]model.AuditEvent(nil), m.auditEvents...),
+		AlertRules:      cloneAlertRuleMap(m.alertRules),
 		PolicyEvents:    cloneRiskMap(m.policyEvents),
 		AnomalyEvents:   cloneRiskMap(m.anomalyEvents),
 		TamperEvents:    cloneRiskMap(m.tamperEvents),
@@ -636,6 +778,14 @@ func cloneRiskMap(input map[string][]model.RiskEvent) map[string][]model.RiskEve
 	return output
 }
 
+func cloneAlertRuleMap(input map[string][]model.AlertRule) map[string][]model.AlertRule {
+	output := make(map[string][]model.AlertRule, len(input))
+	for key, value := range input {
+		output[key] = append([]model.AlertRule(nil), value...)
+	}
+	return output
+}
+
 func cloneDeliveryMap(input map[string][]model.AlertDelivery) map[string][]model.AlertDelivery {
 	output := make(map[string][]model.AlertDelivery, len(input))
 	for key, value := range input {
@@ -674,6 +824,51 @@ func PolicyTemplates() []model.PolicyTemplate {
 			Audience:    "business",
 			Description: "Productivity and endpoint risk observability for managed workstations.",
 			Roles:       []string{constants.RoleBusinessManager},
+		},
+	}
+}
+
+func AlertRuleTemplates() []model.AlertRuleTemplate {
+	return []model.AlertRuleTemplate{
+		{
+			ID:              constants.AlertRuleTemplateNonStudyYouTube,
+			Name:            "Non-study YouTube over limit",
+			Trigger:         constants.AlertTriggerNonStudyYouTube,
+			Description:     "Alert when YouTube usage is not categorized as coding, math, system design, or coursework and crosses a time threshold.",
+			DefaultSeverity: constants.SeverityMedium,
+			Channels:        []string{constants.DeliveryChannelPush, constants.DeliveryChannelDashboard},
+			Example:         "If non-study YouTube is greater than 30 minutes in 60 minutes, send push and dashboard alert.",
+			PaidTier:        constants.PlanFamilyPro,
+		},
+		{
+			ID:              constants.AlertRuleTemplateMediaAfterHours,
+			Name:            "Media playback after hours",
+			Trigger:         constants.AlertTriggerMediaPlayback,
+			Description:     "Alert when VLC, media player, or other entertainment playback appears during restricted hours.",
+			DefaultSeverity: constants.SeverityHigh,
+			Channels:        []string{constants.DeliveryChannelEmail, constants.DeliveryChannelDashboard},
+			Example:         "If media playback starts after 10 PM, email the parent and add it to the dashboard feed.",
+			PaidTier:        constants.PlanFamilyPro,
+		},
+		{
+			ID:              constants.AlertRuleTemplateRiskySoftware,
+			Name:            "Risky software detected",
+			Trigger:         constants.AlertTriggerRiskySoftware,
+			Description:     "Alert when torrent clients, VPN/proxy tools, game launchers, unknown browsers, or downloads installers are detected.",
+			DefaultSeverity: constants.SeverityHigh,
+			Channels:        []string{constants.DeliveryChannelEmail, constants.DeliveryChannelDashboard},
+			Example:         "If risky software category equals torrent client, email and record the dashboard event.",
+			PaidTier:        constants.PlanBusiness,
+		},
+		{
+			ID:              constants.AlertRuleTemplateTamperBacklog,
+			Name:            "Archive backlog over limit",
+			Trigger:         constants.AlertTriggerArchiveBacklog,
+			Description:     "Alert when S3 archive upload backlog waits beyond the configured online retry window.",
+			DefaultSeverity: constants.SeverityMedium,
+			Channels:        []string{constants.DeliveryChannelEmail, constants.DeliveryChannelDashboard},
+			Example:         "If archive backlog is greater than 2 batches for 60 minutes, email and show a trust event.",
+			PaidTier:        constants.PlanSchool,
 		},
 	}
 }
@@ -853,6 +1048,15 @@ func KnownPlanID(planID string) bool {
 func KnownRetentionTierID(tierID string) bool {
 	for _, tier := range RetentionTiers() {
 		if tier.ID == strings.TrimSpace(tierID) {
+			return true
+		}
+	}
+	return false
+}
+
+func KnownAlertRuleTemplateID(templateID string) bool {
+	for _, template := range AlertRuleTemplates() {
+		if template.ID == strings.TrimSpace(templateID) {
 			return true
 		}
 	}

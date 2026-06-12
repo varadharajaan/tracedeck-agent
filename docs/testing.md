@@ -27,6 +27,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase16.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase17.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase18.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase19.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
@@ -209,6 +210,20 @@ and notification action queue. Newman runs
 `postman/tracedeck-backend-phase18.postman_collection.json` against a live
 API-key-protected backend and checks the same dashboard cockpit plus API
 signals.
+
+Phase 19 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase19.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase19.ps1
+```
+
+The Phase 19 smoke builds and boots the backend on localhost, creates a Family
+Pro tenant, verifies alert rule templates, verifies seeded tenant rules, creates
+a custom alert rule, and asserts the dashboard contains no-code alert rules and
+rule builder recipes. Newman runs
+`postman/tracedeck-backend-phase19.postman_collection.json` against a live
+API-key-protected backend.
 
 Phase 13 adds:
 

@@ -46,6 +46,14 @@ operator debug screen. The first screen now surfaces:
 - notification action queue for retrying push routes, mail route issues, and
   open anomaly/policy/tamper items
 
+Phase 19 adds a paid no-code alert rules slice:
+
+- rule recipe catalog for family, school, and business templates
+- tenant-scoped saved rules
+- typed conditions for app/category/time/window thresholds
+- delivery channels for email, push, and dashboard
+- dashboard visibility for saved automations and recipe packaging
+
 This still uses the existing privacy-aware API data: typed risk categories,
 delivery routes, report readiness, health, archive, role, retention, and policy
 template metadata. It does not add credential, keylog, private-message, raw URL,
