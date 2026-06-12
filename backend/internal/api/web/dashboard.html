@@ -112,6 +112,7 @@
     .panel { padding: 16px; }
     main > *,
     .command-nav,
+    .growth-cockpit,
     .buyer-ops-brief,
     .paid-ops-console,
     .commercial-room,
@@ -242,6 +243,105 @@
       color: var(--muted);
       font-size: 11px;
       font-weight: 650;
+      overflow-wrap: anywhere;
+    }
+    .growth-cockpit {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.84fr) minmax(0, 2.16fr);
+      gap: 16px;
+    }
+    .growth-focus {
+      min-height: 360px;
+      display: grid;
+      align-content: space-between;
+      gap: 16px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--blue);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .growth-focus h2 {
+      font-size: 21px;
+    }
+    .growth-focus strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 34px;
+      line-height: 1.03;
+      overflow-wrap: anywhere;
+    }
+    .growth-focus p {
+      color: var(--muted);
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+    .growth-meter {
+      display: grid;
+      gap: 8px;
+    }
+    .growth-meter-track {
+      height: 12px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #eef1f5;
+    }
+    .growth-meter-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--teal), var(--green));
+    }
+    .growth-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .growth-tile {
+      min-height: 142px;
+      display: grid;
+      align-content: space-between;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .growth-tile small {
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .growth-tile strong {
+      font-size: 20px;
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+    }
+    .growth-tile span {
+      overflow-wrap: anywhere;
+    }
+    .growth-board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .growth-list {
+      display: grid;
+      gap: 8px;
+    }
+    .growth-item {
+      display: grid;
+      gap: 7px;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+    }
+    .growth-item strong,
+    .growth-item span {
       overflow-wrap: anywhere;
     }
     .monetization-command-center {
@@ -1147,6 +1247,9 @@
       .command-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .command-nav { grid-template-columns: 1fr; position: static; }
       .command-nav-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .growth-cockpit { grid-template-columns: 1fr; }
+      .growth-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .growth-board { grid-template-columns: 1fr; }
       .monetization-command-center { grid-template-columns: 1fr; }
       .command-center-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .command-center-board { grid-template-columns: 1fr; }
@@ -1180,6 +1283,7 @@
       .route-grid { grid-template-columns: 1fr; }
       .command-board { grid-template-columns: 1fr; }
       .command-nav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .growth-grid { grid-template-columns: 1fr; }
       .command-center-grid { grid-template-columns: 1fr; }
       .buyer-ops-grid, .buyer-ops-board { grid-template-columns: 1fr; }
       .launch-grid, .launch-actions { grid-template-columns: 1fr; }
@@ -1236,6 +1340,99 @@
         <div class="auth-actions">
           <button id="save-auth-button" class="primary" type="button">Unlock</button>
           <button id="clear-auth-button" type="button">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="growth-cockpit-section" class="growth-cockpit" aria-label="monetisation growth cockpit">
+      <div class="growth-focus">
+        <div class="section-head">
+          <div>
+            <h2>Growth Cockpit</h2>
+            <p>Customer-ready value screen for anomaly notification, push reach, mail delivery, weekly reporting, archive retention, trust, and paid conversion.</p>
+          </div>
+          <span id="growth-cockpit-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Paid product promise</span>
+          <strong id="growth-cockpit-headline">No tenant loaded</strong>
+          <p id="growth-cockpit-detail">Waiting for anomaly, notification, mail, report, archive, trust, and owner action proof.</p>
+        </div>
+        <div class="growth-meter">
+          <div class="score-meta"><span>Growth readiness</span><span id="growth-cockpit-score">0%</span></div>
+          <div class="growth-meter-track"><div id="growth-cockpit-score-bar" class="growth-meter-fill"></div></div>
+        </div>
+        <div class="action-meta">
+          <span id="growth-cockpit-plan" class="pill">plan pending</span>
+          <span id="growth-cockpit-audience" class="pill">audience pending</span>
+          <span id="growth-cockpit-notification" class="pill">notification pending</span>
+          <span id="growth-cockpit-next" class="pill">next action pending</span>
+        </div>
+      </div>
+      <div>
+        <div class="growth-grid">
+          <div class="growth-tile">
+            <small>Revenue Readiness</small>
+            <strong id="growth-revenue-readiness">-</strong>
+            <span id="growth-revenue-readiness-sub" class="muted">No readiness proof</span>
+          </div>
+          <div class="growth-tile">
+            <small>Anomaly Notifications</small>
+            <strong id="growth-anomaly-notifications">-</strong>
+            <span id="growth-anomaly-notifications-sub" class="muted">No anomaly notification proof</span>
+          </div>
+          <div class="growth-tile">
+            <small>Mail Delivery</small>
+            <strong id="growth-mail-delivery">-</strong>
+            <span id="growth-mail-delivery-sub" class="muted">No mail delivery proof</span>
+          </div>
+          <div class="growth-tile">
+            <small>Push Delivery</small>
+            <strong id="growth-push-delivery">-</strong>
+            <span id="growth-push-delivery-sub" class="muted">No push delivery proof</span>
+          </div>
+          <div class="growth-tile">
+            <small>Archive And Reports</small>
+            <strong id="growth-archive-reports">-</strong>
+            <span id="growth-archive-reports-sub" class="muted">No archive/report proof</span>
+          </div>
+          <div class="growth-tile">
+            <small>Trust And Consent</small>
+            <strong id="growth-trust-consent">-</strong>
+            <span id="growth-trust-consent-sub" class="muted">No trust proof</span>
+          </div>
+        </div>
+        <div class="growth-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Anomaly Notification Ops</h2>
+                <p class="muted">Open anomaly, policy, and tamper alerts with email, push, and dashboard route state.</p>
+              </div>
+              <span id="growth-alert-ops-count" class="pill">0 alerts</span>
+            </div>
+            <div id="growth-alert-ops-list" class="growth-list"><div class="empty">No growth alert operations yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Notification Delivery Proof</h2>
+                <p class="muted">Mail, push, dashboard, and weekly report evidence for customer trust and paid onboarding.</p>
+              </div>
+              <span id="growth-delivery-proof-count" class="pill">0 routes</span>
+            </div>
+            <div id="growth-delivery-proof-list" class="growth-list"><div class="empty">No growth delivery proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Monetisation Owner Actions</h2>
+                <p class="muted">Customer success, owner, and admin actions that make the product easier to sell and retain.</p>
+              </div>
+              <span id="growth-owner-action-count" class="pill">0 actions</span>
+            </div>
+            <div id="growth-owner-action-list" class="growth-list"><div class="empty">No growth owner actions yet.</div></div>
+          </div>
         </div>
       </div>
     </section>
@@ -3097,6 +3294,7 @@
 
       renderDeviceHealth(healthModel);
       renderTenantPlan(device, context);
+      renderGrowthCockpit(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderNotificationOperations(deliveries.items);
       renderAlertInbox(policy.items.concat(anomalies.items, tamper.items), deliveries.items);
       renderProductPackaging({ ...context, deliveries: deliveries.items });
@@ -3175,6 +3373,16 @@
       setText("command-center-audience", "audience pending");
       setText("command-center-route-sla", "delivery pending");
       setText("command-center-next-action", "action pending");
+      document.getElementById("growth-cockpit-status").outerHTML =
+        badge("pending").replace("<span", '<span id="growth-cockpit-status"');
+      setText("growth-cockpit-headline", "No tenant loaded");
+      setText("growth-cockpit-detail", "Waiting for anomaly, notification, mail, report, archive, trust, and owner action proof.");
+      setText("growth-cockpit-score", "0%");
+      document.getElementById("growth-cockpit-score-bar").style.width = "0%";
+      setText("growth-cockpit-plan", "plan pending");
+      setText("growth-cockpit-audience", "audience pending");
+      setText("growth-cockpit-notification", "notification pending");
+      setText("growth-cockpit-next", "next action pending");
     }
 
     function renderCommandNavigation(overview, health, policy, anomalies, tamper, deliveries, context) {
@@ -3530,6 +3738,290 @@
         Number(health.score || 0) >= 70
       ];
       return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+    }
+
+    function renderGrowthCockpit(overview, health, events, deliveries, context) {
+      const tenant = context.tenant || {};
+      const monetization = context.monetizationSummary || {};
+      const operations = context.tenantOperations || {};
+      const command = context.notificationCommandCenter || {};
+      const commandSummary = command.summary || {};
+      const weekly = context.weeklyReport || {};
+      const consent = context.consentCenter || {};
+      const alertInbox = context.alertInbox || {};
+      const inboxSummary = alertInbox.summary || {};
+      const deliveryDrill = context.deliveryDrilldown || {};
+      const drillSummary = deliveryDrill.summary || {};
+      const remediation = context.deliveryRemediation || {};
+      const remediationSummary = remediation.summary || {};
+      const plans = (context.plans && context.plans.items) || [];
+      const tiers = (context.retentionTiers && context.retentionTiers.items) || [];
+      const plan = plans.find((item) => item.id === (tenant.plan_id || monetization.plan_id || operations.plan_id)) || {};
+      const retention = tiers.find((item) => item.id === tenant.retention_tier_id) || {};
+      const commandChannels = command.channels || [];
+      const email = latestDelivery(deliveryByChannel(deliveries, CHANNEL.email));
+      const push = latestDelivery(deliveryByChannel(deliveries, CHANNEL.push));
+      const dashboard = latestDelivery(deliveryByChannel(deliveries, CHANNEL.dashboard));
+      const commandEmail = commandChannels.find((item) => item.channel === CHANNEL.email) || {};
+      const commandPush = commandChannels.find((item) => item.channel === CHANNEL.push) || {};
+      const delivered = deliveries.filter((item) => item.status === DELIVERY_STATUS.delivered).length;
+      const deliveryScore = deliveries.length > 0 ? Math.round((delivered / deliveries.length) * 100) : Number(drillSummary.delivery_score || 0);
+      const notificationScore = Number(commandSummary.notification_score || monetization.notification_score || operations.notification_score || deliveryScore);
+      const readiness = Number(monetization.readiness_score || operations.monetization_readiness || readinessScore(context, deliveries, overview.archive, health));
+      const trustScore = Number(commandSummary.trust_score || monetization.trust_score || Math.round(([
+        Boolean(consent.monitoring_visible),
+        Boolean(consent.data_export_ready),
+        Boolean(consent.delete_request_ready),
+        Boolean(health.agent_healthy),
+        overview.archive.provider === "s3",
+        Number((context.auditEvents && context.auditEvents.count) || 0) > 0
+      ].filter(Boolean).length / 6) * 100));
+      const reportScore = weekly.email_ready && weekly.pdf_ready ? 100 : weekly.email_ready ? 72 : weekly.generated ? 55 : 25;
+      const archiveReady = overview.archive.provider === "s3" && Number(overview.archive.pending_batches || 0) === 0;
+      const archiveScore = archiveReady ? 100 : overview.archive.provider === "s3" ? 68 : 35;
+      const growthScore = Math.round((readiness + notificationScore + trustScore + reportScore + archiveScore) / 5);
+      const status = growthScore >= 82 ? "healthy" : growthScore >= 58 ? "watch" : "attention";
+      const packageName = commandSummary.recommended_paid_package || monetization.plan_name || operations.plan_name || plan.name || tenant.plan_id || "TraceDeck paid plan";
+      const audience = command.audience || monetization.audience || plan.audience || tenant.primary_profile || overview.device.profile || "customer";
+      const topEvent = topRiskEvent(events);
+      const routeProblem = topDeliveryProblem(deliveries);
+      const openAlerts = Number(commandSummary.open_alerts ?? inboxSummary.open ?? events.filter((event) => event.status !== "resolved").length);
+      const highAlerts = Number(commandSummary.high_priority_alerts || inboxSummary.high_or_critical || events.filter((event) => ["critical", "high"].includes(String(event.severity || "").toLowerCase())).length);
+      const nextAction = Number(remediationSummary.problems_open || commandSummary.remediation_open || 0) > 0
+        ? `${remediationSummary.problems_open || commandSummary.remediation_open} delivery SLA action${Number(remediationSummary.problems_open || commandSummary.remediation_open || 0) === 1 ? "" : "s"}`
+        : routeProblem
+          ? `${capitalize(routeProblem.channel)} route needs proof`
+          : topEvent
+            ? `Review ${rowDetail(topEvent)}`
+            : !weekly.email_ready || !weekly.pdf_ready
+              ? "Finish weekly report proof"
+              : !archiveReady
+                ? "Clear archive backlog"
+                : ((monetization.conversion_actions || [])[0] || {}).title || "Paid onboarding ready";
+
+      document.getElementById("growth-cockpit-status").outerHTML =
+        badge(status).replace("<span", '<span id="growth-cockpit-status"');
+      setText("growth-cockpit-headline", `${packageName}: ${growthScore}% growth-ready`);
+      setText("growth-cockpit-detail", `${audience} dashboard with ${openAlerts} open alerts, ${notificationScore}% notification score, ${deliveryScore}% route delivery, ${trustScore}% trust, weekly report ${weekly.email_ready && weekly.pdf_ready ? "ready" : "pending"}, and ${overview.archive.pending_batches || 0} archive batches pending.`);
+      setText("growth-cockpit-score", `${growthScore}%`);
+      document.getElementById("growth-cockpit-score-bar").style.width = growthScore + "%";
+      setText("growth-cockpit-plan", packageName);
+      setText("growth-cockpit-audience", audience);
+      setText("growth-cockpit-notification", `${notificationScore}% notification`);
+      setText("growth-cockpit-next", nextAction);
+
+      setText("growth-revenue-readiness", `${readiness}% ready`);
+      setText("growth-revenue-readiness-sub", `${monetization.conversion_stage || operations.customer_health || "pilot"} stage; ${tenant.device_limit || "custom"} device limit.`);
+      setText("growth-anomaly-notifications", `${openAlerts} open`);
+      setText("growth-anomaly-notifications-sub", `${highAlerts} high priority; email ${commandSummary.email_delivered || (email && email.status === DELIVERY_STATUS.delivered ? 1 : 0)}, push ${commandSummary.push_delivered || (push && push.status === DELIVERY_STATUS.delivered ? 1 : 0)}.`);
+      setText("growth-mail-delivery", commandEmail.latest_delivery_status || (email ? capitalize(email.status) : "pending"));
+      setText("growth-mail-delivery-sub", email ? `${email.recipient} via ${email.provider}; ${formatAge(email.last_attempt_at)}` : commandEmail.next_action || "mail route proof pending");
+      setText("growth-push-delivery", commandPush.latest_delivery_status || (push ? capitalize(push.status) : "pending"));
+      setText("growth-push-delivery-sub", push ? `${push.recipient} via ${push.provider}; ${push.summary || "push route visible"}` : commandPush.next_action || "push route proof pending");
+      setText("growth-archive-reports", archiveReady ? "S3 current" : weekly.email_ready && weekly.pdf_ready ? "report ready" : "proof pending");
+      setText("growth-archive-reports-sub", `${retention.name || overview.archive.provider || "archive"}; report ${weekly.email_ready && weekly.pdf_ready ? "email + PDF" : "not complete"}.`);
+      setText("growth-trust-consent", `${trustScore}% trust`);
+      setText("growth-trust-consent-sub", `${consent.monitoring_visible ? "visible monitoring" : "visibility pending"}, ${health.agent_healthy ? "agent healthy" : "agent review"}, ${(context.auditEvents && context.auditEvents.count) || 0} audit events.`);
+
+      renderGrowthAlertOps(command.alerts || [], alertInbox.items || [], events, deliveries);
+      renderGrowthDeliveryProof(commandChannels, deliveries, weekly, drillSummary, remediationSummary);
+      renderGrowthOwnerActions(command.actions || [], monetization, operations, { topEvent, routeProblem, weekly, archiveReady, overview, remediationSummary, audience });
+    }
+
+    function renderGrowthAlertOps(commandAlerts, inboxItems, events, deliveries) {
+      const items = commandAlerts.length > 0
+        ? commandAlerts.map((item) => ({
+          title: item.title,
+          detail: item.detail || item.recommendation,
+          severity: item.severity,
+          status: item.delivery_state || item.status,
+          meta: `email ${item.email_status || "pending"} / push ${item.push_status || "pending"}`,
+          observed_at: item.observed_at,
+          paid_tier: item.paid_tier
+        }))
+        : inboxItems.length > 0
+          ? inboxItems.map((item) => ({
+            title: item.title,
+            detail: item.detail || item.recommendation,
+            severity: item.severity,
+            status: item.delivery_state || item.status,
+            meta: (item.delivery_proof || []).map((proof) => `${proof.channel}:${proof.status}`).join(", ") || item.host_name,
+            observed_at: item.observed_at,
+            paid_tier: "paid alerting"
+          }))
+          : events.map((event) => {
+            const routes = deliveries.filter((delivery) => delivery.event_id === event.id);
+            return {
+              title: rowDetail(event),
+              detail: event.reason || event.recommendation,
+              severity: event.severity,
+              status: event.status || "open",
+              meta: routes.length ? routes.map((route) => `${route.channel}:${route.status}`).join(", ") : "route proof pending",
+              observed_at: event.observed_at,
+              paid_tier: "risk observability"
+            };
+          });
+
+      const clipped = items.slice(0, 5);
+      setText("growth-alert-ops-count", `${clipped.length} alert${clipped.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("growth-alert-ops-list");
+      if (clipped.length === 0) {
+        target.innerHTML = '<div class="empty">No growth alert operations yet.</div>';
+        return;
+      }
+      target.innerHTML = clipped.map((item) => `
+        <div class="growth-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.severity || "info")}
+            ${badge(item.status || "watch")}
+            <span class="pill">${escapeHTML(item.meta || "notification proof pending")}</span>
+            <span class="pill">${escapeHTML(item.paid_tier || "paid")}</span>
+            <span class="pill">${escapeHTML(formatAge(item.observed_at))}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderGrowthDeliveryProof(commandChannels, deliveries, weekly, drillSummary, remediationSummary) {
+      const routeRows = commandChannels.length > 0
+        ? commandChannels.map((item) => ({
+          title: `${capitalize(item.channel)} route`,
+          detail: `${item.recipient || "recipient pending"} via ${item.provider || "provider pending"}; ${item.evidence || item.next_action || "proof pending"}`,
+          status: item.latest_delivery_status || item.route_status || "pending",
+          meta: `${item.attempts || 0} attempts`,
+          proof: item.proof_state || "needs_proof",
+          age: item.last_delivery_at,
+          tier: item.paid_tier || "paid"
+        }))
+        : [CHANNEL.email, CHANNEL.push, CHANNEL.dashboard].map((channel) => {
+          const latest = latestDelivery(deliveryByChannel(deliveries, channel));
+          return {
+            title: `${capitalize(channel)} route`,
+            detail: latest ? `${latest.recipient} via ${latest.provider}; ${latest.summary || "route visible"}` : "route proof pending",
+            status: latest ? latest.status : "pending",
+            meta: latest ? `${latest.attempts || 0} attempts` : "not configured",
+            proof: latest ? "delivery proof" : "needs_proof",
+            age: latest ? latest.last_attempt_at : "",
+            tier: "paid"
+          };
+        });
+      routeRows.push({
+        title: "Weekly report delivery",
+        detail: weekly.email_preview || weekly.generated_note || "weekly report email/PDF proof pending",
+        status: weekly.email_ready && weekly.pdf_ready ? "ready" : weekly.generated ? "watch" : "pending",
+        meta: weekly.email_ready ? "email ready" : "email pending",
+        proof: weekly.pdf_ready ? "PDF ready" : "PDF pending",
+        age: weekly.generated_at,
+        tier: "family_pro"
+      });
+      routeRows.push({
+        title: "Remediation SLA",
+        detail: `${remediationSummary.problems_open || 0} open, ${remediationSummary.planned_actions || 0} planned, ${remediationSummary.sla_watch || 0} SLA watch`,
+        status: Number(remediationSummary.problems_open || 0) === 0 ? "healthy" : Number(remediationSummary.planned_actions || 0) > 0 ? "planned" : "watch",
+        meta: drillSummary.rehearsal_mode || "dry_run",
+        proof: remediationSummary.next_retry_at ? `retry ${formatDate(remediationSummary.next_retry_at)}` : "provider-safe",
+        age: remediationSummary.last_planned_at,
+        tier: "business"
+      });
+
+      setText("growth-delivery-proof-count", `${routeRows.length} proof${routeRows.length === 1 ? "" : "s"}`);
+      document.getElementById("growth-delivery-proof-list").innerHTML = routeRows.slice(0, 6).map((item) => `
+        <div class="growth-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.status)}
+            ${badge(item.proof)}
+            <span class="pill">${escapeHTML(item.meta)}</span>
+            <span class="pill">${escapeHTML(item.tier)}</span>
+            <span class="pill">${escapeHTML(formatAge(item.age))}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderGrowthOwnerActions(commandActions, monetization, operations, state) {
+      const actions = commandActions.slice();
+      if (state.routeProblem) {
+        actions.push({
+          title: `${capitalize(state.routeProblem.channel)} route needs proof`,
+          detail: state.routeProblem.last_error || state.routeProblem.summary || "Verify provider route before customer walkthrough.",
+          severity: "medium",
+          status: state.routeProblem.status,
+          channel: state.routeProblem.channel,
+          owner: state.routeProblem.recipient,
+          paid_tier: "family_pro",
+          observed_at: state.routeProblem.last_attempt_at
+        });
+      }
+      if (state.topEvent) {
+        actions.push({
+          title: `Review ${rowDetail(state.topEvent)}`,
+          detail: state.topEvent.recommendation || state.topEvent.reason,
+          severity: state.topEvent.severity,
+          status: state.topEvent.status || "open",
+          channel: state.topEvent.source,
+          owner: state.topEvent.category,
+          paid_tier: "risk_observability",
+          observed_at: state.topEvent.observed_at
+        });
+      }
+      if (!state.weekly.email_ready || !state.weekly.pdf_ready) {
+        actions.push({
+          title: "Finish weekly report package",
+          detail: state.weekly.email_preview || state.weekly.generated_note || "Generate email preview and PDF proof for paid weekly reporting.",
+          severity: "medium",
+          status: state.weekly.generated ? "watch" : "pending",
+          channel: CHANNEL.email,
+          owner: "reporting",
+          paid_tier: "family_pro",
+          observed_at: new Date().toISOString()
+        });
+      }
+      if (!state.archiveReady) {
+        actions.push({
+          title: "Clear archive and retention proof",
+          detail: `${state.overview.archive.pending_batches || 0} archive batch${Number(state.overview.archive.pending_batches || 0) === 1 ? "" : "es"} pending for ${state.overview.archive.provider || "archive provider"}.`,
+          severity: "low",
+          status: state.overview.archive.status || "watch",
+          channel: "archive",
+          owner: "operations",
+          paid_tier: "school",
+          observed_at: new Date().toISOString()
+        });
+      }
+      actions.push(...((monetization.conversion_actions || []).slice(0, 2)));
+      actions.push(...((operations.priority_signals || []).slice(0, 2)));
+      if (actions.length === 0) {
+        actions.push({
+          title: "Paid onboarding ready",
+          detail: `${state.audience} view has anomaly notification, mail, push, report, archive, trust, and owner proof visible.`,
+          severity: "info",
+          status: "healthy",
+          channel: "dashboard",
+          owner: "customer success",
+          paid_tier: "family_pro",
+          observed_at: new Date().toISOString()
+        });
+      }
+
+      const clipped = actions.slice(0, 6);
+      setText("growth-owner-action-count", `${clipped.length} action${clipped.length === 1 ? "" : "s"}`);
+      document.getElementById("growth-owner-action-list").innerHTML = clipped.map((item) => `
+        <div class="growth-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.severity || "info")}
+            ${badge(item.status || "watch")}
+            <span class="pill">${escapeHTML(item.channel || "dashboard")}</span>
+            <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+            <span class="pill">${escapeHTML(item.paid_tier || item.paidTier || "paid")}</span>
+          </div>
+        </div>
+      `).join("");
     }
 
     function renderBuyerOperationsBrief(overview, health, events, deliveries, context) {

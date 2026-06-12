@@ -23,6 +23,9 @@ The response includes:
 - premium notification command center summary for alert funnel, email proof,
   push proof, route assurance, remediation SLA state, paid-tier labels, and
   owner action SLAs
+- growth cockpit proof for revenue readiness, anomaly notification operations,
+  mail delivery, push reach, archive/report status, trust/consent, and owner
+  actions
 
 These endpoints aggregate existing privacy-aware metadata. They do not add
 password, credential, screenshot, keystroke, raw URL, page title, private
@@ -32,6 +35,7 @@ message, camera, microphone, alert-body, or provider-secret collection.
 
 The embedded dashboard now adds:
 
+- Growth Cockpit
 - Monetisation Command Center
 - Notification Guarantee
 - Premium Notification Command Center
@@ -51,4 +55,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase47.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase47.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase47.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase48.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase48.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase48.ps1
 ```
