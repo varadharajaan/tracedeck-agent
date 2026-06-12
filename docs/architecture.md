@@ -34,3 +34,10 @@ rules against the in-memory event batch. Evaluators are split by rule family so
 new rules can be added without turning the runner into rule-specific code.
 Current rule families cover blocked process names, blocked browser domains, and
 non-study YouTube domain activity.
+
+Phase 5 starts the backend/dashboard foundation with a separate Go command under
+`backend/cmd/tracedeck-backend`. It uses the standard library HTTP server,
+binds to localhost by default, exposes health/version/device/template/archive
+routes, and serves an embedded dashboard shell. Backend storage is in-memory for
+this foundation slice; later SaaS phases can replace the repository with durable
+multi-tenant storage without changing handler contracts.

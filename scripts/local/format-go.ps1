@@ -9,7 +9,7 @@ Initialize-TraceDeckScriptLog -Name "format-go" -LogRoot "logs/local/format" | O
 try {
     Invoke-TraceDeckLoggedCommand -Label "Format Go source" -Command {
         $files = @()
-        foreach ($path in @("agent", "scripts/tools")) {
+        foreach ($path in @("agent", "backend", "scripts/tools")) {
             if (Test-Path $path) {
                 $files += Get-ChildItem -Path $path -Recurse -Filter "*.go" | ForEach-Object { $_.FullName }
             }
