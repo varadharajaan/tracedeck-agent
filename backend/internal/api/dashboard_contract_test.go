@@ -32,6 +32,23 @@ func TestDashboardDOMContract(t *testing.T) {
 	if len(missing) > 0 {
 		t.Fatalf("dashboard JavaScript references missing DOM ids: %s", strings.Join(missing, ", "))
 	}
+
+	for _, marker := range []string{
+		"Paid Ops Console",
+		"Commercial Control Room",
+		"Revenue Command Center",
+		"Notification Proof Rail",
+		"Buyer Demo Checklist",
+		"Mail Delivery Center",
+		"Push Notification Center",
+		"Archive Retention",
+		"Tamper Trust",
+		"Backend Alert Inbox",
+	} {
+		if !strings.Contains(html, marker) {
+			t.Fatalf("dashboard is missing monetisation marker %q", marker)
+		}
+	}
 }
 
 func dashboardElementIDs(html string) (map[string]struct{}, []string) {

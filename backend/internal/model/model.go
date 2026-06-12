@@ -290,6 +290,59 @@ type TenantActivityFeed struct {
 	PrivacyBoundary string                    `json:"privacy_boundary"`
 }
 
+type TenantAlertDeliveryProof struct {
+	Channel       string     `json:"channel"`
+	Status        string     `json:"status"`
+	Provider      string     `json:"provider"`
+	Recipient     string     `json:"recipient"`
+	Attempts      int        `json:"attempts"`
+	LastAttemptAt time.Time  `json:"last_attempt_at"`
+	NextRetryAt   *time.Time `json:"next_retry_at,omitempty"`
+	Proof         string     `json:"proof"`
+}
+
+type TenantAlertInboxSummary struct {
+	Total             int `json:"total"`
+	Open              int `json:"open"`
+	HighOrCritical    int `json:"high_or_critical"`
+	WithEmail         int `json:"with_email"`
+	WithPush          int `json:"with_push"`
+	WithDashboard     int `json:"with_dashboard"`
+	DeliveryRetrying  int `json:"delivery_retrying"`
+	DeliveryFailed    int `json:"delivery_failed"`
+	SourceHostCount   int `json:"source_host_count"`
+	NotificationReady int `json:"notification_ready"`
+}
+
+type TenantAlertInboxItem struct {
+	ID             string                     `json:"id"`
+	TenantID       string                     `json:"tenant_id"`
+	DeviceID       string                     `json:"device_id"`
+	HostName       string                     `json:"host_name"`
+	EventID        string                     `json:"event_id"`
+	Type           string                     `json:"type"`
+	Severity       string                     `json:"severity"`
+	Category       string                     `json:"category"`
+	Status         string                     `json:"status"`
+	Title          string                     `json:"title"`
+	Detail         string                     `json:"detail"`
+	Recommendation string                     `json:"recommendation"`
+	Source         string                     `json:"source"`
+	DeliveryState  string                     `json:"delivery_state"`
+	DeliveryProof  []TenantAlertDeliveryProof `json:"delivery_proof"`
+	NextAction     string                     `json:"next_action"`
+	ObservedAt     time.Time                  `json:"observed_at"`
+}
+
+type TenantAlertInbox struct {
+	TenantID        string                  `json:"tenant_id"`
+	TenantName      string                  `json:"tenant_name"`
+	Summary         TenantAlertInboxSummary `json:"summary"`
+	Items           []TenantAlertInboxItem  `json:"items"`
+	GeneratedAt     time.Time               `json:"generated_at"`
+	PrivacyBoundary string                  `json:"privacy_boundary"`
+}
+
 type TenantActivityView struct {
 	ID          string                   `json:"id"`
 	TenantID    string                   `json:"tenant_id"`

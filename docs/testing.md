@@ -500,6 +500,23 @@ delivery records, and weekly report email/PDF readiness. Newman runs
 live demo so the monetisation-grade UI contract includes anomaly, push, mail,
 report, archive, and trust proof.
 
+Phase 41 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase41.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase41.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase41.ps1
+```
+
+The Phase 41 smoke live-boots the seeded dashboard and verifies the typed tenant
+alert inbox endpoint, backend alert inbox dashboard markers, monetisation UI
+markers for paid ops, commercial control, revenue command, notification proof,
+buyer checklist, mail delivery, push notification, archive retention, and tamper
+trust, event-linked delivery proof for email/push/dashboard, activity feed
+delivery continuity, and the metadata-only privacy boundary. Newman runs
+`postman/tracedeck-backend-phase41.postman_collection.json` against the same
+live demo.
+
 Phase 13 adds:
 
 ```powershell

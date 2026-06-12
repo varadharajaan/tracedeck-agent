@@ -305,6 +305,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantNotificationRoutes(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentConsentCenter && r.Method == http.MethodGet:
 		s.handleTenantConsentCenter(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentAlertInbox && r.Method == http.MethodGet:
+		s.handleTenantAlertInbox(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentOperations && r.Method == http.MethodGet:
 		s.handleTenantOperationsSummary(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentMonetization && r.Method == http.MethodGet:
@@ -485,6 +487,23 @@ func (s *Server) handleTenantOperationsSummary(w http.ResponseWriter, r *http.Re
 		return
 	}
 	writeJSON(w, http.StatusOK, summary)
+}
+
+func (s *Server) handleTenantAlertInbox(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	inbox, err := s.store.TenantAlertInbox(r.Context(), tenantID)
+	if err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant alert inbox lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, inbox)
 }
 
 func (s *Server) handleTenantMonetizationSummary(w http.ResponseWriter, r *http.Request, tenantID string) {
