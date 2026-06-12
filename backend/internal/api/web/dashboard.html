@@ -273,6 +273,104 @@
       gap: 12px;
       margin-top: 12px;
     }
+    .paid-ops-console {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.95fr) minmax(0, 2.05fr);
+      gap: 16px;
+    }
+    .paid-ops-focus {
+      min-height: 360px;
+      display: grid;
+      align-content: space-between;
+      gap: 16px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--blue);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .paid-ops-focus h2 {
+      font-size: 20px;
+    }
+    .paid-ops-focus strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 32px;
+      line-height: 1.05;
+      overflow-wrap: anywhere;
+    }
+    .paid-ops-focus p {
+      color: var(--muted);
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+    .paid-meter {
+      display: grid;
+      gap: 8px;
+    }
+    .paid-meter-track {
+      height: 12px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #eef1f5;
+    }
+    .paid-meter-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--green));
+    }
+    .paid-ops-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .paid-ops-tile {
+      min-height: 148px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      display: grid;
+      align-content: space-between;
+      gap: 10px;
+    }
+    .paid-ops-tile small {
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .paid-ops-tile strong {
+      font-size: 20px;
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+    }
+    .paid-ops-tile span {
+      overflow-wrap: anywhere;
+    }
+    .paid-ops-board {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .route-proof-list {
+      display: grid;
+      gap: 10px;
+    }
+    .route-proof-item {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+    }
+    .route-proof-item strong, .route-proof-item span {
+      overflow-wrap: anywhere;
+    }
     .launch-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -779,6 +877,9 @@
       .revenue-suite { grid-template-columns: 1fr; }
       .suite-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .proof-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .paid-ops-console { grid-template-columns: 1fr; }
+      .paid-ops-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .paid-ops-board { grid-template-columns: 1fr; }
       .commercial-room { grid-template-columns: 1fr; }
       .commercial-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .commercial-board { grid-template-columns: 1fr; }
@@ -799,6 +900,7 @@
       .ops-strip { grid-template-columns: 1fr; }
       .cockpit-grid { grid-template-columns: 1fr; }
       .suite-grid, .proof-rail { grid-template-columns: 1fr; }
+      .paid-ops-grid { grid-template-columns: 1fr; }
       .commercial-grid { grid-template-columns: 1fr; }
       .revenue-grid, .assurance-grid { grid-template-columns: 1fr; }
       .summary-line { grid-template-columns: 1fr; }
@@ -844,6 +946,88 @@
         <div class="auth-actions">
           <button id="save-auth-button" class="primary" type="button">Unlock</button>
           <button id="clear-auth-button" type="button">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="paid-ops-console" aria-label="paid operations console">
+      <div class="paid-ops-focus">
+        <div class="section-head">
+          <div>
+            <h2>Paid Ops Console</h2>
+            <p>Monetisation-first view for anomaly response, push notification reach, mail delivery, weekly reports, archive retention, tamper trust, and upgrade readiness.</p>
+          </div>
+          <span id="paid-ops-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Customer-Ready Promise</span>
+          <strong id="paid-ops-headline">No tenant loaded</strong>
+          <p id="paid-ops-detail">Waiting for anomaly, mail, push, archive, and report proof.</p>
+        </div>
+        <div class="paid-meter">
+          <div class="score-meta"><span>Paid readiness</span><span id="paid-ops-score-label">0%</span></div>
+          <div class="paid-meter-track"><div id="paid-ops-score-bar" class="paid-meter-fill"></div></div>
+        </div>
+        <div class="action-meta">
+          <span id="paid-ops-plan" class="pill">plan pending</span>
+          <span id="paid-ops-stage" class="pill">stage pending</span>
+          <span id="paid-ops-route-sla" class="pill">delivery pending</span>
+        </div>
+      </div>
+      <div>
+        <div class="paid-ops-grid">
+          <div class="paid-ops-tile">
+            <small>Anomaly Inbox</small>
+            <strong id="paid-anomaly">-</strong>
+            <span id="paid-anomaly-sub" class="muted">No anomaly or policy proof</span>
+          </div>
+          <div class="paid-ops-tile">
+            <small>Push Notification</small>
+            <strong id="paid-push">-</strong>
+            <span id="paid-push-sub" class="muted">No push proof</span>
+          </div>
+          <div class="paid-ops-tile">
+            <small>Mail Delivery</small>
+            <strong id="paid-mail">-</strong>
+            <span id="paid-mail-sub" class="muted">No mail proof</span>
+          </div>
+          <div class="paid-ops-tile">
+            <small>Weekly Report</small>
+            <strong id="paid-report">-</strong>
+            <span id="paid-report-sub" class="muted">No report mail proof</span>
+          </div>
+          <div class="paid-ops-tile">
+            <small>Archive Retention</small>
+            <strong id="paid-archive">-</strong>
+            <span id="paid-archive-sub" class="muted">No archive proof</span>
+          </div>
+          <div class="paid-ops-tile">
+            <small>Tamper Trust</small>
+            <strong id="paid-trust">-</strong>
+            <span id="paid-trust-sub" class="muted">No trust proof</span>
+          </div>
+        </div>
+        <div class="paid-ops-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Notification Route Proof</h2>
+                <p class="muted">Email, push, and dashboard delivery evidence tied to anomaly or policy events.</p>
+              </div>
+              <span id="paid-route-status" class="badge pending">pending</span>
+            </div>
+            <div id="paid-route-proof-list" class="route-proof-list"><div class="empty">No notification route proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Monetisation Action Queue</h2>
+                <p class="muted">Escalations a paid customer expects: anomaly response, delivery recovery, report packaging, archive health, and upgrade follow-up.</p>
+              </div>
+              <span id="paid-action-count" class="pill">0 actions</span>
+            </div>
+            <div id="paid-action-list" class="action-list"><div class="empty">No paid action items yet.</div></div>
+          </div>
         </div>
       </div>
     </section>
@@ -2204,6 +2388,7 @@
       renderNotificationOperations(deliveries.items);
       renderAlertInbox(policy.items.concat(anomalies.items, tamper.items), deliveries.items);
       renderProductPackaging({ ...context, deliveries: deliveries.items });
+      renderPaidOpsConsole(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderCommandBoard(overview, healthModel, policy, anomalies, tamper, deliveries, context);
       renderExecutiveBrief(overview, healthModel, policy, anomalies, tamper, deliveries, context);
       renderNotificationActionQueue(policy.items.concat(anomalies.items, tamper.items), deliveries.items);
@@ -2283,6 +2468,201 @@
         Number(health.score || 0) >= 70
       ];
       return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+    }
+
+    function renderPaidOpsConsole(overview, health, events, deliveries, context) {
+      const monetization = context.monetizationSummary || {};
+      const operations = context.tenantOperations || {};
+      const tenant = context.tenant || {};
+      const weekly = context.weeklyReport || {};
+      const consent = context.consentCenter || {};
+      const plans = (context.plans && context.plans.items) || [];
+      const tiers = (context.retentionTiers && context.retentionTiers.items) || [];
+      const plan = plans.find((item) => item.id === (tenant.plan_id || monetization.plan_id || operations.plan_id)) || {};
+      const retention = tiers.find((item) => item.id === tenant.retention_tier_id) || {};
+      const email = latestDelivery(deliveryByChannel(deliveries, CHANNEL.email));
+      const push = latestDelivery(deliveryByChannel(deliveries, CHANNEL.push));
+      const dashboard = latestDelivery(deliveryByChannel(deliveries, CHANNEL.dashboard));
+      const topEvent = topRiskEvent(events);
+      const routeProblem = topDeliveryProblem(deliveries);
+      const delivered = deliveries.filter((item) => item.status === DELIVERY_STATUS.delivered).length;
+      const deliveryScore = deliveries.length > 0 ? Math.round((delivered / deliveries.length) * 100) : Number(monetization.notification_score || operations.notification_score || 0);
+      const readiness = Number(monetization.readiness_score || operations.monetization_readiness || readinessScore(context, deliveries, overview.archive, health));
+      const trust = Number(monetization.trust_score || 0);
+      const trustForScore = trust > 0 ? trust : Math.round(([
+        health.agent_healthy,
+        overview.archive.provider === "s3",
+        Boolean(email),
+        Boolean(push),
+        Boolean(dashboard),
+        Boolean(consent.monitoring_visible)
+      ].filter(Boolean).length / 6) * 100);
+      const archiveScore = overview.archive.provider === "s3" && Number(overview.archive.pending_batches || 0) === 0 ? 100 : overview.archive.provider === "s3" ? 70 : 30;
+      const paidScore = Math.round((readiness + deliveryScore + trustForScore + archiveScore) / 4);
+      const status = paidScore >= 80 ? "healthy" : paidScore >= 55 ? "watch" : "attention";
+      const packageName = monetization.plan_name || operations.plan_name || plan.name || tenant.plan_id || "TraceDeck paid plan";
+      const audience = monetization.audience || plan.audience || tenant.primary_profile || overview.device.profile || "customer";
+      const eventLabel = topEvent ? rowDetail(topEvent) : "No active anomaly";
+
+      document.getElementById("paid-ops-status").outerHTML =
+        badge(status).replace("<span", '<span id="paid-ops-status"');
+      setText("paid-ops-headline", topEvent ? `${eventLabel} alert is customer-visible` : `${packageName} is ready for buyer review`);
+      setText("paid-ops-detail", `Email ${email ? email.status : "missing"}, push ${push ? push.status : "missing"}, dashboard ${dashboard ? dashboard.status : "missing"}, report ${weekly.email_ready ? "mail ready" : "pending"}, archive ${overview.archive.provider || "pending"}.`);
+      setText("paid-ops-score-label", `${paidScore}%`);
+      document.getElementById("paid-ops-score-bar").style.width = paidScore + "%";
+      setText("paid-ops-plan", packageName);
+      setText("paid-ops-stage", monetization.conversion_stage || operations.customer_health || "pilot");
+      setText("paid-ops-route-sla", `${deliveryScore}% delivery`);
+
+      const activeRiskCount = events.filter((event) => event.status !== "resolved").length;
+      setText("paid-anomaly", `${activeRiskCount} active`);
+      setText("paid-anomaly-sub", topEvent ? `${topEvent.severity} ${topEvent.category}: ${topEvent.reason}` : "No policy, anomaly, or tamper events.");
+      setText("paid-push", push ? `${capitalize(push.status)} push` : "Push missing");
+      setText("paid-push-sub", push ? `${push.recipient}; ${deliveryEventName(push, events)}; retry ${push.next_retry_at ? formatDate(push.next_retry_at) : "not scheduled"}` : "Configure web or mobile push for anomaly urgency.");
+      setText("paid-mail", email ? `${capitalize(email.status)} email` : "Mail missing");
+      setText("paid-mail-sub", email ? `${email.recipient}; ${deliveryEventName(email, events)}; ${formatAge(email.last_attempt_at)}` : "Configure mail delivery for critical anomaly proof.");
+      setText("paid-report", weekly.email_ready ? "Mail ready" : weekly.generated ? "Generated" : "Pending");
+      setText("paid-report-sub", weekly.pdf_ready ? "PDF attachment ready for scheduled report mail." : weekly.email_preview || weekly.generated_note || "Weekly report mail proof pending.");
+      setText("paid-archive", overview.archive.provider === "s3" ? `${overview.archive.pending_batches} pending` : "Archive pending");
+      setText("paid-archive-sub", retention.name ? `${retention.name}: ${retention.s3_standard_days}d standard, IA until ${retention.s3_standard_ia_until_days}d, archive after ${retention.s3_archive_after_days}d` : `${overview.archive.provider || "no provider"} retention proof.`);
+      setText("paid-trust", `${trustForScore}% trust`);
+      setText("paid-trust-sub", `${operations.tamper_signals || 0} tamper signals, ${health.agent_healthy ? "agent healthy" : "agent needs review"}, ${consent.monitoring_visible ? "consent visible" : "consent pending"}.`);
+
+      renderPaidRouteProof(deliveries, events, deliveryScore);
+      renderPaidActionQueue(overview, health, events, deliveries, context, {
+        topEvent,
+        routeProblem,
+        email,
+        push,
+        dashboard,
+        weekly,
+        readiness,
+        trust: trustForScore,
+        audience
+      });
+    }
+
+    function deliveryEventName(delivery, events) {
+      if (!delivery) return "no linked event";
+      const event = events.find((item) => item.id === delivery.event_id);
+      if (event) return `${rowDetail(event)} ${event.type}`;
+      return delivery.summary || "route proof";
+    }
+
+    function renderPaidRouteProof(deliveries, events, deliveryScore) {
+      document.getElementById("paid-route-status").outerHTML =
+        badge(deliveryScore >= 70 ? "healthy" : deliveryScore > 0 ? "watch" : "pending").replace("<span", '<span id="paid-route-status"');
+      const target = document.getElementById("paid-route-proof-list");
+      if (deliveries.length === 0) {
+        target.innerHTML = '<div class="empty">No notification route proof yet.</div>';
+        return;
+      }
+      target.innerHTML = deliveries.map((delivery) => `
+        <div class="route-proof-item">
+          <strong>${escapeHTML(capitalize(delivery.channel))} - ${escapeHTML(delivery.provider)}</strong>
+          <span class="muted">${escapeHTML(deliveryEventName(delivery, events))}</span>
+          <div class="action-meta">
+            ${badge(delivery.status)}
+            <span class="pill">${escapeHTML(delivery.recipient)}</span>
+            <span class="pill">${escapeHTML(delivery.attempts)} attempt${Number(delivery.attempts || 0) === 1 ? "" : "s"}</span>
+            <span class="pill">last ${escapeHTML(formatAge(delivery.last_attempt_at))}</span>
+          </div>
+          <span class="muted">${escapeHTML(delivery.last_error || delivery.summary || "Route proof visible.")}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderPaidActionQueue(overview, health, events, deliveries, context, state) {
+      const operations = context.tenantOperations || {};
+      const monetization = context.monetizationSummary || {};
+      const actions = [];
+      if (state.topEvent) {
+        actions.push({
+          title: `Review ${rowDetail(state.topEvent)}`,
+          detail: state.topEvent.recommendation || state.topEvent.reason,
+          severity: state.topEvent.severity,
+          status: state.topEvent.status,
+          owner: state.topEvent.category,
+          channel: state.topEvent.source,
+          observed_at: state.topEvent.observed_at
+        });
+      }
+      if (state.routeProblem) {
+        actions.push({
+          title: `${capitalize(state.routeProblem.channel)} delivery needs proof`,
+          detail: state.routeProblem.last_error || state.routeProblem.summary || "Retry or verify the route before paid walkthrough.",
+          severity: "medium",
+          status: state.routeProblem.status,
+          owner: state.routeProblem.recipient,
+          channel: state.routeProblem.provider,
+          observed_at: state.routeProblem.last_attempt_at
+        });
+      }
+      if (!state.weekly.email_ready || !state.weekly.pdf_ready) {
+        actions.push({
+          title: "Package weekly report mail",
+          detail: state.weekly.email_preview || state.weekly.generated_note || "Generate report email preview and PDF attachment proof.",
+          severity: "medium",
+          status: state.weekly.generated ? "watch" : "pending",
+          owner: "reporting",
+          channel: CHANNEL.email,
+          observed_at: new Date().toISOString()
+        });
+      }
+      if (Number(overview.archive.pending_batches || 0) > 0) {
+        actions.push({
+          title: "Clear archive upload backlog",
+          detail: `${overview.archive.pending_batches} S3 archive batch${Number(overview.archive.pending_batches || 0) === 1 ? "" : "es"} waiting for online upload.`,
+          severity: "low",
+          status: overview.archive.status || "watch",
+          owner: "archive",
+          channel: "s3",
+          observed_at: new Date().toISOString()
+        });
+      }
+      if (!health.agent_healthy || Number(operations.tamper_signals || 0) > 0) {
+        actions.push({
+          title: "Verify tamper and service trust",
+          detail: `${operations.tamper_signals || 0} trust signal${Number(operations.tamper_signals || 0) === 1 ? "" : "s"}; agent ${health.agent_healthy ? "healthy" : "needs review"}.`,
+          severity: "low",
+          status: health.agent_healthy ? "watch" : "attention",
+          owner: "trust",
+          channel: "dashboard",
+          observed_at: new Date().toISOString()
+        });
+      }
+      const conversionAction = ((monetization.conversion_actions || [])[0]) || ((operations.upgrade_signals || [])[0]);
+      if (conversionAction) {
+        actions.push(conversionAction);
+      }
+      if (actions.length === 0) {
+        actions.push({
+          title: "Ready for monetisation walkthrough",
+          detail: `${state.audience} view has anomaly, push, mail, report, archive, and trust proof visible.`,
+          severity: "info",
+          status: "healthy",
+          owner: "customer success",
+          channel: "dashboard",
+          observed_at: new Date().toISOString()
+        });
+      }
+
+      const clipped = actions.slice(0, 6);
+      setText("paid-action-count", `${clipped.length} action${clipped.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("paid-action-list");
+      target.innerHTML = clipped.map((item) => `
+        <div class="action-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.severity || "info")}
+            ${badge(item.status || "watch")}
+            <span class="pill">${escapeHTML(item.channel || "dashboard")}</span>
+            <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+            <span class="pill">${escapeHTML(formatAge(item.observed_at))}</span>
+          </div>
+        </div>
+      `).join("");
     }
 
     function renderCommandBoard(overview, health, policy, anomalies, tamper, deliveries, context) {

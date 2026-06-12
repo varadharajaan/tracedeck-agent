@@ -131,3 +131,7 @@
 42. Phase 39: autostart assurance. Stronger Windows Task Scheduler hidden
     startup/status JSON checks, service-manager dry-run proof, service trust
     smoke/Newman coverage, docs, and full local verification.
+43. Phase 40: paid ops console. First-screen monetisation dashboard for anomaly
+    response, push notifications, mail delivery, weekly reports, archive
+    retention, tamper trust, escalation actions, live smoke/Newman coverage,
+    docs, and full local verification.
