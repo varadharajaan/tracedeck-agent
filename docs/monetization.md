@@ -432,3 +432,18 @@ This makes TraceDeck easier to monetise after a demo because the customer can
 see what is production-ready, what blocks rollout, what paid package is
 recommended, and which actions improve activation without exposing sensitive
 payloads.
+
+Phase 64 adds a Customer Settings Center for activation and renewal:
+
+- current and recommended plan package settings
+- current and recommended retention/archive settings
+- notification policy settings for immediate, digest, silent, quiet-hours, and
+  escalation behavior
+- mail, push, and dashboard channel settings with route proof state
+- archive, autostart, role dashboard, and privacy/data-rights settings
+- owner actions that turn configuration gaps into a paid activation checklist
+
+This helps monetisation because a parent, school admin, or business manager can
+see what settings are ready to turn on, what paid package those settings
+support, and what still blocks activation without exposing provider secrets,
+payment data, private content, or alert payloads.

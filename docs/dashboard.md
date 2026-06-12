@@ -436,6 +436,15 @@ readiness, privacy guard, and owner actions. The command navigation includes an
 Onboard target so a buyer/admin can answer whether deployment, alerts, archive,
 reports, and roles are ready before moving into host-level drilldowns.
 
+Phase 64 adds a Customer Settings Center next to onboarding. It renders the
+typed `customer-settings-center` API as configurable activation proof: plan and
+retention recommendations, notification policy state, mail route proof, push
+route proof, dashboard fallback, archive and autostart readiness, role view
+settings, data-rights settings, and owner actions. The command navigation adds
+a Settings target so a buyer/admin can move from readiness proof to settings
+review without exposing payment data, provider secrets, alert bodies, raw URLs,
+or push endpoints.
+
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
 paid customer onboarding workflows.

@@ -259,3 +259,9 @@
     handoff, package readiness, privacy/data-rights guardrails, owner actions,
     Postman/Newman coverage, screenshot-free layout guard, docs, and full local
     verification.
+67. Phase 64: customer settings center. Typed tenant customer-settings-center
+    API and dashboard surface for plan settings, retention settings,
+    notification policy, mail route proof, push route proof, dashboard fallback,
+    archive, autostart, role dashboard settings, privacy/data-rights settings,
+    owner actions, Postman/Newman coverage, screenshot-free layout guard, docs,
+    and full local verification.

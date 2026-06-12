@@ -1963,6 +1963,85 @@
       </div>
     </section>
 
+    <section id="customer-settings-section" class="executive-console" aria-label="customer settings center">
+      <div class="executive-focus">
+        <div class="section-head">
+          <div>
+            <h2>Customer Settings Center</h2>
+            <p>Customer-facing activation settings for plan package, retention, anomaly mail, push notification, dashboard fallback, archive, autostart, role views, and privacy proof.</p>
+          </div>
+          <span id="customer-settings-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Configurable rollout</span>
+          <strong id="customer-settings-headline">No tenant loaded</strong>
+          <p id="customer-settings-detail">Waiting for package, retention, notification, route, archive, role, and data-rights settings.</p>
+        </div>
+        <div class="executive-meter">
+          <div class="score-meta"><span>Settings readiness</span><span id="customer-settings-score">0%</span></div>
+          <div class="executive-meter-track"><div id="customer-settings-score-bar" class="executive-meter-fill"></div></div>
+        </div>
+        <div class="action-meta">
+          <span id="customer-settings-plan" class="pill">plan pending</span>
+          <span id="customer-settings-retention" class="pill">retention pending</span>
+          <span id="customer-settings-next" class="pill">action pending</span>
+          <span id="customer-settings-privacy" class="pill">metadata-only</span>
+        </div>
+      </div>
+      <div>
+        <div class="executive-kpis">
+          <div class="executive-kpi"><small>Settings</small><strong id="settings-kpi-configured">-</strong><span id="settings-kpi-configured-sub" class="muted">No settings proof</span></div>
+          <div class="executive-kpi"><small>Notifications</small><strong id="settings-kpi-notifications">-</strong><span id="settings-kpi-notifications-sub" class="muted">No notification settings</span></div>
+          <div class="executive-kpi"><small>Archive</small><strong id="settings-kpi-archive">-</strong><span id="settings-kpi-archive-sub" class="muted">No archive settings</span></div>
+          <div class="executive-kpi"><small>Autostart</small><strong id="settings-kpi-autostart">-</strong><span id="settings-kpi-autostart-sub" class="muted">No autostart proof</span></div>
+          <div class="executive-kpi"><small>Role Views</small><strong id="settings-kpi-roles">-</strong><span id="settings-kpi-roles-sub" class="muted">No role settings</span></div>
+          <div class="executive-kpi"><small>Data Rights</small><strong id="settings-kpi-data-rights">-</strong><span id="settings-kpi-data-rights-sub" class="muted">No data-rights proof</span></div>
+        </div>
+        <div class="executive-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Settings Matrix</h2>
+                <p class="muted">Current and recommended settings for plan, retention, notifications, routes, archive, autostart, roles, and privacy.</p>
+              </div>
+              <span id="customer-settings-count" class="pill">0 settings</span>
+            </div>
+            <div id="customer-settings-list" class="executive-list"><div class="empty">No customer settings yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Plan And Retention Options</h2>
+                <p class="muted">Buyer-safe package and archive options without payment card or invoice collection.</p>
+              </div>
+              <span id="customer-settings-option-count" class="pill">0 options</span>
+            </div>
+            <div id="customer-settings-option-list" class="executive-list"><div class="empty">No plan or retention options yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Notification Channel Settings</h2>
+                <p class="muted">Mail, push, and dashboard preference state with provider-safe delivery proof.</p>
+              </div>
+              <span id="customer-settings-channel-count" class="pill">0 channels</span>
+            </div>
+            <div id="customer-settings-channel-list" class="executive-list"><div class="empty">No channel settings yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Settings Owner Actions</h2>
+                <p class="muted">Actions needed before paid activation, renewal, or family/school/business rollout.</p>
+              </div>
+              <span id="customer-settings-action-count" class="pill">0 actions</span>
+            </div>
+            <div id="customer-settings-action-list" class="executive-list"><div class="empty">No settings actions yet.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="customer-control-section" class="executive-console" aria-label="customer control room">
       <div class="executive-focus">
         <div class="section-head">
@@ -2949,6 +3028,7 @@
       </div>
       <nav class="command-nav-grid" aria-label="dashboard sections">
         <button class="command-jump" type="button" data-jump-target="onboarding-center-section">Onboard<span id="nav-onboarding-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="customer-settings-section">Settings<span id="nav-settings-meta">waiting</span></button>
         <button class="command-jump is-active" type="button" data-jump-target="customer-control-section">Control<span id="nav-customer-control-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="customer-success-section">Success<span id="nav-customer-success-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="push-activation-section">Push<span id="nav-push-activation-meta">waiting</span></button>
@@ -4833,6 +4913,7 @@
       renderTenantPlan(device, context);
       renderMonetisationOverview(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderTenantOnboardingCenter(context.onboardingCenter);
+      renderTenantCustomerSettingsCenter(context.customerSettingsCenter);
       renderCustomerControlRoom(context.customerControlRoom);
       renderCustomerSuccessPacket(context.customerSuccessPacket);
       renderPushActivationCenter(context.pushActivationCenter);
@@ -4908,6 +4989,7 @@
       setText("command-nav-report", "report pending");
       setText("command-nav-archive", "archive pending");
       setText("nav-onboarding-meta", "waiting");
+      setText("nav-settings-meta", "waiting");
       setText("nav-customer-control-meta", "waiting");
       setText("nav-customer-success-meta", "waiting");
       setText("nav-push-activation-meta", "waiting");
@@ -4981,6 +5063,8 @@
       const packageBillingSummary = packageBilling.summary || {};
       const onboarding = context.onboardingCenter || {};
       const onboardingSummary = onboarding.summary || {};
+      const settingsCenter = context.customerSettingsCenter || {};
+      const settingsSummary = settingsCenter.summary || {};
       const weekly = context.weeklyReport || {};
       const alertInbox = context.alertInbox || {};
       const inboxSummary = alertInbox.summary || {};
@@ -5004,6 +5088,7 @@
       setText("command-nav-report", reportReady ? "report ready" : weekly.email_ready ? "email ready" : "report pending");
       setText("command-nav-archive", archiveProvider === "s3" ? `${archivePending} archive pending` : `${archiveProvider} pending`);
       setText("nav-onboarding-meta", onboardingSummary.readiness_score ? `${onboardingSummary.readiness_score}% setup` : `${onboardingSummary.setup_steps_ready || 0}/${onboardingSummary.setup_steps_total || 0} steps`);
+      setText("nav-settings-meta", settingsSummary.settings_score ? `${settingsSummary.settings_score}% set` : `${settingsSummary.configured_settings || 0}/${settingsSummary.settings_total || 0} set`);
       setText("nav-customer-control-meta", customerControlSummary.product_score ? `${customerControlSummary.product_score}% control` : `${deliveryScore}% proof`);
       setText("nav-push-activation-meta", pushActivationSummary.activation_score ? `${pushActivationSummary.activation_score}% push` : `${pushActivationSummary.push_retrying || 0} retry`);
       setText("nav-portfolio-meta", portfolioSummary.portfolio_score ? `${portfolioSummary.portfolio_score}% fleet` : `${state.devices.length} hosts`);
@@ -5474,6 +5559,150 @@
             ${badge(item.status || "pending")}
             <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
             <span class="pill">${escapeHTML(item.source || "onboarding")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderTenantCustomerSettingsCenter(center) {
+      const model = center || {};
+      const summary = model.summary || {};
+      const settings = model.settings || [];
+      const plans = model.plan_options || [];
+      const retention = model.retention_options || [];
+      const channels = model.channels || [];
+      const actions = model.actions || [];
+      const status = summary.status || "pending";
+      const score = Number(summary.settings_score || 0);
+      const configured = Number(summary.configured_settings || 0);
+      const total = Number(summary.settings_total || settings.length || 0);
+
+      document.getElementById("customer-settings-status").outerHTML =
+        badge(status).replace("<span", '<span id="customer-settings-status"');
+      setText("customer-settings-headline", summary.headline || "No tenant loaded");
+      setText("customer-settings-detail", summary.detail || "Waiting for package, retention, notification, route, archive, role, and data-rights settings.");
+      setText("customer-settings-score", `${score}%`);
+      document.getElementById("customer-settings-score-bar").style.width = Math.max(0, Math.min(100, score)) + "%";
+      setText("customer-settings-plan", summary.current_plan || model.plan_name || "plan pending");
+      setText("customer-settings-retention", summary.retention_tier || model.retention_name || "retention pending");
+      setText("customer-settings-next", summary.owner_next_step || "action pending");
+      setText("customer-settings-privacy", model.privacy_boundary ? "metadata-only guard" : "metadata-only");
+
+      setText("settings-kpi-configured", total > 0 ? `${configured}/${total}` : "-");
+      setText("settings-kpi-configured-sub", total > 0 ? `${score}% settings readiness` : "No settings proof");
+      setText("settings-kpi-notifications", readyLabel(Boolean(summary.notification_ready)));
+      setText("settings-kpi-notifications-sub", summary.notification_ready ? "mail, push, dashboard settings ready" : "notification settings need proof");
+      setText("settings-kpi-archive", readyLabel(Boolean(summary.archive_ready)));
+      setText("settings-kpi-archive-sub", summary.archive_ready ? "archive and retention settings ready" : "archive settings need proof");
+      setText("settings-kpi-autostart", readyLabel(Boolean(summary.autostart_ready)));
+      setText("settings-kpi-autostart-sub", summary.autostart_ready ? "boot persistence setting proven" : "autostart proof pending");
+      setText("settings-kpi-roles", readyLabel(Boolean(summary.role_views_ready)));
+      setText("settings-kpi-roles-sub", summary.role_views_ready ? "role dashboards ready" : "role settings need review");
+      setText("settings-kpi-data-rights", readyLabel(Boolean(summary.data_rights_ready)));
+      setText("settings-kpi-data-rights-sub", summary.data_rights_ready ? "data rights proof ready" : "privacy settings need review");
+
+      renderCustomerSettingsRows(settings);
+      renderCustomerSettingsOptions(plans, retention);
+      renderCustomerSettingsChannels(channels);
+      renderCustomerSettingsActions(actions);
+    }
+
+    function renderCustomerSettingsRows(settings) {
+      const items = (settings || []).slice(0, 10);
+      setText("customer-settings-count", `${items.length} setting${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("customer-settings-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No customer settings yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.label)}</strong>
+          <span class="muted">${escapeHTML(item.next_action)}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.configurable ? "configurable" : "proof-only")}</span>
+            <span class="pill">${escapeHTML(item.current_value || "current pending")}</span>
+            <span class="pill">${escapeHTML(item.recommended_value || "recommendation pending")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderCustomerSettingsOptions(plans, retention) {
+      const planRows = (plans || []).slice(0, 4).map((item) => ({
+        title: item.name,
+        detail: `${item.price_model || "pricing"}; ${item.buyer_value || "package value"}`,
+        status: item.status,
+        meta: `${item.current ? "current" : item.recommended ? "recommended" : item.audience || "available"} plan`,
+        next: item.next_action
+      }));
+      const retentionRows = (retention || []).slice(0, 4).map((item) => ({
+        title: item.name,
+        detail: `${item.local_ttl_days || 0}d local, ${item.s3_standard_days || 0}d S3 standard, archive after ${item.s3_archive_after_days || 0}d`,
+        status: item.status,
+        meta: `${item.current ? "current" : item.recommended ? "recommended" : "available"} retention`,
+        next: item.next_action
+      }));
+      const rows = planRows.concat(retentionRows).slice(0, 8);
+      setText("customer-settings-option-count", `${rows.length} option${rows.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("customer-settings-option-list");
+      if (rows.length === 0) {
+        target.innerHTML = '<div class="empty">No plan or retention options yet.</div>';
+        return;
+      }
+      target.innerHTML = rows.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.meta)}</span>
+            <span class="pill">${escapeHTML(item.next || "review option")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderCustomerSettingsChannels(channels) {
+      const items = (channels || []).slice(0, 4);
+      setText("customer-settings-channel-count", `${items.length} channel${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("customer-settings-channel-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No channel settings yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(capitalize(item.channel))}</strong>
+          <span class="muted">${escapeHTML(item.next_action)}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.preference_mode || "mode pending")}</span>
+            <span class="pill">${escapeHTML(item.delivery_proof || "proof pending")}</span>
+            <span class="pill">${escapeHTML(item.evidence || "rule evidence pending")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderCustomerSettingsActions(actions) {
+      const items = (actions || []).slice(0, 8);
+      setText("customer-settings-action-count", `${items.length} action${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("customer-settings-action-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No settings actions yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.severity || "info")}
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+            <span class="pill">${escapeHTML(item.source || "settings")}</span>
           </div>
         </div>
       `).join("");
@@ -9399,6 +9628,7 @@
       setText("host-last-seen", "-");
       renderMonetisationOverview(null, {}, [], [], {});
       renderTenantOnboardingCenter(null);
+      renderTenantCustomerSettingsCenter(null);
       renderCustomerControlRoom(null);
       renderCustomerSuccessPacket(null);
       renderPushActivationCenter(null);
@@ -9474,6 +9704,7 @@
       const providerSimulationLab = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/provider-simulation-lab`) : null;
       const packageBillingReadiness = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/package-billing-readiness`) : null;
       const onboardingCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/onboarding-center`) : null;
+      const customerSettingsCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/customer-settings-center`) : null;
       const notificationCommandCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-command-center`) : null;
       const deliveryTimeline = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delivery-timeline?device_id=${encodeURIComponent(overview.device.device_id)}&limit=8`) : null;
       const syncHealth = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/sync-health`) : null;
@@ -9512,6 +9743,7 @@
         providerSimulationLab,
         packageBillingReadiness,
         onboardingCenter,
+        customerSettingsCenter,
         notificationCommandCenter,
         deliveryTimeline,
         syncHealth,
