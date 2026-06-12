@@ -17,6 +17,7 @@ type Repository interface {
 	ListNotificationRoutes(context.Context, string) []model.NotificationRoute
 	TenantOperationsSummary(context.Context, string) (model.TenantOperationsSummary, error)
 	TenantMonetizationSummary(context.Context, string) (model.TenantMonetizationSummary, error)
+	TenantSyncHealth(context.Context, string) (model.TenantSyncHealth, error)
 	CreateTenantDataExport(context.Context, string, model.CreateTenantDataExportRequest) (model.TenantDataExport, error)
 	ListTenantDataExports(context.Context, string) []model.TenantDataExport
 	CreateDeleteRequest(context.Context, string, model.CreateDeleteRequestRequest) (model.DeleteRequest, error)

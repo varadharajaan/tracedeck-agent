@@ -25,6 +25,18 @@ Backend ingest is idempotent for non-empty event IDs. Replaying the same
 `local-event-*` ID is acknowledged so the agent can advance its cursor, but the
 backend does not store a duplicate telemetry row.
 
+Phase 31 exposes backend-visible replay proof at:
+
+```text
+GET /api/v1/tenants/{tenantId}/sync-health
+```
+
+This tenant rollup shows reporting hosts, stored metadata events, highest
+stable `local-event-*` cursor received, source counts, last ingest, and per-host
+recommendations. It is intentionally backend-visible proof only: if a laptop is
+offline and has local unsynced SQLite rows, the backend cannot count those rows
+until the next online replay succeeds.
+
 Privacy boundary:
 
 - no passwords or credentials
@@ -39,9 +51,13 @@ Verification:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase30.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase31.ps1
 ```
 
 The Phase 30 smoke points the agent at an offline localhost port, confirms the
 run succeeds with a local telemetry backlog, starts the backend, reruns the
 agent with the same SQLite data directory, and verifies the backend receives
 the replayed metadata events.
+The Phase 31 smoke live-boots the dashboard, posts stable replay metadata,
+checks tenant sync health, and asserts the buyer assurance UI contains sync,
+mail, push, anomaly, report, and archive proof panels.

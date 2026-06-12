@@ -99,3 +99,7 @@
     offline-tolerant agent sync behavior, idempotent backend telemetry ingest by
     stable event ID, Postman/Newman coverage, offline-to-online live smoke, and
     local verification.
+34. Phase 31: buyer assurance sync health. Tenant sync-health API, dashboard
+    Buyer Assurance Wall, Offline Replay Health panel, source-count replay
+    proof, email/push monetisation checks, Postman/Newman coverage, live
+    dashboard smoke, and local verification.

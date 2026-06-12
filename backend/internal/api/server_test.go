@@ -138,6 +138,74 @@ func TestTelemetryIngestEndpoints(t *testing.T) {
 	}
 }
 
+func TestTenantSyncHealthEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	body := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "sync-device-001",
+		"host_name": "sync-host",
+		"profile": "ai-btech-student",
+		"os_name": "windows",
+		"events": [
+			{
+				"id": "local-event-11",
+				"type": "process.observed",
+				"source": "collector.process",
+				"observed_at": "2026-06-12T08:00:00Z",
+				"app_name": "Code.exe",
+				"path_hash": "hash-only",
+				"metadata": { "category": "coding" }
+			},
+			{
+				"id": "local-event-12",
+				"type": "browser.summary",
+				"source": "collector.browser.history",
+				"observed_at": "2026-06-12T08:01:00Z",
+				"metadata": { "domain": "youtube.com", "category": "study" }
+			}
+		]
+	}`)
+	ingest := httptest.NewRecorder()
+	handler.ServeHTTP(ingest, httptest.NewRequest(http.MethodPost, constants.RouteDevices+"/sync-device-001/"+constants.RouteSegmentTelemetry, bytes.NewReader(body)))
+	if ingest.Code != http.StatusAccepted {
+		t.Fatalf("expected telemetry ingest 202, got %d: %s", ingest.Code, ingest.Body.String())
+	}
+
+	syncHealth := httptest.NewRecorder()
+	handler.ServeHTTP(syncHealth, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentSyncHealth, nil))
+	if syncHealth.Code != http.StatusOK {
+		t.Fatalf("expected sync health 200, got %d: %s", syncHealth.Code, syncHealth.Body.String())
+	}
+	var summary model.TenantSyncHealth
+	if err := json.Unmarshal(syncHealth.Body.Bytes(), &summary); err != nil {
+		t.Fatalf("decode sync health: %v", err)
+	}
+	if summary.StoredEvents != 2 || summary.LastLocalEventID != 12 || summary.HostsReporting != 1 {
+		t.Fatalf("unexpected tenant sync health: %+v", summary)
+	}
+	if len(summary.Devices) != 1 || summary.Devices[0].BrowserEvents != 1 || !summary.OfflineReplayReady {
+		t.Fatalf("expected device sync and offline replay proof: %+v", summary)
+	}
+	if !strings.Contains(summary.PrivacyBoundary, "metadata-only") {
+		t.Fatalf("expected metadata-only privacy boundary: %+v", summary)
+	}
+}
+
 func TestHostDashboardRiskEndpoints(t *testing.T) {
 	t.Parallel()
 

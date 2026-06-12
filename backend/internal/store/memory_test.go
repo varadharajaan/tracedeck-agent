@@ -294,3 +294,80 @@ func TestTelemetryIngestIsIdempotentForStableEventIDs(t *testing.T) {
 		t.Fatalf("expected one stored telemetry event: %+v", status)
 	}
 }
+
+func TestTenantSyncHealthSummarizesOfflineReplayProof(t *testing.T) {
+	t.Parallel()
+
+	repo := NewMemory()
+	ctx := context.Background()
+	_, err := repo.CreateTenant(ctx, model.CreateTenantRequest{
+		TenantID:        "family-varadha",
+		Name:            "Family Varadha",
+		PlanID:          constants.PlanFamilyPro,
+		RetentionTierID: constants.RetentionFamilyCloud,
+		PrimaryProfile:  "ai-btech-student",
+	})
+	if err != nil {
+		t.Fatalf("create tenant: %v", err)
+	}
+	_, err = repo.EnrollDevice(ctx, model.EnrollDeviceRequest{
+		TenantID: "family-varadha",
+		DeviceID: "sync-device",
+		HostName: "sync-host",
+		Profile:  "ai-btech-student",
+		OSName:   "windows",
+	})
+	if err != nil {
+		t.Fatalf("enroll device: %v", err)
+	}
+
+	_, err = repo.IngestTelemetryEvents(ctx, "sync-device", model.IngestTelemetryRequest{
+		TenantID: "family-varadha",
+		DeviceID: "sync-device",
+		HostName: "sync-host",
+		Profile:  "ai-btech-student",
+		OSName:   "windows",
+		Events: []model.TelemetryEvent{
+			{
+				ID:         "local-event-7",
+				Type:       "process.observed",
+				Source:     "collector.process",
+				ObservedAt: time.Date(2026, 6, 12, 8, 0, 0, 0, time.UTC),
+				AppName:    "Code.exe",
+				PathHash:   "hash-only",
+				Metadata:   map[string]string{"category": "coding"},
+			},
+			{
+				ID:         "local-event-8",
+				Type:       "device.health",
+				Source:     "collector.device.health",
+				ObservedAt: time.Date(2026, 6, 12, 8, 1, 0, 0, time.UTC),
+				Metadata:   map[string]string{"battery": "ok"},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("ingest telemetry: %v", err)
+	}
+
+	summary, err := repo.TenantSyncHealth(ctx, "family-varadha")
+	if err != nil {
+		t.Fatalf("tenant sync health: %v", err)
+	}
+	if summary.HostsReporting != 1 || summary.HostsPending != 0 || summary.StoredEvents != 2 {
+		t.Fatalf("unexpected sync health counts: %+v", summary)
+	}
+	if summary.LastLocalEventID != 8 || !summary.OfflineReplayReady || !summary.BackendVisible {
+		t.Fatalf("expected replay proof and backend visibility: %+v", summary)
+	}
+	if summary.PrivacyBoundary == "" || len(summary.Devices) != 1 {
+		t.Fatalf("expected privacy boundary and one device summary: %+v", summary)
+	}
+	device := summary.Devices[0]
+	if device.ProcessEvents != 1 || device.HealthEvents != 1 || device.LastLocalEventID != 8 {
+		t.Fatalf("unexpected device source counts: %+v", device)
+	}
+	if len(device.RecentEventIDs) != 2 || device.RecentEventIDs[0] != "local-event-8" {
+		t.Fatalf("expected recent stable event IDs newest first: %+v", device.RecentEventIDs)
+	}
+}
