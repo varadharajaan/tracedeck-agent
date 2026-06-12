@@ -1781,6 +1781,84 @@
       </div>
     </section>
 
+    <section id="customer-success-section" class="executive-console" aria-label="customer success packet">
+      <div class="executive-focus">
+        <div class="section-head">
+          <div>
+            <h2>Customer Success Packet</h2>
+            <p>Buyer-ready packet for anomaly proof, push notification, mail delivery, weekly report, archive retention, package fit, provider simulation, privacy assurance, and renewal actions.</p>
+          </div>
+          <span id="customer-success-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Monetisation review packet</span>
+          <strong id="customer-success-headline">No tenant loaded</strong>
+          <p id="customer-success-detail">Waiting for customer success proof across anomalies, notifications, reports, archive, billing, provider rehearsal, role views, and privacy assurances.</p>
+        </div>
+        <div class="executive-meter">
+          <div class="score-meta"><span>Success packet readiness</span><span id="customer-success-score">0%</span></div>
+          <div class="executive-meter-track"><div id="customer-success-score-bar" class="executive-meter-fill"></div></div>
+        </div>
+        <div class="action-meta">
+          <span id="customer-success-package" class="pill">package pending</span>
+          <span id="customer-success-next" class="pill">action pending</span>
+          <span id="customer-success-privacy" class="pill">metadata-only</span>
+        </div>
+      </div>
+      <div>
+        <div class="executive-kpis">
+          <div class="executive-kpi"><small>Anomaly Proof</small><strong id="success-kpi-anomalies">-</strong><span id="success-kpi-anomalies-sub" class="muted">No anomaly proof</span></div>
+          <div class="executive-kpi"><small>Mail Delivery</small><strong id="success-kpi-mail">-</strong><span id="success-kpi-mail-sub" class="muted">No mail delivery proof</span></div>
+          <div class="executive-kpi"><small>Push Notification</small><strong id="success-kpi-push">-</strong><span id="success-kpi-push-sub" class="muted">No push notification proof</span></div>
+          <div class="executive-kpi"><small>Report And Archive</small><strong id="success-kpi-report">-</strong><span id="success-kpi-report-sub" class="muted">No report/archive proof</span></div>
+          <div class="executive-kpi"><small>Package Fit</small><strong id="success-kpi-package">-</strong><span id="success-kpi-package-sub" class="muted">No package proof</span></div>
+          <div class="executive-kpi"><small>Role Readiness</small><strong id="success-kpi-roles">-</strong><span id="success-kpi-roles-sub" class="muted">No role proof</span></div>
+        </div>
+        <div class="executive-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Success Proof Stack</h2>
+                <p class="muted">What a buyer or admin needs to see before paying: anomaly visibility, notification proof, archive/report readiness, provider rehearsal, and package value.</p>
+              </div>
+              <span id="customer-success-proof-count" class="pill">0 proof</span>
+            </div>
+            <div id="customer-success-proof-list" class="executive-list"><div class="empty">No success proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Buyer Objection Answers</h2>
+                <p class="muted">Privacy, reliability, package, and role-fit answers backed by typed metadata only.</p>
+              </div>
+              <span id="customer-success-objection-count" class="pill">0 answers</span>
+            </div>
+            <div id="customer-success-objection-list" class="executive-list"><div class="empty">No buyer answers yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Success Packet Actions</h2>
+                <p class="muted">Next owner/admin moves for alert reliability, mail delivery, push reach, package conversion, and renewal readiness.</p>
+              </div>
+              <span id="customer-success-action-count" class="pill">0 actions</span>
+            </div>
+            <div id="customer-success-action-list" class="executive-list"><div class="empty">No success actions yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Delivery And Trust Promise</h2>
+                <p class="muted">Customer-facing guarantee that anomaly notifications, mail delivery, push routing, report delivery, and archive proof are visible without sensitive payloads.</p>
+              </div>
+              <span id="customer-success-trust-score" class="pill">0% trust</span>
+            </div>
+            <div id="customer-success-trust-list" class="executive-list"><div class="empty">No trust promise yet.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="executive-console-section" class="executive-console" aria-label="executive notification console">
       <div class="executive-focus">
         <div class="section-head">
@@ -2367,6 +2445,7 @@
       </div>
       <nav class="command-nav-grid" aria-label="dashboard sections">
         <button class="command-jump is-active" type="button" data-jump-target="customer-control-section">Control<span id="nav-customer-control-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="customer-success-section">Success<span id="nav-customer-success-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="executive-console-section">Executive<span id="nav-executive-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="notification-revenue-section">Notif Rev<span id="nav-notification-revenue-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="provider-simulation-section">Provider<span id="nav-provider-simulation-meta">waiting</span></button>
@@ -4244,6 +4323,7 @@
       renderDeviceHealth(healthModel);
       renderTenantPlan(device, context);
       renderCustomerControlRoom(context.customerControlRoom);
+      renderCustomerSuccessPacket(context.customerSuccessPacket);
       renderExecutiveConsole(context.executiveConsole);
       renderNotificationRevenueCockpit(context.notificationRevenueCockpit);
       renderProviderSimulationLab(context.providerSimulationLab);
@@ -4314,6 +4394,7 @@
       setText("command-nav-report", "report pending");
       setText("command-nav-archive", "archive pending");
       setText("nav-customer-control-meta", "waiting");
+      setText("nav-customer-success-meta", "waiting");
       setText("nav-executive-meta", "waiting");
       setText("nav-notification-revenue-meta", "waiting");
       setText("nav-provider-simulation-meta", "waiting");
@@ -4364,6 +4445,8 @@
       const operations = context.tenantOperations || {};
       const customerControl = context.customerControlRoom || {};
       const customerControlSummary = customerControl.summary || {};
+      const customerSuccess = context.customerSuccessPacket || {};
+      const customerSuccessSummary = customerSuccess.summary || {};
       const notificationCommand = context.notificationCommandCenter || {};
       const notificationSummary = notificationCommand.summary || {};
       const executive = context.executiveConsole || {};
@@ -4409,6 +4492,7 @@
       setText("nav-archive-meta", archiveProvider === "s3" ? `${archivePending} pending` : archiveProvider);
       setText("nav-trust-meta", trust > 0 ? `${trust}% trust` : `${highAlerts} high`);
       setText("nav-host-meta", `${state.devices.length} host${state.devices.length === 1 ? "" : "s"}`);
+      setText("nav-customer-success-meta", customerSuccessSummary.readiness_score ? `${customerSuccessSummary.readiness_score}% packet` : `${openAlerts} alerts`);
     }
 
     function renderMonetizationCommandCenter(overview, health, policy, anomalies, tamper, deliveries, context) {
@@ -4849,6 +4933,124 @@
             <span class="pill">${escapeHTML(item.sla || "SLA pending")}</span>
             <span class="pill">${escapeHTML(item.paid_tier || "paid tier pending")}</span>
           </div>
+        </div>
+      `).join("");
+    }
+
+    function renderCustomerSuccessPacket(packet) {
+      const model = packet || {};
+      const summary = model.summary || {};
+      const proofs = model.proofs || [];
+      const objections = model.objections || [];
+      const actions = model.actions || [];
+      const status = summary.status || "pending";
+
+      document.getElementById("customer-success-status").outerHTML =
+        badge(status).replace("<span", '<span id="customer-success-status"');
+      setText("customer-success-headline", summary.headline || "Customer success packet pending");
+      setText("customer-success-detail", summary.detail || "Waiting for customer success proof across anomalies, notifications, reports, archive, billing, provider rehearsal, role views, and privacy assurances.");
+      setText("customer-success-score", `${summary.readiness_score || 0}%`);
+      setPercentBar("customer-success-score-bar", summary.readiness_score || 0);
+      setText("customer-success-package", summary.recommended_paid_package || model.plan_name || "package pending");
+      setText("customer-success-next", summary.owner_next_step || "action pending");
+      setText("customer-success-privacy", model.privacy_boundary ? "metadata-only" : "privacy pending");
+
+      setText("success-kpi-anomalies", `${summary.open_alerts || 0} open`);
+      setText("success-kpi-anomalies-sub", `${summary.high_priority_alerts || 0} high priority across ${summary.hosts_total || 0} hosts`);
+      setText("success-kpi-mail", `${summary.mail_delivered || 0} delivered`);
+      setText("success-kpi-mail-sub", `${summary.notification_score || 0}% notification score`);
+      setText("success-kpi-push", `${summary.push_delivered || 0} delivered`);
+      setText("success-kpi-push-sub", `${summary.routes_needing_proof || 0} route proof gaps`);
+      setText("success-kpi-report", summary.weekly_report_ready ? "ready" : "pending");
+      setText("success-kpi-report-sub", `${summary.archive_backlog || 0} archive batches pending`);
+      setText("success-kpi-package", `${summary.package_score || 0}%`);
+      setText("success-kpi-package-sub", summary.billing_ready ? "billing ready" : "billing proof pending");
+      setText("success-kpi-roles", `${summary.roles_ready || 0}/${summary.roles_total || 0}`);
+      setText("success-kpi-roles-sub", summary.provider_ready ? "provider rehearsal ready" : "provider proof pending");
+      setText("customer-success-trust-score", `${summary.trust_score || 0}% trust`);
+
+      renderCustomerSuccessProofs(proofs);
+      renderCustomerSuccessObjections(objections);
+      renderCustomerSuccessActions(actions);
+      renderCustomerSuccessTrust(summary, model.privacy_boundary);
+    }
+
+    function renderCustomerSuccessProofs(proofs) {
+      setText("customer-success-proof-count", `${proofs.length} proof${proofs.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("customer-success-proof-list");
+      if (proofs.length === 0) {
+        target.innerHTML = '<div class="empty">No success proof yet.</div>';
+        return;
+      }
+      target.innerHTML = proofs.map((item) => `
+        <div class="action-item">
+          <strong>${escapeHTML(item.label)}: ${escapeHTML(item.value)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.paid_tier || "paid tier pending")}</span>
+            <span class="pill">${escapeHTML(item.buyer_impact || "buyer value pending")}</span>
+          </div>
+          <span class="muted">${escapeHTML(item.evidence || "Evidence pending")}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderCustomerSuccessObjections(objections) {
+      setText("customer-success-objection-count", `${objections.length} answer${objections.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("customer-success-objection-list");
+      if (objections.length === 0) {
+        target.innerHTML = '<div class="empty">No buyer answers yet.</div>';
+        return;
+      }
+      target.innerHTML = objections.map((item) => `
+        <div class="action-item">
+          <strong>${escapeHTML(item.concern)}</strong>
+          <span class="muted">${escapeHTML(item.answer)}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+          </div>
+          <span class="muted">${escapeHTML(item.evidence || "Evidence pending")}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderCustomerSuccessActions(actions) {
+      setText("customer-success-action-count", `${actions.length} action${actions.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("customer-success-action-list");
+      if (actions.length === 0) {
+        target.innerHTML = '<div class="empty">No success actions yet.</div>';
+        return;
+      }
+      target.innerHTML = actions.slice(0, 8).map((item) => `
+        <div class="action-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            ${badge(item.severity || "info")}
+            <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+            <span class="pill">${escapeHTML(item.sla || "SLA pending")}</span>
+            <span class="pill">${escapeHTML(item.paid_tier || "paid tier pending")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderCustomerSuccessTrust(summary, privacyBoundary) {
+      const target = document.getElementById("customer-success-trust-list");
+      const rows = [
+        { title: "Notification promise", detail: `${summary.mail_delivered || 0} mail and ${summary.push_delivered || 0} push deliveries are visible with ${summary.routes_needing_proof || 0} route proof gaps.`, status: summary.routes_needing_proof > 0 ? "watch" : "healthy" },
+        { title: "Report and archive promise", detail: `${summary.weekly_report_ready ? "Weekly report ready" : "Weekly report pending"} with ${summary.archive_backlog || 0} archive batches pending.`, status: summary.archive_backlog > 0 ? "watch" : "healthy" },
+        { title: "Commercial package promise", detail: `${summary.recommended_paid_package || "Paid package"} has ${summary.package_score || 0}% package score and ${summary.billing_ready ? "billing-ready" : "billing proof pending"} status.`, status: summary.billing_ready ? "healthy" : "watch" },
+        { title: "Privacy promise", detail: privacyBoundary || "Metadata-only proof boundary pending.", status: privacyBoundary ? "healthy" : "pending" }
+      ];
+      target.innerHTML = rows.map((item) => `
+        <div class="action-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">${badge(item.status)}</div>
         </div>
       `).join("");
     }
@@ -7950,6 +8152,7 @@
       setText("host-os", "-");
       setText("host-last-seen", "-");
       renderCustomerControlRoom(null);
+      renderCustomerSuccessPacket(null);
       renderExecutiveConsole(null);
       renderNotificationRevenueCockpit(null);
       renderProviderSimulationLab(null);
@@ -8011,6 +8214,7 @@
       const businessDashboard = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/business-dashboard`) : null;
       const roleExperience = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/role-experiences`) : null;
       const customerControlRoom = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/customer-control-room`) : null;
+      const customerSuccessPacket = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/customer-success-packet`) : null;
       const executiveConsole = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/executive-console`) : null;
       const notificationRevenueCockpit = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-revenue-cockpit`) : null;
       const providerSimulationLab = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/provider-simulation-lab`) : null;
@@ -8044,6 +8248,7 @@
         businessDashboard,
         roleExperience,
         customerControlRoom,
+        customerSuccessPacket,
         executiveConsole,
         notificationRevenueCockpit,
         providerSimulationLab,

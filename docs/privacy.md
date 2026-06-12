@@ -109,3 +109,11 @@ simulation state, report readiness, archive posture, package fit, customer
 health, and owner actions. It does not add collectors and does not store
 passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets,
 endpoint payloads, private content, tokens, cookies, or payment card data.
+
+Phase 58 customer success packet is metadata-only. It exposes customer-ready
+scores, host count, anomaly categories, mail and push proof, route proof gaps,
+report/archive readiness, package fit, provider simulation state, role
+readiness, privacy assurances, buyer objection answers, and owner actions. It
+does not add collectors and does not store passwords, screenshots, raw URLs,
+page titles, alert bodies, provider secrets, push endpoints, endpoint payloads,
+private content, invoices, tokens, cookies, or payment card data.

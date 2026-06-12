@@ -70,6 +70,7 @@ GET  /api/v1/tenants/{tenantId}/monetization-summary
 GET  /api/v1/tenants/{tenantId}/business-dashboard
 GET  /api/v1/tenants/{tenantId}/role-experiences
 GET  /api/v1/tenants/{tenantId}/customer-control-room
+GET  /api/v1/tenants/{tenantId}/customer-success-packet
 GET  /api/v1/tenants/{tenantId}/executive-console
 GET  /api/v1/tenants/{tenantId}/notification-revenue-cockpit
 GET  /api/v1/tenants/{tenantId}/provider-simulation-lab
@@ -355,6 +356,17 @@ readiness, value tiles, alert rows, delivery rows, owner actions, and a strict
 metadata-only privacy boundary. It does not collect or store passwords,
 screenshots, raw URLs, page titles, alert bodies, provider secrets, endpoint
 payloads, private content, or payment card data.
+
+Phase 58 adds `GET /api/v1/tenants/{tenantId}/customer-success-packet`. It
+composes the customer control room, package billing readiness, provider
+simulation, and role experience metadata into a typed buyer/admin review
+packet. The response includes readiness, notification, package, and trust
+scores; open and high-priority alert counts; host count; mail and push proof;
+route proof gaps; report/archive readiness; provider and billing readiness;
+role readiness; proof rows; buyer objection answers; owner actions; and a
+strict metadata-only privacy boundary. It does not collect or store passwords,
+screenshots, raw URLs, page titles, alert bodies, provider secrets, push
+endpoints, endpoint payloads, invoices, private content, or payment card data.
 
 Phase 31 adds `GET /api/v1/tenants/{tenantId}/sync-health` for buyer and admin
 proof that backend-visible telemetry is arriving per host. It returns reporting

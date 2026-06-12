@@ -1,0 +1,92 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 58",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Has Customer Success Packet",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('dashboard contains customer success markers', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('Customer Success Packet');",
+              "  pm.expect(html).to.include('Success Proof Stack');",
+              "  pm.expect(html).to.include('Buyer Objection Answers');",
+              "  pm.expect(html).to.include('Success Packet Actions');",
+              "  pm.expect(html).to.include('Delivery And Trust Promise');",
+              "  pm.expect(html).to.include('data-jump-target=\"customer-success-section\"');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Customer Success Packet",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/customer-success-packet"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('customer success packet exposes monetisation proof', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.summary.readiness_score).to.be.above(0);",
+              "  pm.expect(body.summary.notification_score).to.be.above(0);",
+              "  pm.expect(body.summary.package_score).to.be.above(0);",
+              "  pm.expect(body.summary.mail_delivered).to.be.above(0);",
+              "  pm.expect(body.summary.hosts_total).to.be.above(0);",
+              "  pm.expect(body.summary.owner_next_step).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.proofs.length).to.be.at.least(7);",
+              "  pm.expect(body.objections.length).to.be.at.least(4);",
+              "  pm.expect(body.actions.length).to.be.at.least(1);",
+              "  pm.expect(body.proofs.some((item) => item.id === 'push-notification' && item.status)).to.eql(true);",
+              "  pm.expect(body.proofs.some((item) => item.id === 'mail-delivery' && item.status)).to.eql(true);",
+              "  pm.expect(body.objections.some((item) => item.id === 'privacy-boundary' && item.answer.includes('metadata-only'))).to.eql(true);",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(body.privacy_boundary).to.include('no passwords');",
+              "  const serialized = JSON.stringify(body).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'push_endpoint', 'screenshot_bytes', 'raw_url', 'page_title', 'alert_body', 'card_number', 'cvv', 'payment_token'].forEach(function (marker) {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

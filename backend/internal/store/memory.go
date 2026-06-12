@@ -620,6 +620,30 @@ func (m *Memory) TenantCustomerControlRoom(ctx context.Context, tenantID string)
 	return buildTenantCustomerControlRoom(operations, business, executive, packageBilling, provider, generatedAt), nil
 }
 
+func (m *Memory) TenantCustomerSuccessPacket(ctx context.Context, tenantID string) (model.TenantCustomerSuccessPacket, error) {
+	generatedAt := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	controlRoom, err := m.TenantCustomerControlRoom(ctx, tenantID)
+	if err != nil {
+		return model.TenantCustomerSuccessPacket{}, err
+	}
+	packageBilling, err := m.TenantPackageBillingReadiness(ctx, tenantID)
+	if err != nil {
+		return model.TenantCustomerSuccessPacket{}, err
+	}
+	provider, err := m.TenantProviderSimulationLab(ctx, tenantID)
+	if err != nil {
+		return model.TenantCustomerSuccessPacket{}, err
+	}
+	roles, err := m.TenantRoleExperiences(ctx, tenantID)
+	if err != nil {
+		return model.TenantCustomerSuccessPacket{}, err
+	}
+
+	return buildTenantCustomerSuccessPacket(controlRoom, packageBilling, provider, roles, generatedAt), nil
+}
+
 func (m *Memory) deliveriesForTenantLocked(tenantID string) []model.AlertDelivery {
 	deliveries := make([]model.AlertDelivery, 0)
 	for _, device := range m.devices {
@@ -5543,6 +5567,275 @@ func customerControlActions(
 			SLA:        "weekly review",
 			PaidTier:   constants.PlanFamilyPro,
 			Source:     "customer control room",
+			ObservedAt: generatedAt,
+		})
+	}
+	return actions
+}
+
+func buildTenantCustomerSuccessPacket(
+	controlRoom model.TenantCustomerControlRoom,
+	packageBilling model.TenantPackageBillingReadiness,
+	provider model.TenantProviderSimulationLab,
+	roles model.TenantRoleExperience,
+	generatedAt time.Time,
+) model.TenantCustomerSuccessPacket {
+	summary := model.TenantCustomerSuccessPacketSummary{
+		ReadinessScore:         averageScore(controlRoom.Summary.ProductScore, packageBilling.Summary.PackageScore, roles.Summary.ReadinessScore),
+		NotificationScore:      controlRoom.Summary.NotificationScore,
+		PackageScore:           packageBilling.Summary.PackageScore,
+		TrustScore:             controlRoom.Summary.TrustScore,
+		OpenAlerts:             controlRoom.Summary.OpenAlerts,
+		HighPriorityAlerts:     controlRoom.Summary.HighPriorityAlerts,
+		HostsTotal:             controlRoom.Summary.HostsTotal,
+		MailDelivered:          controlRoom.Summary.MailDelivered,
+		PushDelivered:          controlRoom.Summary.PushDelivered,
+		RoutesNeedingProof:     controlRoom.Summary.RoutesNeedingProof,
+		WeeklyReportReady:      controlRoom.Summary.WeeklyReportReady,
+		ArchiveBacklog:         controlRoom.Summary.ArchiveBacklog,
+		ProviderReady:          controlRoom.Summary.ProviderReady,
+		BillingReady:           packageBilling.Summary.BillingReady,
+		RolesReady:             roles.Summary.RolesReady,
+		RolesTotal:             roles.Summary.RolesTotal,
+		RecommendedPaidPackage: firstNonEmpty(controlRoom.Summary.RecommendedPaidPackage, packageBilling.Summary.RecommendedPackage, roles.Summary.RecommendedPackage, controlRoom.PlanName),
+	}
+	summary.Status = customerSuccessPacketStatus(summary)
+	summary.Headline = customerSuccessPacketHeadline(summary)
+	summary.Detail = customerSuccessPacketDetail(summary)
+	summary.OwnerNextStep = customerSuccessPacketNextStep(controlRoom.Actions, packageBilling.Actions, summary)
+
+	return model.TenantCustomerSuccessPacket{
+		TenantID:        controlRoom.TenantID,
+		TenantName:      controlRoom.TenantName,
+		PlanID:          controlRoom.PlanID,
+		PlanName:        controlRoom.PlanName,
+		Audience:        controlRoom.Audience,
+		Summary:         summary,
+		Proofs:          customerSuccessPacketProofs(summary, controlRoom, packageBilling, provider, roles),
+		Objections:      customerSuccessPacketObjections(summary, packageBilling, provider, roles),
+		Actions:         customerSuccessPacketActions(controlRoom.Actions, packageBilling.Actions, generatedAt),
+		PrivacyBoundary: constants.CustomerSuccessPacketPrivacyNote,
+		GeneratedAt:     generatedAt,
+	}
+}
+
+func customerSuccessPacketStatus(summary model.TenantCustomerSuccessPacketSummary) string {
+	switch {
+	case summary.HighPriorityAlerts > 0 || summary.RoutesNeedingProof > 0:
+		return constants.StatusAttention
+	case !summary.ProviderReady || !summary.BillingReady || summary.ArchiveBacklog > 0:
+		return constants.StatusWatch
+	case summary.ReadinessScore >= 80 && summary.NotificationScore >= 70:
+		return constants.StatusHealthy
+	default:
+		return constants.StatusPending
+	}
+}
+
+func customerSuccessPacketHeadline(summary model.TenantCustomerSuccessPacketSummary) string {
+	if summary.HighPriorityAlerts > 0 {
+		return fmt.Sprintf("%d urgent alert%s anchor the customer success packet", summary.HighPriorityAlerts, pluralSuffix(summary.HighPriorityAlerts))
+	}
+	if summary.RoutesNeedingProof > 0 {
+		return fmt.Sprintf("%d route proof gap%s need closure before renewal review", summary.RoutesNeedingProof, pluralSuffix(summary.RoutesNeedingProof))
+	}
+	return fmt.Sprintf("%s success packet is %d%% ready", firstNonEmpty(summary.RecommendedPaidPackage, "TraceDeck"), summary.ReadinessScore)
+}
+
+func customerSuccessPacketDetail(summary model.TenantCustomerSuccessPacketSummary) string {
+	return fmt.Sprintf("%d open alerts, %d mail delivered, %d push delivered, report %s, archive backlog %d, billing %s, provider %s, role views %d/%d.",
+		summary.OpenAlerts,
+		summary.MailDelivered,
+		summary.PushDelivered,
+		boolReady(summary.WeeklyReportReady),
+		summary.ArchiveBacklog,
+		boolReady(summary.BillingReady),
+		boolReady(summary.ProviderReady),
+		summary.RolesReady,
+		summary.RolesTotal,
+	)
+}
+
+func customerSuccessPacketNextStep(controlActions []model.TenantCustomerControlAction, packageActions []model.TenantPackageBillingAction, summary model.TenantCustomerSuccessPacketSummary) string {
+	if len(controlActions) > 0 {
+		return firstNonEmpty(controlActions[0].Detail, controlActions[0].Title)
+	}
+	if len(packageActions) > 0 {
+		return firstNonEmpty(packageActions[0].NextAction, packageActions[0].Detail, packageActions[0].Title)
+	}
+	if !summary.ProviderReady {
+		return "Run provider-safe delivery proof before sending the customer packet."
+	}
+	return "Share the success packet during the next paid customer review."
+}
+
+func customerSuccessPacketProofs(
+	summary model.TenantCustomerSuccessPacketSummary,
+	controlRoom model.TenantCustomerControlRoom,
+	packageBilling model.TenantPackageBillingReadiness,
+	provider model.TenantProviderSimulationLab,
+	roles model.TenantRoleExperience,
+) []model.TenantCustomerSuccessPacketProof {
+	return []model.TenantCustomerSuccessPacketProof{
+		{
+			ID:          "anomaly-command",
+			Label:       "Anomaly command",
+			Value:       fmt.Sprintf("%d open", summary.OpenAlerts),
+			Detail:      fmt.Sprintf("%d high-priority signals across %d hosts", summary.HighPriorityAlerts, summary.HostsTotal),
+			Status:      countStatus(summary.OpenAlerts),
+			Evidence:    firstNonEmpty(controlRoom.Summary.Headline, "Customer Control Room alert wall"),
+			PaidTier:    constants.PlanFamilyPro,
+			BuyerImpact: "Shows the customer what needs attention without exposing private content.",
+		},
+		{
+			ID:          "mail-delivery",
+			Label:       "Mail delivery",
+			Value:       fmt.Sprintf("%d delivered", summary.MailDelivered),
+			Detail:      "Email proof for critical alerts and weekly report trust.",
+			Status:      deliveryValueStatus(summary.MailDelivered),
+			Evidence:    "Provider-safe mail route metadata",
+			PaidTier:    constants.PlanFamilyPro,
+			BuyerImpact: "Proves alerts can reach the owner by email.",
+		},
+		{
+			ID:          "push-notification",
+			Label:       "Push notification",
+			Value:       fmt.Sprintf("%d delivered", summary.PushDelivered),
+			Detail:      fmt.Sprintf("%d route proof gaps, %d%% notification score", summary.RoutesNeedingProof, summary.NotificationScore),
+			Status:      scoreStatus(summary.NotificationScore),
+			Evidence:    "Push route status and retry metadata",
+			PaidTier:    constants.PlanFamilyPro,
+			BuyerImpact: "Makes urgent anomaly awareness feel immediate.",
+		},
+		{
+			ID:          "report-archive",
+			Label:       "Report and archive",
+			Value:       boolReady(summary.WeeklyReportReady),
+			Detail:      fmt.Sprintf("%d archive batches pending", summary.ArchiveBacklog),
+			Status:      archiveValueStatus(summary.ArchiveBacklog, summary.WeeklyReportReady),
+			Evidence:    "Weekly report readiness and S3 archive posture",
+			PaidTier:    constants.PlanSchool,
+			BuyerImpact: "Supports retention, review meetings, and school/business reporting.",
+		},
+		{
+			ID:          "package-billing",
+			Label:       "Package fit",
+			Value:       fmt.Sprintf("%d%%", packageBilling.Summary.PackageScore),
+			Detail:      fmt.Sprintf("%d/%d gates ready", packageBilling.Summary.FeatureGatesReady, packageBilling.Summary.FeatureGatesTotal),
+			Status:      packageBilling.Summary.Status,
+			Evidence:    packageBilling.Summary.Headline,
+			PaidTier:    constants.PlanBusiness,
+			BuyerImpact: "Connects feature proof to Family Pro, School, and Business packages.",
+		},
+		{
+			ID:          "provider-simulation",
+			Label:       "Provider simulation",
+			Value:       fmt.Sprintf("%d routes", provider.Summary.SimulatedRoutes),
+			Detail:      fmt.Sprintf("%d provider risks, %d%% readiness", provider.Summary.ProviderRisks, provider.Summary.ReadinessScore),
+			Status:      provider.Summary.Status,
+			Evidence:    provider.Summary.Headline,
+			PaidTier:    constants.PlanBusiness,
+			BuyerImpact: "Proves notification routes can be rehearsed without storing secrets or payloads.",
+		},
+		{
+			ID:          "role-onboarding",
+			Label:       "Role onboarding",
+			Value:       fmt.Sprintf("%d/%d ready", roles.Summary.RolesReady, roles.Summary.RolesTotal),
+			Detail:      roles.Summary.Detail,
+			Status:      roles.Summary.Status,
+			Evidence:    roles.Summary.Headline,
+			PaidTier:    constants.PlanBusiness,
+			BuyerImpact: "Lets the same product support parent, student, school, and business views.",
+		},
+	}
+}
+
+func customerSuccessPacketObjections(
+	summary model.TenantCustomerSuccessPacketSummary,
+	packageBilling model.TenantPackageBillingReadiness,
+	provider model.TenantProviderSimulationLab,
+	roles model.TenantRoleExperience,
+) []model.TenantCustomerSuccessPacketObjection {
+	return []model.TenantCustomerSuccessPacketObjection{
+		{
+			ID:       "privacy-boundary",
+			Concern:  "Will this expose private content?",
+			Answer:   "The packet uses metadata-only proof and excludes passwords, screenshots, raw URLs, alert bodies, provider secrets, and payment data.",
+			Status:   constants.StatusHealthy,
+			Evidence: constants.CustomerSuccessPacketPrivacyNote,
+			Owner:    constants.RoleBusinessManager,
+		},
+		{
+			ID:       "notification-reliability",
+			Concern:  "Will anomaly notifications actually reach someone?",
+			Answer:   fmt.Sprintf("%d mail deliveries, %d push deliveries, and %d route proof gaps are visible before renewal.", summary.MailDelivered, summary.PushDelivered, summary.RoutesNeedingProof),
+			Status:   proofGapStatus(summary.RoutesNeedingProof),
+			Evidence: provider.Summary.Headline,
+			Owner:    constants.RoleParent,
+		},
+		{
+			ID:       "billing-readiness",
+			Concern:  "Which package should this customer buy?",
+			Answer:   fmt.Sprintf("%s is recommended with %d%% package score and %d/%d feature gates ready.", firstNonEmpty(summary.RecommendedPaidPackage, packageBilling.Summary.RecommendedPackage), summary.PackageScore, packageBilling.Summary.FeatureGatesReady, packageBilling.Summary.FeatureGatesTotal),
+			Status:   packageBilling.Summary.Status,
+			Evidence: packageBilling.Summary.NextBestAction,
+			Owner:    constants.RoleBusinessManager,
+		},
+		{
+			ID:       "role-fit",
+			Concern:  "Can this work for family, school, and business buyers?",
+			Answer:   fmt.Sprintf("%d/%d role experiences are ready with role-specific onboarding actions.", roles.Summary.RolesReady, roles.Summary.RolesTotal),
+			Status:   roles.Summary.Status,
+			Evidence: roles.Summary.Headline,
+			Owner:    constants.RoleSchoolAdmin,
+		},
+	}
+}
+
+func customerSuccessPacketActions(controlActions []model.TenantCustomerControlAction, packageActions []model.TenantPackageBillingAction, generatedAt time.Time) []model.TenantCustomerSuccessPacketAction {
+	actions := make([]model.TenantCustomerSuccessPacketAction, 0, 8)
+	for _, action := range controlActions {
+		if len(actions) >= 5 {
+			break
+		}
+		actions = append(actions, model.TenantCustomerSuccessPacketAction{
+			Title:      action.Title,
+			Detail:     action.Detail,
+			Owner:      action.Owner,
+			Status:     action.Status,
+			Severity:   action.Severity,
+			SLA:        action.SLA,
+			PaidTier:   action.PaidTier,
+			Source:     action.Source,
+			ObservedAt: action.ObservedAt,
+		})
+	}
+	for _, action := range packageActions {
+		if len(actions) >= 8 {
+			break
+		}
+		actions = append(actions, model.TenantCustomerSuccessPacketAction{
+			Title:      action.Title,
+			Detail:     firstNonEmpty(action.NextAction, action.Detail, action.ConversionLever),
+			Owner:      action.Owner,
+			Status:     action.Status,
+			Severity:   constants.SeverityInfo,
+			SLA:        "before customer review",
+			PaidTier:   action.PaidTier,
+			Source:     "package billing readiness",
+			ObservedAt: generatedAt,
+		})
+	}
+	if len(actions) == 0 {
+		actions = append(actions, model.TenantCustomerSuccessPacketAction{
+			Title:      "Share customer success packet",
+			Detail:     "Use the packet in the next customer review with anomaly, delivery, archive, package, and privacy proof.",
+			Owner:      constants.RoleBusinessManager,
+			Status:     constants.StatusHealthy,
+			Severity:   constants.SeverityInfo,
+			SLA:        "weekly review",
+			PaidTier:   constants.PlanFamilyPro,
+			Source:     "customer success packet",
 			ObservedAt: generatedAt,
 		})
 	}

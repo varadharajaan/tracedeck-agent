@@ -668,6 +668,76 @@ type TenantCustomerControlRoom struct {
 	GeneratedAt     time.Time                       `json:"generated_at"`
 }
 
+type TenantCustomerSuccessPacketSummary struct {
+	Status                 string `json:"status"`
+	Headline               string `json:"headline"`
+	Detail                 string `json:"detail"`
+	ReadinessScore         int    `json:"readiness_score"`
+	NotificationScore      int    `json:"notification_score"`
+	PackageScore           int    `json:"package_score"`
+	TrustScore             int    `json:"trust_score"`
+	OpenAlerts             int    `json:"open_alerts"`
+	HighPriorityAlerts     int    `json:"high_priority_alerts"`
+	HostsTotal             int    `json:"hosts_total"`
+	MailDelivered          int    `json:"mail_delivered"`
+	PushDelivered          int    `json:"push_delivered"`
+	RoutesNeedingProof     int    `json:"routes_needing_proof"`
+	WeeklyReportReady      bool   `json:"weekly_report_ready"`
+	ArchiveBacklog         int    `json:"archive_backlog"`
+	ProviderReady          bool   `json:"provider_ready"`
+	BillingReady           bool   `json:"billing_ready"`
+	RolesReady             int    `json:"roles_ready"`
+	RolesTotal             int    `json:"roles_total"`
+	RecommendedPaidPackage string `json:"recommended_paid_package"`
+	OwnerNextStep          string `json:"owner_next_step"`
+}
+
+type TenantCustomerSuccessPacketProof struct {
+	ID          string `json:"id"`
+	Label       string `json:"label"`
+	Value       string `json:"value"`
+	Detail      string `json:"detail"`
+	Status      string `json:"status"`
+	Evidence    string `json:"evidence"`
+	PaidTier    string `json:"paid_tier"`
+	BuyerImpact string `json:"buyer_impact"`
+}
+
+type TenantCustomerSuccessPacketObjection struct {
+	ID       string `json:"id"`
+	Concern  string `json:"concern"`
+	Answer   string `json:"answer"`
+	Status   string `json:"status"`
+	Evidence string `json:"evidence"`
+	Owner    string `json:"owner"`
+}
+
+type TenantCustomerSuccessPacketAction struct {
+	Title      string    `json:"title"`
+	Detail     string    `json:"detail"`
+	Owner      string    `json:"owner"`
+	Status     string    `json:"status"`
+	Severity   string    `json:"severity"`
+	SLA        string    `json:"sla"`
+	PaidTier   string    `json:"paid_tier"`
+	Source     string    `json:"source"`
+	ObservedAt time.Time `json:"observed_at"`
+}
+
+type TenantCustomerSuccessPacket struct {
+	TenantID        string                                 `json:"tenant_id"`
+	TenantName      string                                 `json:"tenant_name"`
+	PlanID          string                                 `json:"plan_id"`
+	PlanName        string                                 `json:"plan_name"`
+	Audience        string                                 `json:"audience"`
+	Summary         TenantCustomerSuccessPacketSummary     `json:"summary"`
+	Proofs          []TenantCustomerSuccessPacketProof     `json:"proofs"`
+	Objections      []TenantCustomerSuccessPacketObjection `json:"objections"`
+	Actions         []TenantCustomerSuccessPacketAction    `json:"actions"`
+	PrivacyBoundary string                                 `json:"privacy_boundary"`
+	GeneratedAt     time.Time                              `json:"generated_at"`
+}
+
 type TenantActivityView struct {
 	ID          string                   `json:"id"`
 	TenantID    string                   `json:"tenant_id"`
