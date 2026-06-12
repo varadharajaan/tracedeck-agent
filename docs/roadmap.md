@@ -11,5 +11,7 @@
 8. Phase 5: backend and dashboard. Localhost Go backend foundation, device
    enrollment APIs, policy template catalog, archive status, embedded dashboard
    shell, and Newman-backed API verification.
-9. Phase 6: SaaS readiness.
+9. Phase 6: SaaS readiness. Localhost backend APIs for tenant readiness,
+   subscription plan catalog, role catalog, retention tier catalog, audit
+   events, dashboard visibility, and Newman-backed verification.
 10. Phase 7: deeper macOS and Linux native collectors.

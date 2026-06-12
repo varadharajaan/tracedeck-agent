@@ -46,7 +46,7 @@
     .muted { color: var(--muted); }
     .grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 12px;
     }
     .panel, .metric {
@@ -65,6 +65,9 @@
       display: grid;
       grid-template-columns: 1.2fr 1fr;
       gap: 18px;
+    }
+    .row.three {
+      grid-template-columns: 1fr 1fr 1fr;
     }
     table {
       width: 100%;
@@ -121,9 +124,11 @@
   <main>
     <section class="grid" aria-label="dashboard metrics">
       <div class="metric"><span class="muted">Devices</span><strong id="device-count">0</strong></div>
+      <div class="metric"><span class="muted">Tenants</span><strong id="tenant-count">0</strong></div>
+      <div class="metric"><span class="muted">Plans</span><strong id="plan-count">0</strong></div>
       <div class="metric"><span class="muted">Policy Templates</span><strong id="template-count">0</strong></div>
+      <div class="metric"><span class="muted">Audit Events</span><strong id="audit-count">0</strong></div>
       <div class="metric"><span class="muted">Archive Backlog</span><strong id="archive-backlog">0</strong></div>
-      <div class="metric"><span class="muted">API Status</span><strong id="api-status">...</strong></div>
     </section>
     <section class="row">
       <div class="panel">
@@ -136,6 +141,23 @@
       <div class="panel">
         <h2>Policy Templates</h2>
         <div id="template-list" class="muted">Loading templates...</div>
+      </div>
+    </section>
+    <section class="row three">
+      <div class="panel">
+        <h2>Tenants</h2>
+        <table>
+          <thead><tr><th>Tenant</th><th>Plan</th><th>Status</th></tr></thead>
+          <tbody id="tenant-table"><tr><td colspan="3" class="muted">No tenants created yet.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h2>Plans</h2>
+        <div id="plan-list" class="muted">Loading plans...</div>
+      </div>
+      <div class="panel">
+        <h2>Roles</h2>
+        <div id="role-list" class="muted">Loading roles...</div>
       </div>
     </section>
   </main>
@@ -161,17 +183,24 @@
     }
 
     async function refresh() {
-      const [health, devices, templates, archive] = await Promise.all([
+      const [health, devices, tenants, plans, roles, templates, archive, audit] = await Promise.all([
         loadJSON("/health"),
         loadJSON("/api/v1/devices"),
+        loadJSON("/api/v1/tenants"),
+        loadJSON("/api/v1/plans"),
+        loadJSON("/api/v1/roles"),
         loadJSON("/api/v1/policy-templates"),
-        loadJSON("/api/v1/archive/status")
+        loadJSON("/api/v1/archive/status"),
+        loadJSON("/api/v1/audit-events")
       ]);
 
-      document.getElementById("api-status").textContent = health.status;
       document.getElementById("device-count").textContent = devices.count;
+      document.getElementById("tenant-count").textContent = tenants.count;
+      document.getElementById("plan-count").textContent = plans.count;
       document.getElementById("template-count").textContent = templates.count;
+      document.getElementById("audit-count").textContent = audit.count;
       document.getElementById("archive-backlog").textContent = archive.pending_batches;
+      document.querySelector(".status").textContent = "Local backend " + health.status;
 
       const deviceTable = document.getElementById("device-table");
       if (devices.count === 0) {
@@ -185,10 +214,27 @@
       document.getElementById("template-list").innerHTML = templates.items.map((template) =>
         `<p><strong>${escapeHTML(template.name)}</strong><br><span class="muted">${escapeHTML(template.description)}</span><br>${template.roles.map((role) => `<span class="tag">${escapeHTML(role)}</span>`).join("")}</p>`
       ).join("");
+
+      const tenantTable = document.getElementById("tenant-table");
+      if (tenants.count === 0) {
+        tenantTable.innerHTML = '<tr><td colspan="3" class="muted">No tenants created yet.</td></tr>';
+      } else {
+        tenantTable.innerHTML = tenants.items.map((tenant) =>
+          `<tr><td>${escapeHTML(tenant.name)}</td><td>${escapeHTML(tenant.plan_id)}</td><td>${escapeHTML(tenant.status)}</td></tr>`
+        ).join("");
+      }
+
+      document.getElementById("plan-list").innerHTML = plans.items.map((plan) =>
+        `<p><strong>${escapeHTML(plan.name)}</strong><br><span class="muted">${escapeHTML(plan.price_model)}</span><br><span class="tag">${escapeHTML(plan.audience)}</span><span class="tag">${escapeHTML(plan.device_limit === 0 ? "custom devices" : plan.device_limit + " devices")}</span></p>`
+      ).join("");
+
+      document.getElementById("role-list").innerHTML = roles.items.map((role) =>
+        `<p><strong>${escapeHTML(role.name)}</strong><br><span class="muted">${escapeHTML(role.description)}</span></p>`
+      ).join("");
     }
 
     refresh().catch(() => {
-      document.getElementById("api-status").textContent = "error";
+      document.querySelector(".status").textContent = "Local backend error";
     });
   </script>
 </body>

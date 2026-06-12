@@ -41,3 +41,10 @@ binds to localhost by default, exposes health/version/device/template/archive
 routes, and serves an embedded dashboard shell. Backend storage is in-memory for
 this foundation slice; later SaaS phases can replace the repository with durable
 multi-tenant storage without changing handler contracts.
+
+Phase 6 adds a SaaS readiness slice to the same backend boundary. It introduces
+typed models and centralized identifiers for tenants, plans, roles, retention
+tiers, and audit events. The backend remains localhost-only and in-memory; this
+phase proves API shape, catalog packaging, dashboard visibility, and
+Postman/Newman coverage before durable multi-tenant storage, authentication,
+billing integration, and SSO are added.

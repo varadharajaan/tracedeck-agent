@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -12,15 +13,23 @@ import (
 	"github.com/varadharajaan/tracedeck-agent/backend/internal/model"
 )
 
-var ErrDeviceNotFound = errors.New("device not found")
+var (
+	ErrDeviceNotFound = errors.New("device not found")
+	ErrTenantNotFound = errors.New("tenant not found")
+)
 
 type Memory struct {
-	mu      sync.RWMutex
-	devices map[string]model.Device
+	mu          sync.RWMutex
+	devices     map[string]model.Device
+	tenants     map[string]model.Tenant
+	auditEvents []model.AuditEvent
 }
 
 func NewMemory() *Memory {
-	return &Memory{devices: make(map[string]model.Device)}
+	return &Memory{
+		devices: make(map[string]model.Device),
+		tenants: make(map[string]model.Tenant),
+	}
 }
 
 func (m *Memory) EnrollDevice(_ context.Context, req model.EnrollDeviceRequest) (model.Device, error) {
@@ -42,6 +51,82 @@ func (m *Memory) EnrollDevice(_ context.Context, req model.EnrollDeviceRequest) 
 	}
 	m.devices[device.DeviceID] = device
 	return device, nil
+}
+
+func (m *Memory) CreateTenant(_ context.Context, req model.CreateTenantRequest) (model.Tenant, error) {
+	now := time.Now().UTC()
+	tenantID := strings.TrimSpace(req.TenantID)
+	tenant := model.Tenant{
+		TenantID:        tenantID,
+		Name:            strings.TrimSpace(req.Name),
+		PlanID:          strings.TrimSpace(req.PlanID),
+		RetentionTierID: strings.TrimSpace(req.RetentionTierID),
+		PrimaryProfile:  strings.TrimSpace(req.PrimaryProfile),
+		DeviceLimit:     planDeviceLimit(req.PlanID),
+		Status:          constants.TenantStatusActive,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if current, ok := m.tenants[tenantID]; ok {
+		tenant.CreatedAt = current.CreatedAt
+	}
+	m.tenants[tenantID] = tenant
+	m.auditEvents = append(m.auditEvents, model.AuditEvent{
+		ID:        auditID(tenantID, len(m.auditEvents)+1, now),
+		TenantID:  tenantID,
+		Category:  constants.AuditCategoryTenant,
+		Action:    constants.AuditActionTenantCreated,
+		Actor:     constants.AuditActorLocalAPI,
+		ActorRole: constants.RoleBusinessManager,
+		Summary:   "tenant readiness profile created",
+		CreatedAt: now,
+	})
+	return tenant, nil
+}
+
+func (m *Memory) ListTenants(_ context.Context) []model.Tenant {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	tenants := make([]model.Tenant, 0, len(m.tenants))
+	for _, tenant := range m.tenants {
+		tenants = append(tenants, tenant)
+	}
+	sort.Slice(tenants, func(i, j int) bool {
+		return tenants[i].TenantID < tenants[j].TenantID
+	})
+	return tenants
+}
+
+func (m *Memory) GetTenant(_ context.Context, tenantID string) (model.Tenant, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	tenant, ok := m.tenants[strings.TrimSpace(tenantID)]
+	if !ok {
+		return model.Tenant{}, ErrTenantNotFound
+	}
+	return tenant, nil
+}
+
+func (m *Memory) ListAuditEvents(_ context.Context, tenantID string) []model.AuditEvent {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	tenantID = strings.TrimSpace(tenantID)
+	events := make([]model.AuditEvent, 0, len(m.auditEvents))
+	for _, event := range m.auditEvents {
+		if tenantID == "" || event.TenantID == tenantID {
+			events = append(events, event)
+		}
+	}
+	sort.Slice(events, func(i, j int) bool {
+		return events[i].CreatedAt.Before(events[j].CreatedAt)
+	})
+	return events
 }
 
 func (m *Memory) ListDevices(_ context.Context) []model.Device {
@@ -121,10 +206,200 @@ func PolicyTemplates() []model.PolicyTemplate {
 	}
 }
 
+func Plans() []model.Plan {
+	return []model.Plan{
+		{
+			ID:            constants.PlanFree,
+			Name:          "Free",
+			Audience:      "individual",
+			DeviceLimit:   1,
+			PriceModel:    "local-only starter",
+			CloudArchive:  false,
+			WeeklyReports: false,
+			Features: []string{
+				"one device",
+				"local-only basic app usage",
+				"starter policy templates",
+			},
+		},
+		{
+			ID:                 constants.PlanFamilyPro,
+			Name:               "Family Pro",
+			Audience:           "family",
+			DeviceLimit:        5,
+			PriceModel:         "per family",
+			CloudArchive:       true,
+			WeeklyReports:      true,
+			RoleBasedDashboard: true,
+			Features: []string{
+				"weekly AI reports",
+				"S3 archive readiness",
+				"parent and student views",
+				"policy anomaly alerts",
+			},
+		},
+		{
+			ID:                 constants.PlanSchool,
+			Name:               "School",
+			Audience:           "education",
+			DeviceLimit:        500,
+			PriceModel:         "per student device",
+			CloudArchive:       true,
+			WeeklyReports:      true,
+			RoleBasedDashboard: true,
+			Features: []string{
+				"managed policy templates",
+				"school admin dashboard",
+				"audit history",
+				"retention controls",
+			},
+		},
+		{
+			ID:                 constants.PlanBusiness,
+			Name:               "Business",
+			Audience:           "business",
+			DeviceLimit:        250,
+			PriceModel:         "per endpoint",
+			CloudArchive:       true,
+			WeeklyReports:      true,
+			RoleBasedDashboard: true,
+			Features: []string{
+				"productivity analytics",
+				"risky software detection",
+				"manager dashboard",
+				"compliance exports",
+			},
+		},
+		{
+			ID:                 constants.PlanEnterprise,
+			Name:               "Enterprise",
+			Audience:           "enterprise",
+			DeviceLimit:        0,
+			PriceModel:         "custom contract",
+			CloudArchive:       true,
+			WeeklyReports:      true,
+			RoleBasedDashboard: true,
+			Features: []string{
+				"custom retention",
+				"SSO readiness",
+				"SIEM export roadmap",
+				"custom anomaly rules",
+			},
+		},
+	}
+}
+
+func Roles() []model.Role {
+	return []model.Role{
+		{
+			ID:          constants.RoleParent,
+			Name:        "Parent",
+			Scope:       "family",
+			Description: "Can review family device summaries, reports, alerts, and policy templates.",
+		},
+		{
+			ID:          constants.RoleStudent,
+			Name:        "Student",
+			Scope:       "self",
+			Description: "Can view transparent monitoring status and personal productivity summaries.",
+		},
+		{
+			ID:          constants.RoleSchoolAdmin,
+			Name:        "School Admin",
+			Scope:       "education",
+			Description: "Can manage school laptop templates, enrollment, and audit history.",
+		},
+		{
+			ID:          constants.RoleBusinessManager,
+			Name:        "Business Manager",
+			Scope:       "business",
+			Description: "Can review business endpoint productivity, risk, and retention settings.",
+		},
+	}
+}
+
+func RetentionTiers() []model.RetentionTier {
+	return []model.RetentionTier{
+		{
+			ID:                 constants.RetentionLocalOnly,
+			Name:               "Local Only",
+			LocalTTLDays:       7,
+			Description:        "Starter retention for free local-only devices.",
+			S3StandardDays:     0,
+			S3StandardIAUntil:  0,
+			S3ArchiveAfterDays: 0,
+		},
+		{
+			ID:                 constants.RetentionFamilyCloud,
+			Name:               "Family Cloud Archive",
+			LocalTTLDays:       90,
+			S3StandardDays:     90,
+			S3StandardIAUntil:  365,
+			S3ArchiveAfterDays: 365,
+			Description:        "Default family archive lifecycle with 90-day standard storage.",
+		},
+		{
+			ID:                 constants.RetentionSchoolYear,
+			Name:               "School Year Archive",
+			LocalTTLDays:       90,
+			S3StandardDays:     90,
+			S3StandardIAUntil:  365,
+			S3ArchiveAfterDays: 365,
+			ComplianceExport:   true,
+			Description:        "School retention with compliance export readiness.",
+		},
+		{
+			ID:                 constants.RetentionBusiness,
+			Name:               "Business Compliance",
+			LocalTTLDays:       90,
+			S3StandardDays:     90,
+			S3StandardIAUntil:  365,
+			S3ArchiveAfterDays: 365,
+			ComplianceExport:   true,
+			Description:        "Business retention tier for audit and compliance packaging.",
+		},
+	}
+}
+
 func ArchiveStatus() model.ArchiveStatus {
 	return model.ArchiveStatus{
 		Status:         constants.StatusEmpty,
-		Provider:       "s3",
+		Provider:       constants.ArchiveProviderS3,
 		PendingBatches: 0,
 	}
+}
+
+func KnownPlanID(planID string) bool {
+	for _, plan := range Plans() {
+		if plan.ID == strings.TrimSpace(planID) {
+			return true
+		}
+	}
+	return false
+}
+
+func KnownRetentionTierID(tierID string) bool {
+	for _, tier := range RetentionTiers() {
+		if tier.ID == strings.TrimSpace(tierID) {
+			return true
+		}
+	}
+	return false
+}
+
+func planDeviceLimit(planID string) int {
+	for _, plan := range Plans() {
+		if plan.ID == strings.TrimSpace(planID) {
+			return plan.DeviceLimit
+		}
+	}
+	return 0
+}
+
+func auditID(tenantID string, sequence int, createdAt time.Time) string {
+	return strings.Join([]string{
+		strings.TrimSpace(tenantID),
+		createdAt.Format("20060102T150405Z"),
+		fmt.Sprintf("%04d", sequence),
+	}, "-")
 }

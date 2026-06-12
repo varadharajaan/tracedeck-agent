@@ -14,6 +14,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase3.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase4.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase5.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase6.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
@@ -48,6 +49,18 @@ The Phase 5 smoke builds a local backend executable under `data/local/`, boots
 it on localhost, exercises health/version/device/template/archive/dashboard
 routes, and stops the process. Newman runs the committed Postman collection and
 writes its JSON report under `data/local/newman/phase5/`.
+
+Phase 6 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase6.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase6.ps1
+```
+
+The Phase 6 smoke builds and boots the backend on localhost, exercises plan,
+role, retention, tenant, audit, and dashboard routes, then stops the process.
+Newman runs the committed Phase 6 Postman collection and writes its JSON report
+under `data/local/newman/phase6/`.
 
 `go test -race ./...` is run when the local Go toolchain supports it. On
 Windows shells where CGO is disabled or no race-capable C toolchain is active,
