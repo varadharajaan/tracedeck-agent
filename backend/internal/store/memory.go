@@ -318,6 +318,72 @@ func (m *Memory) TenantOperationsSummary(_ context.Context, tenantID string) (mo
 	}, nil
 }
 
+func (m *Memory) TenantMonetizationSummary(ctx context.Context, tenantID string) (model.TenantMonetizationSummary, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	operations, err := m.TenantOperationsSummary(ctx, tenantID)
+	if err != nil {
+		return model.TenantMonetizationSummary{}, err
+	}
+
+	m.mu.RLock()
+	tenant, ok := m.tenants[tenantID]
+	if !ok {
+		m.mu.RUnlock()
+		return model.TenantMonetizationSummary{}, ErrTenantNotFound
+	}
+	plan := planByID(tenant.PlanID)
+	auditCount := 0
+	for _, event := range m.auditEvents {
+		if event.TenantID == tenantID {
+			auditCount++
+		}
+	}
+	rulesCount := len(m.alertRules[tenantID])
+	groupsCount := len(m.deviceGroups[tenantID])
+	assignmentsCount := len(m.policyAssigns[tenantID])
+	exportsCount := len(m.dataExports[tenantID])
+	deletesCount := len(m.deleteRequests[tenantID])
+	deliveries := make([]model.AlertDelivery, 0)
+	for _, device := range m.devices {
+		if device.TenantID == tenantID {
+			deliveries = append(deliveries, m.alertDeliveries[device.DeviceID]...)
+		}
+	}
+	m.mu.RUnlock()
+
+	email := latestTenantDelivery(deliveries, constants.DeliveryChannelEmail)
+	push := latestTenantDelivery(deliveries, constants.DeliveryChannelPush)
+	dashboard := latestTenantDelivery(deliveries, constants.DeliveryChannelDashboard)
+	trustScore := tenantTrustScore(operations, auditCount, exportsCount, deletesCount)
+
+	return model.TenantMonetizationSummary{
+		TenantID:            tenant.TenantID,
+		TenantName:          tenant.Name,
+		PlanID:              tenant.PlanID,
+		PlanName:            plan.Name,
+		Audience:            plan.Audience,
+		ConversionStage:     monetizationStage(tenant, operations, trustScore),
+		RevenueHealth:       monetizationHealth(operations, trustScore),
+		SeatsUsed:           operations.HostsTotal,
+		SeatsIncluded:       tenant.DeviceLimit,
+		ReadinessScore:      operations.MonetizationReadiness,
+		NotificationScore:   operations.NotificationScore,
+		TrustScore:          trustScore,
+		NotificationPromise: notificationPromise(operations, trustScore, email, push, dashboard),
+		NotificationRoutes: []model.TenantNotificationRoute{
+			notificationRoute(constants.DeliveryChannelEmail, email),
+			notificationRoute(constants.DeliveryChannelPush, push),
+			notificationRoute(constants.DeliveryChannelDashboard, dashboard),
+		},
+		ValuePanels:       tenantValuePanels(operations, plan, trustScore),
+		PaidCapabilities:  tenantPaidCapabilities(operations, rulesCount, groupsCount, assignmentsCount, auditCount, exportsCount),
+		ConversionActions: tenantConversionActions(operations, tenant, plan, trustScore, now),
+		GeneratedAt:       now,
+	}, nil
+}
+
 func (m *Memory) CreateTenantDataExport(_ context.Context, tenantID string, req model.CreateTenantDataExportRequest) (model.TenantDataExport, error) {
 	now := time.Now().UTC()
 	tenantID = strings.TrimSpace(tenantID)
@@ -1751,6 +1817,289 @@ func tenantUpgradeSignals(tenant model.Tenant, plan model.Plan, readiness int, o
 		}}, signals...)
 	}
 	return signals
+}
+
+func tenantTrustScore(operations model.TenantOperationsSummary, auditCount int, exportsCount int, deletesCount int) int {
+	checks := []bool{
+		operations.TamperSignals == 0 || operations.ArchiveBacklog <= 2,
+		operations.DeliveryFailed == 0,
+		operations.DashboardDelivered > 0,
+		auditCount > 0,
+		exportsCount > 0 || deletesCount > 0 || auditCount > 0,
+		operations.HostsTotal > 0,
+	}
+	passed := 0
+	for _, check := range checks {
+		if check {
+			passed++
+		}
+	}
+	return (passed * 100) / len(checks)
+}
+
+func monetizationStage(tenant model.Tenant, operations model.TenantOperationsSummary, trustScore int) string {
+	switch {
+	case tenant.PlanID == constants.PlanFree && operations.MonetizationReadiness >= 60:
+		return constants.MonetizationStageConversionReady
+	case operations.MonetizationReadiness >= 85 && trustScore >= 80 && operations.HostsTotal > 1:
+		return constants.MonetizationStageExpansionReady
+	case operations.MonetizationReadiness >= 70 && trustScore >= 65:
+		return constants.MonetizationStagePilotReady
+	default:
+		return constants.MonetizationStageProofGap
+	}
+}
+
+func monetizationHealth(operations model.TenantOperationsSummary, trustScore int) string {
+	switch {
+	case operations.MonetizationReadiness >= 80 && operations.NotificationScore >= 65 && trustScore >= 75:
+		return constants.StatusHealthy
+	case operations.MonetizationReadiness >= 55 && operations.NotificationScore >= 50:
+		return constants.StatusWatch
+	default:
+		return constants.StatusAttention
+	}
+}
+
+func notificationPromise(operations model.TenantOperationsSummary, trustScore int, email *model.AlertDelivery, push *model.AlertDelivery, dashboard *model.AlertDelivery) model.TenantNotificationPromise {
+	return model.TenantNotificationPromise{
+		Status:    monetizationHealth(operations, trustScore),
+		Summary:   fmt.Sprintf("%d/%d notification routes delivered with %d retrying", operations.DeliveryDelivered, operations.DeliveryTotal, operations.DeliveryRetrying),
+		Email:     notificationPromiseLine(email),
+		Push:      notificationPromiseLine(push),
+		Dashboard: notificationPromiseLine(dashboard),
+	}
+}
+
+func notificationPromiseLine(delivery *model.AlertDelivery) string {
+	if delivery == nil {
+		return "route not configured"
+	}
+	return strings.Join([]string{
+		delivery.Status,
+		delivery.Provider,
+		firstNonEmpty(delivery.Recipient, "recipient pending"),
+	}, " / ")
+}
+
+func notificationRoute(channel string, delivery *model.AlertDelivery) model.TenantNotificationRoute {
+	if delivery == nil {
+		return model.TenantNotificationRoute{
+			Channel:    channel,
+			Status:     constants.DeliveryStatusPending,
+			Proof:      "No delivery proof has been recorded for this route.",
+			NextAction: "Configure the route and send a demo alert.",
+		}
+	}
+	return model.TenantNotificationRoute{
+		Channel:       delivery.Channel,
+		Provider:      delivery.Provider,
+		Status:        delivery.Status,
+		Recipient:     delivery.Recipient,
+		Attempts:      delivery.Attempts,
+		LastAttemptAt: delivery.LastAttemptAt,
+		NextRetryAt:   delivery.NextRetryAt,
+		Proof:         firstNonEmpty(delivery.Summary, "Route attempt is visible in dashboard delivery history."),
+		NextAction:    notificationNextAction(delivery),
+	}
+}
+
+func notificationNextAction(delivery *model.AlertDelivery) string {
+	switch delivery.Status {
+	case constants.DeliveryStatusDelivered:
+		return "Use this route as customer proof."
+	case constants.DeliveryStatusRetrying:
+		return "Watch retry timing and provider health."
+	case constants.DeliveryStatusFailed:
+		return "Fix provider credentials or endpoint subscription."
+	case constants.DeliveryStatusSuppressed:
+		return "Review suppression policy before demo."
+	default:
+		return "Send a proof notification."
+	}
+}
+
+func tenantValuePanels(operations model.TenantOperationsSummary, plan model.Plan, trustScore int) []model.TenantValuePanel {
+	return []model.TenantValuePanel{
+		{
+			Title:    "Anomaly Notifications",
+			Metric:   fmt.Sprintf("%d active", operations.OpenAnomalies+operations.OpenPolicyViolations),
+			Detail:   "Policy, non-study YouTube, risky software, and media playback signals are routed into customer actions.",
+			Status:   statusFromCount(operations.OpenAnomalies + operations.OpenPolicyViolations),
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			Title:    "Mail Delivery",
+			Metric:   fmt.Sprintf("%d delivered", operations.EmailDelivered),
+			Detail:   "Critical alert and weekly report email proof is visible for customer trust.",
+			Status:   deliveryValueStatus(operations.EmailDelivered),
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			Title:    "Push Notification",
+			Metric:   fmt.Sprintf("%d delivered", operations.PushDelivered),
+			Detail:   "Mobile/web push routing makes anomalies feel immediate and premium.",
+			Status:   deliveryValueStatus(operations.PushDelivered),
+			PaidTier: constants.PlanFamilyPro,
+		},
+		{
+			Title:    "Archive And Retention",
+			Metric:   fmt.Sprintf("%d backlog", operations.ArchiveBacklog),
+			Detail:   "S3 lifecycle readiness supports Family Pro, school, and business retention packaging.",
+			Status:   archiveValueStatus(operations.ArchiveBacklog, plan.CloudArchive),
+			PaidTier: constants.PlanSchool,
+		},
+		{
+			Title:    "Trust And Audit",
+			Metric:   fmt.Sprintf("%d%%", trustScore),
+			Detail:   "Visible monitoring, audit events, policy changes, exports, and delete workflows support legitimate rollout.",
+			Status:   scoreStatus(trustScore),
+			PaidTier: constants.PlanBusiness,
+		},
+	}
+}
+
+func tenantPaidCapabilities(operations model.TenantOperationsSummary, rulesCount int, groupsCount int, assignmentsCount int, auditCount int, exportsCount int) []model.TenantPaidCapability {
+	return []model.TenantPaidCapability{
+		{
+			Name:     "Weekly AI report",
+			Status:   constants.StatusHealthy,
+			Tier:     constants.PlanFamilyPro,
+			Evidence: "Generated report and PDF route are available from host overview.",
+		},
+		{
+			Name:     "Alert rules builder",
+			Status:   countStatus(rulesCount),
+			Tier:     constants.PlanFamilyPro,
+			Evidence: fmt.Sprintf("%d saved alert rules", rulesCount),
+		},
+		{
+			Name:     "Role-based dashboard",
+			Status:   constants.StatusHealthy,
+			Tier:     constants.PlanSchool,
+			Evidence: "Parent, student, school admin, and business manager views are modeled.",
+		},
+		{
+			Name:     "Managed rollout",
+			Status:   countStatus(groupsCount + assignmentsCount),
+			Tier:     constants.PlanSchool,
+			Evidence: fmt.Sprintf("%d groups and %d assignments", groupsCount, assignmentsCount),
+		},
+		{
+			Name:     "Notification proof",
+			Status:   scoreStatus(operations.NotificationScore),
+			Tier:     constants.PlanFamilyPro,
+			Evidence: fmt.Sprintf("%d/%d routes delivered", operations.DeliveryDelivered, operations.DeliveryTotal),
+		},
+		{
+			Name:     "Compliance export",
+			Status:   countStatus(exportsCount + auditCount),
+			Tier:     constants.PlanBusiness,
+			Evidence: fmt.Sprintf("%d exports and %d audit events", exportsCount, auditCount),
+		},
+	}
+}
+
+func tenantConversionActions(operations model.TenantOperationsSummary, tenant model.Tenant, plan model.Plan, trustScore int, observedAt time.Time) []model.TenantOperationsSignal {
+	actions := make([]model.TenantOperationsSignal, 0, 5)
+	if operations.PushDelivered == 0 {
+		actions = append(actions, model.TenantOperationsSignal{
+			Title:      "Finish push notification proof",
+			Detail:     "A delivered push route makes anomaly monitoring feel immediate in Family Pro demos.",
+			Severity:   constants.SeverityMedium,
+			Channel:    constants.DeliveryChannelPush,
+			Status:     constants.StatusWatch,
+			Owner:      constants.RoleParent,
+			ObservedAt: observedAt,
+		})
+	}
+	if operations.EmailDelivered == 0 {
+		actions = append(actions, model.TenantOperationsSignal{
+			Title:      "Send email proof",
+			Detail:     "Send one critical alert or weekly report email before pitching paid monitoring.",
+			Severity:   constants.SeverityHigh,
+			Channel:    constants.DeliveryChannelEmail,
+			Status:     constants.StatusAttention,
+			Owner:      constants.RoleParent,
+			ObservedAt: observedAt,
+		})
+	}
+	if operations.ArchiveBacklog > 0 {
+		actions = append(actions, model.TenantOperationsSignal{
+			Title:      "Clear archive backlog story",
+			Detail:     "Show retry behavior and S3 lifecycle policy so archive retention looks reliable.",
+			Severity:   constants.SeverityLow,
+			Channel:    constants.DeliveryChannelDashboard,
+			Status:     constants.StatusWatch,
+			Owner:      constants.PlanSchool,
+			ObservedAt: observedAt,
+		})
+	}
+	if trustScore < 80 {
+		actions = append(actions, model.TenantOperationsSignal{
+			Title:      "Strengthen consent and audit proof",
+			Detail:     "Keep collection disclosure, recipients, policy changes, exports, and delete workflows visible.",
+			Severity:   constants.SeverityMedium,
+			Channel:    constants.DeliveryChannelDashboard,
+			Status:     constants.StatusWatch,
+			Owner:      constants.RoleBusinessManager,
+			ObservedAt: observedAt,
+		})
+	}
+	if len(actions) == 0 {
+		actions = append(actions, model.TenantOperationsSignal{
+			Title:      "Ready for paid-plan demo",
+			Detail:     fmt.Sprintf("%s has notification, archive, report, and dashboard proof for %s packaging.", tenant.Name, plan.Name),
+			Severity:   constants.SeverityInfo,
+			Channel:    constants.DeliveryChannelDashboard,
+			Status:     constants.StatusHealthy,
+			Owner:      constants.RoleBusinessManager,
+			ObservedAt: observedAt,
+		})
+	}
+	return actions
+}
+
+func statusFromCount(count int) string {
+	if count > 0 {
+		return constants.StatusHealthy
+	}
+	return constants.StatusWatch
+}
+
+func countStatus(count int) string {
+	if count > 0 {
+		return constants.StatusHealthy
+	}
+	return constants.StatusAttention
+}
+
+func deliveryValueStatus(delivered int) string {
+	if delivered > 0 {
+		return constants.StatusHealthy
+	}
+	return constants.StatusAttention
+}
+
+func archiveValueStatus(backlog int, cloudArchive bool) string {
+	if !cloudArchive {
+		return constants.StatusAttention
+	}
+	if backlog > 0 {
+		return constants.StatusWatch
+	}
+	return constants.StatusHealthy
+}
+
+func scoreStatus(score int) string {
+	switch {
+	case score >= 75:
+		return constants.StatusHealthy
+	case score >= 50:
+		return constants.StatusWatch
+	default:
+		return constants.StatusAttention
+	}
 }
 
 func topTenantDeliveryProblem(deliveries []model.AlertDelivery) *model.AlertDelivery {

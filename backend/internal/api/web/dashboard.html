@@ -617,6 +617,64 @@
       <div class="panel">
         <div class="section-head">
           <div>
+            <h2>Monetisation Command Center</h2>
+            <p class="muted">Plan packaging, paid value proof, route health, and upgrade stage for the selected customer</p>
+          </div>
+          <span id="monetization-health" class="badge pending">pending</span>
+        </div>
+        <div class="cockpit-grid">
+          <div class="ops-tile"><small>Conversion Stage</small><strong id="monetization-stage">-</strong><span id="monetization-stage-sub" class="muted">No stage yet</span></div>
+          <div class="ops-tile"><small>Readiness</small><strong id="monetization-readiness">-</strong><span id="monetization-readiness-sub" class="muted">No readiness score</span></div>
+          <div class="ops-tile"><small>Notifications</small><strong id="monetization-notifications">-</strong><span id="monetization-notifications-sub" class="muted">No delivery score</span></div>
+          <div class="ops-tile"><small>Trust</small><strong id="monetization-trust">-</strong><span id="monetization-trust-sub" class="muted">No trust score</span></div>
+          <div class="ops-tile"><small>Seats</small><strong id="monetization-seats">-</strong><span id="monetization-seats-sub" class="muted">No seat data</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Notification Guarantee</h2>
+            <p class="muted">Email, push, and dashboard proof customers can trust during paid demos</p>
+          </div>
+          <span id="notification-promise-status" class="badge pending">pending</span>
+        </div>
+        <div class="summary-list">
+          <div class="summary-line"><span>Promise</span><strong id="notification-promise-summary">-</strong></div>
+          <div class="summary-line"><span>Email</span><strong id="notification-promise-email">-</strong></div>
+          <div class="summary-line"><span>Push</span><strong id="notification-promise-push">-</strong></div>
+          <div class="summary-line"><span>Dashboard</span><strong id="notification-promise-dashboard">-</strong></div>
+        </div>
+        <div id="monetization-route-list" class="catalog-list" style="margin-top: 12px;"><div class="empty">No notification route proof yet.</div></div>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Paid Feature Proof</h2>
+            <p class="muted">Capabilities that justify Family Pro, school, and business pricing</p>
+          </div>
+          <span id="paid-capability-count" class="pill">0 capabilities</span>
+        </div>
+        <div id="paid-capability-list" class="catalog-list"><div class="empty">No paid capability proof yet.</div></div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Conversion Action Queue</h2>
+            <p class="muted">Next product steps before pitching or upgrading the customer</p>
+          </div>
+          <span id="conversion-action-count" class="pill">0 actions</span>
+        </div>
+        <div id="conversion-action-list" class="action-list"><div class="empty">No conversion actions yet.</div></div>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <div class="panel">
+        <div class="section-head">
+          <div>
             <h2>Customer Operations Cockpit</h2>
             <p class="muted">Fleet, anomaly, mail delivery, push notification, and paid-plan proof for the selected tenant</p>
           </div>
@@ -1180,6 +1238,7 @@
 
     function formatAge(value) {
       if (!value) return "age unknown";
+      if (String(value).startsWith("0001-")) return "not sent";
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return "age unknown";
       const minutesAgo = Math.max(0, Math.round((Date.now() - date.getTime()) / 60000));
@@ -1312,6 +1371,7 @@
       renderPolicyAssignments(context.policyAssignments);
       renderConsentCenter(context.consentCenter);
       renderTenantOperations(context.tenantOperations);
+      renderMonetizationSummary(context.monetizationSummary);
       renderDataExports(context.dataExports);
       renderDeleteRequests(context.deleteRequests);
       renderTimeline(policy.items.concat(anomalies.items, tamper.items));
@@ -1836,6 +1896,97 @@
       renderTenantSignalList("tenant-upgrade-list", "tenant-upgrade-count", ops.upgrade_signals || [], "proof");
     }
 
+    function renderMonetizationSummary(summary) {
+      const model = summary || {};
+      const health = model.revenue_health || "pending";
+      document.getElementById("monetization-health").outerHTML =
+        badge(health).replace("<span", '<span id="monetization-health"');
+      document.getElementById("notification-promise-status").outerHTML =
+        badge((model.notification_promise && model.notification_promise.status) || health).replace("<span", '<span id="notification-promise-status"');
+
+      setText("monetization-stage", model.conversion_stage || "pending");
+      setText("monetization-stage-sub", `${model.plan_name || model.plan_id || "plan pending"} for ${model.audience || "customer"}`);
+      setText("monetization-readiness", `${model.readiness_score || 0}%`);
+      setText("monetization-readiness-sub", "paid feature proof score");
+      setText("monetization-notifications", `${model.notification_score || 0}%`);
+      setText("monetization-notifications-sub", "email, push, dashboard delivery");
+      setText("monetization-trust", `${model.trust_score || 0}%`);
+      setText("monetization-trust-sub", "audit, consent, archive, delivery trust");
+      const seatsIncluded = model.seats_included ? model.seats_included : "custom";
+      setText("monetization-seats", `${model.seats_used || 0}/${seatsIncluded}`);
+      setText("monetization-seats-sub", `${model.tenant_name || "tenant"} enrolled hosts`);
+
+      const promise = model.notification_promise || {};
+      setText("notification-promise-summary", promise.summary || "No notification promise yet");
+      setText("notification-promise-email", promise.email || "email route pending");
+      setText("notification-promise-push", promise.push || "push route pending");
+      setText("notification-promise-dashboard", promise.dashboard || "dashboard route pending");
+
+      renderMonetizationRoutes(model.notification_routes || []);
+      renderPaidCapabilities(model.paid_capabilities || []);
+      renderConversionActions(model.conversion_actions || []);
+    }
+
+    function renderMonetizationRoutes(items) {
+      const target = document.getElementById("monetization-route-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No notification route proof yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="catalog-item">
+          <strong>${escapeHTML(capitalize(item.channel))} - ${escapeHTML(item.status)}</strong>
+          <span class="muted">${escapeHTML(item.proof)} ${escapeHTML(item.next_action)}</span>
+          <div class="action-meta">
+            <span class="pill">${escapeHTML(item.provider || "provider pending")}</span>
+            <span class="pill">${escapeHTML(item.recipient || "recipient pending")}</span>
+            <span class="pill">${escapeHTML(item.attempts || 0)} attempt${item.attempts === 1 ? "" : "s"}</span>
+            <span class="pill">${escapeHTML(formatAge(item.last_attempt_at))}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderPaidCapabilities(items) {
+      setText("paid-capability-count", `${items.length} capabilit${items.length === 1 ? "y" : "ies"}`);
+      const target = document.getElementById("paid-capability-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No paid capability proof yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="catalog-item">
+          <strong>${escapeHTML(item.name)}</strong>
+          <span class="muted">${escapeHTML(item.evidence)}</span>
+          <div class="action-meta">
+            ${badge(item.status)}
+            <span class="pill">${escapeHTML(item.tier)}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderConversionActions(items) {
+      setText("conversion-action-count", `${items.length} action${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("conversion-action-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No conversion actions yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="action-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.severity)}
+            ${badge(item.status)}
+            <span class="pill">${escapeHTML(item.channel || "dashboard")}</span>
+            <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
     function renderTenantSignalList(listID, countID, items, noun) {
       setText(countID, `${items.length} ${noun}${items.length === 1 ? "" : "s"}`);
       const target = document.getElementById(listID);
@@ -2081,6 +2232,7 @@
       const policyAssignments = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/policy-assignments`) : null;
       const consentCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/consent-center`) : null;
       const tenantOperations = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/operations-summary`) : null;
+      const monetizationSummary = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/monetization-summary`) : null;
       const dataExports = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/data-exports`) : null;
       const deleteRequests = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delete-requests`) : null;
       renderOverview(overview, deviceHealth, policy, anomalies, tamper, deliveries, {
@@ -2095,6 +2247,7 @@
         policyAssignments,
         consentCenter,
         tenantOperations,
+        monetizationSummary,
         dataExports,
         deleteRequests,
         auditEvents,

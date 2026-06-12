@@ -62,6 +62,7 @@ GET  /api/v1/tenants/{tenantId}/alert-rules
 POST /api/v1/tenants/{tenantId}/alert-rules
 GET  /api/v1/tenants/{tenantId}/consent-center
 GET  /api/v1/tenants/{tenantId}/operations-summary
+GET  /api/v1/tenants/{tenantId}/monetization-summary
 GET  /api/v1/tenants/{tenantId}/data-exports
 POST /api/v1/tenants/{tenantId}/data-exports
 GET  /api/v1/tenants/{tenantId}/delete-requests
@@ -179,6 +180,12 @@ tenant-level customer operations view. It rolls up host count, hosts needing
 attention, anomaly/policy/tamper pressure, archive backlog, mail/push/dashboard
 delivery counts, latest mail and push delivery proof, notification score,
 monetisation readiness, priority escalation signals, and upgrade proof signals.
+
+Phase 25 adds `GET /api/v1/tenants/{tenantId}/monetization-summary` for a
+customer-ready product cockpit. It returns plan packaging, conversion stage,
+readiness/notification/trust scores, email/push/dashboard promise lines,
+route-level delivery proof, paid capability proof, and conversion actions for
+Family Pro, school, and business demos.
 
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.

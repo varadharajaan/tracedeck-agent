@@ -340,6 +340,62 @@ type TenantOperationsSummary struct {
 	GeneratedAt           time.Time                `json:"generated_at"`
 }
 
+type TenantMonetizationSummary struct {
+	TenantID            string                    `json:"tenant_id"`
+	TenantName          string                    `json:"tenant_name"`
+	PlanID              string                    `json:"plan_id"`
+	PlanName            string                    `json:"plan_name"`
+	Audience            string                    `json:"audience"`
+	ConversionStage     string                    `json:"conversion_stage"`
+	RevenueHealth       string                    `json:"revenue_health"`
+	SeatsUsed           int                       `json:"seats_used"`
+	SeatsIncluded       int                       `json:"seats_included"`
+	ReadinessScore      int                       `json:"readiness_score"`
+	NotificationScore   int                       `json:"notification_score"`
+	TrustScore          int                       `json:"trust_score"`
+	NotificationPromise TenantNotificationPromise `json:"notification_promise"`
+	NotificationRoutes  []TenantNotificationRoute `json:"notification_routes"`
+	ValuePanels         []TenantValuePanel        `json:"value_panels"`
+	PaidCapabilities    []TenantPaidCapability    `json:"paid_capabilities"`
+	ConversionActions   []TenantOperationsSignal  `json:"conversion_actions"`
+	GeneratedAt         time.Time                 `json:"generated_at"`
+}
+
+type TenantNotificationPromise struct {
+	Status    string `json:"status"`
+	Summary   string `json:"summary"`
+	Email     string `json:"email"`
+	Push      string `json:"push"`
+	Dashboard string `json:"dashboard"`
+}
+
+type TenantNotificationRoute struct {
+	Channel       string     `json:"channel"`
+	Provider      string     `json:"provider"`
+	Status        string     `json:"status"`
+	Recipient     string     `json:"recipient"`
+	Attempts      int        `json:"attempts"`
+	LastAttemptAt time.Time  `json:"last_attempt_at"`
+	NextRetryAt   *time.Time `json:"next_retry_at,omitempty"`
+	Proof         string     `json:"proof"`
+	NextAction    string     `json:"next_action"`
+}
+
+type TenantValuePanel struct {
+	Title    string `json:"title"`
+	Metric   string `json:"metric"`
+	Detail   string `json:"detail"`
+	Status   string `json:"status"`
+	PaidTier string `json:"paid_tier"`
+}
+
+type TenantPaidCapability struct {
+	Name     string `json:"name"`
+	Status   string `json:"status"`
+	Tier     string `json:"tier"`
+	Evidence string `json:"evidence"`
+}
+
 type Plan struct {
 	ID                 string   `json:"id"`
 	Name               string   `json:"name"`
