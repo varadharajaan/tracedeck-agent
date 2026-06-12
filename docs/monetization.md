@@ -81,6 +81,15 @@ Phase 22 adds data-rights packaging for paid trust plans:
 - audit events for export and delete workflows
 - dashboard proof for compliance and family trust conversations
 
+Phase 23 adds customer operations packaging for monetisation demos:
+
+- tenant-level fleet coverage and hosts needing attention
+- anomaly, policy, tamper, and archive pressure summary
+- mail delivery proof for alerts and reports
+- push notification reach and retry visibility
+- escalation workbench for customer follow-up
+- upgrade proof pack for Family Pro, school, and business buyers
+
 This still uses the existing privacy-aware API data: typed risk categories,
 delivery routes, report readiness, health, archive, role, retention, and policy
 template metadata. It does not add credential, keylog, private-message, raw URL,

@@ -28,6 +28,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase17.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase18.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase19.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase20.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase21.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase22.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase23.ps1
 ```
 
 Verification logs are written under `logs/local/verify/`.
@@ -269,6 +273,21 @@ Pro tenant, creates a ready tenant export manifest, queues a non-destructive
 delete request, verifies list APIs and audit events, and asserts the dashboard
 contains Data Export Center and Delete Request Queue panels. Newman runs
 `postman/tracedeck-backend-phase22.postman_collection.json` against a live
+API-key-protected backend.
+
+Phase 23 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase23.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase23.ps1
+```
+
+The Phase 23 smoke builds and boots the backend on localhost, creates a Family
+Pro tenant, enrolls a host, verifies the tenant operations summary, checks mail
+delivery proof, priority signals, and upgrade proof signals, and asserts the
+dashboard contains Customer Operations Cockpit, Escalation Workbench,
+Notification Delivery Board, and Upgrade Proof Pack panels. Newman runs
+`postman/tracedeck-backend-phase23.postman_collection.json` against a live
 API-key-protected backend.
 
 Phase 13 adds:

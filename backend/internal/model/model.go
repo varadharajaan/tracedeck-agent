@@ -292,6 +292,54 @@ type ConsentCenter struct {
 	UpdatedAt          time.Time               `json:"updated_at"`
 }
 
+type TenantDeliverySnapshot struct {
+	Channel       string    `json:"channel"`
+	Status        string    `json:"status"`
+	Recipient     string    `json:"recipient"`
+	Provider      string    `json:"provider"`
+	LastAttemptAt time.Time `json:"last_attempt_at"`
+	Summary       string    `json:"summary"`
+}
+
+type TenantOperationsSignal struct {
+	Title      string    `json:"title"`
+	Detail     string    `json:"detail"`
+	Severity   string    `json:"severity"`
+	Channel    string    `json:"channel"`
+	Status     string    `json:"status"`
+	Owner      string    `json:"owner"`
+	ObservedAt time.Time `json:"observed_at"`
+}
+
+type TenantOperationsSummary struct {
+	TenantID              string                   `json:"tenant_id"`
+	TenantName            string                   `json:"tenant_name"`
+	PlanID                string                   `json:"plan_id"`
+	PlanName              string                   `json:"plan_name"`
+	CustomerHealth        string                   `json:"customer_health"`
+	MonetizationReadiness int                      `json:"monetization_readiness"`
+	HostsTotal            int                      `json:"hosts_total"`
+	HostsAttention        int                      `json:"hosts_attention"`
+	RiskScore             int                      `json:"risk_score"`
+	OpenPolicyViolations  int                      `json:"open_policy_violations"`
+	OpenAnomalies         int                      `json:"open_anomalies"`
+	TamperSignals         int                      `json:"tamper_signals"`
+	ArchiveBacklog        int                      `json:"archive_backlog"`
+	NotificationScore     int                      `json:"notification_score"`
+	DeliveryTotal         int                      `json:"delivery_total"`
+	DeliveryDelivered     int                      `json:"delivery_delivered"`
+	DeliveryRetrying      int                      `json:"delivery_retrying"`
+	DeliveryFailed        int                      `json:"delivery_failed"`
+	EmailDelivered        int                      `json:"email_delivered"`
+	PushDelivered         int                      `json:"push_delivered"`
+	DashboardDelivered    int                      `json:"dashboard_delivered"`
+	LastEmail             *TenantDeliverySnapshot  `json:"last_email,omitempty"`
+	LastPush              *TenantDeliverySnapshot  `json:"last_push,omitempty"`
+	PrioritySignals       []TenantOperationsSignal `json:"priority_signals"`
+	UpgradeSignals        []TenantOperationsSignal `json:"upgrade_signals"`
+	GeneratedAt           time.Time                `json:"generated_at"`
+}
+
 type Plan struct {
 	ID                 string   `json:"id"`
 	Name               string   `json:"name"`

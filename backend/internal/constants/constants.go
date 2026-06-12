@@ -39,6 +39,7 @@ const (
 	RouteSegmentAuditEvents    = "audit-events"
 	RouteSegmentAlertRules     = "alert-rules"
 	RouteSegmentConsentCenter  = "consent-center"
+	RouteSegmentOperations     = "operations-summary"
 	RouteSegmentDataExports    = "data-exports"
 	RouteSegmentDeleteRequests = "delete-requests"
 	RouteSegmentDeviceGroups   = "device-groups"
@@ -149,9 +150,12 @@ const (
 )
 
 const (
-	StatusOK      = "ok"
-	StatusEmpty   = "empty"
-	StatusPending = "pending"
+	StatusOK        = "ok"
+	StatusEmpty     = "empty"
+	StatusPending   = "pending"
+	StatusHealthy   = "healthy"
+	StatusWatch     = "watch"
+	StatusAttention = "attention"
 )
 
 const (
