@@ -44,4 +44,5 @@ const (
 	ConfigErrorArchiveAfterStandardIA      = "must be greater than or equal to standard_ia_until"
 	ConfigErrorRuleNameRequired            = "rule name must not be empty"
 	ConfigErrorTimeMustUseHourMinute       = "must use HH:MM 24-hour format"
+	ConfigErrorDurationRequired            = "must be a valid Go duration such as 10m or 1h"
 )

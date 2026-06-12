@@ -83,23 +83,27 @@ func newRunCommand() *cobra.Command {
 	var archiveDryRun bool
 	var alertOnce bool
 	var alertDryRun bool
+	var collectionInterval string
+	var maxCycles int
 
 	cmd := &cobra.Command{
 		Use:   constants.CommandRun,
 		Short: "Run TraceDeck agent",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			result, err := app.Run(context.Background(), app.RunOptions{
-				ConfigPath:    configPath,
-				DataDir:       dataDir,
-				LogDir:        logDir,
-				LogLevel:      logLevel,
-				OutboxDir:     outboxDir,
-				Once:          once,
-				ProcessLimit:  processLimit,
-				ArchiveOnce:   archiveOnce,
-				ArchiveDryRun: archiveDryRun,
-				AlertOnce:     alertOnce,
-				AlertDryRun:   alertDryRun,
+				ConfigPath:         configPath,
+				DataDir:            dataDir,
+				LogDir:             logDir,
+				LogLevel:           logLevel,
+				OutboxDir:          outboxDir,
+				Once:               once,
+				ProcessLimit:       processLimit,
+				ArchiveOnce:        archiveOnce,
+				ArchiveDryRun:      archiveDryRun,
+				AlertOnce:          alertOnce,
+				AlertDryRun:        alertDryRun,
+				CollectionInterval: collectionInterval,
+				MaxCycles:          maxCycles,
 			})
 			if err != nil {
 				return err
@@ -119,5 +123,7 @@ func newRunCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&archiveDryRun, "archive-dry-run", true, "skip S3 upload after staging the archive batch")
 	cmd.Flags().BoolVar(&alertOnce, "alert-once", false, "evaluate alerts for the collected snapshot")
 	cmd.Flags().BoolVar(&alertDryRun, "alert-dry-run", true, "write alert notifications to local outbox instead of sending email")
+	cmd.Flags().StringVar(&collectionInterval, "collection-interval", constants.DefaultCollectionInterval, "continuous mode collection interval")
+	cmd.Flags().IntVar(&maxCycles, "max-cycles", constants.DefaultMaxCycles, "maximum continuous cycles before exit; 0 runs until interrupted")
 	return cmd
 }

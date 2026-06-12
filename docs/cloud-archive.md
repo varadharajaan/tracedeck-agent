@@ -15,3 +15,6 @@ Lifecycle target: Standard for 90 days, Standard-IA until day 365, then archive.
 Phase 2 stages compressed JSONL batches under `data/local/outbox/archive/`.
 S3 upload is available through the AWS SDK adapter and is skipped when
 `--archive-dry-run` is enabled.
+
+Phase 2B enables continuous mode. The first continuous cycle stages an archive
+batch immediately, then subsequent staging follows `archive.upload_interval`.

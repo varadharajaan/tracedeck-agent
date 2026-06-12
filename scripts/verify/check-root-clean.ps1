@@ -24,6 +24,37 @@ try {
         exit 1
     }
 
+    $localOnlyFiles = @(
+        "plan.md",
+        "checkpoint.md",
+        "memory.md",
+        "todo.md",
+        "PLAN_MODE_PROMPT.md",
+        "agent-strict-rules-prompts.md",
+        "instructions.md",
+        "tracedeck_agent_project_prompt.md",
+        "tracedeck-agent-system-blueprint.md"
+    )
+
+    $trackedLocalOnly = @()
+    foreach ($fileName in $localOnlyFiles) {
+        $filePath = Join-Path $script:TraceDeckRepoRoot $fileName
+        if (-not (Test-Path -LiteralPath $filePath)) {
+            continue
+        }
+
+        $trackedPath = & git -C $script:TraceDeckRepoRoot ls-files -- $fileName
+        if ($trackedPath) {
+            $trackedLocalOnly += $fileName
+        }
+    }
+
+    if ($trackedLocalOnly.Count -gt 0) {
+        $names = $trackedLocalOnly -join ", "
+        Write-TraceDeckLog -Level "ERROR" -Message "Local-only prompt/checkpoint files are tracked: $names"
+        exit 1
+    }
+
     Write-TraceDeckLog -Level "INFO" -Message "Root artifact check passed."
     Complete-TraceDeckScriptLog
 }

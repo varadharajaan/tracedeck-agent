@@ -18,3 +18,7 @@ SQLite schema changes are applied from ordered migration files under
 Phase 1B introduces platform adapters behind Go build tags for Windows, macOS,
 Linux, and fallback operating systems. The app and collectors depend on the
 adapter contract instead of calling host OS APIs directly.
+
+Phase 2B turns the one-shot runner into a continuous loop. `run --once` remains
+the single-snapshot path, while `run` without `--once` repeats collection using
+`--collection-interval` until interrupted or `--max-cycles` is reached.
