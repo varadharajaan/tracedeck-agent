@@ -381,6 +381,20 @@ not collect or store passwords, screenshots, raw URLs, page titles, alert
 bodies, provider secrets, push endpoints, endpoint payloads, private content,
 invoices, tokens, cookies, payment card data, or raw provider payloads.
 
+Phase 60 adds `GET /api/v1/tenants/{tenantId}/portfolio-center`. It composes
+operations, business dashboard, sync health, alert inbox, delivery timeline,
+package billing, and host overview metadata into a typed multi-host portfolio
+contract. The response includes portfolio, notification, trust, and risk
+scores; host reporting and pending counts; open/high-priority alerts; typed
+alert notification rows with mail, push, and dashboard statuses; delivery proof
+cards for mail, push, dashboard fallback, weekly report/archive, and host
+coverage; archive backlog; route proof gaps; host rows with
+health/risk/count/delivery status; portfolio segments; owner actions; and a
+strict metadata-only privacy boundary. It does not collect or store
+passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets,
+push endpoints, endpoint payloads, private content, invoices, tokens, cookies,
+payment card data, or raw provider payloads.
+
 Phase 31 adds `GET /api/v1/tenants/{tenantId}/sync-health` for buyer and admin
 proof that backend-visible telemetry is arriving per host. It returns reporting
 host counts, stored metadata event totals, the highest stable `local-event-*`

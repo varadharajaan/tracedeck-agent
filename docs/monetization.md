@@ -365,3 +365,23 @@ This makes "push notification" sellable instead of vague: buyers can see
 whether urgent anomalies will reach them, what fallback exists, what proof is
 missing, and which paid package it supports. It does not add sensitive
 collection or live provider sends.
+
+Phase 60 adds a Portfolio Center for multi-host packaging:
+
+- portfolio score, customer health, trust, and risk posture
+- host rows with profile, OS, risk, health, policy/anomaly/tamper counts, and
+  archive backlog
+- anomaly notification rows with mail delivery, push notification, dashboard
+  fallback, host, category, severity, paid tier, and owner next action
+- delivery proof cards for mail, push, dashboard fallback, weekly
+  report/archive, alert inbox, and host coverage
+- mail, push, and dashboard delivery state per host
+- fleet coverage, risk queue, notification proof, archive/sync, and package
+  readiness segments
+- owner actions for the hosts or routes that need attention first
+- metadata-only privacy guard for parent, school, and business demos
+
+This is the surface that makes TraceDeck feel like an admin product rather than
+a single-machine monitor: the buyer can compare hosts, understand which machine
+needs attention, verify whether anomaly push and mail delivery worked, and see
+paid package value in one screen.

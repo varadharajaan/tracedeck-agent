@@ -127,3 +127,12 @@ collectors and does not store passwords, screenshots, raw URLs, page titles,
 alert bodies, provider secrets, push endpoints, endpoint payloads, private
 content, invoices, tokens, cookies, payment card data, or raw provider
 payloads.
+
+Phase 60 portfolio center is metadata-only. It exposes host labels, profiles,
+OS labels, risk and health scores, policy/anomaly/tamper counts, notification
+status, alert notification route states, delivery proof labels, archive
+backlog, sync posture, paid-tier labels, portfolio segments, and owner actions.
+It does not add collectors and does not store passwords, screenshots, raw URLs,
+page titles, alert bodies, provider secrets, push endpoints, endpoint payloads,
+private content, invoices, tokens, cookies, payment card data, or raw provider
+payloads.
