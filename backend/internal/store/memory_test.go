@@ -112,6 +112,13 @@ func TestPersistentStoreSurvivesRestart(t *testing.T) {
 	if deleteRequest.ID == "" || deleteRequest.Status != constants.DeleteRequestStatusQueued {
 		t.Fatalf("expected queued delete request: %+v", deleteRequest)
 	}
+	summary, err := first.TenantOperationsSummary(ctx, "family-varadha")
+	if err != nil {
+		t.Fatalf("create tenant operations summary: %v", err)
+	}
+	if summary.HostsTotal != 1 || summary.LastEmail == nil || len(summary.PrioritySignals) == 0 {
+		t.Fatalf("expected tenant operations summary: %+v", summary)
+	}
 
 	second, err := NewPersistent(statePath)
 	if err != nil {
@@ -157,5 +164,12 @@ func TestPersistentStoreSurvivesRestart(t *testing.T) {
 	deleteRequests := second.ListDeleteRequests(ctx, "family-varadha")
 	if len(deleteRequests) != 1 || deleteRequests[0].Status != constants.DeleteRequestStatusQueued {
 		t.Fatalf("expected persisted delete request after restart: %+v", deleteRequests)
+	}
+	loadedSummary, err := second.TenantOperationsSummary(ctx, "family-varadha")
+	if err != nil {
+		t.Fatalf("load tenant operations summary after restart: %v", err)
+	}
+	if loadedSummary.HostsTotal != 1 || loadedSummary.DeliveryTotal == 0 || loadedSummary.MonetizationReadiness == 0 {
+		t.Fatalf("expected loaded tenant operations summary: %+v", loadedSummary)
 	}
 }

@@ -70,3 +70,6 @@
 25. Phase 22: data rights workflows. Tenant-scoped export manifests,
     non-destructive delete request queue, access audit events, dashboard
     export/delete panels, Postman/Newman coverage, and local verification.
+26. Phase 23: customer operations dashboard. Tenant-level operations summary
+    API, monetisation cockpit, escalation workbench, notification delivery
+    board, upgrade proof pack, Postman/Newman coverage, and local verification.

@@ -61,6 +61,7 @@ GET  /api/v1/tenants/{tenantId}/audit-events
 GET  /api/v1/tenants/{tenantId}/alert-rules
 POST /api/v1/tenants/{tenantId}/alert-rules
 GET  /api/v1/tenants/{tenantId}/consent-center
+GET  /api/v1/tenants/{tenantId}/operations-summary
 GET  /api/v1/tenants/{tenantId}/data-exports
 POST /api/v1/tenants/{tenantId}/data-exports
 GET  /api/v1/tenants/{tenantId}/delete-requests
@@ -172,6 +173,12 @@ typed target values (`tenant`, `device_group`, `device`) and typed modes
 Phase 22 adds data rights workflow APIs for tenant exports and delete requests.
 Exports create ready manifests; delete requests are queued for review and audit
 instead of silently deleting data.
+
+Phase 23 adds `GET /api/v1/tenants/{tenantId}/operations-summary` for a
+tenant-level customer operations view. It rolls up host count, hosts needing
+attention, anomaly/policy/tamper pressure, archive backlog, mail/push/dashboard
+delivery counts, latest mail and push delivery proof, notification score,
+monetisation readiness, priority escalation signals, and upgrade proof signals.
 
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.

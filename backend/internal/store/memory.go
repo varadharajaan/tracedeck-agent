@@ -200,6 +200,124 @@ func (m *Memory) ListAlertRules(_ context.Context, tenantID string) []model.Aler
 	return rules
 }
 
+func (m *Memory) TenantOperationsSummary(_ context.Context, tenantID string) (model.TenantOperationsSummary, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	tenant, ok := m.tenants[tenantID]
+	if !ok {
+		return model.TenantOperationsSummary{}, ErrTenantNotFound
+	}
+
+	var allEvents []model.RiskEvent
+	var allDeliveries []model.AlertDelivery
+	riskTotal := 0
+	hostsTotal := 0
+	hostsAttention := 0
+	openPolicy := 0
+	openAnomalies := 0
+	tamperSignals := 0
+	archiveBacklog := 0
+
+	for _, device := range m.devices {
+		if device.TenantID != tenantID {
+			continue
+		}
+		hostsTotal++
+		m.seedDashboardForDeviceLocked(device)
+		overview := m.hostOverviewLocked(device)
+		riskTotal += overview.RiskScore
+		openPolicy += len(overview.PolicyViolations)
+		openAnomalies += len(overview.Anomalies)
+		tamperSignals += len(overview.TamperEvents)
+		archiveBacklog += overview.Archive.PendingBatches
+		allEvents = append(allEvents, overview.PolicyViolations...)
+		allEvents = append(allEvents, overview.Anomalies...)
+		allEvents = append(allEvents, overview.TamperEvents...)
+		allDeliveries = append(allDeliveries, overview.AlertDeliveries...)
+		if overview.RiskScore >= 60 || overview.Health.Status != constants.HealthStatusHealthy || overview.Archive.PendingBatches > 0 {
+			hostsAttention++
+		}
+	}
+	if err := m.persistLocked(); err != nil {
+		return model.TenantOperationsSummary{}, err
+	}
+
+	deliveryTotal := len(allDeliveries)
+	delivered := 0
+	retrying := 0
+	failed := 0
+	emailDelivered := 0
+	pushDelivered := 0
+	dashboardDelivered := 0
+	for _, delivery := range allDeliveries {
+		switch delivery.Status {
+		case constants.DeliveryStatusDelivered:
+			delivered++
+			switch delivery.Channel {
+			case constants.DeliveryChannelEmail:
+				emailDelivered++
+			case constants.DeliveryChannelPush:
+				pushDelivered++
+			case constants.DeliveryChannelDashboard:
+				dashboardDelivered++
+			}
+		case constants.DeliveryStatusRetrying:
+			retrying++
+		case constants.DeliveryStatusFailed:
+			failed++
+		}
+	}
+
+	riskScore := 0
+	if hostsTotal > 0 {
+		riskScore = riskTotal / hostsTotal
+	}
+	notificationScore := 0
+	if deliveryTotal > 0 {
+		notificationScore = (delivered * 100) / deliveryTotal
+	}
+	plan := planByID(tenant.PlanID)
+	monetizationReadiness := tenantReadinessScore(tenant, plan, hostsTotal, emailDelivered, pushDelivered, dashboardDelivered, len(m.alertRules[tenantID]), len(m.deviceGroups[tenantID]), len(m.policyAssigns[tenantID]))
+	customerHealth := constants.StatusHealthy
+	if failed > 0 || riskScore >= 75 {
+		customerHealth = constants.StatusAttention
+	} else if retrying > 0 || openAnomalies > 0 || archiveBacklog > 0 || hostsAttention > 0 {
+		customerHealth = constants.StatusWatch
+	}
+
+	return model.TenantOperationsSummary{
+		TenantID:              tenant.TenantID,
+		TenantName:            tenant.Name,
+		PlanID:                tenant.PlanID,
+		PlanName:              plan.Name,
+		CustomerHealth:        customerHealth,
+		MonetizationReadiness: monetizationReadiness,
+		HostsTotal:            hostsTotal,
+		HostsAttention:        hostsAttention,
+		RiskScore:             riskScore,
+		OpenPolicyViolations:  openPolicy,
+		OpenAnomalies:         openAnomalies,
+		TamperSignals:         tamperSignals,
+		ArchiveBacklog:        archiveBacklog,
+		NotificationScore:     notificationScore,
+		DeliveryTotal:         deliveryTotal,
+		DeliveryDelivered:     delivered,
+		DeliveryRetrying:      retrying,
+		DeliveryFailed:        failed,
+		EmailDelivered:        emailDelivered,
+		PushDelivered:         pushDelivered,
+		DashboardDelivered:    dashboardDelivered,
+		LastEmail:             deliverySnapshot(latestTenantDelivery(allDeliveries, constants.DeliveryChannelEmail)),
+		LastPush:              deliverySnapshot(latestTenantDelivery(allDeliveries, constants.DeliveryChannelPush)),
+		PrioritySignals:       tenantPrioritySignals(allEvents, allDeliveries, now),
+		UpgradeSignals:        tenantUpgradeSignals(tenant, plan, monetizationReadiness, now),
+		GeneratedAt:           now,
+	}, nil
+}
+
 func (m *Memory) CreateTenantDataExport(_ context.Context, tenantID string, req model.CreateTenantDataExportRequest) (model.TenantDataExport, error) {
 	now := time.Now().UTC()
 	tenantID = strings.TrimSpace(tenantID)
@@ -1478,6 +1596,273 @@ func ArchiveStatus() model.ArchiveStatus {
 		Status:         constants.StatusEmpty,
 		Provider:       constants.ArchiveProviderS3,
 		PendingBatches: 0,
+	}
+}
+
+func planByID(planID string) model.Plan {
+	for _, plan := range Plans() {
+		if plan.ID == strings.TrimSpace(planID) {
+			return plan
+		}
+	}
+	return model.Plan{ID: strings.TrimSpace(planID), Name: strings.TrimSpace(planID)}
+}
+
+func tenantReadinessScore(tenant model.Tenant, plan model.Plan, hostsTotal int, emailDelivered int, pushDelivered int, dashboardDelivered int, alertRules int, groups int, assignments int) int {
+	checks := []bool{
+		strings.TrimSpace(tenant.PlanID) != "",
+		strings.TrimSpace(tenant.RetentionTierID) != "",
+		hostsTotal > 0,
+		plan.CloudArchive,
+		plan.WeeklyReports,
+		plan.RoleBasedDashboard,
+		emailDelivered > 0,
+		pushDelivered > 0,
+		dashboardDelivered > 0,
+		alertRules > 0,
+		groups > 0,
+		assignments > 0,
+	}
+	passed := 0
+	for _, check := range checks {
+		if check {
+			passed++
+		}
+	}
+	return (passed * 100) / len(checks)
+}
+
+func deliverySnapshot(delivery *model.AlertDelivery) *model.TenantDeliverySnapshot {
+	if delivery == nil {
+		return nil
+	}
+	return &model.TenantDeliverySnapshot{
+		Channel:       delivery.Channel,
+		Status:        delivery.Status,
+		Recipient:     delivery.Recipient,
+		Provider:      delivery.Provider,
+		LastAttemptAt: delivery.LastAttemptAt,
+		Summary:       delivery.Summary,
+	}
+}
+
+func latestTenantDelivery(deliveries []model.AlertDelivery, channel string) *model.AlertDelivery {
+	var latest *model.AlertDelivery
+	for index := range deliveries {
+		if deliveries[index].Channel != channel {
+			continue
+		}
+		if latest == nil || deliveries[index].LastAttemptAt.After(latest.LastAttemptAt) {
+			current := deliveries[index]
+			latest = &current
+		}
+	}
+	return latest
+}
+
+func tenantPrioritySignals(events []model.RiskEvent, deliveries []model.AlertDelivery, observedAt time.Time) []model.TenantOperationsSignal {
+	signals := make([]model.TenantOperationsSignal, 0, 4)
+	if delivery := topTenantDeliveryProblem(deliveries); delivery != nil {
+		signals = append(signals, model.TenantOperationsSignal{
+			Title:      titleWord(delivery.Channel) + " delivery needs attention",
+			Detail:     firstNonEmpty(delivery.LastError, delivery.Summary, "Review provider route health and retry policy."),
+			Severity:   constants.SeverityMedium,
+			Channel:    delivery.Channel,
+			Status:     delivery.Status,
+			Owner:      delivery.Recipient,
+			ObservedAt: delivery.LastAttemptAt,
+		})
+	}
+	for _, event := range topTenantRiskEvents(events, 3) {
+		signals = append(signals, model.TenantOperationsSignal{
+			Title:      eventTitle(event),
+			Detail:     firstNonEmpty(event.Recommendation, event.Reason, "Review this signal."),
+			Severity:   event.Severity,
+			Channel:    event.Source,
+			Status:     event.Status,
+			Owner:      event.Category,
+			ObservedAt: event.ObservedAt,
+		})
+	}
+	if len(signals) == 0 {
+		signals = append(signals, model.TenantOperationsSignal{
+			Title:      "No immediate escalation",
+			Detail:     "Tenant routes and host signals are ready for command-center review.",
+			Severity:   constants.SeverityInfo,
+			Channel:    constants.DeliveryChannelDashboard,
+			Status:     constants.StatusHealthy,
+			Owner:      constants.RoleBusinessManager,
+			ObservedAt: observedAt,
+		})
+	}
+	return signals
+}
+
+func tenantUpgradeSignals(tenant model.Tenant, plan model.Plan, readiness int, observedAt time.Time) []model.TenantOperationsSignal {
+	signals := []model.TenantOperationsSignal{
+		{
+			Title:      "Family Pro proof pack",
+			Detail:     "Weekly report, email alert, push route, dashboard feed, and S3 archive value are visible in one customer view.",
+			Severity:   constants.SeverityInfo,
+			Channel:    constants.DeliveryChannelEmail,
+			Status:     constants.StatusHealthy,
+			Owner:      constants.RoleParent,
+			ObservedAt: observedAt,
+		},
+		{
+			Title:      "School rollout packaging",
+			Detail:     "Device groups, policy assignments, consent center, audit history, and data rights workflows support managed cohorts.",
+			Severity:   constants.SeverityInfo,
+			Channel:    constants.DeliveryChannelDashboard,
+			Status:     constants.StatusHealthy,
+			Owner:      constants.RoleSchoolAdmin,
+			ObservedAt: observedAt,
+		},
+		{
+			Title:      "Business risk observability",
+			Detail:     "Risky software, device health, archive backlog, tamper signals, and notification reliability support paid endpoint plans.",
+			Severity:   constants.SeverityInfo,
+			Channel:    constants.DeliveryChannelDashboard,
+			Status:     constants.StatusHealthy,
+			Owner:      constants.RoleBusinessManager,
+			ObservedAt: observedAt,
+		},
+	}
+	if readiness < 80 {
+		signals = append([]model.TenantOperationsSignal{{
+			Title:      "Readiness gap before upgrade pitch",
+			Detail:     "Improve route delivery, enrollment, or plan packaging before presenting this tenant as production-ready.",
+			Severity:   constants.SeverityMedium,
+			Channel:    constants.DeliveryChannelDashboard,
+			Status:     constants.StatusWatch,
+			Owner:      plan.Name,
+			ObservedAt: observedAt,
+		}}, signals...)
+	}
+	if tenant.PlanID == constants.PlanFree {
+		signals = append([]model.TenantOperationsSignal{{
+			Title:      "Upgrade candidate",
+			Detail:     "Cloud archive, weekly reports, role views, and notification proof are paid-plan conversion levers.",
+			Severity:   constants.SeverityLow,
+			Channel:    constants.DeliveryChannelEmail,
+			Status:     constants.StatusWatch,
+			Owner:      constants.PlanFamilyPro,
+			ObservedAt: observedAt,
+		}}, signals...)
+	}
+	return signals
+}
+
+func topTenantDeliveryProblem(deliveries []model.AlertDelivery) *model.AlertDelivery {
+	var top *model.AlertDelivery
+	for index := range deliveries {
+		if deliveries[index].Status == constants.DeliveryStatusDelivered {
+			continue
+		}
+		currentRank := deliveryProblemRank(deliveries[index].Status)
+		topRank := 0
+		if top != nil {
+			topRank = deliveryProblemRank(top.Status)
+		}
+		if top == nil || currentRank > topRank || (currentRank == topRank && deliveries[index].LastAttemptAt.After(top.LastAttemptAt)) {
+			current := deliveries[index]
+			top = &current
+		}
+	}
+	return top
+}
+
+func topTenantRiskEvents(events []model.RiskEvent, limit int) []model.RiskEvent {
+	candidates := append([]model.RiskEvent(nil), events...)
+	sort.Slice(candidates, func(i, j int) bool {
+		statusDelta := riskStatusRank(candidates[j].Status) - riskStatusRank(candidates[i].Status)
+		if statusDelta != 0 {
+			return statusDelta < 0
+		}
+		severityDelta := severityRank(candidates[j].Severity) - severityRank(candidates[i].Severity)
+		if severityDelta != 0 {
+			return severityDelta < 0
+		}
+		return candidates[i].ObservedAt.After(candidates[j].ObservedAt)
+	})
+	if len(candidates) > limit {
+		candidates = candidates[:limit]
+	}
+	return candidates
+}
+
+func eventTitle(event model.RiskEvent) string {
+	if strings.TrimSpace(event.AppName) != "" {
+		return event.AppName
+	}
+	if strings.TrimSpace(event.Domain) != "" {
+		return event.Domain
+	}
+	if strings.TrimSpace(event.ResourceLabel) != "" {
+		return event.ResourceLabel
+	}
+	return event.Category
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
+}
+
+func titleWord(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	return strings.ToUpper(value[:1]) + value[1:]
+}
+
+func deliveryProblemRank(status string) int {
+	switch status {
+	case constants.DeliveryStatusFailed:
+		return 4
+	case constants.DeliveryStatusRetrying:
+		return 3
+	case constants.DeliveryStatusPending:
+		return 2
+	case constants.DeliveryStatusSuppressed:
+		return 1
+	default:
+		return 0
+	}
+}
+
+func riskStatusRank(status string) int {
+	switch status {
+	case constants.RiskStatusOpen:
+		return 3
+	case constants.RiskStatusAcknowledged:
+		return 2
+	case constants.RiskStatusResolved:
+		return 1
+	default:
+		return 0
+	}
+}
+
+func severityRank(severity string) int {
+	switch severity {
+	case constants.SeverityCritical:
+		return 5
+	case constants.SeverityHigh:
+		return 4
+	case constants.SeverityMedium:
+		return 3
+	case constants.SeverityLow:
+		return 2
+	case constants.SeverityInfo:
+		return 1
+	default:
+		return 0
 	}
 }
 

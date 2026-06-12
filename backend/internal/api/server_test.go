@@ -425,6 +425,57 @@ func TestConsentCenterEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantOperationsSummaryEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "ops-device-001",
+		"host_name": "ops-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	summaryResponse := httptest.NewRecorder()
+	handler.ServeHTTP(summaryResponse, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentOperations, nil))
+	if summaryResponse.Code != http.StatusOK {
+		t.Fatalf("expected operations summary 200, got %d: %s", summaryResponse.Code, summaryResponse.Body.String())
+	}
+	var summary model.TenantOperationsSummary
+	if err := json.Unmarshal(summaryResponse.Body.Bytes(), &summary); err != nil {
+		t.Fatalf("decode operations summary: %v", err)
+	}
+	if summary.HostsTotal != 1 || summary.OpenPolicyViolations == 0 || summary.DeliveryTotal == 0 {
+		t.Fatalf("unexpected operations summary: %+v", summary)
+	}
+	if summary.LastEmail == nil || summary.LastEmail.Channel != constants.DeliveryChannelEmail {
+		t.Fatalf("expected latest email delivery proof: %+v", summary.LastEmail)
+	}
+	if len(summary.PrioritySignals) == 0 || len(summary.UpgradeSignals) == 0 {
+		t.Fatalf("expected priority and upgrade signals: %+v", summary)
+	}
+}
+
 func TestDeviceGroupAndPolicyAssignmentEndpoints(t *testing.T) {
 	t.Parallel()
 

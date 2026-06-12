@@ -298,6 +298,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantAlertRules(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentConsentCenter && r.Method == http.MethodGet:
 		s.handleTenantConsentCenter(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentOperations && r.Method == http.MethodGet:
+		s.handleTenantOperationsSummary(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentDataExports:
 		s.handleTenantDataExports(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentDeleteRequests:
@@ -409,6 +411,23 @@ func (s *Server) handleTenantConsentCenter(w http.ResponseWriter, r *http.Reques
 	auditEvents = filterAuditEventsForPrincipal(r.Context(), auditEvents)
 	rules := s.store.ListAlertRules(r.Context(), tenantID)
 	writeJSON(w, http.StatusOK, buildConsentCenter(tenant, auditEvents, rules))
+}
+
+func (s *Server) handleTenantOperationsSummary(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	summary, err := s.store.TenantOperationsSummary(r.Context(), tenantID)
+	if err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant operations lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, summary)
 }
 
 func (s *Server) handleTenantDataExports(w http.ResponseWriter, r *http.Request, tenantID string) {

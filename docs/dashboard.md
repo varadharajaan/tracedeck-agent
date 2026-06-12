@@ -41,6 +41,9 @@ Phase 21 adds managed policy rollout panels for device groups and policy
 assignments.
 Phase 22 adds data rights workflow panels for tenant export manifests and
 delete request queues.
+Phase 23 adds tenant-level customer operations panels for monetisation demos:
+fleet coverage, anomaly pipeline, mail delivery proof, push reach, escalation
+signals, notification delivery score, and upgrade proof pack.
 
 The dashboard reads the base backend endpoints:
 
@@ -65,6 +68,7 @@ For the selected host it reads:
 - `/api/v1/alert-rule-templates`
 - `/api/v1/tenants/{tenantId}/alert-rules`
 - `/api/v1/tenants/{tenantId}/consent-center`
+- `/api/v1/tenants/{tenantId}/operations-summary`
 - `/api/v1/tenants/{tenantId}/data-exports`
 - `/api/v1/tenants/{tenantId}/delete-requests`
 - `/api/v1/tenants/{tenantId}/device-groups`
@@ -77,6 +81,13 @@ Current panels:
 - notification promise for email, push, and dashboard delivery status
 - commercial readiness score for Family Pro, school, and business packaging
 - trust coverage across agent, archive, delivery, and audit signals
+- customer operations cockpit for fleet, anomaly, mail delivery, push reach,
+  and paid value
+- escalation workbench for tenant-level policy, anomaly, delivery, and archive
+  follow-up
+- notification delivery board for tenant-level email, push, dashboard, retry,
+  and failure proof
+- upgrade proof pack for family, school, and business packaging
 - executive briefing for top risk, study signal, alert outcome, and archive
   trust
 - notification action queue for delivery retries and open risk events

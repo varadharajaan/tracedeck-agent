@@ -20,6 +20,8 @@ remote unauthenticated backend.
 - Device group and policy assignment APIs for tenant, group, and device-level
   rollout readiness.
 - Data export and delete-request workflow APIs for consent center readiness.
+- Tenant operations summary API for customer health, fleet coverage,
+  notification score, escalation signals, and upgrade proof signals.
 
 ## Boundaries
 

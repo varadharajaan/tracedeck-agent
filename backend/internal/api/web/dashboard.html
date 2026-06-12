@@ -203,6 +203,11 @@
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 10px;
     }
+    .cockpit-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
     .ops-tile {
       min-height: 118px;
       padding: 12px;
@@ -514,6 +519,7 @@
       .command-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .brief-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .ops-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .cockpit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
     @media (max-width: 720px) {
@@ -526,6 +532,7 @@
       .command-board { grid-template-columns: 1fr; }
       .brief-grid { grid-template-columns: 1fr; }
       .ops-strip { grid-template-columns: 1fr; }
+      .cockpit-grid { grid-template-columns: 1fr; }
       .summary-line { grid-template-columns: 1fr; }
       .kv div { grid-template-columns: 1fr; }
       main { width: min(100vw - 20px, 1400px); }
@@ -603,6 +610,63 @@
           <span id="trust-agent" class="pill">agent pending</span>
           <span id="trust-archive" class="pill">archive pending</span>
         </div>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Customer Operations Cockpit</h2>
+            <p class="muted">Fleet, anomaly, mail delivery, push notification, and paid-plan proof for the selected tenant</p>
+          </div>
+          <span id="tenant-ops-status" class="badge pending">pending</span>
+        </div>
+        <div class="cockpit-grid">
+          <div class="ops-tile"><small>Fleet Coverage</small><strong id="tenant-ops-fleet">-</strong><span id="tenant-ops-fleet-sub" class="muted">No tenant hosts</span></div>
+          <div class="ops-tile"><small>Anomaly Pipeline</small><strong id="tenant-ops-anomaly">-</strong><span id="tenant-ops-anomaly-sub" class="muted">No anomaly data</span></div>
+          <div class="ops-tile"><small>Mail Delivery Proof</small><strong id="tenant-ops-mail">-</strong><span id="tenant-ops-mail-sub" class="muted">No email proof</span></div>
+          <div class="ops-tile"><small>Push Reach</small><strong id="tenant-ops-push">-</strong><span id="tenant-ops-push-sub" class="muted">No push proof</span></div>
+          <div class="ops-tile"><small>Paid Value</small><strong id="tenant-ops-paid">-</strong><span id="tenant-ops-paid-sub" class="muted">No plan proof</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Escalation Workbench</h2>
+            <p class="muted">Customer-ready action queue for anomaly, policy, delivery, and archive follow-up</p>
+          </div>
+          <span id="tenant-escalation-count" class="pill">0 signals</span>
+        </div>
+        <div id="tenant-escalation-list" class="action-list"><div class="empty">No tenant escalation signals yet.</div></div>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Notification Delivery Board</h2>
+            <p class="muted">Tenant-level mail, push, dashboard delivery score and latest recipients</p>
+          </div>
+          <span id="tenant-delivery-score" class="pill">waiting</span>
+        </div>
+        <div class="brief-grid">
+          <div class="brief-item"><small>Email</small><strong id="tenant-mail-latest">-</strong><span id="tenant-mail-latest-sub" class="muted">No latest email</span></div>
+          <div class="brief-item"><small>Push</small><strong id="tenant-push-latest">-</strong><span id="tenant-push-latest-sub" class="muted">No latest push</span></div>
+          <div class="brief-item"><small>Dashboard</small><strong id="tenant-dashboard-proof">-</strong><span id="tenant-dashboard-proof-sub" class="muted">No dashboard proof</span></div>
+          <div class="brief-item"><small>Failures</small><strong id="tenant-delivery-failures">-</strong><span id="tenant-delivery-failures-sub" class="muted">No failure data</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Upgrade Proof Pack</h2>
+            <p class="muted">Family, school, and business packaging signals for monetisation demos</p>
+          </div>
+          <span id="tenant-upgrade-count" class="pill">0 proofs</span>
+        </div>
+        <div id="tenant-upgrade-list" class="catalog-list"><div class="empty">No upgrade proof signals yet.</div></div>
       </div>
     </section>
 
@@ -1247,6 +1311,7 @@
       renderDeviceGroups(context.deviceGroups);
       renderPolicyAssignments(context.policyAssignments);
       renderConsentCenter(context.consentCenter);
+      renderTenantOperations(context.tenantOperations);
       renderDataExports(context.dataExports);
       renderDeleteRequests(context.deleteRequests);
       renderTimeline(policy.items.concat(anomalies.items, tamper.items));
@@ -1741,6 +1806,58 @@
       `).join("");
     }
 
+    function renderTenantOperations(summary) {
+      const ops = summary || {};
+      const status = ops.customer_health || "pending";
+      document.getElementById("tenant-ops-status").outerHTML =
+        badge(status).replace("<span", '<span id="tenant-ops-status"');
+      setText("tenant-ops-fleet", `${ops.hosts_total || 0} host${ops.hosts_total === 1 ? "" : "s"}`);
+      setText("tenant-ops-fleet-sub", `${ops.hosts_attention || 0} need attention, average risk ${ops.risk_score || 0}`);
+      setText("tenant-ops-anomaly", `${ops.open_anomalies || 0} active`);
+      setText("tenant-ops-anomaly-sub", `${ops.open_policy_violations || 0} policy, ${ops.tamper_signals || 0} tamper, ${ops.archive_backlog || 0} archive backlog`);
+      setText("tenant-ops-mail", `${ops.email_delivered || 0} delivered`);
+      setText("tenant-ops-mail-sub", ops.last_email ? `${ops.last_email.recipient} via ${ops.last_email.provider}` : "mail delivery not proven");
+      setText("tenant-ops-push", `${ops.push_delivered || 0} delivered`);
+      setText("tenant-ops-push-sub", ops.last_push ? `${ops.last_push.status} to ${ops.last_push.recipient}` : "push route not proven");
+      setText("tenant-ops-paid", `${ops.monetization_readiness || 0}% ready`);
+      setText("tenant-ops-paid-sub", `${ops.plan_name || ops.plan_id || "plan pending"} customer proof pack`);
+
+      setText("tenant-delivery-score", `${ops.notification_score || 0}% delivery score`);
+      setText("tenant-mail-latest", ops.last_email ? ops.last_email.status : "missing");
+      setText("tenant-mail-latest-sub", ops.last_email ? `${ops.last_email.summary} - ${formatDate(ops.last_email.last_attempt_at)}` : "No latest email route.");
+      setText("tenant-push-latest", ops.last_push ? ops.last_push.status : "missing");
+      setText("tenant-push-latest-sub", ops.last_push ? `${ops.last_push.summary} - ${formatDate(ops.last_push.last_attempt_at)}` : "No latest push route.");
+      setText("tenant-dashboard-proof", `${ops.dashboard_delivered || 0} delivered`);
+      setText("tenant-dashboard-proof-sub", `${ops.delivery_delivered || 0}/${ops.delivery_total || 0} total routes delivered`);
+      setText("tenant-delivery-failures", `${ops.delivery_failed || 0} failed`);
+      setText("tenant-delivery-failures-sub", `${ops.delivery_retrying || 0} retrying routes`);
+
+      renderTenantSignalList("tenant-escalation-list", "tenant-escalation-count", ops.priority_signals || [], "signal");
+      renderTenantSignalList("tenant-upgrade-list", "tenant-upgrade-count", ops.upgrade_signals || [], "proof");
+    }
+
+    function renderTenantSignalList(listID, countID, items, noun) {
+      setText(countID, `${items.length} ${noun}${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById(listID);
+      if (items.length === 0) {
+        target.innerHTML = `<div class="empty">No ${escapeHTML(noun)} signals yet.</div>`;
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="action-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail)}</span>
+          <div class="action-meta">
+            ${badge(item.severity)}
+            ${badge(item.status)}
+            <span class="pill">${escapeHTML(item.channel || "dashboard")}</span>
+            <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+            <span class="pill">${escapeHTML(formatAge(item.observed_at))}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
     function renderConsentCenter(consent) {
       const center = consent || {};
       document.getElementById("consent-status").outerHTML =
@@ -1963,6 +2080,7 @@
       const deviceGroups = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/device-groups`) : null;
       const policyAssignments = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/policy-assignments`) : null;
       const consentCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/consent-center`) : null;
+      const tenantOperations = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/operations-summary`) : null;
       const dataExports = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/data-exports`) : null;
       const deleteRequests = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delete-requests`) : null;
       renderOverview(overview, deviceHealth, policy, anomalies, tamper, deliveries, {
@@ -1976,6 +2094,7 @@
         deviceGroups,
         policyAssignments,
         consentCenter,
+        tenantOperations,
         dataExports,
         deleteRequests,
         auditEvents,
