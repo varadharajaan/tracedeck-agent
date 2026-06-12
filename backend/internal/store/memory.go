@@ -557,6 +557,41 @@ func (m *Memory) RunTenantProviderSimulation(ctx context.Context, tenantID strin
 	return m.TenantProviderSimulationLab(ctx, tenantID)
 }
 
+func (m *Memory) TenantPackageBillingReadiness(ctx context.Context, tenantID string) (model.TenantPackageBillingReadiness, error) {
+	generatedAt := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	operations, err := m.TenantOperationsSummary(ctx, tenantID)
+	if err != nil {
+		return model.TenantPackageBillingReadiness{}, err
+	}
+	monetization, err := m.TenantMonetizationSummary(ctx, tenantID)
+	if err != nil {
+		return model.TenantPackageBillingReadiness{}, err
+	}
+	business, err := m.TenantBusinessDashboard(ctx, tenantID)
+	if err != nil {
+		return model.TenantPackageBillingReadiness{}, err
+	}
+	roles, err := m.TenantRoleExperiences(ctx, tenantID)
+	if err != nil {
+		return model.TenantPackageBillingReadiness{}, err
+	}
+	provider, err := m.TenantProviderSimulationLab(ctx, tenantID)
+	if err != nil {
+		return model.TenantPackageBillingReadiness{}, err
+	}
+
+	m.mu.RLock()
+	tenant, ok := m.tenants[tenantID]
+	m.mu.RUnlock()
+	if !ok {
+		return model.TenantPackageBillingReadiness{}, ErrTenantNotFound
+	}
+
+	return buildTenantPackageBillingReadiness(tenant, retentionTierByID(tenant.RetentionTierID), operations, monetization, business, roles, provider, generatedAt), nil
+}
+
 func (m *Memory) deliveriesForTenantLocked(tenantID string) []model.AlertDelivery {
 	deliveries := make([]model.AlertDelivery, 0)
 	for _, device := range m.devices {
@@ -3388,6 +3423,15 @@ func planByID(planID string) model.Plan {
 		}
 	}
 	return model.Plan{ID: strings.TrimSpace(planID), Name: strings.TrimSpace(planID)}
+}
+
+func retentionTierByID(tierID string) model.RetentionTier {
+	for _, tier := range RetentionTiers() {
+		if tier.ID == strings.TrimSpace(tierID) {
+			return tier
+		}
+	}
+	return model.RetentionTier{ID: strings.TrimSpace(tierID), Name: strings.TrimSpace(tierID)}
 }
 
 func tenantReadinessScore(tenant model.Tenant, plan model.Plan, hostsTotal int, emailDelivered int, pushDelivered int, dashboardDelivered int, alertRules int, groups int, assignments int) int {
@@ -6353,6 +6397,328 @@ func providerSimulationActions(summary model.TenantProviderSimulationSummary, ro
 		})
 	}
 	return actions
+}
+
+func buildTenantPackageBillingReadiness(
+	tenant model.Tenant,
+	retention model.RetentionTier,
+	operations model.TenantOperationsSummary,
+	monetization model.TenantMonetizationSummary,
+	business model.TenantBusinessDashboard,
+	roles model.TenantRoleExperience,
+	provider model.TenantProviderSimulationLab,
+	generatedAt time.Time,
+) model.TenantPackageBillingReadiness {
+	plan := planByID(tenant.PlanID)
+	retentionReady := plan.CloudArchive && retention.S3StandardDays > 0 && retention.S3ArchiveAfterDays >= 365
+	archiveReady := retentionReady && operations.ArchiveBacklog == 0
+	weeklyReady := plan.WeeklyReports && business.Summary.WeeklyReportReady
+	notificationReady := operations.NotificationScore >= 60 && operations.DeliveryDelivered > 0
+	providerReady := provider.Summary.SimulatedRoutes > 0 && provider.Summary.ProviderRisks == 0
+	billingReady := strings.TrimSpace(tenant.PlanID) != "" &&
+		tenant.PlanID != constants.PlanFree &&
+		strings.TrimSpace(tenant.RetentionTierID) != "" &&
+		monetization.TrustScore >= 60
+
+	featureGates := packageBillingFeatureGates(plan, retention, operations, monetization, business, roles, provider, retentionReady, archiveReady, weeklyReady, notificationReady, providerReady, billingReady)
+	readyGates, totalGates := packageFeatureGateCounts(featureGates)
+	featureScore := 0
+	if totalGates > 0 {
+		featureScore = (readyGates * 100) / totalGates
+	}
+	packageScore := averageScore(monetization.ReadinessScore, business.Summary.ProductScore, provider.Summary.ReadinessScore, featureScore, monetization.TrustScore)
+	recommended := firstNonEmpty(business.Summary.RecommendedPackage, provider.Summary.RecommendedPaidPackage, monetization.PlanName, plan.Name)
+	summary := model.TenantPackageBillingSummary{
+		PackageScore:       packageScore,
+		BillingStatus:      packageBillingStatus(billingReady, packageScore, featureScore),
+		RevenueStage:       monetization.ConversionStage,
+		CurrentPlan:        firstNonEmpty(plan.Name, tenant.PlanID),
+		RecommendedPackage: recommended,
+		SeatsUsed:          monetization.SeatsUsed,
+		SeatsIncluded:      monetization.SeatsIncluded,
+		SeatUtilization:    packageSeatUtilization(monetization.SeatsUsed, monetization.SeatsIncluded),
+		FeatureGatesReady:  readyGates,
+		FeatureGatesTotal:  totalGates,
+		UpgradeReady:       packageScore >= 80 && billingReady,
+		BillingReady:       billingReady,
+		RetentionReady:     retentionReady,
+		ArchiveReady:       archiveReady,
+		WeeklyReportReady:  weeklyReady,
+		NotificationReady:  notificationReady,
+		ProviderReady:      providerReady,
+		TrustScore:         monetization.TrustScore,
+	}
+	summary.Status = packageBillingStatus(summary.BillingReady, summary.PackageScore, featureScore)
+	summary.Headline, summary.Detail = packageBillingNarrative(summary, retention)
+	summary.NextBestAction = packageBillingNextAction(summary)
+
+	return model.TenantPackageBillingReadiness{
+		TenantID:        tenant.TenantID,
+		TenantName:      tenant.Name,
+		PlanID:          tenant.PlanID,
+		PlanName:        firstNonEmpty(plan.Name, tenant.PlanID),
+		Audience:        firstNonEmpty(plan.Audience, monetization.Audience),
+		RetentionTierID: tenant.RetentionTierID,
+		RetentionName:   firstNonEmpty(retention.Name, tenant.RetentionTierID),
+		Summary:         summary,
+		Plans:           packageBillingPlans(plan, recommended, packageScore),
+		FeatureGates:    featureGates,
+		Milestones:      packageBillingMilestones(summary, retention, provider),
+		Actions:         packageBillingActions(summary, monetization.ConversionActions, business.Actions),
+		PrivacyBoundary: constants.PackageBillingPrivacyNote,
+		GeneratedAt:     generatedAt,
+	}
+}
+
+func packageBillingStatus(billingReady bool, packageScore int, featureScore int) string {
+	switch {
+	case !billingReady || featureScore < 60:
+		return constants.StatusAttention
+	case packageScore >= 80:
+		return constants.StatusHealthy
+	case packageScore >= 60:
+		return constants.StatusWatch
+	default:
+		return constants.StatusPending
+	}
+}
+
+func packageBillingNarrative(summary model.TenantPackageBillingSummary, retention model.RetentionTier) (string, string) {
+	switch {
+	case summary.UpgradeReady:
+		return fmt.Sprintf("%s is ready for paid package review", summary.RecommendedPackage),
+			fmt.Sprintf("%d/%d feature gates are ready with %s retention proof and %d%% trust.", summary.FeatureGatesReady, summary.FeatureGatesTotal, firstNonEmpty(retention.Name, "configured"), summary.TrustScore)
+	case !summary.BillingReady:
+		return "Billing readiness needs trust and package proof",
+			"Current plan, retention tier, notification proof, and data-rights evidence must be visible before a buyer handoff."
+	case !summary.NotificationReady:
+		return "Notification proof is the package gap",
+			"Mail, push, dashboard, and provider-safe delivery evidence make the paid plan easier to sell."
+	case !summary.RetentionReady:
+		return "Retention proof is the package gap",
+			"S3 lifecycle, local TTL, archive, and compliance export evidence should be visible before selling archive plans."
+	default:
+		return fmt.Sprintf("%s is package-ready", summary.CurrentPlan),
+			"Feature gates, package fit, billing setup metadata, and owner actions are ready for review."
+	}
+}
+
+func packageBillingNextAction(summary model.TenantPackageBillingSummary) string {
+	switch {
+	case !summary.BillingReady:
+		return "Confirm plan, retention tier, trust center, and billing setup metadata before buyer handoff."
+	case !summary.ProviderReady:
+		return "Run provider simulation so push, mail, and dashboard proof can support the package pitch."
+	case !summary.WeeklyReportReady:
+		return "Generate weekly report proof and include it in the package review."
+	case !summary.ArchiveReady:
+		return "Clear archive backlog or show lifecycle retry proof before selling retention value."
+	default:
+		return "Use package billing readiness in the Family Pro, school, or business upgrade conversation."
+	}
+}
+
+func packageBillingPlans(current model.Plan, recommended string, packageScore int) []model.TenantPackageBillingPlan {
+	candidates := []model.Plan{planByID(constants.PlanFree), planByID(constants.PlanFamilyPro), planByID(constants.PlanSchool), planByID(constants.PlanBusiness)}
+	plans := make([]model.TenantPackageBillingPlan, 0, len(candidates))
+	for _, plan := range candidates {
+		isCurrent := plan.ID == current.ID
+		isRecommended := strings.EqualFold(plan.Name, recommended) || plan.ID == recommended
+		status := constants.StatusWatch
+		if isCurrent || isRecommended {
+			status = constants.StatusHealthy
+		}
+		if plan.ID == constants.PlanFree && current.ID != constants.PlanFree {
+			status = constants.StatusPending
+		}
+		plans = append(plans, model.TenantPackageBillingPlan{
+			PlanID:      plan.ID,
+			Name:        plan.Name,
+			Audience:    plan.Audience,
+			PriceModel:  plan.PriceModel,
+			Status:      status,
+			Current:     isCurrent,
+			Recommended: isRecommended,
+			FitScore:    packagePlanFitScore(plan, current, packageScore),
+			Features:    append([]string(nil), plan.Features...),
+			Value:       businessPackageValue(plan.ID),
+			NextAction:  packagePlanNextAction(plan, isCurrent, isRecommended),
+		})
+	}
+	return plans
+}
+
+func packagePlanFitScore(plan model.Plan, current model.Plan, packageScore int) int {
+	score := packageScore
+	if plan.ID == current.ID {
+		score += 10
+	}
+	if plan.ID == constants.PlanFree {
+		score -= 25
+	}
+	if plan.ID == constants.PlanSchool || plan.ID == constants.PlanBusiness {
+		score -= 5
+	}
+	if score > 100 {
+		return 100
+	}
+	if score < 0 {
+		return 0
+	}
+	return score
+}
+
+func packagePlanNextAction(plan model.Plan, current bool, recommended bool) string {
+	switch {
+	case current:
+		return "Use this plan as the current package proof."
+	case recommended:
+		return "Prepare this package as the next upgrade offer."
+	case plan.ID == constants.PlanFree:
+		return "Keep free as a trial path with local-only limits."
+	default:
+		return "Keep collecting feature proof before positioning this package."
+	}
+}
+
+func packageBillingFeatureGates(
+	plan model.Plan,
+	retention model.RetentionTier,
+	operations model.TenantOperationsSummary,
+	monetization model.TenantMonetizationSummary,
+	business model.TenantBusinessDashboard,
+	roles model.TenantRoleExperience,
+	provider model.TenantProviderSimulationLab,
+	retentionReady bool,
+	archiveReady bool,
+	weeklyReady bool,
+	notificationReady bool,
+	providerReady bool,
+	billingReady bool,
+) []model.TenantPackageBillingFeatureGate {
+	return []model.TenantPackageBillingFeatureGate{
+		packageFeatureGate("seat-capacity", "Seat Capacity", monetization.SeatsIncluded == 0 || monetization.SeatsUsed <= monetization.SeatsIncluded, fmt.Sprintf("%d/%d seats used", monetization.SeatsUsed, monetization.SeatsIncluded), "Seat limits make packaging clear for family, school, and business buyers.", constants.PlanFamilyPro),
+		packageFeatureGate("billing-setup", "Billing Setup", billingReady, "Plan and retention metadata are configured; payment data is not collected.", "Buyer handoff can discuss package readiness without storing payment card data.", constants.PlanFamilyPro),
+		packageFeatureGate("archive-retention", "Archive Retention", retentionReady, fmt.Sprintf("%s: %d local days, %d S3 standard days, archive after %d days", firstNonEmpty(retention.Name, retention.ID), retention.LocalTTLDays, retention.S3StandardDays, retention.S3ArchiveAfterDays), "Cloud archive and lifecycle proof monetise retention plans.", constants.PlanFamilyPro),
+		packageFeatureGate("archive-health", "Archive Health", archiveReady, fmt.Sprintf("%d archive batches pending", operations.ArchiveBacklog), "A clean archive queue supports renewal and compliance trust.", constants.PlanSchool),
+		packageFeatureGate("weekly-report", "Weekly Report", weeklyReady, boolReady(business.Summary.WeeklyReportReady), "Weekly AI report delivery is a Family Pro retention feature.", constants.PlanFamilyPro),
+		packageFeatureGate("notification-proof", "Notification Proof", notificationReady, fmt.Sprintf("%d%% notification score with %d delivered events", operations.NotificationScore, operations.DeliveryDelivered), "Mail, push, and dashboard delivery proof makes anomaly alerts monetisable.", constants.PlanFamilyPro),
+		packageFeatureGate("provider-simulation", "Provider Simulation", providerReady, fmt.Sprintf("%d/%d routes simulated", provider.Summary.SimulatedRoutes, provider.Summary.RoutesTotal), "Provider-safe proof supports paid demos without storing secrets or payloads.", constants.PlanFamilyPro),
+		packageFeatureGate("role-dashboards", "Role Dashboards", plan.RoleBasedDashboard && roles.Summary.RolesReady > 0, fmt.Sprintf("%d/%d roles ready", roles.Summary.RolesReady, roles.Summary.RolesTotal), "Parent, student, school, and manager views unlock higher-tier packaging.", constants.PlanSchool),
+		packageFeatureGate("trust-data-rights", "Trust And Data Rights", business.Summary.ConsentVisible && business.Summary.DataRightsReady, fmt.Sprintf("%d%% trust score", monetization.TrustScore), "Consent, export, and delete readiness reduces buyer friction.", constants.PlanBusiness),
+		packageFeatureGate("package-evidence", "Package Evidence", len(business.Packages) > 0, fmt.Sprintf("%d package options visible", len(business.Packages)), "Visible package options help convert monitoring into paid observability.", constants.PlanFamilyPro),
+	}
+}
+
+func packageFeatureGate(id string, label string, enabled bool, evidence string, buyerValue string, paidTier string) model.TenantPackageBillingFeatureGate {
+	status := constants.StatusWatch
+	if enabled {
+		status = constants.StatusHealthy
+	}
+	return model.TenantPackageBillingFeatureGate{
+		ID:         id,
+		Label:      label,
+		Status:     status,
+		Enabled:    enabled,
+		Evidence:   evidence,
+		BuyerValue: buyerValue,
+		PaidTier:   paidTier,
+	}
+}
+
+func packageFeatureGateCounts(gates []model.TenantPackageBillingFeatureGate) (int, int) {
+	ready := 0
+	for _, gate := range gates {
+		if gate.Enabled {
+			ready++
+		}
+	}
+	return ready, len(gates)
+}
+
+func packageBillingMilestones(summary model.TenantPackageBillingSummary, retention model.RetentionTier, provider model.TenantProviderSimulationLab) []model.TenantPackageBillingMilestone {
+	return []model.TenantPackageBillingMilestone{
+		packageMilestone("plan-fit", "Plan fit", summary.BillingReady, summary.CurrentPlan, "Current plan and tenant metadata are configured.", "Keep package evidence current.", "before buyer review", constants.PlanFamilyPro),
+		packageMilestone("retention-lifecycle", "Retention lifecycle", summary.RetentionReady, firstNonEmpty(retention.Name, retention.ID), "Local TTL, S3 standard, IA, and archive lifecycle are visible.", "Confirm lifecycle proof before selling archive value.", "before archive pitch", constants.PlanFamilyPro),
+		packageMilestone("report-proof", "Report proof", summary.WeeklyReportReady, boolReady(summary.WeeklyReportReady), "Weekly report readiness is visible in dashboard and API.", "Generate report proof before renewal review.", "weekly", constants.PlanFamilyPro),
+		packageMilestone("notification-proof", "Notification proof", summary.NotificationReady, fmt.Sprintf("%d/%d feature gates ready", summary.FeatureGatesReady, summary.FeatureGatesTotal), "Alert delivery proof supports mail, push, and dashboard claims.", "Close route gaps before promising SLA.", "same day", constants.PlanFamilyPro),
+		packageMilestone("provider-proof", "Provider proof", summary.ProviderReady, fmt.Sprintf("%d simulated routes", provider.Summary.SimulatedRoutes), "Provider simulation is metadata-only and avoids provider secrets.", "Run simulation before paid demo.", "before demo", constants.PlanFamilyPro),
+		packageMilestone("trust-review", "Trust review", summary.TrustScore >= 65, fmt.Sprintf("%d%% trust score", summary.TrustScore), "Consent center, audit trail, data exports, and delete requests support trust.", "Review data-rights proof with customer.", "before billing", constants.PlanBusiness),
+	}
+}
+
+func packageMilestone(id string, title string, ready bool, detail string, evidence string, nextAction string, sla string, paidTier string) model.TenantPackageBillingMilestone {
+	status := constants.StatusWatch
+	if ready {
+		status = constants.StatusHealthy
+	}
+	return model.TenantPackageBillingMilestone{
+		ID:         id,
+		Title:      title,
+		Detail:     detail,
+		Status:     status,
+		Owner:      constants.RoleBusinessManager,
+		Evidence:   evidence,
+		NextAction: nextAction,
+		SLA:        sla,
+		PaidTier:   paidTier,
+	}
+}
+
+func packageBillingActions(summary model.TenantPackageBillingSummary, conversion []model.TenantOperationsSignal, businessActions []model.TenantBusinessDashboardAction) []model.TenantPackageBillingAction {
+	actions := make([]model.TenantPackageBillingAction, 0, 6)
+	for _, signal := range conversion {
+		if len(actions) >= 3 {
+			break
+		}
+		actions = append(actions, model.TenantPackageBillingAction{
+			Title:           signal.Title,
+			Detail:          signal.Detail,
+			Owner:           signal.Owner,
+			Status:          signal.Status,
+			PaidTier:        constants.PlanFamilyPro,
+			ConversionLever: firstNonEmpty(summary.RecommendedPackage, summary.CurrentPlan),
+			NextAction:      "Use this signal in the package review.",
+		})
+	}
+	for _, action := range businessActions {
+		if len(actions) >= 5 {
+			break
+		}
+		actions = append(actions, model.TenantPackageBillingAction{
+			Title:           action.Title,
+			Detail:          action.Detail,
+			Owner:           action.Owner,
+			Status:          action.Status,
+			PaidTier:        action.PaidTier,
+			ConversionLever: firstNonEmpty(action.Source, "business dashboard"),
+			NextAction:      "Resolve this before billing or renewal discussion.",
+		})
+	}
+	actions = append(actions, model.TenantPackageBillingAction{
+		Title:           "Package billing readiness",
+		Detail:          summary.NextBestAction,
+		Owner:           constants.RoleBusinessManager,
+		Status:          summary.Status,
+		PaidTier:        firstNonEmpty(summary.RecommendedPackage, constants.PlanFamilyPro),
+		ConversionLever: "Feature gates, billing setup metadata, notification proof, reports, and archive trust are in one buyer view.",
+		NextAction:      summary.NextBestAction,
+	})
+	return actions
+}
+
+func packageSeatUtilization(used int, included int) int {
+	if included <= 0 {
+		if used > 0 {
+			return 100
+		}
+		return 0
+	}
+	utilization := (used * 100) / included
+	if utilization > 100 {
+		return 100
+	}
+	return utilization
 }
 
 func topTenantRiskEvents(events []model.RiskEvent, limit int) []model.RiskEvent {

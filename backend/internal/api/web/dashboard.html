@@ -114,6 +114,7 @@
     .command-nav,
     .executive-console,
     .notification-revenue-cockpit,
+    .package-billing-lab,
     .growth-cockpit,
     .buyer-ops-brief,
     .paid-ops-console,
@@ -527,13 +528,15 @@
     .notification-revenue-board > .panel {
       min-width: 0;
     }
-    .provider-simulation-lab {
+    .provider-simulation-lab,
+    .package-billing-lab {
       display: grid;
       grid-template-columns: minmax(320px, 0.95fr) minmax(0, 2.05fr);
       gap: 16px;
       min-width: 0;
     }
-    .provider-simulation-lab > .panel {
+    .provider-simulation-lab > .panel,
+    .package-billing-lab > .panel {
       min-width: 0;
     }
     .notification-revenue-list {
@@ -1589,6 +1592,7 @@
       .notification-revenue-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .notification-revenue-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .provider-simulation-lab { grid-template-columns: 1fr; }
+      .package-billing-lab { grid-template-columns: 1fr; }
       .monetization-command-center { grid-template-columns: 1fr; }
       .command-center-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .command-center-board { grid-template-columns: 1fr; }
@@ -1632,6 +1636,7 @@
       .notification-revenue-kpis { grid-template-columns: 1fr; }
       .notification-revenue-board { grid-template-columns: 1fr; }
       .provider-simulation-lab { grid-template-columns: 1fr; }
+      .package-billing-lab { grid-template-columns: 1fr; }
       .notification-revenue-focus { min-height: auto; padding: 12px; }
       .notification-revenue-focus .section-head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
       .notification-revenue-focus .badge { justify-self: start; }
@@ -1918,6 +1923,74 @@
               <span id="provider-simulation-risk-count" class="pill">0 risks</span>
             </div>
             <div id="provider-simulation-privacy-list" class="notification-revenue-list"><div class="empty">No provider privacy proof yet.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="package-billing-section" class="package-billing-lab" aria-label="package billing readiness">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Package Billing Readiness</h2>
+            <p class="muted">Customer-facing package fit, billing setup metadata, feature gates, archive/report value, notification proof, and upgrade actions.</p>
+          </div>
+          <span id="package-billing-status" class="badge pending">pending</span>
+        </div>
+        <div class="brief-grid">
+          <div class="brief-item"><small>Package Score</small><strong id="package-billing-score">-</strong><span id="package-billing-score-sub" class="muted">No package proof</span></div>
+          <div class="brief-item"><small>Billing Setup</small><strong id="package-billing-ready">-</strong><span id="package-billing-ready-sub" class="muted">No billing metadata</span></div>
+          <div class="brief-item"><small>Feature Gates</small><strong id="package-billing-gates">-</strong><span id="package-billing-gates-sub" class="muted">No feature gates</span></div>
+          <div class="brief-item"><small>Seats</small><strong id="package-billing-seats">-</strong><span id="package-billing-seats-sub" class="muted">No seat proof</span></div>
+        </div>
+        <div style="margin-top: 12px;">
+          <div class="summary-line"><span>Headline</span><strong id="package-billing-headline">No tenant loaded</strong></div>
+          <div class="summary-line"><span>Next Action</span><strong id="package-billing-next">action pending</strong></div>
+          <div class="summary-line"><span>Package</span><strong id="package-billing-package">package pending</strong></div>
+          <div class="summary-line"><span>Boundary</span><strong id="package-billing-boundary">metadata-only</strong></div>
+        </div>
+      </div>
+      <div>
+        <div class="notification-revenue-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Plan Fit Matrix</h2>
+                <p class="muted">Current and upgrade package options with fit score, price model, audience, and buyer value.</p>
+              </div>
+              <span id="package-billing-plan-count" class="pill">0 plans</span>
+            </div>
+            <div id="package-billing-plan-list" class="notification-revenue-list"><div class="empty">No package plans yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Feature Gate Proof</h2>
+                <p class="muted">Billing-safe gates for archive, reports, notifications, provider proof, roles, trust, and package evidence.</p>
+              </div>
+              <span id="package-billing-feature-count" class="pill">0 gates</span>
+            </div>
+            <div id="package-billing-feature-list" class="notification-revenue-list"><div class="empty">No package feature gates yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Billing Milestones</h2>
+                <p class="muted">Plan fit, retention lifecycle, report delivery, notification proof, provider proof, and trust review.</p>
+              </div>
+              <span id="package-billing-milestone-count" class="pill">0 milestones</span>
+            </div>
+            <div id="package-billing-milestone-list" class="notification-revenue-list"><div class="empty">No billing milestones yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Upgrade Actions</h2>
+                <p class="muted">Owner actions that turn package proof, alert delivery, reports, archive, and trust into paid conversion.</p>
+              </div>
+              <span id="package-billing-action-count" class="pill">0 actions</span>
+            </div>
+            <div id="package-billing-action-list" class="notification-revenue-list"><div class="empty">No package upgrade actions yet.</div></div>
           </div>
         </div>
       </div>
@@ -2218,6 +2291,7 @@
         <button class="command-jump is-active" type="button" data-jump-target="executive-console-section">Executive<span id="nav-executive-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="notification-revenue-section">Notif Rev<span id="nav-notification-revenue-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="provider-simulation-section">Provider<span id="nav-provider-simulation-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="package-billing-section">Packages<span id="nav-package-billing-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="paid-ops-section">Paid Ops<span id="nav-paid-ops-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="revenue-section">Revenue<span id="nav-revenue-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="premium-notification-section">Notify Pro<span id="nav-premium-notification-meta">waiting</span></button>
@@ -4093,6 +4167,7 @@
       renderExecutiveConsole(context.executiveConsole);
       renderNotificationRevenueCockpit(context.notificationRevenueCockpit);
       renderProviderSimulationLab(context.providerSimulationLab);
+      renderPackageBillingReadiness(context.packageBillingReadiness);
       renderBusinessDashboard(context.businessDashboard);
       renderGrowthCockpit(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderNotificationPreferenceCenter(context.notificationPreferences);
@@ -4161,6 +4236,7 @@
       setText("nav-executive-meta", "waiting");
       setText("nav-notification-revenue-meta", "waiting");
       setText("nav-provider-simulation-meta", "waiting");
+      setText("nav-package-billing-meta", "waiting");
       setText("nav-paid-ops-meta", "waiting");
       setText("nav-revenue-meta", "waiting");
       setText("nav-premium-notification-meta", "waiting");
@@ -4213,6 +4289,8 @@
       const notificationRevenueSummary = notificationRevenue.summary || {};
       const providerSimulation = context.providerSimulationLab || {};
       const providerSimulationSummary = providerSimulation.summary || {};
+      const packageBilling = context.packageBillingReadiness || {};
+      const packageBillingSummary = packageBilling.summary || {};
       const weekly = context.weeklyReport || {};
       const alertInbox = context.alertInbox || {};
       const inboxSummary = alertInbox.summary || {};
@@ -4238,6 +4316,7 @@
       setText("nav-executive-meta", executiveSummary.readiness_score ? `${executiveSummary.readiness_score}% ready` : `${readiness}% ready`);
       setText("nav-notification-revenue-meta", notificationRevenueSummary.revenue_readiness ? `${notificationRevenueSummary.revenue_readiness}% rev` : `${deliveryScore}% proof`);
       setText("nav-provider-simulation-meta", providerSimulationSummary.readiness_score ? `${providerSimulationSummary.readiness_score}% sim` : `${routes.length || 0} routes`);
+      setText("nav-package-billing-meta", packageBillingSummary.package_score ? `${packageBillingSummary.package_score}% pkg` : packageBillingSummary.billing_status || "waiting");
       setText("nav-paid-ops-meta", `${readiness}% ready`);
       setText("nav-revenue-meta", monetization.conversion_stage || operations.customer_health || "pilot");
       setText("nav-premium-notification-meta", notificationSummary.status || `${openAlerts} alerts`);
@@ -4893,6 +4972,111 @@
           </div>
         </div>
       `;
+    }
+
+    function renderPackageBillingReadiness(readiness) {
+      const model = readiness || {};
+      const summary = model.summary || {};
+      const plans = model.plans || [];
+      const gates = model.feature_gates || [];
+      const milestones = model.milestones || [];
+      const actions = model.actions || [];
+
+      document.getElementById("package-billing-status").outerHTML =
+        badge(summary.status || "pending").replace("<span", '<span id="package-billing-status"');
+      setText("package-billing-score", summary.package_score ? `${summary.package_score}%` : "-");
+      setText("package-billing-score-sub", `${summary.revenue_stage || "stage pending"}, ${summary.trust_score || 0}% trust`);
+      setText("package-billing-ready", summary.billing_ready ? "ready" : summary.billing_status || "pending");
+      setText("package-billing-ready-sub", "billing setup metadata only");
+      setText("package-billing-gates", `${summary.feature_gates_ready || 0}/${summary.feature_gates_total || 0}`);
+      setText("package-billing-gates-sub", `${summary.retention_ready ? "retention ready" : "retention pending"}, ${summary.notification_ready ? "notification ready" : "notification pending"}`);
+      setText("package-billing-seats", `${summary.seats_used || 0}/${summary.seats_included || 0}`);
+      setText("package-billing-seats-sub", `${summary.seat_utilization || 0}% seat use`);
+      setText("package-billing-headline", summary.headline || "Package billing readiness pending");
+      setText("package-billing-next", summary.next_best_action || "Confirm package proof before buyer review.");
+      setText("package-billing-package", summary.recommended_package || model.plan_name || "package pending");
+      setText("package-billing-boundary", model.privacy_boundary ? "metadata-only billing proof" : "metadata-only");
+
+      setText("package-billing-plan-count", `${plans.length} plan${plans.length === 1 ? "" : "s"}`);
+      const planTarget = document.getElementById("package-billing-plan-list");
+      if (plans.length === 0) {
+        planTarget.innerHTML = '<div class="empty">No package plans yet.</div>';
+      } else {
+        planTarget.innerHTML = plans.map((plan) => `
+          <div class="notification-revenue-item">
+            <strong>${escapeHTML(plan.name || plan.plan_id || "Plan pending")}</strong>
+            <span class="muted">${escapeHTML(plan.value || "Package value pending.")}</span>
+            <div class="action-meta">
+              ${badge(plan.status || "pending")}
+              <span class="pill">${escapeHTML(plan.price_model || "price pending")}</span>
+              <span class="pill">${escapeHTML(plan.audience || "audience pending")}</span>
+              <span class="pill">${plan.fit_score || 0}% fit</span>
+              ${plan.current ? '<span class="pill">current</span>' : ""}
+              ${plan.recommended ? '<span class="pill">recommended</span>' : ""}
+            </div>
+            <span class="muted">${escapeHTML(plan.next_action || "Keep package evidence current.")}</span>
+          </div>
+        `).join("");
+      }
+
+      setText("package-billing-feature-count", `${gates.length} gate${gates.length === 1 ? "" : "s"}`);
+      const gateTarget = document.getElementById("package-billing-feature-list");
+      if (gates.length === 0) {
+        gateTarget.innerHTML = '<div class="empty">No package feature gates yet.</div>';
+      } else {
+        gateTarget.innerHTML = gates.slice(0, 10).map((gate) => `
+          <div class="notification-revenue-item">
+            <strong>${escapeHTML(gate.label || gate.id || "Feature gate")}</strong>
+            <span class="muted">${escapeHTML(gate.buyer_value || gate.evidence || "Buyer value pending.")}</span>
+            <div class="action-meta">
+              ${badge(gate.status || "pending")}
+              <span class="pill">${gate.enabled ? "enabled" : "pending"}</span>
+              <span class="pill">${escapeHTML(gate.paid_tier || "paid")}</span>
+            </div>
+            <span class="muted">${escapeHTML(gate.evidence || "Evidence pending.")}</span>
+          </div>
+        `).join("");
+      }
+
+      setText("package-billing-milestone-count", `${milestones.length} milestone${milestones.length === 1 ? "" : "s"}`);
+      const milestoneTarget = document.getElementById("package-billing-milestone-list");
+      if (milestones.length === 0) {
+        milestoneTarget.innerHTML = '<div class="empty">No billing milestones yet.</div>';
+      } else {
+        milestoneTarget.innerHTML = milestones.map((item) => `
+          <div class="notification-revenue-item">
+            <strong>${escapeHTML(item.title || item.id || "Milestone")}</strong>
+            <span class="muted">${escapeHTML(item.evidence || item.detail || "Milestone evidence pending.")}</span>
+            <div class="action-meta">
+              ${badge(item.status || "pending")}
+              <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+              <span class="pill">${escapeHTML(item.sla || "SLA pending")}</span>
+              <span class="pill">${escapeHTML(item.paid_tier || "paid")}</span>
+            </div>
+            <span class="muted">${escapeHTML(item.next_action || "Review before billing handoff.")}</span>
+          </div>
+        `).join("");
+      }
+
+      setText("package-billing-action-count", `${actions.length} action${actions.length === 1 ? "" : "s"}`);
+      const actionTarget = document.getElementById("package-billing-action-list");
+      if (actions.length === 0) {
+        actionTarget.innerHTML = '<div class="empty">No package upgrade actions yet.</div>';
+      } else {
+        actionTarget.innerHTML = actions.slice(0, 8).map((action) => `
+          <div class="notification-revenue-item">
+            <strong>${escapeHTML(action.title || "Package action")}</strong>
+            <span class="muted">${escapeHTML(action.detail || action.next_action || "Action detail pending.")}</span>
+            <div class="action-meta">
+              ${badge(action.status || "pending")}
+              <span class="pill">${escapeHTML(action.owner || "owner pending")}</span>
+              <span class="pill">${escapeHTML(action.paid_tier || "paid")}</span>
+              <span class="pill">${escapeHTML(action.conversion_lever || "conversion pending")}</span>
+            </div>
+            <span class="muted">${escapeHTML(action.next_action || "Use in the next package review.")}</span>
+          </div>
+        `).join("");
+      }
     }
 
     function renderBusinessDashboard(dashboard) {
@@ -7559,6 +7743,7 @@
       renderExecutiveConsole(null);
       renderNotificationRevenueCockpit(null);
       renderProviderSimulationLab(null);
+      renderPackageBillingReadiness(null);
       renderBusinessDashboard(null);
       renderCommandNavigationEmpty();
     }
@@ -7618,6 +7803,7 @@
       const executiveConsole = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/executive-console`) : null;
       const notificationRevenueCockpit = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-revenue-cockpit`) : null;
       const providerSimulationLab = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/provider-simulation-lab`) : null;
+      const packageBillingReadiness = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/package-billing-readiness`) : null;
       const notificationCommandCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-command-center`) : null;
       const deliveryTimeline = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delivery-timeline?device_id=${encodeURIComponent(overview.device.device_id)}&limit=8`) : null;
       const syncHealth = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/sync-health`) : null;
@@ -7649,6 +7835,7 @@
         executiveConsole,
         notificationRevenueCockpit,
         providerSimulationLab,
+        packageBillingReadiness,
         notificationCommandCenter,
         deliveryTimeline,
         syncHealth,

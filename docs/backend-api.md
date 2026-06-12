@@ -332,6 +332,17 @@ rejected. It does not store provider secrets, SMTP passwords, push endpoint
 payloads, alert bodies, screenshots, passwords, tokens, cookies, raw URLs, page
 titles, private content, or endpoint payloads.
 
+Phase 56 adds `GET /api/v1/tenants/{tenantId}/package-billing-readiness`.
+The response composes operations, monetisation, business dashboard, role
+experience, provider simulation, plan, and retention metadata into a typed
+buyer-facing package contract. It includes package score, billing status,
+current and recommended package, seat usage, feature gate readiness, retention
+and archive readiness, weekly report readiness, notification/provider proof,
+plan fit rows, billing milestones, upgrade actions, and a strict metadata-only
+privacy boundary. It does not collect or store payment card data, invoices,
+provider secrets, passwords, screenshots, raw URLs, page titles, alert bodies,
+tokens, cookies, private content, or endpoint payloads.
+
 Phase 31 adds `GET /api/v1/tenants/{tenantId}/sync-health` for buyer and admin
 proof that backend-visible telemetry is arriving per host. It returns reporting
 host counts, stored metadata event totals, the highest stable `local-event-*`

@@ -1,0 +1,83 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 56",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Has Package Billing Readiness",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('dashboard contains package billing markers', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('Package Billing Readiness');",
+              "  pm.expect(html).to.include('Plan Fit Matrix');",
+              "  pm.expect(html).to.include('Feature Gate Proof');",
+              "  pm.expect(html).to.include('Billing Milestones');",
+              "  pm.expect(html).to.include('data-jump-target=\"package-billing-section\"');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Package Billing Readiness",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/package-billing-readiness"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('package billing readiness exposes typed buyer proof', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.summary.package_score).to.be.above(0);",
+              "  pm.expect(body.summary.billing_status).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.summary.next_best_action).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.plans.length).to.be.at.least(4);",
+              "  pm.expect(body.feature_gates.length).to.be.at.least(8);",
+              "  pm.expect(body.milestones.length).to.be.at.least(5);",
+              "  pm.expect(body.actions.length).to.be.at.least(1);",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(body.privacy_boundary).to.include('no payment card data');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+

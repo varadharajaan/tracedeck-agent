@@ -991,6 +991,94 @@ type TenantProviderSimulationLab struct {
 	GeneratedAt     time.Time                          `json:"generated_at"`
 }
 
+type TenantPackageBillingSummary struct {
+	Status             string `json:"status"`
+	Headline           string `json:"headline"`
+	Detail             string `json:"detail"`
+	PackageScore       int    `json:"package_score"`
+	BillingStatus      string `json:"billing_status"`
+	RevenueStage       string `json:"revenue_stage"`
+	CurrentPlan        string `json:"current_plan"`
+	RecommendedPackage string `json:"recommended_package"`
+	SeatsUsed          int    `json:"seats_used"`
+	SeatsIncluded      int    `json:"seats_included"`
+	SeatUtilization    int    `json:"seat_utilization"`
+	FeatureGatesReady  int    `json:"feature_gates_ready"`
+	FeatureGatesTotal  int    `json:"feature_gates_total"`
+	UpgradeReady       bool   `json:"upgrade_ready"`
+	BillingReady       bool   `json:"billing_ready"`
+	RetentionReady     bool   `json:"retention_ready"`
+	ArchiveReady       bool   `json:"archive_ready"`
+	WeeklyReportReady  bool   `json:"weekly_report_ready"`
+	NotificationReady  bool   `json:"notification_ready"`
+	ProviderReady      bool   `json:"provider_ready"`
+	TrustScore         int    `json:"trust_score"`
+	NextBestAction     string `json:"next_best_action"`
+}
+
+type TenantPackageBillingPlan struct {
+	PlanID      string   `json:"plan_id"`
+	Name        string   `json:"name"`
+	Audience    string   `json:"audience"`
+	PriceModel  string   `json:"price_model"`
+	Status      string   `json:"status"`
+	Current     bool     `json:"current"`
+	Recommended bool     `json:"recommended"`
+	FitScore    int      `json:"fit_score"`
+	Features    []string `json:"features"`
+	Value       string   `json:"value"`
+	NextAction  string   `json:"next_action"`
+}
+
+type TenantPackageBillingFeatureGate struct {
+	ID         string `json:"id"`
+	Label      string `json:"label"`
+	Status     string `json:"status"`
+	Enabled    bool   `json:"enabled"`
+	Evidence   string `json:"evidence"`
+	BuyerValue string `json:"buyer_value"`
+	PaidTier   string `json:"paid_tier"`
+}
+
+type TenantPackageBillingMilestone struct {
+	ID         string `json:"id"`
+	Title      string `json:"title"`
+	Detail     string `json:"detail"`
+	Status     string `json:"status"`
+	Owner      string `json:"owner"`
+	Evidence   string `json:"evidence"`
+	NextAction string `json:"next_action"`
+	SLA        string `json:"sla"`
+	PaidTier   string `json:"paid_tier"`
+}
+
+type TenantPackageBillingAction struct {
+	Title           string `json:"title"`
+	Detail          string `json:"detail"`
+	Owner           string `json:"owner"`
+	Status          string `json:"status"`
+	PaidTier        string `json:"paid_tier"`
+	ConversionLever string `json:"conversion_lever"`
+	NextAction      string `json:"next_action"`
+}
+
+type TenantPackageBillingReadiness struct {
+	TenantID        string                            `json:"tenant_id"`
+	TenantName      string                            `json:"tenant_name"`
+	PlanID          string                            `json:"plan_id"`
+	PlanName        string                            `json:"plan_name"`
+	Audience        string                            `json:"audience"`
+	RetentionTierID string                            `json:"retention_tier_id"`
+	RetentionName   string                            `json:"retention_name"`
+	Summary         TenantPackageBillingSummary       `json:"summary"`
+	Plans           []TenantPackageBillingPlan        `json:"plans"`
+	FeatureGates    []TenantPackageBillingFeatureGate `json:"feature_gates"`
+	Milestones      []TenantPackageBillingMilestone   `json:"milestones"`
+	Actions         []TenantPackageBillingAction      `json:"actions"`
+	PrivacyBoundary string                            `json:"privacy_boundary"`
+	GeneratedAt     time.Time                         `json:"generated_at"`
+}
+
 type ConsentCollectionItem struct {
 	Name        string `json:"name"`
 	Status      string `json:"status"`

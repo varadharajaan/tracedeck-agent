@@ -95,3 +95,10 @@ proof only and does not send live provider payloads. It does not store SMTP
 passwords, push endpoint secrets, provider credentials, alert bodies,
 screenshots, raw URLs, page titles, cookies, tokens, private content, or
 endpoint payloads.
+
+Phase 56 package billing readiness is metadata-only. It exposes plan labels,
+feature gates, seat counts, retention tier, billing setup status, report and
+archive value, notification proof, provider simulation proof, trust/data-rights
+readiness, and upgrade actions. It does not collect or store payment card data,
+invoices, provider secrets, passwords, screenshots, raw URLs, page titles,
+alert bodies, tokens, cookies, private content, or endpoint payloads.
