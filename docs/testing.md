@@ -800,6 +800,16 @@ screenshot-free dashboard layout contract. Newman runs
 `postman/tracedeck-backend-phase64.postman_collection.json` against the same
 live demo and covers dashboard markers plus typed customer settings proof.
 
+The Phase 65 smoke live-boots the seeded dashboard, verifies Revenue Operations
+Center, Revenue Signals, Anomaly And Delivery Wall, Mail/Push/Dashboard Proof,
+Commercial Levers, Revenue Owner Actions, and Rev Ops command navigation
+markers, checks the tenant `revenue-operations-center` API, verifies revenue,
+product, notification, host, mail, dashboard, signal, alert, delivery, lever,
+owner action, and strict privacy/forbidden markers, and reruns the
+screenshot-free dashboard layout contract. Newman runs
+`postman/tracedeck-backend-phase65.postman_collection.json` against the same
+live demo and covers dashboard markers plus typed revenue operations proof.
+
 Phase 13 adds:
 
 ```powershell

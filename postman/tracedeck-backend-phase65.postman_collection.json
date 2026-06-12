@@ -1,0 +1,103 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 65",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Has Revenue Operations Center",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('dashboard contains revenue operations markers', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('Revenue Operations Center');",
+              "  pm.expect(html).to.include('Revenue Signals');",
+              "  pm.expect(html).to.include('Anomaly And Delivery Wall');",
+              "  pm.expect(html).to.include('Mail, Push, Dashboard Proof');",
+              "  pm.expect(html).to.include('Commercial Levers');",
+              "  pm.expect(html).to.include('Revenue Owner Actions');",
+              "  pm.expect(html).to.include('data-jump-target=\"revenue-operations-section\"');",
+              "  pm.expect(html).to.include('revenue-kpi-mail');",
+              "  pm.expect(html).to.include('revenue-kpi-push');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Revenue Operations Center API",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/revenue-operations-center"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('revenue operations center is typed and metadata-only', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.summary.revenue_score).to.be.above(0);",
+              "  pm.expect(body.summary.product_score).to.be.above(0);",
+              "  pm.expect(body.summary.notification_score).to.be.above(0);",
+              "  pm.expect(body.summary.owner_next_step).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.summary.hosts_total).to.be.at.least(1);",
+              "  pm.expect(body.summary.mail_delivered).to.be.at.least(1);",
+              "  pm.expect(body.summary.dashboard_delivered).to.be.at.least(1);",
+              "  pm.expect(body.signals.length).to.be.at.least(9);",
+              "  pm.expect(body.alerts.length).to.be.at.least(1);",
+              "  pm.expect(body.deliveries.length).to.be.at.least(3);",
+              "  pm.expect(body.levers.length).to.be.at.least(6);",
+              "  pm.expect(body.actions.length).to.be.at.least(1);",
+              "  ['anomaly-command', 'mail-delivery', 'push-reach', 'archive-retention', 'customer-settings', 'provider-simulation'].forEach(function (id) {",
+              "    pm.expect(body.signals.map(function (signal) { return signal.id; })).to.include(id);",
+              "  });",
+              "  ['email', 'push', 'dashboard'].forEach(function (channel) {",
+              "    pm.expect(body.deliveries.map(function (delivery) { return delivery.channel; })).to.include(channel);",
+              "  });",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(body.privacy_boundary).to.include('no passwords');",
+              "  pm.expect(body.privacy_boundary).to.include('no screenshots');",
+              "  pm.expect(body.privacy_boundary).to.include('push endpoints');",
+              "  const serialized = JSON.stringify(body).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'push_endpoint', 'screenshot_bytes', 'raw_url', 'page_title', 'alert_body', 'card_number', 'cvv', 'payment_token'].forEach(function (marker) {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -447,3 +447,19 @@ This helps monetisation because a parent, school admin, or business manager can
 see what settings are ready to turn on, what paid package those settings
 support, and what still blocks activation without exposing provider secrets,
 payment data, private content, or alert payloads.
+
+Phase 65 adds a Revenue Operations Center for monetisable daily operations:
+
+- revenue score, product score, notification score, package score, settings
+  score, onboarding score, and trust score in one buyer/admin surface
+- anomaly queue with mail, push, and dashboard delivery status
+- mail delivery, push notification, dashboard fallback, weekly report, archive,
+  setup, settings, package, and provider simulation signals
+- commercial levers for Family Pro, School, Business, push activation,
+  onboarding, customer settings, and provider proof
+- owner action queue for closing proof gaps before demos, renewals, or paid
+  activation
+
+This is the dashboard surface that should open sales and admin conversations:
+it explains what happened, whether the owner was notified, what proof is still
+missing, and which paid package/value lever the customer can buy.

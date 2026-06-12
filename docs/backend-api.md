@@ -79,6 +79,7 @@ POST /api/v1/tenants/{tenantId}/provider-simulation-lab
 GET  /api/v1/tenants/{tenantId}/package-billing-readiness
 GET  /api/v1/tenants/{tenantId}/onboarding-center
 GET  /api/v1/tenants/{tenantId}/customer-settings-center
+GET  /api/v1/tenants/{tenantId}/revenue-operations-center
 GET  /api/v1/tenants/{tenantId}/notification-command-center
 GET  /api/v1/tenants/{tenantId}/delivery-timeline
 GET  /api/v1/tenants/{tenantId}/sync-health
@@ -470,3 +471,17 @@ metadata-only privacy boundary. It does not collect or store passwords,
 screenshots, raw URLs, page titles, alert bodies, provider secrets, push
 endpoints, endpoint payloads, private content, invoices, tokens, cookies,
 payment card data, or raw provider payloads.
+
+Phase 65 adds `GET /api/v1/tenants/{tenantId}/revenue-operations-center`. It
+composes customer control, customer success, push activation, portfolio,
+onboarding, customer settings, package billing, and provider simulation
+metadata into a typed monetisation operations contract. The response includes
+revenue, product, notification, trust, package, settings, and onboarding
+scores; open/high-priority alert counts; host coverage; mail, push, and
+dashboard delivery proof; report/archive readiness; provider and billing
+readiness; revenue signal rows; anomaly/delivery wall rows; delivery route
+proof rows; commercial levers; owner actions; and a strict metadata-only
+privacy boundary. It does not collect or store passwords, screenshots, raw
+URLs, page titles, alert bodies, provider secrets, push endpoints, endpoint
+payloads, private content, invoices, tokens, cookies, payment card data, or raw
+provider payloads.

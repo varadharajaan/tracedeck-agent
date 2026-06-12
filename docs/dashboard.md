@@ -445,6 +445,15 @@ a Settings target so a buyer/admin can move from readiness proof to settings
 review without exposing payment data, provider secrets, alert bodies, raw URLs,
 or push endpoints.
 
+Phase 65 adds a Revenue Operations Center after Customer Settings. It renders
+the typed `revenue-operations-center` API as the paid-product overview:
+revenue readiness, anomaly queue, mail delivery, push notification, dashboard
+fallback, weekly report, archive retention, setup readiness, customer settings,
+package fit, provider simulation, commercial levers, and owner actions. The
+command navigation adds a Rev Ops target so demos and admin reviews can answer
+"is the product working and sellable today?" before drilling into individual
+host or route panels.
+
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
 paid customer onboarding workflows.

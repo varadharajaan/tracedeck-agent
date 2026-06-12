@@ -169,3 +169,12 @@ actions. It does not add collectors and does not store passwords, screenshots,
 raw URLs, page titles, alert bodies, provider secrets, push endpoints, endpoint
 payloads, private content, invoices, tokens, cookies, payment card data, or raw
 provider payloads.
+
+Phase 65 revenue operations center is metadata-only. It exposes tenant labels,
+host counts, anomaly categories, notification delivery proof, mail/push/
+dashboard route state, weekly report readiness, archive backlog, setup
+readiness, settings readiness, package labels, commercial levers, owner
+actions, and trust guardrails. It does not add collectors and does not store
+passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets,
+push endpoints, endpoint payloads, private content, invoices, tokens, cookies,
+payment card data, or raw provider payloads.

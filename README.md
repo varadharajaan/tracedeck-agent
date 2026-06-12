@@ -323,3 +323,14 @@ owner actions. It remains metadata-only and does not collect passwords,
 screenshots, raw URLs, page titles, alert bodies, provider secrets, push
 endpoints, endpoint payloads, private content, invoices, payment card data,
 tokens, cookies, or raw provider payloads.
+
+Phase 65 adds a typed Revenue Operations Center at
+`/api/v1/tenants/{tenantId}/revenue-operations-center` and a dashboard panel
+that makes TraceDeck feel like a monetisable endpoint productivity and risk
+observability product. It combines anomaly queue, mail delivery, push
+notification, dashboard fallback, weekly report readiness, archive retention,
+onboarding, customer settings, provider simulation, package fit, commercial
+levers, and owner actions in one surface. It remains metadata-only and does
+not collect passwords, screenshots, raw URLs, page titles, alert bodies,
+provider secrets, push endpoints, endpoint payloads, private content,
+invoices, payment card data, tokens, cookies, or raw provider payloads.

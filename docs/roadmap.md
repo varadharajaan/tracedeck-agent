@@ -265,3 +265,10 @@
     archive, autostart, role dashboard settings, privacy/data-rights settings,
     owner actions, Postman/Newman coverage, screenshot-free layout guard, docs,
     and full local verification.
+68. Phase 65: revenue operations center. Typed tenant
+    revenue-operations-center API and dashboard surface for revenue readiness,
+    anomaly queue, mail delivery proof, push notification proof, dashboard
+    fallback, weekly report readiness, archive retention, onboarding, customer
+    settings, provider proof, package fit, commercial levers, owner actions,
+    Postman/Newman coverage, screenshot-free layout guard, docs, and full local
+    verification.

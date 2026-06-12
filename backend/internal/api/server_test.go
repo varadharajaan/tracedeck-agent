@@ -2172,6 +2172,129 @@ func TestTenantCustomerSettingsCenterEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantRevenueOperationsCenterEndpoint(t *testing.T) {
+	t.Parallel()
+
+	repo := store.NewMemory()
+	handler := NewServer(repo, slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	for _, body := range [][]byte{
+		[]byte(`{
+			"tenant_id": "family-varadha",
+			"device_id": "revenue-ops-device-001",
+			"host_name": "revenue-ops-study-laptop",
+			"profile": "ai-btech-student",
+			"os_name": "windows"
+		}`),
+		[]byte(`{
+			"tenant_id": "family-varadha",
+			"device_id": "revenue-ops-device-002",
+			"host_name": "revenue-ops-lab-laptop",
+			"profile": "developer-workstation",
+			"os_name": "linux"
+		}`),
+	} {
+		enroll := httptest.NewRecorder()
+		handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(body)))
+		if enroll.Code != http.StatusCreated {
+			t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+		}
+	}
+
+	response := httptest.NewRecorder()
+	route := constants.RouteTenants + "/family-varadha/" + constants.RouteSegmentRevenueOps
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, route, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected revenue operations center 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var center model.TenantRevenueOperationsCenter
+	if err := json.Unmarshal(response.Body.Bytes(), &center); err != nil {
+		t.Fatalf("decode revenue operations center: %v", err)
+	}
+	if center.Summary.RevenueScore == 0 || center.Summary.ProductScore == 0 || center.Summary.NotificationScore == 0 || center.Summary.OwnerNextStep == "" {
+		t.Fatalf("expected scored revenue operations summary: %+v", center.Summary)
+	}
+	if center.Summary.HostsTotal < 2 || center.Summary.MailDelivered == 0 || center.Summary.DashboardDelivered == 0 || center.Summary.RecommendedPaidPackage == "" {
+		t.Fatalf("expected host, mail, dashboard, and paid package proof: %+v", center.Summary)
+	}
+	if len(center.Signals) < 9 || len(center.Alerts) == 0 || len(center.Deliveries) < 3 || len(center.Levers) < 6 || len(center.Actions) == 0 {
+		t.Fatalf("expected revenue signals, alerts, deliveries, levers, and actions: %+v", center)
+	}
+	hasAnomaly := false
+	hasMail := false
+	hasPush := false
+	hasArchive := false
+	hasSettings := false
+	hasProvider := false
+	for _, signal := range center.Signals {
+		switch signal.ID {
+		case "anomaly-command":
+			hasAnomaly = signal.Value != "" && signal.PaidTier != ""
+		case "mail-delivery":
+			hasMail = signal.Channel == constants.DeliveryChannelEmail && signal.Status != ""
+		case "push-reach":
+			hasPush = signal.Channel == constants.DeliveryChannelPush && signal.Status != ""
+		case "archive-retention":
+			hasArchive = signal.PaidTier != ""
+		case "customer-settings":
+			hasSettings = signal.Value != "" && signal.Detail != ""
+		case "provider-simulation":
+			hasProvider = signal.Value != "" && signal.Status != ""
+		}
+	}
+	if !hasAnomaly || !hasMail || !hasPush || !hasArchive || !hasSettings || !hasProvider {
+		t.Fatalf("expected anomaly, mail, push, archive, settings, and provider signals: %+v", center.Signals)
+	}
+	hasMailRoute := false
+	hasPushRoute := false
+	hasDashboardRoute := false
+	for _, delivery := range center.Deliveries {
+		if delivery.Channel == constants.DeliveryChannelEmail && delivery.NextAction != "" {
+			hasMailRoute = true
+		}
+		if delivery.Channel == constants.DeliveryChannelPush && delivery.NextAction != "" {
+			hasPushRoute = true
+		}
+		if delivery.Channel == constants.DeliveryChannelDashboard && delivery.NextAction != "" {
+			hasDashboardRoute = true
+		}
+	}
+	if !hasMailRoute || !hasPushRoute || !hasDashboardRoute {
+		t.Fatalf("expected mail, push, and dashboard route proof: %+v", center.Deliveries)
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "push_endpoint", "screenshot_bytes", "raw_url", "page_title", "alert_body", "card_number", "cvv", "payment_token"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("revenue operations center leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+	if !strings.Contains(center.PrivacyBoundary, "metadata-only") || !strings.Contains(center.PrivacyBoundary, "no passwords") || !strings.Contains(center.PrivacyBoundary, "no screenshots") || !strings.Contains(center.PrivacyBoundary, "push endpoints") {
+		t.Fatalf("expected strict revenue operations privacy boundary, got %q", center.PrivacyBoundary)
+	}
+
+	scopedHandler := NewServerWithAuth(repo, slog.Default(), AuthConfig{APIKey: "local-key", TenantID: "school-alpha"}).Handler()
+	scopedRequest := httptest.NewRequest(http.MethodGet, route, nil)
+	scopedRequest.Header.Set(constants.HeaderAPIKey, "local-key")
+	scopedResponse := httptest.NewRecorder()
+	scopedHandler.ServeHTTP(scopedResponse, scopedRequest)
+	if scopedResponse.Code != http.StatusForbidden {
+		t.Fatalf("expected tenant-scoped revenue operations route to reject another tenant, got %d: %s", scopedResponse.Code, scopedResponse.Body.String())
+	}
+}
+
 func TestTenantNotificationRevenueCockpitEndpoint(t *testing.T) {
 	t.Parallel()
 

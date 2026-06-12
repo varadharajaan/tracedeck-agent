@@ -57,6 +57,25 @@ REQUIRED_IDS = (
     "customer-settings-option-list",
     "customer-settings-channel-list",
     "customer-settings-action-list",
+    "revenue-operations-section",
+    "revenue-operations-status",
+    "revenue-operations-headline",
+    "revenue-operations-score",
+    "revenue-operations-score-bar",
+    "revenue-operations-package",
+    "revenue-operations-next",
+    "revenue-operations-privacy",
+    "revenue-kpi-alerts",
+    "revenue-kpi-mail",
+    "revenue-kpi-push",
+    "revenue-kpi-report",
+    "revenue-kpi-package",
+    "revenue-kpi-trust",
+    "revenue-signal-list",
+    "revenue-alert-list",
+    "revenue-delivery-list",
+    "revenue-lever-list",
+    "revenue-action-list",
     "executive-console-section",
     "executive-console-status",
     "executive-console-headline",
@@ -258,8 +277,8 @@ def main() -> int:
                             clientHeight: element.clientHeight
                           }));
                           checks.push({
-                            name: "command-navigation-has-nineteen-jumps",
-                            ok: jumpBoxes.length === 19,
+                            name: "command-navigation-has-twenty-jumps",
+                            ok: jumpBoxes.length === 20,
                             detail: `${jumpBoxes.length} command jump buttons`
                           });
                           for (const item of jumpBoxes) {
