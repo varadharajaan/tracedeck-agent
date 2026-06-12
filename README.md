@@ -46,6 +46,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase41.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase42.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase43.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase44.ps1
 go run ./agent/cmd/tracedeck-agent validate-config --config ./examples/policies/ai-btech-student.yaml
 go run ./agent/cmd/tracedeck-agent schema --version v1alpha1 --out ./docs/schema/policy-v1alpha1.schema.json
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-policy-schema.ps1
@@ -103,6 +104,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase4
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase42.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase43.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase43.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase44.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase44.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-service-manifests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-windows-task.ps1
 ```
@@ -117,3 +120,10 @@ delivery command, packaging snapshot, and next commercial action visible for a
 monetisation demo. The Playwright check records layout metrics only under
 `data/local/dashboard-layout/` and does not capture screenshots, video,
 credentials, or page content.
+
+Phase 44 adds provider-safe delivery drilldown. The backend exposes
+`/api/v1/tenants/{tenantId}/delivery-drilldown` for current route proof and
+dry-run rehearsals across email, push, and dashboard routes. The dashboard shows
+route score, channel readiness, route evidence, and next actions without sending
+live messages or storing provider secrets, alert bodies, endpoint payloads, or
+sensitive content.

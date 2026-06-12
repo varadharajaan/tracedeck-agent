@@ -284,6 +284,85 @@ func (m *Memory) ListNotificationRoutes(_ context.Context, tenantID string) []mo
 	return append([]model.NotificationRoute(nil), routes...)
 }
 
+func (m *Memory) TenantDeliveryDrilldown(_ context.Context, tenantID string) (model.TenantDeliveryDrilldown, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	tenant, ok := m.tenants[tenantID]
+	if !ok {
+		return model.TenantDeliveryDrilldown{}, ErrTenantNotFound
+	}
+	m.seedNotificationRoutesForTenantLocked(tenant)
+	return buildTenantDeliveryDrilldown(tenantID, m.notificationRoutes[tenantID], m.deliveriesForTenantLocked(tenantID), now, constants.DeliveryDrillModeDryRun), nil
+}
+
+func (m *Memory) RunTenantDeliveryDrilldown(_ context.Context, tenantID string, req model.RunDeliveryDrilldownRequest) (model.TenantDeliveryDrilldown, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+	channel := strings.TrimSpace(req.Channel)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	tenant, ok := m.tenants[tenantID]
+	if !ok {
+		return model.TenantDeliveryDrilldown{}, ErrTenantNotFound
+	}
+	m.seedNotificationRoutesForTenantLocked(tenant)
+
+	rehearsed := 0
+	routes := m.notificationRoutes[tenantID]
+	for index := range routes {
+		if channel != "" && routes[index].Channel != channel {
+			continue
+		}
+		if !routes[index].Enabled {
+			routes[index].Status = constants.StatusWatch
+			routes[index].LastSummary = "Dry-run rehearsal skipped because the route is disabled."
+			routes[index].UpdatedAt = now
+			continue
+		}
+		if !deliveryProviderMatchesChannel(routes[index].Provider, routes[index].Channel) {
+			routes[index].Status = constants.StatusAttention
+			routes[index].LastSummary = "Dry-run rehearsal detected a provider/channel mismatch."
+			routes[index].UpdatedAt = now
+			rehearsed++
+			continue
+		}
+		routes[index].Status = constants.StatusHealthy
+		routes[index].LastVerifiedAt = &now
+		routes[index].LastSummary = "Dry-run rehearsal passed without sending provider payloads or storing message content."
+		routes[index].UpdatedAt = now
+		rehearsed++
+	}
+	m.notificationRoutes[tenantID] = routes
+	m.auditEvents = append(m.auditEvents, model.AuditEvent{
+		ID:        auditID(tenantID, len(m.auditEvents)+1, now),
+		TenantID:  tenantID,
+		Category:  constants.AuditCategorySystem,
+		Action:    constants.AuditActionDeliveryDrillRun,
+		Actor:     constants.AuditActorLocalAPI,
+		ActorRole: constants.RoleBusinessManager,
+		Summary:   fmt.Sprintf("delivery drilldown dry-run rehearsed %d route(s)", rehearsed),
+		CreatedAt: now,
+	})
+	if err := m.persistLocked(); err != nil {
+		return model.TenantDeliveryDrilldown{}, err
+	}
+	return buildTenantDeliveryDrilldown(tenantID, m.notificationRoutes[tenantID], m.deliveriesForTenantLocked(tenantID), now, constants.DeliveryDrillModeDryRun), nil
+}
+
+func (m *Memory) deliveriesForTenantLocked(tenantID string) []model.AlertDelivery {
+	deliveries := make([]model.AlertDelivery, 0)
+	for _, device := range m.devices {
+		if device.TenantID == tenantID {
+			deliveries = append(deliveries, m.alertDeliveries[device.DeviceID]...)
+		}
+	}
+	return deliveries
+}
+
 func (m *Memory) CreateTenantActivityView(_ context.Context, tenantID string, req model.CreateTenantActivityViewRequest) (model.TenantActivityView, error) {
 	now := time.Now().UTC()
 	tenantID = strings.TrimSpace(tenantID)
@@ -3199,6 +3278,206 @@ func topTenantDeliveryProblem(deliveries []model.AlertDelivery) *model.AlertDeli
 		}
 	}
 	return top
+}
+
+func buildTenantDeliveryDrilldown(tenantID string, routes []model.NotificationRoute, deliveries []model.AlertDelivery, generatedAt time.Time, mode string) model.TenantDeliveryDrilldown {
+	routes = append([]model.NotificationRoute(nil), routes...)
+	sort.Slice(routes, func(i, j int) bool {
+		if routes[i].Channel != routes[j].Channel {
+			return routes[i].Channel < routes[j].Channel
+		}
+		return routes[i].CreatedAt.Before(routes[j].CreatedAt)
+	})
+
+	items := make([]model.TenantDeliveryDrilldownRoute, 0, len(routes))
+	summary := model.TenantDeliveryDrilldownSummary{
+		RoutesTotal:   len(routes),
+		RehearsalMode: mode,
+	}
+	actions := make([]model.TenantOperationsSignal, 0, len(routes))
+	for _, route := range routes {
+		latest := latestDeliveryForRoute(deliveries, route)
+		item := deliveryDrilldownRoute(route, latest)
+		items = append(items, item)
+
+		if route.Enabled {
+			summary.EnabledRoutes++
+		}
+		if route.Status == constants.StatusHealthy {
+			summary.HealthyRoutes++
+		}
+		if item.ProofState != "customer_proof" && item.ProofState != "rehearsed" {
+			summary.RoutesNeedingProof++
+			actions = append(actions, model.TenantOperationsSignal{
+				Title:      titleWord(route.Channel) + " delivery proof needed",
+				Detail:     item.NextAction,
+				Severity:   constants.SeverityMedium,
+				Channel:    route.Channel,
+				Status:     item.RouteStatus,
+				Owner:      route.RecipientLabel,
+				ObservedAt: generatedAt,
+			})
+		}
+		if route.LastVerifiedAt != nil {
+			if summary.LastRehearsedAt == nil || route.LastVerifiedAt.After(*summary.LastRehearsedAt) {
+				verifiedAt := *route.LastVerifiedAt
+				summary.LastRehearsedAt = &verifiedAt
+			}
+		}
+		switch route.Channel {
+		case constants.DeliveryChannelEmail:
+			summary.EmailReady = item.ProofState == "customer_proof" || item.ProofState == "rehearsed"
+		case constants.DeliveryChannelPush:
+			summary.PushReady = item.ProofState == "customer_proof" || item.ProofState == "rehearsed"
+		case constants.DeliveryChannelDashboard:
+			summary.DashboardReady = item.ProofState == "customer_proof" || item.ProofState == "rehearsed"
+		}
+	}
+	if summary.RoutesTotal > 0 {
+		summary.DeliveryScore = (summary.HealthyRoutes * 100) / summary.RoutesTotal
+	}
+	if len(actions) == 0 {
+		actions = append(actions, model.TenantOperationsSignal{
+			Title:      "Delivery proof is rehearsal-ready",
+			Detail:     "Email, push, and dashboard routes have content-safe proof for a paid demo.",
+			Severity:   constants.SeverityInfo,
+			Channel:    constants.DeliveryChannelDashboard,
+			Status:     constants.StatusHealthy,
+			Owner:      constants.RoleBusinessManager,
+			ObservedAt: generatedAt,
+		})
+	}
+	return model.TenantDeliveryDrilldown{
+		TenantID:        tenantID,
+		GeneratedAt:     generatedAt,
+		PrivacyBoundary: constants.DeliveryDrillPrivacyNote,
+		Summary:         summary,
+		Routes:          items,
+		Actions:         actions,
+	}
+}
+
+func deliveryDrilldownRoute(route model.NotificationRoute, delivery *model.AlertDelivery) model.TenantDeliveryDrilldownRoute {
+	item := model.TenantDeliveryDrilldownRoute{
+		RouteID:        route.ID,
+		Channel:        route.Channel,
+		Provider:       route.Provider,
+		RecipientLabel: route.RecipientLabel,
+		Enabled:        route.Enabled,
+		RouteStatus:    route.Status,
+		LastVerifiedAt: route.LastVerifiedAt,
+		ProofState:     deliveryProofState(route, delivery),
+		SLA:            deliveryDrilldownSLA(route.Channel),
+		Evidence:       firstNonEmpty(route.LastSummary, "Route metadata is present without provider secrets."),
+	}
+	if delivery != nil {
+		item.LatestDeliveryStatus = delivery.Status
+		item.LatestDeliveryAt = &delivery.LastAttemptAt
+		item.Attempts = delivery.Attempts
+		item.Evidence = firstNonEmpty(delivery.Summary, route.LastSummary, "Latest delivery metadata is visible.")
+	} else {
+		item.LatestDeliveryStatus = constants.DeliveryStatusPending
+	}
+	item.RehearsalResult = deliveryRehearsalResult(route, delivery)
+	item.NextAction = deliveryDrilldownNextAction(route, delivery, item.ProofState)
+	return item
+}
+
+func latestDeliveryForRoute(deliveries []model.AlertDelivery, route model.NotificationRoute) *model.AlertDelivery {
+	var latest *model.AlertDelivery
+	for index := range deliveries {
+		if deliveries[index].Channel != route.Channel {
+			continue
+		}
+		if strings.TrimSpace(route.Provider) != "" && deliveries[index].Provider != route.Provider {
+			continue
+		}
+		if latest == nil || deliveries[index].LastAttemptAt.After(latest.LastAttemptAt) {
+			current := deliveries[index]
+			latest = &current
+		}
+	}
+	return latest
+}
+
+func deliveryProofState(route model.NotificationRoute, delivery *model.AlertDelivery) string {
+	switch {
+	case !route.Enabled:
+		return "disabled"
+	case !deliveryProviderMatchesChannel(route.Provider, route.Channel):
+		return "provider_mismatch"
+	case delivery != nil && delivery.Status == constants.DeliveryStatusDelivered:
+		return "customer_proof"
+	case route.Status == constants.StatusHealthy && route.LastVerifiedAt != nil:
+		return "rehearsed"
+	case delivery != nil && (delivery.Status == constants.DeliveryStatusRetrying || delivery.Status == constants.DeliveryStatusFailed):
+		return "needs_provider_attention"
+	default:
+		return "needs_delivery_proof"
+	}
+}
+
+func deliveryRehearsalResult(route model.NotificationRoute, delivery *model.AlertDelivery) string {
+	switch deliveryProofState(route, delivery) {
+	case "customer_proof":
+		return "latest metadata shows delivered route proof"
+	case "rehearsed":
+		return "dry-run route rehearsal passed without provider payloads"
+	case "disabled":
+		return "route disabled; rehearsal skipped"
+	case "provider_mismatch":
+		return "provider/channel mismatch blocks rehearsal"
+	case "needs_provider_attention":
+		return "latest provider metadata needs retry or verification"
+	default:
+		return "dry-run rehearsal available"
+	}
+}
+
+func deliveryDrilldownNextAction(route model.NotificationRoute, delivery *model.AlertDelivery, proofState string) string {
+	switch proofState {
+	case "customer_proof":
+		return "Use latest delivery metadata as buyer proof."
+	case "rehearsed":
+		return "Send a real proof notification when production provider credentials are configured."
+	case "disabled":
+		return "Enable this route before relying on it for anomaly alerts."
+	case "provider_mismatch":
+		return "Fix the provider/channel pairing before rehearsal."
+	case "needs_provider_attention":
+		if delivery != nil {
+			return firstNonEmpty(delivery.LastError, delivery.Summary, "Review retry timing and provider status.")
+		}
+		return "Review retry timing and provider status."
+	default:
+		return "Run a dry-run delivery drilldown before a paid demo."
+	}
+}
+
+func deliveryDrilldownSLA(channel string) string {
+	switch channel {
+	case constants.DeliveryChannelEmail:
+		return "critical email proof within 5 minutes"
+	case constants.DeliveryChannelPush:
+		return "push proof within 60 seconds"
+	case constants.DeliveryChannelDashboard:
+		return "dashboard inbox proof immediately"
+	default:
+		return "route proof pending"
+	}
+}
+
+func deliveryProviderMatchesChannel(provider string, channel string) bool {
+	switch channel {
+	case constants.DeliveryChannelEmail:
+		return provider == constants.DeliveryProviderSMTP
+	case constants.DeliveryChannelPush:
+		return provider == constants.DeliveryProviderWebPush
+	case constants.DeliveryChannelDashboard:
+		return provider == constants.DeliveryProviderLocalFeed
+	default:
+		return false
+	}
 }
 
 func topTenantRiskEvents(events []model.RiskEvent, limit int) []model.RiskEvent {

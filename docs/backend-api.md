@@ -208,6 +208,19 @@ They store channel, provider, enabled state, status, recipient label, route
 summary, and verification timestamp. They do not store SMTP passwords, API
 keys, push endpoint secrets, auth tokens, or raw message content.
 
+Phase 44 adds provider-safe delivery drilldown APIs:
+
+- `GET /api/v1/tenants/{tenantId}/delivery-drilldown`
+- `POST /api/v1/tenants/{tenantId}/delivery-drilldown`
+
+The `GET` route returns a typed route score, channel readiness flags, per-route
+proof state, latest delivery metadata, dry-run rehearsal result, SLA wording,
+and next actions for email, push, and dashboard routes. The `POST` route accepts
+`mode: "dry_run"` with an optional `channel` filter and updates route
+verification metadata plus an audit event. It never sends live provider
+messages and never stores SMTP passwords, push endpoint secrets, alert bodies,
+tokens, cookies, screenshots, or endpoint payloads.
+
 Phase 31 adds `GET /api/v1/tenants/{tenantId}/sync-health` for buyer and admin
 proof that backend-visible telemetry is arriving per host. It returns reporting
 host counts, stored metadata event totals, the highest stable `local-event-*`

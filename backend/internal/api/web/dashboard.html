@@ -1348,6 +1348,39 @@
       </div>
     </section>
 
+    <section id="delivery-drilldown-section" class="content-grid" aria-label="provider-safe delivery drilldown">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Provider-Safe Delivery Drilldown</h2>
+            <p class="muted">Dry-run proof for email, push, and dashboard routes without provider secrets, alert bodies, or endpoint payloads.</p>
+          </div>
+          <span id="delivery-drill-status" class="badge pending">pending</span>
+        </div>
+        <div class="brief-grid">
+          <div class="brief-item"><small>Route Score</small><strong id="delivery-drill-score">-</strong><span id="delivery-drill-score-sub" class="muted">No delivery drilldown</span></div>
+          <div class="brief-item"><small>Email</small><strong id="delivery-drill-email">-</strong><span id="delivery-drill-email-sub" class="muted">No email rehearsal</span></div>
+          <div class="brief-item"><small>Push</small><strong id="delivery-drill-push">-</strong><span id="delivery-drill-push-sub" class="muted">No push rehearsal</span></div>
+          <div class="brief-item"><small>Dashboard</small><strong id="delivery-drill-dashboard">-</strong><span id="delivery-drill-dashboard-sub" class="muted">No dashboard rehearsal</span></div>
+        </div>
+        <div class="summary-list" style="margin-top: 12px;">
+          <div class="summary-line"><span>Boundary</span><strong id="delivery-drill-boundary">metadata-only dry run</strong></div>
+          <div class="summary-line"><span>Last Run</span><strong id="delivery-drill-last-run">-</strong></div>
+        </div>
+        <div id="delivery-drill-route-list" class="buyer-ops-list" style="margin-top: 12px;"><div class="empty">No delivery drilldown routes yet.</div></div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Delivery Rehearsal Actions</h2>
+            <p class="muted">Next steps before a customer demo or paid notification SLA promise.</p>
+          </div>
+          <span id="delivery-drill-action-count" class="pill">0 actions</span>
+        </div>
+        <div id="delivery-drill-action-list" class="action-list"><div class="empty">No delivery rehearsal actions yet.</div></div>
+      </div>
+    </section>
+
     <section id="commercial-section" class="commercial-room" aria-label="commercial control room">
       <div class="commercial-hero">
         <div class="section-head">
@@ -2757,6 +2790,7 @@
       renderMonetizationSummary(context.monetizationSummary);
       renderCommercialControlRoom(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderBuyerMonetizationConsole(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
+      renderDeliveryDrilldown(context.deliveryDrilldown);
       renderMonetisationLaunchDeck(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderRevenueCommandSuite(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderBuyerAssuranceWall(overview, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
@@ -4180,6 +4214,66 @@
       `).join("");
     }
 
+    function renderDeliveryDrilldown(drilldown) {
+      const model = drilldown || {};
+      const summary = model.summary || {};
+      const routes = model.routes || [];
+      const actions = model.actions || [];
+      const score = Number(summary.delivery_score || 0);
+      const status = score >= 80 ? "healthy" : score >= 50 ? "watch" : "attention";
+
+      document.getElementById("delivery-drill-status").outerHTML =
+        badge(routes.length > 0 ? status : "pending").replace("<span", '<span id="delivery-drill-status"');
+      setText("delivery-drill-score", routes.length > 0 ? `${score}%` : "-");
+      setText("delivery-drill-score-sub", `${summary.healthy_routes || 0}/${summary.routes_total || 0} routes healthy, ${summary.routes_needing_proof || 0} need proof`);
+      setText("delivery-drill-email", summary.email_ready ? "ready" : "needs proof");
+      setText("delivery-drill-email-sub", "critical email proof within 5 minutes");
+      setText("delivery-drill-push", summary.push_ready ? "ready" : "needs proof");
+      setText("delivery-drill-push-sub", "push proof within 60 seconds");
+      setText("delivery-drill-dashboard", summary.dashboard_ready ? "ready" : "needs proof");
+      setText("delivery-drill-dashboard-sub", "dashboard inbox proof immediately");
+      setText("delivery-drill-boundary", model.privacy_boundary || "metadata-only dry run");
+      setText("delivery-drill-last-run", summary.last_rehearsed_at ? formatDate(summary.last_rehearsed_at) : "not rehearsed");
+
+      const routeTarget = document.getElementById("delivery-drill-route-list");
+      if (routes.length === 0) {
+        routeTarget.innerHTML = '<div class="empty">No delivery drilldown routes yet.</div>';
+      } else {
+        routeTarget.innerHTML = routes.map((route) => `
+          <div class="buyer-ops-list-item">
+            <strong>${escapeHTML(capitalize(route.channel))} - ${escapeHTML(route.provider || "provider pending")}</strong>
+            <span class="muted">${escapeHTML(route.evidence || route.rehearsal_result || "metadata-only route proof pending")}</span>
+            <div class="action-meta">
+              ${badge(route.route_status || "pending")}
+              ${badge(route.proof_state || "needs_delivery_proof")}
+              <span class="pill">${escapeHTML(route.recipient_label || "recipient label pending")}</span>
+              <span class="pill">${escapeHTML(route.sla || "sla pending")}</span>
+            </div>
+            <span class="muted">${escapeHTML(route.next_action || "Run a dry-run delivery drilldown.")}</span>
+          </div>
+        `).join("");
+      }
+
+      setText("delivery-drill-action-count", `${actions.length} action${actions.length === 1 ? "" : "s"}`);
+      const actionTarget = document.getElementById("delivery-drill-action-list");
+      if (actions.length === 0) {
+        actionTarget.innerHTML = '<div class="empty">No delivery rehearsal actions yet.</div>';
+        return;
+      }
+      actionTarget.innerHTML = actions.slice(0, 5).map((action) => `
+        <div class="action-item">
+          <strong>${escapeHTML(action.title)}</strong>
+          <span class="muted">${escapeHTML(action.detail)}</span>
+          <div class="action-meta">
+            ${badge(action.severity || "info")}
+            ${badge(action.status || "watch")}
+            <span class="pill">${escapeHTML(action.channel || "dashboard")}</span>
+            <span class="pill">${escapeHTML(action.owner || "owner pending")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
     function renderTelemetryStatus(status) {
       const model = status || {};
       const stored = Number(model.stored_events || 0);
@@ -4721,6 +4815,7 @@
       const deviceGroups = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/device-groups`) : null;
       const policyAssignments = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/policy-assignments`) : null;
       const notificationRoutes = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-routes`) : null;
+      const deliveryDrilldown = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delivery-drilldown`) : null;
       const telemetryStatus = await loadOptionalJSON(`${base}/telemetry-status`);
       const consentCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/consent-center`) : null;
       const alertInbox = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/alert-inbox`) : null;
@@ -4742,6 +4837,7 @@
         deviceGroups,
         policyAssignments,
         notificationRoutes,
+        deliveryDrilldown,
         telemetryStatus,
         consentCenter,
         alertInbox,

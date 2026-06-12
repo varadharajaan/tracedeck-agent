@@ -203,6 +203,9 @@ Current panels:
   delivery proof, push notification dispatch, weekly report delivery, archive
   retention, trust/audit, delivery command, packaging snapshot, and next
   commercial action surfaced before the deeper panels
+- provider-safe delivery drilldown for email, push, and dashboard dry-run
+  rehearsal, route score, channel readiness, route evidence, and next actions
+  without provider secrets or alert bodies
 
 API-provided text is escaped before rendering.
 
@@ -252,6 +255,12 @@ routes, package fit, and next customer action in one surface. The phase also
 adds a Playwright layout contract that checks desktop, tablet, and mobile
 metrics only. It does not capture screenshots, video, credentials, or page
 content.
+
+Phase 44 adds Provider-Safe Delivery Drilldown panels. They render the tenant
+delivery-drilldown API: route score, email/push/dashboard readiness, privacy
+boundary, per-route rehearsal evidence, SLA promise, and next actions. Dry-run
+rehearsal is metadata-only and does not send live provider messages, store
+provider secrets, or persist alert body content.
 
 A future frontend phase can move this surface to a richer application shell with
 role-specific onboarding, no-code alert rule editing, weekly report drilldowns,

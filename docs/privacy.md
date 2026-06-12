@@ -29,3 +29,9 @@ Playwright helper checks viewport overflow, required panel visibility, command
 navigation targets, and text fit, then writes a JSON report under
 `data/local/dashboard-layout/`. It does not capture screenshots, videos,
 credentials, raw page content, browser history, or personal data.
+
+Phase 44 delivery drilldown is metadata-only. Dry-run rehearsals update route
+verification status, route summary, and audit metadata only. They do not send
+live email or push payloads, and they do not collect or store provider secrets,
+alert bodies, endpoint payloads, passwords, tokens, cookies, screenshots, or
+private content.
