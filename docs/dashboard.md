@@ -28,6 +28,10 @@ and retention plan panels. Phase 16 adds an explicit buyer-facing operations
 layer for anomaly notification inbox, mail delivery center, push routing, alert
 route SLA details, and paid packaging cues. It remains a lightweight static
 HTML/CSS/JavaScript asset embedded into the backend binary.
+Phase 18 upgrades the first screen into a product-grade command center with a
+priority action board, notification promise, commercial readiness score, trust
+coverage, executive briefing, and notification action queue before the deeper
+technical tables.
 
 The dashboard reads the base backend endpoints:
 
@@ -53,6 +57,13 @@ For the selected host it reads:
 Current panels:
 
 - host filter and host identity
+- priority action board for the highest-value intervention
+- notification promise for email, push, and dashboard delivery status
+- commercial readiness score for Family Pro, school, and business packaging
+- trust coverage across agent, archive, delivery, and audit signals
+- executive briefing for top risk, study signal, alert outcome, and archive
+  trust
+- notification action queue for delivery retries and open risk events
 - compliance score, risk score, device health, policy, anomaly, tamper, and
   delivery metrics
 - study/coding/entertainment activity mix
