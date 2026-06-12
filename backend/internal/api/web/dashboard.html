@@ -18,6 +18,7 @@
       --amber: #b54708;
       --red: #b42318;
       --blue: #175cd3;
+      --purple: #6941c6;
       --shadow: 0 10px 28px rgba(24, 33, 47, 0.08);
     }
     * { box-sizing: border-box; }
@@ -125,7 +126,7 @@
     }
     .metric-grid {
       display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
       gap: 12px;
     }
     .content-grid {
@@ -214,6 +215,76 @@
     .badge.low, .badge.info, .badge.delivered, .badge.resolved { color: var(--green); background: #ecfdf3; border-color: #abefc6; }
     .badge.open { color: var(--red); background: #fff4f2; border-color: #fecdca; }
     .badge.acknowledged { color: var(--blue); background: #eff8ff; border-color: #b2ddff; }
+    .badge.healthy { color: var(--green); background: #ecfdf3; border-color: #abefc6; }
+    .badge.watch { color: var(--amber); background: #fffaeb; border-color: #fedf89; }
+    .badge.attention { color: var(--red); background: #fff4f2; border-color: #fecdca; }
+    .signal-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .signal {
+      min-height: 76px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+      display: grid;
+      align-content: space-between;
+      gap: 8px;
+    }
+    .signal strong {
+      font-size: 18px;
+      line-height: 1;
+      overflow-wrap: anywhere;
+    }
+    .signal small {
+      color: var(--muted);
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+    .score-row {
+      display: grid;
+      gap: 7px;
+      margin-top: 10px;
+    }
+    .score-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+    }
+    .score-track {
+      height: 8px;
+      border-radius: 999px;
+      background: #eef1f5;
+      overflow: hidden;
+    }
+    .score-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--teal);
+    }
+    .score-fill.warn { background: var(--amber); }
+    .score-fill.bad { background: var(--red); }
+    .catalog-list {
+      display: grid;
+      gap: 8px;
+    }
+    .catalog-item {
+      display: grid;
+      gap: 4px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+    }
+    .catalog-item strong, .catalog-item span {
+      overflow-wrap: anywhere;
+    }
     .timeline {
       display: grid;
       gap: 10px;
@@ -280,6 +351,7 @@
       .toolbar { justify-content: stretch; }
       select, button { width: 100%; }
       .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .signal-grid { grid-template-columns: 1fr; }
       .kv div { grid-template-columns: 1fr; }
       main { width: min(100vw - 20px, 1400px); }
     }
@@ -301,6 +373,7 @@
     <section class="metric-grid" aria-label="host metrics">
       <div class="metric"><span class="muted">Compliance</span><strong id="metric-compliance">-</strong><small id="metric-compliance-sub">No host selected</small></div>
       <div class="metric"><span class="muted">Risk Score</span><strong id="metric-risk">-</strong><small id="metric-risk-sub">Risk level</small></div>
+      <div class="metric"><span class="muted">Device Health</span><strong id="metric-health">-</strong><small id="metric-health-sub">Endpoint score</small></div>
       <div class="metric"><span class="muted">Policy</span><strong id="metric-policy">-</strong><small>Open policy violations</small></div>
       <div class="metric"><span class="muted">Anomalies</span><strong id="metric-anomalies">-</strong><small>Behavior and software drift</small></div>
       <div class="metric"><span class="muted">Tamper</span><strong id="metric-tamper">-</strong><small>Trust and service health</small></div>
@@ -351,6 +424,39 @@
             <div><span>Last Key</span><strong id="archive-key">-</strong></div>
           </div>
         </div>
+        <div>
+          <div class="section-head">
+            <h2>Device Health</h2>
+            <span id="health-status" class="badge pending">pending</span>
+          </div>
+          <div class="kv">
+            <div><span>Heartbeat</span><strong id="health-heartbeat">-</strong></div>
+            <div><span>Battery</span><strong id="health-battery">-</strong></div>
+            <div><span>Startup</span><strong id="health-startup">-</strong></div>
+            <div><span>Crashes</span><strong id="health-crashes">-</strong></div>
+          </div>
+          <div class="score-row">
+            <div class="score-meta"><span>CPU</span><span id="health-cpu">-</span></div>
+            <div class="score-track"><div id="health-cpu-bar" class="score-fill"></div></div>
+            <div class="score-meta"><span>Memory</span><span id="health-memory">-</span></div>
+            <div class="score-track"><div id="health-memory-bar" class="score-fill"></div></div>
+            <div class="score-meta"><span>Disk</span><span id="health-disk">-</span></div>
+            <div class="score-track"><div id="health-disk-bar" class="score-fill"></div></div>
+          </div>
+          <p id="health-recommendation" class="muted">No health recommendation yet.</p>
+        </div>
+        <div>
+          <div class="section-head">
+            <h2>Plan Readiness</h2>
+            <span id="tenant-plan-badge" class="badge info">local</span>
+          </div>
+          <div class="kv">
+            <div><span>Tenant</span><strong id="tenant-name">-</strong></div>
+            <div><span>Plan</span><strong id="tenant-plan">-</strong></div>
+            <div><span>Retention</span><strong id="tenant-retention">-</strong></div>
+            <div><span>Devices</span><strong id="tenant-devices">-</strong></div>
+          </div>
+        </div>
       </aside>
 
       <div class="stack">
@@ -378,6 +484,39 @@
                 <thead><tr><th>Channel</th><th>Status</th><th>Recipient</th><th>Attempts</th></tr></thead>
                 <tbody id="delivery-table"><tr><td colspan="4" class="muted">No alert deliveries yet.</td></tr></tbody>
               </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-grid">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Notification Operations</h2>
+                <p class="muted">Mail, push, dashboard feed, and retries</p>
+              </div>
+              <span id="notification-health" class="badge pending">pending</span>
+            </div>
+            <div class="signal-grid">
+              <div class="signal"><small>Email</small><strong id="notify-email">-</strong><span id="notify-email-sub" class="muted">No route</span></div>
+              <div class="signal"><small>Push</small><strong id="notify-push">-</strong><span id="notify-push-sub" class="muted">No route</span></div>
+              <div class="signal"><small>Dashboard Feed</small><strong id="notify-dashboard">-</strong><span id="notify-dashboard-sub" class="muted">No route</span></div>
+              <div class="signal"><small>Retry Queue</small><strong id="notify-retry">-</strong><span id="notify-retry-sub" class="muted">No retries</span></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Product Packaging</h2>
+                <p class="muted">Paid feature readiness for family, school, and business</p>
+              </div>
+              <span id="catalog-count" class="pill">0 templates</span>
+            </div>
+            <div class="signal-grid">
+              <div class="signal"><small>Weekly Report</small><strong id="weekly-report">-</strong><span id="weekly-report-sub" class="muted">Not generated</span></div>
+              <div class="signal"><small>Policy Marketplace</small><strong id="template-count">-</strong><span id="template-sub" class="muted">Templates</span></div>
+              <div class="signal"><small>Role Views</small><strong id="role-count">-</strong><span id="role-sub" class="muted">Dashboards</span></div>
+              <div class="signal"><small>Audit Center</small><strong id="audit-count">-</strong><span id="audit-sub" class="muted">Changes</span></div>
             </div>
           </div>
         </section>
@@ -430,16 +569,68 @@
             </table>
           </div>
         </section>
+
+        <section class="content-grid">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Policy Template Marketplace</h2>
+                <p class="muted">Reusable packages for monetised customer segments</p>
+              </div>
+              <span id="marketplace-count" class="pill">0 templates</span>
+            </div>
+            <div id="marketplace-list" class="catalog-list"><div class="empty">No policy templates yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Retention And Archive Plans</h2>
+                <p class="muted">Local TTL, S3 standard, IA, and archive packaging</p>
+              </div>
+              <span id="retention-count" class="pill">0 tiers</span>
+            </div>
+            <div id="retention-list" class="catalog-list"><div class="empty">No retention tiers yet.</div></div>
+          </div>
+        </section>
       </div>
     </section>
   </main>
   <script>
+    const API = Object.freeze({
+      health: "/health",
+      devices: "/api/v1/devices",
+      plans: "/api/v1/plans",
+      roles: "/api/v1/roles",
+      retentionTiers: "/api/v1/retention-tiers",
+      auditEvents: "/api/v1/audit-events",
+      policyTemplates: "/api/v1/policy-templates"
+    });
+    const CHANNEL = Object.freeze({
+      email: "email",
+      push: "push",
+      dashboard: "dashboard"
+    });
+    const DELIVERY_STATUS = Object.freeze({
+      delivered: "delivered",
+      retrying: "retrying",
+      failed: "failed",
+      pending: "pending"
+    });
     const state = { devices: [], selectedDeviceId: "" };
 
     async function loadJSON(path) {
       const response = await fetch(path);
       if (!response.ok) throw new Error(path + " failed with " + response.status);
       return response.json();
+    }
+
+    async function loadOptionalJSON(path) {
+      try {
+        return await loadJSON(path);
+      } catch (error) {
+        console.warn(path + " optional load failed", error);
+        return null;
+      }
     }
 
     function text(value) {
@@ -486,6 +677,18 @@
       document.getElementById(id).style.width = Math.max(0, Math.min(100, percent)) + "%";
     }
 
+    function setPercentBar(id, value) {
+      const percent = Math.max(0, Math.min(100, Number(value || 0)));
+      const element = document.getElementById(id);
+      element.style.width = percent + "%";
+      element.classList.toggle("warn", percent >= 70 && percent < 85);
+      element.classList.toggle("bad", percent >= 85);
+    }
+
+    function formatPercent(value) {
+      return `${Number(value || 0).toFixed(1)}%`;
+    }
+
     function rowDetail(event) {
       return event.app_name || event.domain || event.resource_label || event.source || "-";
     }
@@ -505,16 +708,19 @@
       state.selectedDeviceId = select.value;
     }
 
-    function renderOverview(overview, policy, anomalies, tamper, deliveries) {
+    function renderOverview(overview, health, policy, anomalies, tamper, deliveries, context) {
       const device = overview.device;
       const summary = overview.summary;
-      const delivered = deliveries.items.filter((item) => item.status === "delivered").length;
+      const delivered = deliveries.items.filter((item) => item.status === DELIVERY_STATUS.delivered).length;
       const deliveryIssues = deliveries.items.length - delivered;
+      const healthModel = health || overview.health || {};
 
       setMetric("metric-compliance", summary.compliance_score, "%");
       setText("metric-compliance-sub", `${summary.data_completeness_pct}% data completeness`);
       setText("metric-risk", overview.risk_score);
       setText("metric-risk-sub", `${overview.risk_level} risk`);
+      setMetric("metric-health", healthModel.score, "%");
+      setText("metric-health-sub", `${healthModel.status || "unknown"} endpoint health`);
       setText("metric-policy", policy.count);
       setText("metric-anomalies", anomalies.count);
       setText("metric-tamper", tamper.count);
@@ -541,6 +747,12 @@
       setText("archive-backlog", overview.archive.pending_batches + " batches");
       setText("archive-key", overview.archive.last_uploaded_key);
 
+      renderDeviceHealth(healthModel);
+      renderTenantPlan(device, context);
+      renderNotificationOperations(deliveries.items);
+      renderProductPackaging(context);
+      renderMarketplace(context.templates);
+      renderRetentionTiers(context.retentionTiers);
       renderTimeline(policy.items.concat(anomalies.items, tamper.items));
       renderRiskTable("policy-table", policy.items, ["severity", "category", "source", "reason", "status"]);
       renderRiskTable("anomaly-table", anomalies.items, ["severity", "category", "source", "reason"]);
@@ -553,6 +765,114 @@
       setText("delivery-count", `${deliveries.count} routes`);
       document.getElementById("metric-delivery").nextElementSibling.textContent =
         deliveryIssues === 0 ? "All routes delivered" : `${deliveryIssues} route needs attention`;
+    }
+
+    function renderDeviceHealth(health) {
+      document.getElementById("health-status").outerHTML = badge(health.status || "pending").replace("<span", '<span id="health-status"');
+      setText("health-heartbeat", health.agent_healthy ? `healthy, ${formatDate(health.agent_last_heartbeat_at)}` : "unhealthy");
+      setText("health-battery", `${health.battery_percent || 0}% ${health.battery_status || "unknown"}`);
+      setText("health-startup", `${health.startup_apps || 0} apps`);
+      setText("health-crashes", `${health.app_crashes_24h || 0} in 24h`);
+      setText("health-cpu", formatPercent(health.cpu_percent));
+      setText("health-memory", formatPercent(health.memory_percent));
+      setText("health-disk", formatPercent(health.disk_percent));
+      setPercentBar("health-cpu-bar", health.cpu_percent);
+      setPercentBar("health-memory-bar", health.memory_percent);
+      setPercentBar("health-disk-bar", health.disk_percent);
+      setText("health-recommendation", health.recommendation || "No health recommendation yet.");
+    }
+
+    function renderTenantPlan(device, context) {
+      const tenant = context.tenant || {};
+      const plan = (context.plans.items || []).find((item) => item.id === tenant.plan_id) || {};
+      const retention = (context.retentionTiers.items || []).find((item) => item.id === tenant.retention_tier_id) || {};
+      document.getElementById("tenant-plan-badge").outerHTML = badge(tenant.status || "local").replace("<span", '<span id="tenant-plan-badge"');
+      setText("tenant-name", tenant.name || device.tenant_id);
+      setText("tenant-plan", plan.name || tenant.plan_id || "local backend");
+      setText("tenant-retention", retention.name || tenant.retention_tier_id || "not assigned");
+      setText("tenant-devices", tenant.device_limit ? `1/${tenant.device_limit}` : "1/local");
+    }
+
+    function deliveryByChannel(items, channel) {
+      return items.filter((item) => item.channel === channel);
+    }
+
+    function deliverySummary(items) {
+      if (items.length === 0) return { label: "-", detail: "No route" };
+      const deliveredCount = items.filter((item) => item.status === DELIVERY_STATUS.delivered).length;
+      const latest = items.slice().sort((left, right) => new Date(right.last_attempt_at) - new Date(left.last_attempt_at))[0];
+      return {
+        label: `${deliveredCount}/${items.length} delivered`,
+        detail: latest ? `${latest.status} via ${latest.provider}` : "No route"
+      };
+    }
+
+    function renderNotificationOperations(items) {
+      const email = deliverySummary(deliveryByChannel(items, CHANNEL.email));
+      const push = deliverySummary(deliveryByChannel(items, CHANNEL.push));
+      const dashboard = deliverySummary(deliveryByChannel(items, CHANNEL.dashboard));
+      const retrying = items.filter((item) => item.status === DELIVERY_STATUS.retrying || item.status === DELIVERY_STATUS.failed || item.status === DELIVERY_STATUS.pending);
+      const problemCount = retrying.length;
+
+      setText("notify-email", email.label);
+      setText("notify-email-sub", email.detail);
+      setText("notify-push", push.label);
+      setText("notify-push-sub", push.detail);
+      setText("notify-dashboard", dashboard.label);
+      setText("notify-dashboard-sub", dashboard.detail);
+      setText("notify-retry", `${problemCount} route${problemCount === 1 ? "" : "s"}`);
+      setText("notify-retry-sub", problemCount > 0 ? "Retry or failure needs attention" : "No retries");
+      document.getElementById("notification-health").outerHTML =
+        badge(problemCount === 0 ? "healthy" : "watch").replace("<span", '<span id="notification-health"');
+    }
+
+    function renderProductPackaging(context) {
+      const weekly = context.weeklyReport || {};
+      const templateCount = context.templates.count || 0;
+      const roleCount = context.roles.count || 0;
+      const auditCount = context.auditEvents.count || 0;
+
+      setText("weekly-report", weekly.generated ? "generated" : "ready");
+      setText("weekly-report-sub", weekly.generated_note || "Weekly AI report phase reserved");
+      setText("template-count", templateCount);
+      setText("template-sub", "marketplace policies");
+      setText("role-count", roleCount);
+      setText("role-sub", "parent, student, school, business");
+      setText("audit-count", auditCount);
+      setText("audit-sub", "tenant and policy history");
+      setText("catalog-count", `${templateCount} templates`);
+    }
+
+    function renderMarketplace(templates) {
+      const items = templates.items || [];
+      setText("marketplace-count", `${items.length} templates`);
+      const target = document.getElementById("marketplace-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No policy templates yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="catalog-item">
+          <strong>${escapeHTML(item.name)}</strong>
+          <span class="muted">${escapeHTML(item.audience)} - ${escapeHTML(item.description)}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderRetentionTiers(tiers) {
+      const items = tiers.items || [];
+      setText("retention-count", `${items.length} tiers`);
+      const target = document.getElementById("retention-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No retention tiers yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="catalog-item">
+          <strong>${escapeHTML(item.name)}</strong>
+          <span class="muted">${escapeHTML(item.local_ttl_days)}d local - ${escapeHTML(item.s3_standard_days)}d S3 standard - archive after ${escapeHTML(item.s3_archive_after_days)}d</span>
+        </div>
+      `).join("");
     }
 
     function renderTimeline(events) {
@@ -626,7 +946,7 @@
     }
 
     function renderEmptyDashboard() {
-      ["metric-compliance", "metric-risk", "metric-policy", "metric-anomalies", "metric-tamper", "metric-delivery"].forEach((id) => setText(id, "-"));
+      ["metric-compliance", "metric-risk", "metric-health", "metric-policy", "metric-anomalies", "metric-tamper", "metric-delivery"].forEach((id) => setText(id, "-"));
       setText("host-name", "No host enrolled");
       setText("host-device", "-");
       setText("host-tenant", "-");
@@ -636,10 +956,10 @@
     }
 
     async function refresh() {
-      const health = await loadJSON("/health");
+      const health = await loadJSON(API.health);
       document.getElementById("backend-status").textContent = "Local backend " + health.status;
 
-      const devices = await loadJSON("/api/v1/devices");
+      const devices = await loadJSON(API.devices);
       state.devices = devices.items || [];
       if (!state.selectedDeviceId && state.devices.length > 0) {
         state.selectedDeviceId = state.devices[0].device_id;
@@ -652,14 +972,30 @@
       }
 
       const base = `/api/v1/devices/${encodeURIComponent(state.selectedDeviceId)}`;
-      const [overview, policy, anomalies, tamper, deliveries] = await Promise.all([
+      const [overview, deviceHealth, policy, anomalies, tamper, deliveries, plans, roles, retentionTiers, templates, auditEvents, weeklyReport] = await Promise.all([
         loadJSON(`${base}/overview`),
+        loadJSON(`${base}/health`),
         loadJSON(`${base}/policy-violations`),
         loadJSON(`${base}/anomalies`),
         loadJSON(`${base}/tamper-events`),
-        loadJSON(`${base}/alert-deliveries`)
+        loadJSON(`${base}/alert-deliveries`),
+        loadJSON(API.plans),
+        loadJSON(API.roles),
+        loadJSON(API.retentionTiers),
+        loadJSON(API.policyTemplates),
+        loadJSON(API.auditEvents),
+        loadJSON(`${base}/reports/weekly`)
       ]);
-      renderOverview(overview, policy, anomalies, tamper, deliveries);
+      const tenant = await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}`);
+      renderOverview(overview, deviceHealth, policy, anomalies, tamper, deliveries, {
+        tenant,
+        plans,
+        roles,
+        retentionTiers,
+        templates,
+        auditEvents,
+        weeklyReport
+      });
     }
 
     document.getElementById("host-select").addEventListener("change", (event) => {

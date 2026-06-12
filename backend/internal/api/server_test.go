@@ -109,6 +109,22 @@ func TestHostDashboardRiskEndpoints(t *testing.T) {
 	if len(host.AlertDeliveries) == 0 || host.AlertDeliveries[0].Channel == "" {
 		t.Fatalf("expected alert delivery visibility: %+v", host.AlertDeliveries)
 	}
+	if host.Health.Score == 0 || host.Health.Status == "" {
+		t.Fatalf("expected host health score: %+v", host.Health)
+	}
+
+	health := httptest.NewRecorder()
+	handler.ServeHTTP(health, httptest.NewRequest(http.MethodGet, constants.RouteDevices+"/laptop-cousin-001/"+constants.RouteSegmentHealth, nil))
+	if health.Code != http.StatusOK {
+		t.Fatalf("expected device health 200, got %d", health.Code)
+	}
+	var deviceHealth model.DeviceHealth
+	if err := json.Unmarshal(health.Body.Bytes(), &deviceHealth); err != nil {
+		t.Fatalf("decode device health: %v", err)
+	}
+	if deviceHealth.DeviceID != "laptop-cousin-001" || !deviceHealth.AgentHealthy {
+		t.Fatalf("unexpected device health: %+v", deviceHealth)
+	}
 
 	policy := httptest.NewRecorder()
 	handler.ServeHTTP(policy, httptest.NewRequest(http.MethodGet, constants.RouteDevices+"/laptop-cousin-001/"+constants.RouteSegmentPolicyEvents, nil))

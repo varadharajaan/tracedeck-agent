@@ -62,6 +62,7 @@ POST /api/v1/devices/enroll
 GET  /api/v1/devices
 GET  /api/v1/devices/{deviceId}
 GET  /api/v1/devices/{deviceId}/overview
+GET  /api/v1/devices/{deviceId}/health
 GET  /api/v1/devices/{deviceId}/summary/daily
 GET  /api/v1/devices/{deviceId}/reports/weekly
 GET  /api/v1/devices/{deviceId}/policy-violations
@@ -104,7 +105,8 @@ audit events.
 Phase 9 adds typed host dashboard APIs:
 
 - host overview with device, summary, risk score, risk level, archive health,
-  policy violations, anomalies, tamper events, and alert deliveries
+  device health, policy violations, anomalies, tamper events, and alert
+  deliveries
 - policy violation events
 - anomaly events
 - tamper and trust events
@@ -115,6 +117,11 @@ persists backend tenants, devices, audit events, host risk events, tamper events
 and alert delivery rows to the local backend state file. Remote auth, durable
 database migrations, and production push-provider delivery history remain later
 SaaS phases.
+
+Phase 12 adds `GET /api/v1/devices/{deviceId}/health` and includes the same
+typed `DeviceHealth` payload inside host overview. The score is an aggregate
+endpoint-health model for CPU, memory, disk, heartbeat, and operational
+recommendations.
 
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.

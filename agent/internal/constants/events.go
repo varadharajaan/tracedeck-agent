@@ -4,11 +4,13 @@ const (
 	EventTypeProcessObserved = "process.observed"
 	EventTypeBrowserObserved = "browser.domain.observed"
 	EventTypeAlertRaised     = "alert.raised"
+	EventTypeDeviceHealth    = "device.health.observed"
 )
 
 const (
 	EventSourceProcessCollector = "collector.process"
 	EventSourceBrowserCollector = "collector.browser.history"
+	EventSourceHealthCollector  = "collector.device.health"
 )
 
 const (
@@ -22,6 +24,19 @@ const (
 	EventMetadataVisitCount      = "visit_count"
 	EventMetadataYouTubeStudy    = "youtube_study_match"
 	EventMetadataYouTubeVideoID  = "youtube_video_id_hash"
+	EventMetadataHealthScore     = "health_score"
+	EventMetadataCPUPercent      = "cpu_percent"
+	EventMetadataMemoryPercent   = "memory_percent"
+	EventMetadataDiskPercent     = "disk_percent"
+	EventMetadataBootTimeUnix    = "boot_time_unix"
+	EventMetadataUptimeSeconds   = "uptime_seconds"
+	EventMetadataHealthStatus    = "health_status"
+)
+
+const (
+	HealthStatusHealthy   = "healthy"
+	HealthStatusWatch     = "watch"
+	HealthStatusAttention = "attention"
 )
 
 const (

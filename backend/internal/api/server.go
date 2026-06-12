@@ -221,6 +221,8 @@ func (s *Server) handleDeviceRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleWeeklyReport(w, r, deviceID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentOverview && r.Method == http.MethodGet:
 		s.handleHostOverview(w, r, deviceID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentHealth && r.Method == http.MethodGet:
+		s.handleDeviceHealth(w, r, deviceID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentPolicyEvents && r.Method == http.MethodGet:
 		s.handlePolicyViolations(w, r, deviceID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentAnomalies && r.Method == http.MethodGet:
@@ -392,6 +394,22 @@ func (s *Server) handlePolicyViolations(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 	writeJSON(w, http.StatusOK, model.ListResponse[model.RiskEvent]{Items: events, Count: len(events)})
+}
+
+func (s *Server) handleDeviceHealth(w http.ResponseWriter, r *http.Request, deviceID string) {
+	if !s.deviceAllowed(w, r, deviceID) {
+		return
+	}
+	health, err := s.store.DeviceHealth(r.Context(), deviceID)
+	if err != nil {
+		if errors.Is(err, store.ErrDeviceNotFound) {
+			writeError(w, http.StatusNotFound, "device not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "device health lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, health)
 }
 
 func (s *Server) handleAnomalies(w http.ResponseWriter, r *http.Request, deviceID string) {
