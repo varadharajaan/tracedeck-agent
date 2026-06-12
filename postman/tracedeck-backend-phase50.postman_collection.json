@@ -1,0 +1,88 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 50",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Has Business Dashboard",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('dashboard contains business dashboard markers', function () {",
+              "  pm.response.to.have.status(200);",
+              "  var body = pm.response.text();",
+              "  ['Business Dashboard', 'Anomaly Notification Inbox', 'Push And Mail Proof', 'Paid Package Value', 'Customer Owner Actions'].forEach(function (marker) {",
+              "    pm.expect(body).to.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Business Dashboard",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/business-dashboard"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('business dashboard exposes monetisable product proof', function () {",
+              "  pm.response.to.have.status(200);",
+              "  var json = pm.response.json();",
+              "  pm.expect(json.summary.product_score).to.be.above(0);",
+              "  pm.expect(json.summary.notification_score).to.be.above(0);",
+              "  pm.expect(json.summary.recommended_package).to.be.a('string').and.not.empty;",
+              "  pm.expect(json.summary.mail_delivered).to.be.above(0);",
+              "  pm.expect(json.summary.dashboard_delivered).to.be.above(0);",
+              "  pm.expect(json.metrics.length).to.be.at.least(8);",
+              "  pm.expect(json.alerts.length).to.be.at.least(1);",
+              "  pm.expect(json.channels.length).to.be.at.least(3);",
+              "  pm.expect(json.channels.some(function (channel) { return channel.channel === 'push' && channel.status; })).to.eql(true);",
+              "  pm.expect(json.packages.length).to.be.at.least(3);",
+              "  pm.expect(json.actions.length).to.be.at.least(1);",
+              "  pm.expect(json.privacy_boundary).to.include('no passwords');",
+              "  pm.expect(json.privacy_boundary).to.include('screenshots');",
+              "  var serialized = JSON.stringify(json).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'screenshot_bytes', 'raw_url', 'alert_body'].forEach(function (marker) {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

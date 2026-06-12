@@ -13,6 +13,13 @@ VIEWPORTS = (
 )
 
 REQUIRED_IDS = (
+    "business-dashboard-section",
+    "business-dashboard-status",
+    "business-dashboard-headline",
+    "business-alert-list",
+    "business-channel-list",
+    "business-package-list",
+    "business-action-list",
     "command-navigation",
     "command-nav-status",
     "command-nav-title",

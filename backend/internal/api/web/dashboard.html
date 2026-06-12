@@ -245,6 +245,105 @@
       font-weight: 650;
       overflow-wrap: anywhere;
     }
+    .business-dashboard {
+      display: grid;
+      grid-template-columns: minmax(330px, 0.86fr) minmax(0, 2.14fr);
+      gap: 16px;
+    }
+    .business-focus {
+      min-height: 390px;
+      display: grid;
+      align-content: space-between;
+      gap: 16px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--green);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .business-focus h2 {
+      font-size: 22px;
+    }
+    .business-focus strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 36px;
+      line-height: 1.02;
+      overflow-wrap: anywhere;
+    }
+    .business-focus p {
+      color: var(--muted);
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+    .business-meter {
+      display: grid;
+      gap: 8px;
+    }
+    .business-meter-track {
+      height: 12px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #eef1f5;
+    }
+    .business-meter-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--green), var(--teal), var(--blue));
+    }
+    .business-kpis {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .business-kpi {
+      min-height: 148px;
+      display: grid;
+      align-content: space-between;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .business-kpi small {
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .business-kpi strong {
+      font-size: 21px;
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+    }
+    .business-kpi span {
+      overflow-wrap: anywhere;
+    }
+    .business-board {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .business-list {
+      display: grid;
+      gap: 8px;
+    }
+    .business-item {
+      display: grid;
+      gap: 7px;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+    }
+    .business-item strong,
+    .business-item span {
+      overflow-wrap: anywhere;
+    }
     .growth-cockpit {
       display: grid;
       grid-template-columns: minmax(320px, 0.84fr) minmax(0, 2.16fr);
@@ -1268,6 +1367,8 @@
       .paid-ops-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .paid-ops-board { grid-template-columns: 1fr; }
       .commercial-room { grid-template-columns: 1fr; }
+      .business-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .business-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .commercial-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .commercial-board { grid-template-columns: 1fr; }
       .launch-grid, .launch-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1283,6 +1384,9 @@
       .route-grid { grid-template-columns: 1fr; }
       .command-board { grid-template-columns: 1fr; }
       .command-nav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .business-dashboard { grid-template-columns: 1fr; }
+      .business-kpis { grid-template-columns: 1fr; }
+      .business-board { grid-template-columns: 1fr; }
       .growth-grid { grid-template-columns: 1fr; }
       .command-center-grid { grid-template-columns: 1fr; }
       .buyer-ops-grid, .buyer-ops-board { grid-template-columns: 1fr; }
@@ -1340,6 +1444,87 @@
         <div class="auth-actions">
           <button id="save-auth-button" class="primary" type="button">Unlock</button>
           <button id="clear-auth-button" type="button">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="business-dashboard-section" class="business-dashboard" aria-label="business dashboard">
+      <div class="business-focus">
+        <div class="section-head">
+          <div>
+            <h2>Business Dashboard</h2>
+            <p>Monetisable first screen for customer health, anomaly notification, push reach, mail delivery, archive/report value, trust, and paid package proof.</p>
+          </div>
+          <span id="business-dashboard-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Executive Signal</span>
+          <strong id="business-dashboard-headline">No tenant loaded</strong>
+          <p id="business-dashboard-detail">Waiting for customer health, anomaly, push, mail, report, archive, package, and owner action proof.</p>
+        </div>
+        <div class="business-meter">
+          <div class="score-meta"><span>Product readiness</span><span id="business-dashboard-score">0%</span></div>
+          <div class="business-meter-track"><div id="business-dashboard-score-bar" class="business-meter-fill"></div></div>
+        </div>
+        <div class="action-meta">
+          <span id="business-dashboard-plan" class="pill">plan pending</span>
+          <span id="business-dashboard-stage" class="pill">stage pending</span>
+          <span id="business-dashboard-notification" class="pill">notification pending</span>
+          <span id="business-dashboard-package" class="pill">package pending</span>
+        </div>
+      </div>
+      <div>
+        <div id="business-dashboard-kpis" class="business-kpis">
+          <div class="business-kpi"><small>Customer Health</small><strong id="business-kpi-customer-health">-</strong><span id="business-kpi-customer-health-sub" class="muted">No customer proof</span></div>
+          <div class="business-kpi"><small>Anomaly Alerts</small><strong id="business-kpi-anomaly-alerts">-</strong><span id="business-kpi-anomaly-alerts-sub" class="muted">No anomaly proof</span></div>
+          <div class="business-kpi"><small>Mail Delivery</small><strong id="business-kpi-mail-delivery">-</strong><span id="business-kpi-mail-delivery-sub" class="muted">No mail proof</span></div>
+          <div class="business-kpi"><small>Push Reach</small><strong id="business-kpi-push-reach">-</strong><span id="business-kpi-push-reach-sub" class="muted">No push proof</span></div>
+          <div class="business-kpi"><small>Route Proof</small><strong id="business-kpi-route-proof">-</strong><span id="business-kpi-route-proof-sub" class="muted">No route proof</span></div>
+          <div class="business-kpi"><small>Preference Policy</small><strong id="business-kpi-preference-policy">-</strong><span id="business-kpi-preference-policy-sub" class="muted">No preference proof</span></div>
+          <div class="business-kpi"><small>Archive And Reports</small><strong id="business-kpi-archive-report">-</strong><span id="business-kpi-archive-report-sub" class="muted">No archive/report proof</span></div>
+          <div class="business-kpi"><small>Paid Stage</small><strong id="business-kpi-paid-stage">-</strong><span id="business-kpi-paid-stage-sub" class="muted">No paid stage proof</span></div>
+        </div>
+        <div class="business-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Anomaly Notification Inbox</h2>
+                <p class="muted">Policy, anomaly, and tamper signals with mail, push, and dashboard delivery state.</p>
+              </div>
+              <span id="business-alert-count" class="pill">0 alerts</span>
+            </div>
+            <div id="business-alert-list" class="business-list"><div class="empty">No business alerts yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Push And Mail Proof</h2>
+                <p class="muted">Provider-safe route evidence for anomaly push, critical email, dashboard inbox, and report delivery.</p>
+              </div>
+              <span id="business-channel-count" class="pill">0 routes</span>
+            </div>
+            <div id="business-channel-list" class="business-list"><div class="empty">No business channel proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Paid Package Value</h2>
+                <p class="muted">Family, school, and business packaging with the value a buyer should understand fast.</p>
+              </div>
+              <span id="business-package-count" class="pill">0 packages</span>
+            </div>
+            <div id="business-package-list" class="business-list"><div class="empty">No paid package proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Customer Owner Actions</h2>
+                <p class="muted">Actions that improve trust, notification reliability, conversion, and retention.</p>
+              </div>
+              <span id="business-action-count" class="pill">0 actions</span>
+            </div>
+            <div id="business-action-list" class="business-list"><div class="empty">No business actions yet.</div></div>
+          </div>
         </div>
       </div>
     </section>
@@ -3358,6 +3543,7 @@
 
       renderDeviceHealth(healthModel);
       renderTenantPlan(device, context);
+      renderBusinessDashboard(context.businessDashboard);
       renderGrowthCockpit(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderNotificationPreferenceCenter(context.notificationPreferences);
       renderNotificationOperations(deliveries.items);
@@ -3813,6 +3999,122 @@
         Number(health.score || 0) >= 70
       ];
       return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+    }
+
+    function renderBusinessDashboard(dashboard) {
+      const model = dashboard || {};
+      const summary = model.summary || {};
+      document.getElementById("business-dashboard-status").outerHTML =
+        badge(summary.status || "pending").replace("<span", '<span id="business-dashboard-status"');
+      setText("business-dashboard-headline", summary.headline || "No tenant loaded");
+      setText("business-dashboard-detail", summary.detail || "Waiting for customer, anomaly, notification, package, and owner action proof.");
+      setText("business-dashboard-score", `${summary.product_score || 0}%`);
+      setPercentBar("business-dashboard-score-bar", summary.product_score || 0);
+      setText("business-dashboard-plan", model.plan_name || "plan pending");
+      setText("business-dashboard-stage", summary.revenue_stage || "stage pending");
+      setText("business-dashboard-notification", `${summary.mail_delivered || 0} mail / ${summary.push_delivered || 0} push`);
+      setText("business-dashboard-package", summary.recommended_package || "package pending");
+
+      const metrics = model.metrics || [];
+      const metricIDs = [
+        "customer-health",
+        "anomaly-alerts",
+        "mail-delivery",
+        "push-reach",
+        "route-proof",
+        "preference-policy",
+        "archive-report",
+        "paid-stage"
+      ];
+      for (const id of metricIDs) {
+        const item = metrics.find((metric) => metric.id === id) || {};
+        setText(`business-kpi-${id}`, item.value || "-");
+        setText(`business-kpi-${id}-sub`, item.detail || "No proof yet");
+      }
+
+      const alerts = model.alerts || [];
+      setText("business-alert-count", `${alerts.length} alert${alerts.length === 1 ? "" : "s"}`);
+      const alertTarget = document.getElementById("business-alert-list");
+      if (alerts.length === 0) {
+        alertTarget.innerHTML = '<div class="empty">No business alerts yet.</div>';
+      } else {
+        alertTarget.innerHTML = alerts.map((item) => `
+          <div class="business-item">
+            <strong>${escapeHTML(item.title)}</strong>
+            <span class="muted">${escapeHTML(item.detail || item.next_action || "Review this alert.")}</span>
+            <div class="action-meta">
+              ${badge(item.severity)}
+              ${badge(item.status)}
+              <span class="pill">${escapeHTML(item.host_name || "host pending")}</span>
+              <span class="pill">mail ${escapeHTML(item.email_status || "pending")}</span>
+              <span class="pill">push ${escapeHTML(item.push_status || "pending")}</span>
+              <span class="pill">dashboard ${escapeHTML(item.dashboard_status || "pending")}</span>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      const channels = model.channels || [];
+      setText("business-channel-count", `${channels.length} route${channels.length === 1 ? "" : "s"}`);
+      const channelTarget = document.getElementById("business-channel-list");
+      if (channels.length === 0) {
+        channelTarget.innerHTML = '<div class="empty">No business channel proof yet.</div>';
+      } else {
+        channelTarget.innerHTML = channels.map((item) => `
+          <div class="business-item">
+            <strong>${escapeHTML(capitalize(item.channel))} via ${escapeHTML(item.provider || "provider pending")}</strong>
+            <span class="muted">${escapeHTML(item.next_action || item.proof_state || "Keep route proof current.")}</span>
+            <div class="action-meta">
+              ${badge(item.status || "pending")}
+              ${badge(item.proof_state || "proof pending")}
+              <span class="pill">${escapeHTML(item.recipient_label || "recipient pending")}</span>
+              <span class="pill">${escapeHTML(item.attempts || 0)} attempts</span>
+              <span class="pill">${escapeHTML(item.paid_tier || "free")}</span>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      const packages = model.packages || [];
+      setText("business-package-count", `${packages.length} package${packages.length === 1 ? "" : "s"}`);
+      const packageTarget = document.getElementById("business-package-list");
+      if (packages.length === 0) {
+        packageTarget.innerHTML = '<div class="empty">No paid package proof yet.</div>';
+      } else {
+        packageTarget.innerHTML = packages.map((item) => `
+          <div class="business-item">
+            <strong>${escapeHTML(item.name)}</strong>
+            <span class="muted">${escapeHTML(item.value || item.next_action || "Package value pending.")}</span>
+            <div class="action-meta">
+              ${badge(item.status || "watch")}
+              <span class="pill">${escapeHTML(item.audience || "audience pending")}</span>
+              <span class="pill">${escapeHTML(item.price_model || "pricing pending")}</span>
+              <span class="pill">${escapeHTML((item.included || []).slice(0, 2).join(", ") || "features pending")}</span>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      const actions = model.actions || [];
+      setText("business-action-count", `${actions.length} action${actions.length === 1 ? "" : "s"}`);
+      const actionTarget = document.getElementById("business-action-list");
+      if (actions.length === 0) {
+        actionTarget.innerHTML = '<div class="empty">No business actions yet.</div>';
+        return;
+      }
+      actionTarget.innerHTML = actions.map((item) => `
+        <div class="business-item">
+          <strong>${escapeHTML(item.title)}</strong>
+          <span class="muted">${escapeHTML(item.detail || "Action detail pending.")}</span>
+          <div class="action-meta">
+            ${badge(item.severity || "info")}
+            ${badge(item.status || "watch")}
+            <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+            <span class="pill">${escapeHTML(item.sla || "SLA pending")}</span>
+            <span class="pill">${escapeHTML(item.source || "business dashboard")}</span>
+          </div>
+        </div>
+      `).join("");
     }
 
     function renderGrowthCockpit(overview, health, events, deliveries, context) {
@@ -6251,6 +6553,7 @@
       setText("host-profile", "-");
       setText("host-os", "-");
       setText("host-last-seen", "-");
+      renderBusinessDashboard(null);
       renderCommandNavigationEmpty();
     }
 
@@ -6304,6 +6607,7 @@
       const alertInbox = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/alert-inbox`) : null;
       const tenantOperations = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/operations-summary`) : null;
       const monetizationSummary = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/monetization-summary`) : null;
+      const businessDashboard = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/business-dashboard`) : null;
       const notificationCommandCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-command-center`) : null;
       const syncHealth = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/sync-health`) : null;
       const activityFeed = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/activity-feed?device_id=${encodeURIComponent(overview.device.device_id)}&limit=10`) : null;
@@ -6329,6 +6633,7 @@
         alertInbox,
         tenantOperations,
         monetizationSummary,
+        businessDashboard,
         notificationCommandCenter,
         syncHealth,
         activityFeed,

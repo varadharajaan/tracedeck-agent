@@ -309,6 +309,14 @@ rules, study-safe suppression, retention evidence, and owner actions. The
 dashboard reads from the typed tenant notification-preferences API and keeps the
 same metadata-only privacy boundary as the route registry and command center.
 
+Phase 50 adds a Business Dashboard above the growth cockpit. It is the
+monetisation-first surface for customer health, anomaly notification inbox,
+push and mail proof, route proof, archive/report value, paid package cards, and
+customer owner actions. The dashboard reads from the typed tenant
+business-dashboard API so the first screen shows whether anomalies are present,
+whether push/mail/dashboard delivery worked, what package value is proven, and
+what an owner should do next.
+
 A future frontend phase can move this surface to a richer application shell with
 role-specific onboarding, no-code alert rule editing, weekly report drilldowns,
 durable event search, and paid customer onboarding.

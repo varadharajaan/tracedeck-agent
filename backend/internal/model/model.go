@@ -894,6 +894,108 @@ type TenantPaidCapability struct {
 	Evidence string `json:"evidence"`
 }
 
+type TenantBusinessDashboardSummary struct {
+	Status             string `json:"status"`
+	Headline           string `json:"headline"`
+	Detail             string `json:"detail"`
+	ProductScore       int    `json:"product_score"`
+	CustomerHealth     string `json:"customer_health"`
+	RevenueStage       string `json:"revenue_stage"`
+	RecommendedPackage string `json:"recommended_package"`
+	HostsTotal         int    `json:"hosts_total"`
+	HostsAttention     int    `json:"hosts_attention"`
+	OpenAlerts         int    `json:"open_alerts"`
+	HighPriorityAlerts int    `json:"high_priority_alerts"`
+	NotificationScore  int    `json:"notification_score"`
+	PreferenceScore    int    `json:"preference_score"`
+	TrustScore         int    `json:"trust_score"`
+	MailDelivered      int    `json:"mail_delivered"`
+	PushDelivered      int    `json:"push_delivered"`
+	DashboardDelivered int    `json:"dashboard_delivered"`
+	RoutesNeedingProof int    `json:"routes_needing_proof"`
+	ArchiveBacklog     int    `json:"archive_backlog"`
+	WeeklyReportReady  bool   `json:"weekly_report_ready"`
+	ConsentVisible     bool   `json:"consent_visible"`
+	DataRightsReady    bool   `json:"data_rights_ready"`
+}
+
+type TenantBusinessDashboardMetric struct {
+	ID       string `json:"id"`
+	Label    string `json:"label"`
+	Value    string `json:"value"`
+	Detail   string `json:"detail"`
+	Status   string `json:"status"`
+	PaidTier string `json:"paid_tier"`
+}
+
+type TenantBusinessDashboardAlert struct {
+	ID              string    `json:"id"`
+	Title           string    `json:"title"`
+	Detail          string    `json:"detail"`
+	Severity        string    `json:"severity"`
+	Status          string    `json:"status"`
+	HostName        string    `json:"host_name"`
+	Category        string    `json:"category"`
+	EmailStatus     string    `json:"email_status"`
+	PushStatus      string    `json:"push_status"`
+	DashboardStatus string    `json:"dashboard_status"`
+	NextAction      string    `json:"next_action"`
+	PaidTier        string    `json:"paid_tier"`
+	ObservedAt      time.Time `json:"observed_at"`
+}
+
+type TenantBusinessDashboardChannel struct {
+	Channel        string     `json:"channel"`
+	Provider       string     `json:"provider"`
+	Status         string     `json:"status"`
+	ProofState     string     `json:"proof_state"`
+	RecipientLabel string     `json:"recipient_label"`
+	Attempts       int        `json:"attempts"`
+	LastDeliveryAt *time.Time `json:"last_delivery_at,omitempty"`
+	NextAction     string     `json:"next_action"`
+	PaidTier       string     `json:"paid_tier"`
+}
+
+type TenantBusinessDashboardPackage struct {
+	Name       string   `json:"name"`
+	Tier       string   `json:"tier"`
+	Audience   string   `json:"audience"`
+	PriceModel string   `json:"price_model"`
+	Status     string   `json:"status"`
+	Included   []string `json:"included"`
+	Value      string   `json:"value"`
+	NextAction string   `json:"next_action"`
+}
+
+type TenantBusinessDashboardAction struct {
+	Title      string    `json:"title"`
+	Detail     string    `json:"detail"`
+	Severity   string    `json:"severity"`
+	Status     string    `json:"status"`
+	Owner      string    `json:"owner"`
+	Channel    string    `json:"channel"`
+	SLA        string    `json:"sla"`
+	PaidTier   string    `json:"paid_tier"`
+	Source     string    `json:"source"`
+	ObservedAt time.Time `json:"observed_at"`
+}
+
+type TenantBusinessDashboard struct {
+	TenantID        string                           `json:"tenant_id"`
+	TenantName      string                           `json:"tenant_name"`
+	PlanID          string                           `json:"plan_id"`
+	PlanName        string                           `json:"plan_name"`
+	Audience        string                           `json:"audience"`
+	Summary         TenantBusinessDashboardSummary   `json:"summary"`
+	Metrics         []TenantBusinessDashboardMetric  `json:"metrics"`
+	Alerts          []TenantBusinessDashboardAlert   `json:"alerts"`
+	Channels        []TenantBusinessDashboardChannel `json:"channels"`
+	Packages        []TenantBusinessDashboardPackage `json:"packages"`
+	Actions         []TenantBusinessDashboardAction  `json:"actions"`
+	PrivacyBoundary string                           `json:"privacy_boundary"`
+	GeneratedAt     time.Time                        `json:"generated_at"`
+}
+
 type Plan struct {
 	ID                 string   `json:"id"`
 	Name               string   `json:"name"`

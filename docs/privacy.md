@@ -53,3 +53,10 @@ channel choices, digest cadence, quiet hours, escalation owner labels,
 study-safe suppression labels, paid tier, and retention evidence. They do not
 store SMTP passwords, push endpoint secrets, provider credentials, alert bodies,
 screenshots, raw URLs, page titles, cookies, tokens, or private content.
+
+Phase 50 business dashboard is also metadata-only. It aggregates customer
+health, anomaly categories, notification delivery proof, preference score,
+archive/report readiness, paid package labels, and owner actions from existing
+typed APIs. It does not add collectors and does not store provider secrets,
+alert bodies, screenshots, passwords, cookies, tokens, raw URLs, page titles,
+private content, or endpoint payloads.
