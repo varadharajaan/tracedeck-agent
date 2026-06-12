@@ -13,6 +13,10 @@ remote unauthenticated backend.
   archive, and business compliance packaging.
 - Audit event list for administrative backend actions.
 - Dashboard visibility for tenant, plan, role, and audit catalog signals.
+- Consent center API and dashboard trust panels for visible collection status,
+  recipients, data export/delete readiness, pause controls, and audit history.
+- Alert revenue operations panels for anomaly notification proof, email
+  delivery proof, push reach, and customer audit evidence.
 
 ## Boundaries
 
@@ -30,5 +34,6 @@ remote unauthenticated backend.
 - Authentication and tenant authorization.
 - Billing provider integration.
 - Policy assignment by tenant, role, and device group.
-- Consent and audit center UI.
+- Authenticated hosted consent/audit center with durable export and deletion
+  workflows.
 - Report export and retention enforcement.

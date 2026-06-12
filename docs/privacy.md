@@ -17,3 +17,9 @@ YouTube video IDs when policy requests video metadata. It does not persist raw
 URLs, query strings, page titles, cookies, tokens, or browser credentials.
 Local verification scripts before Phase 3 disable browser history collection so
 they do not accidentally archive live operator browsing domains.
+
+Phase 20 exposes these boundaries in the tenant consent center. The consent API
+and dashboard mark application usage metadata, browser domain/category activity,
+device health, and archive health as collected or derived metadata. Passwords,
+credentials, screenshots, private messages, cookies, tokens, camera, and
+microphone are shown as denied collection categories.

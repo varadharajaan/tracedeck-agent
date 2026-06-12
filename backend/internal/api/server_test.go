@@ -387,6 +387,44 @@ func TestNoCodeAlertRuleEndpoints(t *testing.T) {
 	}
 }
 
+func TestConsentCenterEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	consent := httptest.NewRecorder()
+	handler.ServeHTTP(consent, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentConsentCenter, nil))
+	if consent.Code != http.StatusOK {
+		t.Fatalf("expected consent center 200, got %d: %s", consent.Code, consent.Body.String())
+	}
+	var center model.ConsentCenter
+	if err := json.Unmarshal(consent.Body.Bytes(), &center); err != nil {
+		t.Fatalf("decode consent center: %v", err)
+	}
+	if !center.MonitoringVisible || !center.DataExportReady || !center.DeleteRequestReady {
+		t.Fatalf("expected consent readiness flags: %+v", center)
+	}
+	if len(center.AuditEvents) == 0 || len(center.AlertRecipients) == 0 {
+		t.Fatalf("expected audit and recipient visibility: %+v", center)
+	}
+	if !strings.Contains(consent.Body.String(), constants.ConsentCollectionPasswords) || !strings.Contains(consent.Body.String(), constants.ConsentStatusDenied) {
+		t.Fatalf("expected denied sensitive collection disclosure, got %s", consent.Body.String())
+	}
+}
+
 func TestTenantValidation(t *testing.T) {
 	t.Parallel()
 

@@ -54,6 +54,17 @@ Phase 19 adds a paid no-code alert rules slice:
 - delivery channels for email, push, and dashboard
 - dashboard visibility for saved automations and recipe packaging
 
+Phase 20 adds buyer-facing trust and alert proof:
+
+- consent and audit center for visible collection status, recipients, data
+  export/delete readiness, and audit history
+- alert revenue operations for anomaly coverage, mail delivery proof, push
+  notification reach, and customer audit evidence
+- push notification center for mobile recipient, anomaly, status, provider,
+  retry timing, and last-send state
+- static dashboard disclosure that passwords, credentials, screenshots, and
+  private content are denied collection categories
+
 This still uses the existing privacy-aware API data: typed risk categories,
 delivery routes, report readiness, health, archive, role, retention, and policy
 template metadata. It does not add credential, keylog, private-message, raw URL,

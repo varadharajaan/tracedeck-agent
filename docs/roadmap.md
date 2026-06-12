@@ -60,3 +60,7 @@
 22. Phase 19: no-code alert rules builder. Rule recipe catalog, tenant-scoped
     saved rules, persisted local backend state, dashboard builder panels,
     Postman/Newman coverage, and local verification.
+23. Phase 20: consent, audit, and paid alert operations. Tenant-scoped consent
+    center API, dashboard consent/audit panels, alert revenue operations, push
+    notification center, denied sensitive collection disclosures,
+    Postman/Newman coverage, and local verification.

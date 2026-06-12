@@ -38,6 +38,7 @@ const (
 	RouteSegmentOverview      = "overview"
 	RouteSegmentAuditEvents   = "audit-events"
 	RouteSegmentAlertRules    = "alert-rules"
+	RouteSegmentConsentCenter = "consent-center"
 	RouteSegmentPolicyEvents  = "policy-violations"
 	RouteSegmentAnomalies     = "anomalies"
 	RouteSegmentTamperEvents  = "tamper-events"
@@ -204,4 +205,21 @@ const (
 	AlertConditionOperatorContains    = "contains"
 	AlertConditionOperatorGreaterThan = "greater_than"
 	AlertConditionOperatorAfterLocal  = "after_local_time"
+)
+
+const (
+	ConsentStatusCollected    = "collected"
+	ConsentStatusDerived      = "derived"
+	ConsentStatusDenied       = "denied"
+	ConsentStatusNotCollected = "not_collected"
+)
+
+const (
+	ConsentCollectionAppUsage       = "Application usage metadata"
+	ConsentCollectionBrowserDomains = "Browser domain and category activity"
+	ConsentCollectionDeviceHealth   = "Device health score"
+	ConsentCollectionArchiveHealth  = "Archive and upload health"
+	ConsentCollectionPasswords      = "Passwords and credentials"
+	ConsentCollectionScreenshots    = "Screenshots"
+	ConsentCollectionPrivateContent = "Private messages, cookies, tokens, camera, and microphone"
 )

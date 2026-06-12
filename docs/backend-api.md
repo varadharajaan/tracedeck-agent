@@ -60,6 +60,7 @@ GET  /api/v1/tenants/{tenantId}
 GET  /api/v1/tenants/{tenantId}/audit-events
 GET  /api/v1/tenants/{tenantId}/alert-rules
 POST /api/v1/tenants/{tenantId}/alert-rules
+GET  /api/v1/tenants/{tenantId}/consent-center
 POST /api/v1/devices/enroll
 GET  /api/v1/devices
 GET  /api/v1/devices/{deviceId}
@@ -140,6 +141,13 @@ Phase 19 adds no-code alert rule builder APIs:
 Saved rules are tenant-scoped, persisted in local backend state, and include
 typed trigger, severity, delivery channels, condition, enabled flag, and
 timestamps.
+
+Phase 20 adds `GET /api/v1/tenants/{tenantId}/consent-center` for a
+tenant-scoped trust center. It returns visible monitoring status, pause-control
+readiness, data export/delete readiness, alert recipients, collection
+disclosures, and recent tenant/policy audit events. Passwords, credentials,
+screenshots, private messages, cookies, tokens, camera, and microphone are
+reported as denied collection categories.
 
 The backend rejects non-local bind addresses to avoid exposing an
 unauthenticated remote API during the foundation phase.

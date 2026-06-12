@@ -31,3 +31,8 @@ SES credentials come from the AWS SDK default credential chain. Alert payloads
 must not include SMTP passwords, AWS credentials, raw browser URLs, cookies,
 tokens, passwords, keystrokes, private messages, camera, microphone, or hidden
 screen content.
+
+Phase 20 consent and alert-operations panels expose trust evidence from existing
+typed backend data: alert delivery rows, audit events, collection disclosures,
+and tenant metadata. They do not add password, screenshot, private-message,
+camera, microphone, cookie, token, keylog, raw URL, or page-title collection.
