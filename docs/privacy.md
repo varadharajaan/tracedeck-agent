@@ -203,3 +203,11 @@ and notification proof derived from existing browser-domain telemetry. It does
 not store raw URLs, page titles, browser cookies, tokens, passwords,
 screenshots, private content, endpoint payloads, provider secrets, push
 endpoints, alert bodies, keylogging, or hidden collection bypasses.
+
+Phase 75 delivery assurance is metadata-only. It exposes notification route
+truth labels, delivery state counts, source labels, proof labels, retry timing,
+and next actions. It explicitly marks seeded rows as `demo_only` and retrying
+push rows as not screen-visible until provider proof exists. It does not store
+provider secrets, SMTP passwords, push endpoints, raw provider payloads, alert
+bodies, raw URLs, page titles, screenshots, private content, cookies, tokens,
+passwords, keylogging, or hidden collection bypasses.

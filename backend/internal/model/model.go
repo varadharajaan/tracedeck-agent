@@ -255,6 +255,96 @@ type TenantDeliveryTimeline struct {
 	PrivacyBoundary string                        `json:"privacy_boundary"`
 }
 
+type TenantDeliveryAssuranceFilter struct {
+	DeviceID       string `json:"device_id"`
+	Channel        string `json:"channel"`
+	AssuranceState string `json:"assurance_state"`
+	Limit          int    `json:"limit"`
+}
+
+type TenantDeliveryAssuranceSummary struct {
+	Status               string     `json:"status"`
+	AssuranceScore       int        `json:"assurance_score"`
+	RoutesTotal          int        `json:"routes_total"`
+	RoutesEnabled        int        `json:"routes_enabled"`
+	ProviderConfirmed    int        `json:"provider_confirmed"`
+	DryRunRehearsed      int        `json:"dry_run_rehearsed"`
+	DashboardVisible     int        `json:"dashboard_visible"`
+	DemoOnly             int        `json:"demo_only"`
+	Retrying             int        `json:"retrying"`
+	Failed               int        `json:"failed"`
+	PendingProvider      int        `json:"pending_provider"`
+	RouteDisabled        int        `json:"route_disabled"`
+	SourceHostCount      int        `json:"source_host_count"`
+	EmailProviderReady   bool       `json:"email_provider_ready"`
+	PushProviderReady    bool       `json:"push_provider_ready"`
+	DashboardRouteReady  bool       `json:"dashboard_route_ready"`
+	BuyerReady           bool       `json:"buyer_ready"`
+	RecommendedPaidTier  string     `json:"recommended_paid_tier"`
+	NextAction           string     `json:"next_action"`
+	LastProviderProofAt  *time.Time `json:"last_provider_proof_at,omitempty"`
+	LastDashboardProofAt *time.Time `json:"last_dashboard_proof_at,omitempty"`
+	NextRetryAt          *time.Time `json:"next_retry_at,omitempty"`
+}
+
+type TenantDeliveryAssuranceRoute struct {
+	RouteID              string     `json:"route_id"`
+	Channel              string     `json:"channel"`
+	Provider             string     `json:"provider"`
+	RecipientLabel       string     `json:"recipient_label"`
+	Enabled              bool       `json:"enabled"`
+	RouteStatus          string     `json:"route_status"`
+	AssuranceState       string     `json:"assurance_state"`
+	LatestDeliveryStatus string     `json:"latest_delivery_status"`
+	SourceKind           string     `json:"source_kind"`
+	EvidenceScope        string     `json:"evidence_scope"`
+	EvidenceDetail       string     `json:"evidence_detail"`
+	Attempts             int        `json:"attempts"`
+	LastAttemptAt        *time.Time `json:"last_attempt_at,omitempty"`
+	LastVerifiedAt       *time.Time `json:"last_verified_at,omitempty"`
+	NextRetryAt          *time.Time `json:"next_retry_at,omitempty"`
+	LastError            string     `json:"last_error,omitempty"`
+	OperatorTruth        string     `json:"operator_truth"`
+	ProofLabel           string     `json:"proof_label"`
+	UserVisibleLabel     string     `json:"user_visible_label"`
+	NextAction           string     `json:"next_action"`
+	PaidTier             string     `json:"paid_tier"`
+}
+
+type TenantDeliveryAssuranceEvent struct {
+	ID             string     `json:"id"`
+	DeviceID       string     `json:"device_id"`
+	HostName       string     `json:"host_name"`
+	EventID        string     `json:"event_id"`
+	Channel        string     `json:"channel"`
+	Provider       string     `json:"provider"`
+	Recipient      string     `json:"recipient"`
+	Status         string     `json:"status"`
+	AssuranceState string     `json:"assurance_state"`
+	SourceKind     string     `json:"source_kind"`
+	EvidenceScope  string     `json:"evidence_scope"`
+	EvidenceDetail string     `json:"evidence_detail"`
+	Attempts       int        `json:"attempts"`
+	LastAttemptAt  time.Time  `json:"last_attempt_at"`
+	NextRetryAt    *time.Time `json:"next_retry_at,omitempty"`
+	LastError      string     `json:"last_error,omitempty"`
+	OperatorTruth  string     `json:"operator_truth"`
+	ProofLabel     string     `json:"proof_label"`
+	NextAction     string     `json:"next_action"`
+	Summary        string     `json:"summary"`
+}
+
+type TenantDeliveryAssurance struct {
+	TenantID        string                         `json:"tenant_id"`
+	TenantName      string                         `json:"tenant_name"`
+	Filters         TenantDeliveryAssuranceFilter  `json:"filters"`
+	Summary         TenantDeliveryAssuranceSummary `json:"summary"`
+	Routes          []TenantDeliveryAssuranceRoute `json:"routes"`
+	Events          []TenantDeliveryAssuranceEvent `json:"events"`
+	GeneratedAt     time.Time                      `json:"generated_at"`
+	PrivacyBoundary string                         `json:"privacy_boundary"`
+}
+
 type TelemetryEvent struct {
 	ID         string            `json:"id"`
 	Type       string            `json:"type"`

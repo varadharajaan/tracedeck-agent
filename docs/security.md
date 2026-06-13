@@ -51,3 +51,10 @@ Phase 34 dashboard API-key unlock stores the local key only in browser
 is not embedded in the served dashboard HTML, not written to backend state, and
 not logged by TraceDeck scripts. This is still a localhost development/admin
 mechanism, not hosted SSO or internet-exposed authentication.
+
+Phase 75 delivery assurance prevents false operator confidence by separating
+demo, retrying, dashboard-visible, dry-run, failed, disabled, pending-provider,
+and provider-confirmed states. Demo seed data cannot satisfy buyer-ready
+notification proof, and the API does not expose provider secrets, push
+endpoints, SMTP passwords, alert bodies, raw provider payloads, screenshots,
+raw URLs, page titles, cookies, tokens, or private content.

@@ -518,6 +518,86 @@ func TestTenantDeliveryTimelineEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantDeliveryAssuranceEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "assurance-device-001",
+		"host_name": "assurance-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	response := httptest.NewRecorder()
+	path := constants.RouteTenants + "/family-varadha/" + constants.RouteSegmentDeliveryAssure + "?device_id=assurance-device-001&limit=8"
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected delivery assurance 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var assurance model.TenantDeliveryAssurance
+	if err := json.Unmarshal(response.Body.Bytes(), &assurance); err != nil {
+		t.Fatalf("decode delivery assurance: %v", err)
+	}
+	if assurance.Summary.RoutesTotal != 3 || assurance.Summary.ProviderConfirmed != 0 || assurance.Summary.DemoOnly == 0 || assurance.Summary.Retrying == 0 {
+		t.Fatalf("expected route truth summary with demo-only and retrying proof: %+v", assurance.Summary)
+	}
+	if assurance.Summary.EmailProviderReady || assurance.Summary.PushProviderReady || assurance.Summary.BuyerReady {
+		t.Fatalf("seeded demo delivery must not be marked provider ready: %+v", assurance.Summary)
+	}
+	if len(assurance.Routes) != 3 || len(assurance.Events) < 3 {
+		t.Fatalf("expected route and event assurance rows: %+v", assurance)
+	}
+	if !strings.Contains(assurance.PrivacyBoundary, "metadata-only") || !strings.Contains(assurance.PrivacyBoundary, "no provider secrets") {
+		t.Fatalf("expected strict delivery assurance privacy boundary: %q", assurance.PrivacyBoundary)
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "push_endpoint", "screenshot_bytes", "raw_url", "page_title", "alert_body"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("delivery assurance leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+
+	filtered := httptest.NewRecorder()
+	filteredPath := constants.RouteTenants + "/family-varadha/" + constants.RouteSegmentDeliveryAssure + "?device_id=assurance-device-001&channel=email&assurance_state=demo_only"
+	handler.ServeHTTP(filtered, httptest.NewRequest(http.MethodGet, filteredPath, nil))
+	if filtered.Code != http.StatusOK {
+		t.Fatalf("expected filtered delivery assurance 200, got %d: %s", filtered.Code, filtered.Body.String())
+	}
+	var emailDemo model.TenantDeliveryAssurance
+	if err := json.Unmarshal(filtered.Body.Bytes(), &emailDemo); err != nil {
+		t.Fatalf("decode filtered delivery assurance: %v", err)
+	}
+	if len(emailDemo.Routes) != 1 || emailDemo.Routes[0].Channel != constants.DeliveryChannelEmail || emailDemo.Routes[0].AssuranceState != constants.DeliveryAssuranceDemoOnly {
+		t.Fatalf("expected filtered email demo-only route: %+v", emailDemo.Routes)
+	}
+
+	invalid := httptest.NewRecorder()
+	handler.ServeHTTP(invalid, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentDeliveryAssure+"?assurance_state=random", nil))
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("expected invalid delivery assurance state 400, got %d: %s", invalid.Code, invalid.Body.String())
+	}
+}
+
 func TestTenantActivityViewsEndpoint(t *testing.T) {
 	t.Parallel()
 

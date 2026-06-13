@@ -387,3 +387,12 @@ testing. The report is metadata-only and does not collect passwords,
 screenshots, raw URLs, page titles, cookies, tokens, private content, endpoint
 payloads, keylogging, provider secrets, push endpoints, alert bodies, payment
 data, or raw provider payloads.
+
+Phase 75 adds a Delivery Assurance Center so notification proof cannot be
+misread. `GET /api/v1/tenants/{tenantId}/delivery-assurance` separates
+`provider_confirmed`, `dry_run_rehearsed`, `dashboard_visible`, `demo_only`,
+`retrying`, `failed`, `route_disabled`, and `pending_provider` states. Seeded
+dashboard data is labelled `demo_only`; retrying web push is labelled as not
+screen-visible; buyer-ready proof requires provider-confirmed email, provider-
+confirmed push, and dashboard fallback. Use `python devctl.py test phase75` to
+run the full local verifier.

@@ -43,6 +43,7 @@ type Repository interface {
 	TenantAlertInbox(context.Context, string) (model.TenantAlertInbox, error)
 	TenantNotificationCommandCenter(context.Context, string) (model.TenantNotificationCommandCenter, error)
 	TenantDeliveryTimeline(context.Context, string, model.TenantDeliveryTimelineFilter) (model.TenantDeliveryTimeline, error)
+	TenantDeliveryAssurance(context.Context, string, model.TenantDeliveryAssuranceFilter) (model.TenantDeliveryAssurance, error)
 	TenantSyncHealth(context.Context, string) (model.TenantSyncHealth, error)
 	TenantActivityFeed(context.Context, string, model.TenantActivityFeedFilter) (model.TenantActivityFeed, error)
 	TenantBrowserActivity(context.Context, string, model.TenantBrowserActivityFilter) (model.TenantBrowserActivityViewer, error)

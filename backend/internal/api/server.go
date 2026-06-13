@@ -394,6 +394,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantNotificationCommandCenter(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentDeliveryTimeline && r.Method == http.MethodGet:
 		s.handleTenantDeliveryTimeline(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentDeliveryAssure && r.Method == http.MethodGet:
+		s.handleTenantDeliveryAssurance(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentDeliveryDrill:
 		s.handleTenantDeliveryDrilldown(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentDeliveryRemedy:
@@ -931,6 +933,32 @@ func (s *Server) handleTenantDeliveryTimeline(w http.ResponseWriter, r *http.Req
 	writeJSON(w, http.StatusOK, timeline)
 }
 
+func (s *Server) handleTenantDeliveryAssurance(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	filter := deliveryAssuranceFilterFromQuery(r)
+	if filter.Channel != "" && !knownChannels([]string{filter.Channel}) {
+		writeError(w, http.StatusBadRequest, "unknown delivery assurance channel")
+		return
+	}
+	if filter.AssuranceState != "" && !knownDeliveryAssuranceState(filter.AssuranceState) {
+		writeError(w, http.StatusBadRequest, "unknown delivery assurance state")
+		return
+	}
+	assurance, err := s.store.TenantDeliveryAssurance(r.Context(), tenantID, filter)
+	if err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant delivery assurance lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, assurance)
+}
+
 func (s *Server) handleTenantDeliveryDrilldown(w http.ResponseWriter, r *http.Request, tenantID string) {
 	if !tenantAllowed(r.Context(), tenantID) {
 		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
@@ -1247,6 +1275,23 @@ func deliveryTimelineFilterFromQuery(r *http.Request) model.TenantDeliveryTimeli
 		Provider: strings.ToLower(strings.TrimSpace(query.Get("provider"))),
 		Query:    strings.TrimSpace(query.Get("q")),
 		Limit:    limit,
+	}
+}
+
+func deliveryAssuranceFilterFromQuery(r *http.Request) model.TenantDeliveryAssuranceFilter {
+	query := r.URL.Query()
+	limit := 0
+	if rawLimit := strings.TrimSpace(query.Get("limit")); rawLimit != "" {
+		parsed, err := strconv.Atoi(rawLimit)
+		if err == nil {
+			limit = parsed
+		}
+	}
+	return model.TenantDeliveryAssuranceFilter{
+		DeviceID:       strings.TrimSpace(query.Get("device_id")),
+		Channel:        strings.ToLower(strings.TrimSpace(query.Get("channel"))),
+		AssuranceState: strings.ToLower(strings.TrimSpace(query.Get("assurance_state"))),
+		Limit:          limit,
 	}
 }
 
@@ -2254,6 +2299,22 @@ func knownDeliveryTimelineStatus(status string) bool {
 		constants.DeliveryStatusRetrying,
 		constants.DeliveryStatusFailed,
 		constants.DeliveryStatusSuppressed:
+		return true
+	default:
+		return false
+	}
+}
+
+func knownDeliveryAssuranceState(state string) bool {
+	switch strings.TrimSpace(state) {
+	case constants.DeliveryAssuranceProviderConfirmed,
+		constants.DeliveryAssuranceDryRunRehearsed,
+		constants.DeliveryAssuranceDashboardVisible,
+		constants.DeliveryAssuranceDemoOnly,
+		constants.DeliveryAssuranceRetrying,
+		constants.DeliveryAssuranceFailed,
+		constants.DeliveryAssuranceRouteDisabled,
+		constants.DeliveryAssurancePendingProvider:
 		return true
 	default:
 		return false

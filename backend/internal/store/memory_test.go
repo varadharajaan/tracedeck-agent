@@ -510,6 +510,63 @@ func TestTenantDeliveryTimelineFiltersDeliveryProof(t *testing.T) {
 	}
 }
 
+func TestTenantDeliveryAssuranceSeparatesDemoFromProviderProof(t *testing.T) {
+	t.Parallel()
+
+	repo := NewMemory()
+	ctx := context.Background()
+	_, err := repo.CreateTenant(ctx, model.CreateTenantRequest{
+		TenantID:        "family-varadha",
+		Name:            "Family Varadha",
+		PlanID:          constants.PlanFamilyPro,
+		RetentionTierID: constants.RetentionFamilyCloud,
+		PrimaryProfile:  "ai-btech-student",
+	})
+	if err != nil {
+		t.Fatalf("create tenant: %v", err)
+	}
+	_, err = repo.EnrollDevice(ctx, model.EnrollDeviceRequest{
+		TenantID: "family-varadha",
+		DeviceID: "assurance-device",
+		HostName: "assurance-host",
+		Profile:  "ai-btech-student",
+		OSName:   "windows",
+	})
+	if err != nil {
+		t.Fatalf("enroll device: %v", err)
+	}
+
+	assurance, err := repo.TenantDeliveryAssurance(ctx, "family-varadha", model.TenantDeliveryAssuranceFilter{DeviceID: "assurance-device", Limit: 10})
+	if err != nil {
+		t.Fatalf("tenant delivery assurance: %v", err)
+	}
+	if assurance.Summary.RoutesTotal != 3 || assurance.Summary.ProviderConfirmed != 0 || assurance.Summary.DemoOnly == 0 || assurance.Summary.Retrying == 0 || !assurance.Summary.DashboardRouteReady {
+		t.Fatalf("expected demo-only email, retrying push, dashboard fallback, and no provider-confirmed proof: %+v", assurance.Summary)
+	}
+	if assurance.Summary.BuyerReady {
+		t.Fatalf("seeded delivery rows must not be buyer-ready provider proof: %+v", assurance.Summary)
+	}
+	if len(assurance.Routes) != 3 || assurance.PrivacyBoundary == "" {
+		t.Fatalf("expected route assurance rows and privacy boundary: %+v", assurance)
+	}
+
+	filtered, err := repo.TenantDeliveryAssurance(ctx, "family-varadha", model.TenantDeliveryAssuranceFilter{
+		DeviceID:       "assurance-device",
+		Channel:        constants.DeliveryChannelEmail,
+		AssuranceState: constants.DeliveryAssuranceDemoOnly,
+		Limit:          5,
+	})
+	if err != nil {
+		t.Fatalf("tenant delivery assurance filter: %v", err)
+	}
+	if len(filtered.Routes) != 1 || filtered.Routes[0].AssuranceState != constants.DeliveryAssuranceDemoOnly || filtered.Routes[0].SourceKind != constants.EvidenceSourceDemoSeed {
+		t.Fatalf("expected filtered email demo-only proof: %+v", filtered.Routes)
+	}
+	if filtered.Routes[0].OperatorTruth == "" || filtered.Routes[0].UserVisibleLabel == "" || filtered.Routes[0].NextAction == "" {
+		t.Fatalf("expected operator truth labels: %+v", filtered.Routes[0])
+	}
+}
+
 func TestTenantRoleExperiences(t *testing.T) {
 	t.Parallel()
 
