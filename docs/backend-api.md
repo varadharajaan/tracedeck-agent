@@ -517,7 +517,9 @@ typed browser activity viewer contract with filters for `device_id`, `browser`,
 `category`, `domain`, `study_safe`, `q`, and `limit`. The response includes
 Chrome, Edge, Brave, study-safe, non-study YouTube, notification-proof, host,
 browser, and activity-row summaries for domain-level telemetry emitted by the
-agent browser collector. It remains metadata-only and does not collect or store
+agent browser collector. Activity rows include `source_kind`, `evidence_scope`,
+and `evidence_detail` so `demo_seed`, `live_ingested`, and cloud sampled rows
+can be separated in dashboards and tests. It remains metadata-only and does not collect or store
 passwords, screenshots, raw URLs, page titles, cookies, tokens, private
 content, endpoint payloads, keylogging, hidden collection bypasses, provider
 secrets, push endpoints, or alert bodies.
@@ -526,5 +528,5 @@ Phase 69 does not add a new local backend route. It adds a SAM Lambda frontend
 contract at `/api/health`, `/api/s3-summary`, and `/` inside `sam-app`. The
 Lambda frontend uses S3 object listing and safe JSON/JSONL/GZip sampling to
 summarize archive object counts, byte totals, host/browser/domain metadata,
-and cache hit/miss percentages. It is deployed with a Lambda Function URL and
+source provenance, and cache hit/miss percentages. It is deployed with a Lambda Function URL and
 does not define API Gateway resources.

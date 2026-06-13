@@ -44,6 +44,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 Verification logs are written under `logs/local/verify/`.
 Root-level generated artifacts are rejected by `scripts/verify/check-root-clean.ps1`.
 Cross-platform build outputs are written under `data/local/build/`.
+Use `python ./devctl.py test live` to verify the currently running
+`http://127.0.0.1:18080` dashboard, browser activity page, and API source
+provenance without starting a second backend.
 Browser fixture smoke data is generated under `data/local/smoke-phase3/`, and
 the smoke archive is checked to ensure raw URLs and page titles are not stored.
 Earlier phase smokes pass `--disable-browser-history` so they do not collect

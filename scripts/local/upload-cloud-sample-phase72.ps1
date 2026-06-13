@@ -63,6 +63,9 @@ function New-BrowserArchiveRecord {
             browser_name = $Browser
             domain = $Domain
             category = $Category
+            source_kind = "s3_sample"
+            evidence_scope = "metadata_only"
+            evidence_detail = "Sampled from S3 archive metadata for cloud admin rendering."
             url_mode = "domain_only"
             stored_url_mode = "domain_only"
             visit_count = [string]$VisitCount

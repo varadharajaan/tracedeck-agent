@@ -47,6 +47,7 @@ func TestDashboardDOMContract(t *testing.T) {
 		"/browser-activity",
 		"theme-toggle-button",
 		"server-status-light",
+		"sourceBadge",
 		"dashboard-page-nav",
 		"data-page-target=\"notifications\"",
 		"Premium Operations Hub",
@@ -232,6 +233,8 @@ func TestBrowserActivityDOMContract(t *testing.T) {
 		"Notification Proof",
 		"Host Breakdown",
 		"Browser Domain Activity",
+		"<th>Source</th>",
+		"sourceBadge",
 		"metadata-only guard",
 	} {
 		if !strings.Contains(html, marker) {

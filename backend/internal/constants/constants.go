@@ -453,10 +453,36 @@ const (
 	BrowserMetadataBrowserName       = "browser_name"
 	BrowserMetadataCategory          = "category"
 	BrowserMetadataDomain            = "domain"
+	BrowserMetadataEvidenceDetail    = "evidence_detail"
+	BrowserMetadataEvidenceScope     = "evidence_scope"
+	BrowserMetadataSourceKind        = "source_kind"
 	BrowserMetadataStoredURLMode     = "stored_url_mode"
 	BrowserMetadataURLMode           = "url_mode"
 	BrowserMetadataVisitCount        = "visit_count"
 	BrowserMetadataYouTubeStudyMatch = "youtube_study_match"
+)
+
+const (
+	EvidenceSourceDemoSeed   = "demo_seed"
+	EvidenceSourceDryRun     = "dry_run"
+	EvidenceSourceLiveIngest = "live_ingested"
+	EvidenceSourceS3Sample   = "s3_sample"
+	EvidenceSourceS3Archive  = "s3_archive"
+)
+
+const (
+	EvidenceScopeDemo          = "demo"
+	EvidenceScopeLive          = "live"
+	EvidenceScopeMetadataOnly  = "metadata_only"
+	EvidenceScopeDeliveryProof = "delivery_proof"
+)
+
+const (
+	EvidenceDetailDemoRisk      = "Seeded local dashboard demo signal; use live telemetry ingest for production evidence."
+	EvidenceDetailDemoDelivery  = "Seeded dashboard delivery proof only; no SMTP, SES, or web-push provider send was attempted."
+	EvidenceDetailDemoBrowser   = "Seeded browser activity demo row; live rows come from browser telemetry ingest or S3 archive sampling."
+	EvidenceDetailLiveTelemetry = "Accepted through local backend telemetry ingest from the endpoint agent."
+	EvidenceDetailS3Sample      = "Sampled from S3 archive metadata for cloud admin rendering."
 )
 
 const (

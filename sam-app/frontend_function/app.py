@@ -17,6 +17,9 @@ DEFAULT_LOCAL_BACKEND = os.environ.get("TRACEDECK_LOCAL_BACKEND_URL", "http://12
 MAX_KEYS = int(os.environ.get("TRACEDECK_FRONTEND_MAX_KEYS", "1000"))
 MAX_SAMPLE_OBJECTS = int(os.environ.get("TRACEDECK_FRONTEND_SAMPLE_OBJECTS", "24"))
 MAX_SAMPLE_BYTES = int(os.environ.get("TRACEDECK_FRONTEND_SAMPLE_BYTES", "1048576"))
+SOURCE_KIND_S3_SAMPLE = "s3_sample"
+EVIDENCE_SCOPE_METADATA_ONLY = "metadata_only"
+EVIDENCE_DETAIL_S3_SAMPLE = "Sampled from S3 archive metadata for cloud admin rendering."
 
 _CACHE: dict[str, Any] = {
     "key": "",
@@ -274,6 +277,9 @@ def _browser_row(record: dict[str, Any], key: str) -> dict[str, Any] | None:
         "visit_count": int(_field(record, "visit_count", "VisitCount") or 1),
         "observed_at": observed or "",
         "source_key": key,
+        "source_kind": _field(record, "source_kind", "SourceKind") or SOURCE_KIND_S3_SAMPLE,
+        "evidence_scope": _field(record, "evidence_scope", "EvidenceScope") or EVIDENCE_SCOPE_METADATA_ONLY,
+        "evidence_detail": _field(record, "evidence_detail", "EvidenceDetail") or EVIDENCE_DETAIL_S3_SAMPLE,
     }
 
 
@@ -466,7 +472,7 @@ def _index_html() -> str:
       <div class="panel">
         <div class="status-row"><h2>Browser Domain Activity</h2><span id="row-count" class="pill">0 rows</span></div>
         <div class="table-wrap" style="margin-top:10px">
-          <table><thead><tr><th>Host</th><th>Browser</th><th>Domain</th><th>Category</th><th>Study</th><th>Observed</th></tr></thead><tbody id="browser-table"><tr><td colspan="6"><div class="empty">No browser data loaded.</div></td></tr></tbody></table>
+          <table><thead><tr><th>Host</th><th>Browser</th><th>Domain</th><th>Category</th><th>Study</th><th>Source</th><th>Observed</th></tr></thead><tbody id="browser-table"><tr><td colspan="7"><div class="empty">No browser data loaded.</div></td></tr></tbody></table>
         </div>
       </div>
     </section>
@@ -508,6 +514,11 @@ def _index_html() -> str:
       status.classList.remove("connected", "disconnected");
       if (kind) status.classList.add(kind);
       setText("server-status-text", label);
+    }}
+    function sourceBadge(row) {{
+      const source = String(row.source_kind || "source_pending").replace(/_/g, " ");
+      const scope = String(row.evidence_scope || "scope pending").replace(/_/g, " ");
+      return '<span class="pill">' + escapeHTML(source) + '</span><br><span class="muted">' + escapeHTML(scope) + '</span>';
     }}
     function setTheme(theme) {{
       const next = theme === "dark" ? "dark" : "light";
@@ -600,8 +611,8 @@ def _index_html() -> str:
     function renderRows(rows) {{
       setText("row-count", rows.length + " rows");
       const target = document.getElementById("browser-table");
-      if (!rows.length) {{ target.innerHTML = '<tr><td colspan="6"><div class="empty">No browser data loaded.</div></td></tr>'; return; }}
-      target.innerHTML = rows.map(row => '<tr><td>' + escapeHTML(row.host_name || row.device_id) + '</td><td>' + escapeHTML(row.browser) + '</td><td><strong>' + escapeHTML(row.domain) + '</strong></td><td>' + escapeHTML(row.category) + '</td><td>' + escapeHTML(row.study_safe ? "study-safe" : "review") + '</td><td>' + escapeHTML(row.observed_at || "not observed") + '</td></tr>').join("");
+      if (!rows.length) {{ target.innerHTML = '<tr><td colspan="7"><div class="empty">No browser data loaded.</div></td></tr>'; return; }}
+      target.innerHTML = rows.map(row => '<tr><td>' + escapeHTML(row.host_name || row.device_id) + '</td><td>' + escapeHTML(row.browser) + '</td><td><strong>' + escapeHTML(row.domain) + '</strong></td><td>' + escapeHTML(row.category) + '</td><td>' + escapeHTML(row.study_safe ? "study-safe" : "review") + '</td><td>' + sourceBadge(row) + '<br><span class="muted">' + escapeHTML(row.evidence_detail || "") + '</span></td><td>' + escapeHTML(row.observed_at || "not observed") + '</td></tr>').join("");
     }}
     function renderObjects(objects) {{
       setText("object-count", objects.length + " objects");

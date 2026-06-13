@@ -401,6 +401,9 @@ func TestTenantBrowserActivityEndpoint(t *testing.T) {
 	if viewer.Items[0].Domain == "" || viewer.Items[0].Recommendation == "" || len(viewer.Hosts) != 1 || len(viewer.Browsers) != 3 {
 		t.Fatalf("expected typed browser activity detail: %+v", viewer)
 	}
+	if viewer.Items[0].SourceKind != constants.EvidenceSourceLiveIngest || viewer.Items[0].EvidenceScope != constants.EvidenceScopeLive || viewer.Items[0].EvidenceDetail == "" {
+		t.Fatalf("expected live telemetry provenance on browser activity: %+v", viewer.Items[0])
+	}
 	if !strings.Contains(viewer.PrivacyBoundary, "metadata-only") || !strings.Contains(viewer.PrivacyBoundary, "no passwords") {
 		t.Fatalf("expected browser privacy boundary: %q", viewer.PrivacyBoundary)
 	}
@@ -651,6 +654,9 @@ func TestHostDashboardRiskEndpoints(t *testing.T) {
 	if policyEvents.Count == 0 || policyEvents.Items[0].Type != constants.RiskTypePolicyViolation {
 		t.Fatalf("unexpected policy events: %+v", policyEvents)
 	}
+	if policyEvents.Items[0].SourceKind != constants.EvidenceSourceDemoSeed || policyEvents.Items[0].EvidenceScope != constants.EvidenceScopeDemo || policyEvents.Items[0].EvidenceDetail == "" {
+		t.Fatalf("expected seeded risk provenance: %+v", policyEvents.Items[0])
+	}
 
 	deliveries := httptest.NewRecorder()
 	handler.ServeHTTP(deliveries, httptest.NewRequest(http.MethodGet, constants.RouteDevices+"/laptop-cousin-001/"+constants.RouteSegmentAlertDelivery, nil))
@@ -659,6 +665,13 @@ func TestHostDashboardRiskEndpoints(t *testing.T) {
 	}
 	if !strings.Contains(deliveries.Body.String(), constants.DeliveryChannelEmail) {
 		t.Fatalf("expected email delivery visibility, got %s", deliveries.Body.String())
+	}
+	var deliveryEvents model.ListResponse[model.AlertDelivery]
+	if err := json.Unmarshal(deliveries.Body.Bytes(), &deliveryEvents); err != nil {
+		t.Fatalf("decode alert deliveries: %v", err)
+	}
+	if deliveryEvents.Count == 0 || deliveryEvents.Items[0].SourceKind != constants.EvidenceSourceDemoSeed || deliveryEvents.Items[0].EvidenceScope != constants.EvidenceScopeDeliveryProof {
+		t.Fatalf("expected seeded delivery provenance: %+v", deliveryEvents)
 	}
 
 	weekly := httptest.NewRecorder()

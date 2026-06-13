@@ -165,6 +165,9 @@ type RiskEvent struct {
 	Severity       string    `json:"severity"`
 	Category       string    `json:"category"`
 	Source         string    `json:"source"`
+	SourceKind     string    `json:"source_kind"`
+	EvidenceScope  string    `json:"evidence_scope"`
+	EvidenceDetail string    `json:"evidence_detail"`
 	AppName        string    `json:"app_name"`
 	Domain         string    `json:"domain"`
 	ResourceLabel  string    `json:"resource_label"`
@@ -181,6 +184,9 @@ type AlertDelivery struct {
 	Channel          string     `json:"channel"`
 	Recipient        string     `json:"recipient"`
 	Provider         string     `json:"provider"`
+	SourceKind       string     `json:"source_kind"`
+	EvidenceScope    string     `json:"evidence_scope"`
+	EvidenceDetail   string     `json:"evidence_detail"`
 	Status           string     `json:"status"`
 	Attempts         int        `json:"attempts"`
 	LastAttemptAt    time.Time  `json:"last_attempt_at"`
@@ -225,6 +231,9 @@ type TenantDeliveryTimelineItem struct {
 	Channel          string     `json:"channel"`
 	Provider         string     `json:"provider"`
 	Recipient        string     `json:"recipient"`
+	SourceKind       string     `json:"source_kind"`
+	EvidenceScope    string     `json:"evidence_scope"`
+	EvidenceDetail   string     `json:"evidence_detail"`
 	Status           string     `json:"status"`
 	Attempts         int        `json:"attempts"`
 	Summary          string     `json:"summary"`
@@ -330,6 +339,9 @@ type TenantActivityFeedItem struct {
 	Detail         string    `json:"detail"`
 	Recommendation string    `json:"recommendation"`
 	Source         string    `json:"source"`
+	SourceKind     string    `json:"source_kind"`
+	EvidenceScope  string    `json:"evidence_scope"`
+	EvidenceDetail string    `json:"evidence_detail"`
 	Provider       string    `json:"provider"`
 	Recipient      string    `json:"recipient"`
 	EventID        string    `json:"event_id"`
@@ -405,6 +417,9 @@ type TenantBrowserActivityItem struct {
 	YouTubeStudyMatch    bool      `json:"youtube_study_match"`
 	Status               string    `json:"status"`
 	Signal               string    `json:"signal"`
+	SourceKind           string    `json:"source_kind"`
+	EvidenceScope        string    `json:"evidence_scope"`
+	EvidenceDetail       string    `json:"evidence_detail"`
 	Recommendation       string    `json:"recommendation"`
 	NotificationChannels []string  `json:"notification_channels"`
 	ObservedAt           time.Time `json:"observed_at"`
@@ -423,14 +438,17 @@ type TenantBrowserActivityViewer struct {
 }
 
 type TenantAlertDeliveryProof struct {
-	Channel       string     `json:"channel"`
-	Status        string     `json:"status"`
-	Provider      string     `json:"provider"`
-	Recipient     string     `json:"recipient"`
-	Attempts      int        `json:"attempts"`
-	LastAttemptAt time.Time  `json:"last_attempt_at"`
-	NextRetryAt   *time.Time `json:"next_retry_at,omitempty"`
-	Proof         string     `json:"proof"`
+	Channel        string     `json:"channel"`
+	Status         string     `json:"status"`
+	Provider       string     `json:"provider"`
+	Recipient      string     `json:"recipient"`
+	Attempts       int        `json:"attempts"`
+	LastAttemptAt  time.Time  `json:"last_attempt_at"`
+	NextRetryAt    *time.Time `json:"next_retry_at,omitempty"`
+	Proof          string     `json:"proof"`
+	SourceKind     string     `json:"source_kind"`
+	EvidenceScope  string     `json:"evidence_scope"`
+	EvidenceDetail string     `json:"evidence_detail"`
 }
 
 type TenantAlertInboxSummary struct {
@@ -460,6 +478,9 @@ type TenantAlertInboxItem struct {
 	Detail         string                     `json:"detail"`
 	Recommendation string                     `json:"recommendation"`
 	Source         string                     `json:"source"`
+	SourceKind     string                     `json:"source_kind"`
+	EvidenceScope  string                     `json:"evidence_scope"`
+	EvidenceDetail string                     `json:"evidence_detail"`
 	DeliveryState  string                     `json:"delivery_state"`
 	DeliveryProof  []TenantAlertDeliveryProof `json:"delivery_proof"`
 	NextAction     string                     `json:"next_action"`

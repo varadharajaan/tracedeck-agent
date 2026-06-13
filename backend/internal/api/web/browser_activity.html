@@ -490,11 +490,12 @@
                 <th>Signal</th>
                 <th>Visits</th>
                 <th>Delivery</th>
+                <th>Source</th>
                 <th>Observed</th>
               </tr>
             </thead>
             <tbody id="activity-table">
-              <tr><td colspan="8"><div class="empty">No browser activity loaded.</div></td></tr>
+              <tr><td colspan="9"><div class="empty">No browser activity loaded.</div></td></tr>
             </tbody>
           </table>
         </div>
@@ -584,6 +585,12 @@
       const clean = String(status || "pending").toLowerCase();
       const className = ["healthy", "attention", "watch", "ok"].includes(clean) ? clean : "pending";
       return `<span class="badge ${className}">${escapeHTML(clean)}</span>`;
+    }
+
+    function sourceBadge(item) {
+      const source = String(item.source_kind || "source_pending").replace(/_/g, " ");
+      const scope = String(item.evidence_scope || "scope pending").replace(/_/g, " ");
+      return `<span class="pill">${escapeHTML(source)}</span><br><span class="muted">${escapeHTML(scope)}</span>`;
     }
 
     function formatDate(value) {
@@ -711,7 +718,7 @@
       setText("item-count", `${items.length} row${items.length === 1 ? "" : "s"}`);
       const target = document.getElementById("activity-table");
       if (items.length === 0) {
-        target.innerHTML = '<tr><td colspan="8"><div class="empty">No browser activity loaded.</div></td></tr>';
+        target.innerHTML = '<tr><td colspan="9"><div class="empty">No browser activity loaded.</div></td></tr>';
         return;
       }
       target.innerHTML = items.map((item) => `
@@ -723,6 +730,7 @@
           <td>${badge(item.status)}<br><span class="muted">${escapeHTML(item.signal || item.recommendation)}</span></td>
           <td>${escapeHTML(item.visit_count || 0)}</td>
           <td>${(item.notification_channels || []).length ? (item.notification_channels || []).map((channel) => `<span class="pill">${escapeHTML(channel)}</span>`).join(" ") : '<span class="muted">No route proof</span>'}</td>
+          <td>${sourceBadge(item)}<br><span class="muted">${escapeHTML(item.evidence_detail || "")}</span></td>
           <td>${escapeHTML(formatDate(item.observed_at))}</td>
         </tr>
       `).join("");
