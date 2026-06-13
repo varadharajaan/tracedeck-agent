@@ -118,6 +118,12 @@ To check the currently running local dashboard:
 python ./devctl.py test live
 ```
 
+To rerun the full provenance hardening gate:
+
+```powershell
+python ./devctl.py test phase73
+```
+
 The dashboard reads the base backend endpoints:
 
 - `/health`

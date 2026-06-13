@@ -47,6 +47,18 @@ Cross-platform build outputs are written under `data/local/build/`.
 Use `python ./devctl.py test live` to verify the currently running
 `http://127.0.0.1:18080` dashboard, browser activity page, and API source
 provenance without starting a second backend.
+Phase 73 adds the repeatable provenance harness:
+
+```powershell
+python ./devctl.py test phase73
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase73.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase73.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase73.ps1
+```
+
+The Phase 73 verifier checks local dashboard/browser source badges, typed API
+provenance fields, live `18080` readback, Lambda S3 row provenance, Newman
+collections, and root artifact hygiene.
 Browser fixture smoke data is generated under `data/local/smoke-phase3/`, and
 the smoke archive is checked to ensure raw URLs and page titles are not stored.
 Earlier phase smokes pass `--disable-browser-history` so they do not collect
