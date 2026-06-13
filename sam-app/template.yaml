@@ -49,7 +49,6 @@ Resources:
             - "*"
           AllowMethods:
             - GET
-            - OPTIONS
           AllowHeaders:
             - "*"
           MaxAge: 300
