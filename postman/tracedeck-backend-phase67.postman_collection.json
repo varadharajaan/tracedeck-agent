@@ -1,0 +1,100 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 67",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Has Premium Operations Hub",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('dashboard contains premium operations markers', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('Premium Operations Hub');",
+              "  pm.expect(html).to.include('Premium Value Tiles');",
+              "  pm.expect(html).to.include('Anomaly Notification Wall');",
+              "  pm.expect(html).to.include('Mail And Push Delivery Ops');",
+              "  pm.expect(html).to.include('Premium Owner Actions');",
+              "  pm.expect(html).to.include('data-jump-target=\"premium-operations-section\"');",
+              "  pm.expect(html).to.include('premium-kpi-push');",
+              "  pm.expect(html).to.include('premium-delivery-list');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Premium Operations Hub API",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/premium-operations-hub"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('premium operations hub is typed and metadata-only', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.summary.premium_score).to.be.above(0);",
+              "  pm.expect(body.summary.notification_score).to.be.above(0);",
+              "  pm.expect(body.summary.owner_next_step).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.summary.recommended_paid_package).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.summary.mail_delivered).to.be.at.least(1);",
+              "  pm.expect(body.summary.dashboard_delivered).to.be.at.least(1);",
+              "  pm.expect(body.tiles.length).to.be.at.least(8);",
+              "  pm.expect(body.alerts.length).to.be.at.least(1);",
+              "  pm.expect(body.deliveries.length).to.be.at.least(3);",
+              "  pm.expect(body.actions.length).to.be.at.least(1);",
+              "  ['anomaly-inbox', 'mail-delivery', 'push-notifications', 'dashboard-fallback', 'weekly-report', 'archive-retention', 'deployment-readiness', 'package-value'].forEach(function (id) {",
+              "    pm.expect(body.tiles.map(function (item) { return item.id; })).to.include(id);",
+              "  });",
+              "  ['email', 'push', 'dashboard'].forEach(function (channel) {",
+              "    pm.expect(body.deliveries.map(function (item) { return item.channel; })).to.include(channel);",
+              "  });",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(body.privacy_boundary).to.include('no passwords');",
+              "  pm.expect(body.privacy_boundary).to.include('no screenshots');",
+              "  pm.expect(body.privacy_boundary).to.include('hidden collection bypasses');",
+              "  const serialized = JSON.stringify(body).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'push_endpoint', 'screenshot_bytes', 'raw_url', 'page_title', 'alert_body', 'card_number', 'cvv', 'payment_token', 'keylogger'].forEach(function (marker) {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

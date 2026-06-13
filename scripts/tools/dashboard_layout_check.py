@@ -12,7 +12,29 @@ VIEWPORTS = (
     {"name": "mobile", "width": 390, "height": 844},
 )
 
+EXPECTED_COMMAND_JUMPS = 22
+
 REQUIRED_IDS = (
+    "premium-operations-section",
+    "premium-operations-status",
+    "premium-operations-headline",
+    "premium-operations-score",
+    "premium-operations-score-bar",
+    "premium-operations-package",
+    "premium-operations-audience",
+    "premium-operations-next",
+    "premium-operations-privacy",
+    "premium-kpi-alerts",
+    "premium-kpi-mail",
+    "premium-kpi-push",
+    "premium-kpi-dashboard",
+    "premium-kpi-report",
+    "premium-kpi-deployment",
+    "premium-tile-list",
+    "premium-alert-list",
+    "premium-delivery-list",
+    "premium-action-list",
+    "nav-premium-operations-meta",
     "monetisation-overview-section",
     "monetisation-overview-status",
     "monetisation-overview-headline",
@@ -295,8 +317,8 @@ def main() -> int:
                             clientHeight: element.clientHeight
                           }));
                           checks.push({
-                            name: "command-navigation-has-twenty-one-jumps",
-                            ok: jumpBoxes.length === 21,
+                            name: "command-navigation-has-expected-jumps",
+                            ok: jumpBoxes.length === %d,
                             detail: `${jumpBoxes.length} command jump buttons`
                           });
                           for (const item of jumpBoxes) {
@@ -349,7 +371,7 @@ def main() -> int:
                             jump_boxes: jumpBoxes,
                             rightmost_elements: allElements
                           };
-                        }""",
+                        }""" % EXPECTED_COMMAND_JUMPS,
                         list(REQUIRED_IDS),
                     )
                     result["name"] = viewport["name"]

@@ -462,6 +462,15 @@ and deployment owner actions. The command navigation adds a Deploy target so
 admins can answer "will the agent come back after restart?" without leaving the
 monetisation dashboard.
 
+Phase 67 adds a Premium Operations Hub above the existing monetisation
+drilldowns. It renders the typed `premium-operations-hub` API as the
+buyer/admin first screen: premium readiness, anomaly inbox, mail delivery,
+push notification route proof, dashboard fallback, weekly report readiness,
+archive retention, deployment readiness, package value, commercial levers, and
+owner actions. The command navigation adds a Premium target so the user can
+start from the sellable operating view and drill into Rev Ops, Deploy, Push,
+Portfolio, or host details only when needed.
+
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
 paid customer onboarding workflows.

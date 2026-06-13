@@ -823,6 +823,19 @@ live demo and covers dashboard markers plus typed deployment readiness proof.
 Windows task template, runs autostart assurance, runs service-manager dry-run
 verification, and runs cross-platform Windows/macOS/Linux builds locally.
 
+The Phase 67 smoke live-boots the seeded dashboard, verifies Premium Operations
+Hub, Premium Value Tiles, Anomaly Notification Wall, Mail And Push Delivery Ops,
+Premium Owner Actions, and Premium command navigation markers, checks the
+tenant `premium-operations-hub` API, verifies premium score, owner action,
+mail/dashboard proof, push route visibility, tiles, alerts, deliveries, actions,
+and strict privacy/forbidden markers, and reruns the screenshot-free dashboard
+layout contract. Newman runs
+`postman/tracedeck-backend-phase67.postman_collection.json` against the same
+live demo and covers dashboard markers plus typed premium operations proof.
+`scripts/verify/verify-phase67.ps1` also runs backend tests, agent tests,
+dashboard contract, dashboard JavaScript syntax, service manifest rendering,
+Newman, cross-platform builds, and root cleanliness locally.
+
 Phase 13 adds:
 
 ```powershell

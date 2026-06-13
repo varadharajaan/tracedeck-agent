@@ -497,3 +497,17 @@ store passwords, screenshots, raw URLs, page titles, alert bodies, provider
 secrets, push endpoints, endpoint payloads, private content, invoices, tokens,
 cookies, payment card data, raw provider payloads, keylogging, or hidden
 collection bypasses.
+
+Phase 67 adds `GET /api/v1/tenants/{tenantId}/premium-operations-hub`. It
+composes revenue operations, deployment readiness, and portfolio metadata into
+a typed premium command contract. The response includes premium, revenue,
+deployment, portfolio, notification, and trust scores; anomaly/open-alert
+counts; host coverage; mail delivery proof; push notification route state;
+dashboard fallback proof; weekly report readiness; archive backlog; deployment
+readiness; package recommendation; premium value tiles; anomaly notification
+rows; delivery route rows; commercial levers; owner actions; and a strict
+metadata-only privacy boundary. It does not collect or store passwords,
+screenshots, raw URLs, page titles, alert bodies, provider secrets, push
+endpoints, endpoint payloads, private content, invoices, tokens, cookies,
+payment card data, raw provider payloads, keylogging, or hidden collection
+bypasses.

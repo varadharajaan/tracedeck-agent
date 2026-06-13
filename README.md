@@ -341,3 +341,14 @@ levers, and owner actions in one surface. It remains metadata-only and does
 not collect passwords, screenshots, raw URLs, page titles, alert bodies,
 provider secrets, push endpoints, endpoint payloads, private content,
 invoices, payment card data, tokens, cookies, or raw provider payloads.
+
+Phase 67 adds a typed Premium Operations Hub at
+`/api/v1/tenants/{tenantId}/premium-operations-hub` and places it at the top of
+the monetisation dashboard. It gives buyers and admins one polished first
+screen for anomaly inbox, mail delivery proof, push notification route state,
+dashboard fallback, weekly reports, archive retention, deployment readiness,
+package value, commercial levers, and owner actions. It remains metadata-only
+and does not collect passwords, screenshots, raw URLs, page titles, alert
+bodies, provider secrets, push endpoints, endpoint payloads, private content,
+invoices, payment card data, tokens, cookies, raw provider payloads,
+keylogging, or hidden collection bypasses.
