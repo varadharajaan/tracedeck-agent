@@ -8,6 +8,10 @@ dist/
 coverage.out
 *.prof
 
+# Python cache outputs
+__pycache__/
+*.pyc
+
 # Local runtime data
 data/
 logs/

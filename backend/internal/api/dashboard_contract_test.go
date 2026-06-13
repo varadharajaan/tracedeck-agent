@@ -45,6 +45,10 @@ func TestDashboardDOMContract(t *testing.T) {
 	for _, marker := range []string{
 		"browser-activity-button",
 		"/browser-activity",
+		"theme-toggle-button",
+		"server-status-light",
+		"dashboard-page-nav",
+		"data-page-target=\"notifications\"",
 		"Premium Operations Hub",
 		"Premium Value Tiles",
 		"Anomaly Notification Wall",
@@ -219,6 +223,8 @@ func TestBrowserActivityDOMContract(t *testing.T) {
 	for _, marker := range []string{
 		"TraceDeck Browser Activity",
 		"Browser Activity Viewer",
+		"theme-toggle-button",
+		"server-status-light",
 		"Chrome",
 		"Edge",
 		"Brave",

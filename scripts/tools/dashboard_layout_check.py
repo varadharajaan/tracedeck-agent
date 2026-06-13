@@ -2,6 +2,7 @@ import argparse
 import json
 import sys
 from datetime import datetime, timezone
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from playwright.sync_api import sync_playwright
 
@@ -219,15 +220,23 @@ REQUIRED_IDS = (
 )
 
 
+def dashboard_contract_url(base_url: str) -> str:
+    parts = urlsplit(base_url)
+    query = dict(parse_qsl(parts.query, keep_blank_values=True))
+    query["layout"] = "all"
+    return urlunsplit((parts.scheme, parts.netloc, parts.path or "/", urlencode(query), parts.fragment))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="TraceDeck dashboard layout contract")
     parser.add_argument("--base-url", required=True)
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
 
+    target_url = dashboard_contract_url(args.base_url)
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "base_url": args.base_url,
+        "base_url": target_url,
         "privacy_boundary": "layout metrics only; no screenshots, video, credentials, or page content capture",
         "viewports": [],
     }
@@ -239,7 +248,7 @@ def main() -> int:
             for viewport in VIEWPORTS:
                 page = browser.new_page(viewport={"width": viewport["width"], "height": viewport["height"]})
                 try:
-                    page.goto(args.base_url, wait_until="networkidle", timeout=60000)
+                    page.goto(target_url, wait_until="networkidle", timeout=60000)
                     page.wait_for_selector("#command-navigation", state="visible", timeout=30000)
                     page.wait_for_function(
                         "() => document.getElementById('command-nav-title')"

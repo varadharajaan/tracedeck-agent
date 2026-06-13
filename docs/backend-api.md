@@ -521,3 +521,10 @@ agent browser collector. It remains metadata-only and does not collect or store
 passwords, screenshots, raw URLs, page titles, cookies, tokens, private
 content, endpoint payloads, keylogging, hidden collection bypasses, provider
 secrets, push endpoints, or alert bodies.
+
+Phase 69 does not add a new local backend route. It adds a SAM Lambda frontend
+contract at `/api/health`, `/api/s3-summary`, and `/` inside `sam-app`. The
+Lambda frontend uses S3 object listing and safe JSON/JSONL/GZip sampling to
+summarize archive object counts, byte totals, host/browser/domain metadata,
+and cache hit/miss percentages. It is deployed with a Lambda Function URL and
+does not define API Gateway resources.

@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: TraceDeck admin frontend served by a public Lambda Function URL with S3-backed summaries.
+
+Parameters:
+  DataBucketName:
+    Type: String
+    Description: S3 bucket containing TraceDeck archive batches.
+    Default: tracedeck-agent-family-varadha-996335889295-ap-south-1
+  DataPrefix:
+    Type: String
+    Description: Optional S3 key prefix for TraceDeck archive data.
+    Default: ""
+  CacheTTLSeconds:
+    Type: Number
+    Description: Lambda in-memory cache TTL for S3 summaries.
+    Default: 300
+  LocalBackendURL:
+    Type: String
+    Description: Browser-side localhost backend option shown in the admin UI.
+    Default: http://127.0.0.1:18080
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Architectures:
+      - x86_64
+    Timeout: 30
+    MemorySize: 512
+    Tracing: Active
+    Environment:
+      Variables:
+        TRACEDECK_DATA_BUCKET: !Ref DataBucketName
+        TRACEDECK_DATA_PREFIX: !Ref DataPrefix
+        TRACEDECK_CACHE_TTL_SECONDS: !Ref CacheTTLSeconds
+        TRACEDECK_LOCAL_BACKEND_URL: !Ref LocalBackendURL
+
+Resources:
+  TraceDeckFrontendFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: frontend_function/
+      Handler: app.lambda_handler
+      Description: TraceDeck S3-backed admin frontend with cache metrics and local backend switch.
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - GET
+            - OPTIONS
+          AllowHeaders:
+            - "*"
+          MaxAge: 300
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref DataBucketName
+
+Outputs:
+  FrontendFunctionUrl:
+    Description: Public TraceDeck admin frontend Lambda Function URL.
+    Value: !GetAtt TraceDeckFrontendFunctionUrl.FunctionUrl
+  DataBucket:
+    Description: S3 data bucket used by the frontend.
+    Value: !Ref DataBucketName

@@ -481,6 +481,20 @@ metadata-only: no raw URLs, page titles, cookies, tokens, passwords,
 screenshots, provider secrets, alert bodies, private content, or endpoint
 payloads.
 
+Phase 69 adds dashboard navigation and operator polish. The main dashboard now
+has page tabs for Overview, Operations, Notifications, Deployment, Portfolio,
+Hosts, and Admin so admins do not have to scroll through every monetisation
+panel in one pass. `?layout=all` remains available for the screenshot-free
+layout contract. The main dashboard and `/browser-activity` both include a
+dark theme toggle plus an explicit server status light: green for connected,
+red for disconnected, and amber for locked local access.
+
+Phase 69 also adds the optional cloud admin frontend under `sam-app/`. It is
+served by a Lambda Function URL, reads TraceDeck archive metadata from S3,
+shows cache hit/miss percentages, and can switch the browser-side source to a
+configured local backend such as `http://127.0.0.1:18080` when an admin is on
+the machine.
+
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
 paid customer onboarding workflows.
