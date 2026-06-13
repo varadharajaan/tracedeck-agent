@@ -21,6 +21,22 @@
       --purple: #6941c6;
       --shadow: 0 10px 26px rgba(23, 32, 51, 0.08);
     }
+    body.theme-dark {
+      color-scheme: dark;
+      --bg: #101417;
+      --surface: #171d22;
+      --surface-2: #202831;
+      --ink: #edf2f7;
+      --muted: #a7b2bd;
+      --line: #35404b;
+      --teal: #5cbab6;
+      --green: #64c58b;
+      --amber: #f2b15c;
+      --red: #f4766d;
+      --blue: #82aaff;
+      --purple: #c3a6ff;
+      --shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+    }
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -100,6 +116,7 @@
     .status {
       display: inline-flex;
       align-items: center;
+      gap: 8px;
       min-height: 32px;
       padding: 0 12px;
       border: 1px solid #abefc6;
@@ -108,6 +125,45 @@
       color: var(--green);
       font-weight: 750;
       white-space: nowrap;
+    }
+    .status-light {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: currentColor;
+      box-shadow: 0 0 0 4px rgba(2, 122, 72, 0.13);
+    }
+    .server-status.checking {
+      border-color: #b8c7da;
+      background: #f4f7fb;
+      color: #475467;
+    }
+    .server-status.connected {
+      border-color: #abefc6;
+      background: #ecfdf3;
+      color: var(--green);
+    }
+    .server-status.disconnected {
+      border-color: #fecdca;
+      background: #fff4f2;
+      color: var(--red);
+    }
+    body.theme-dark .server-status.checking {
+      border-color: #4b5563;
+      background: #202831;
+      color: #c7d2de;
+    }
+    body.theme-dark .server-status.connected {
+      border-color: rgba(100, 197, 139, 0.45);
+      background: rgba(30, 93, 64, 0.35);
+    }
+    body.theme-dark .server-status.disconnected {
+      border-color: rgba(244, 118, 109, 0.5);
+      background: rgba(92, 35, 36, 0.38);
+    }
+    .theme-toggle {
+      min-width: 98px;
     }
     .panel, .metric {
       min-width: 0;
@@ -308,8 +364,9 @@
     </div>
     <div class="toolbar">
       <button type="button" title="Back to command center" aria-label="Back to command center" onclick="window.location.href='/'"><span class="button-icon" aria-hidden="true">C</span><span>Center</span></button>
+      <button id="theme-toggle-button" class="theme-toggle" type="button" title="Toggle browser activity theme" aria-label="Toggle browser activity theme"><span class="button-icon" aria-hidden="true">T</span><span id="theme-toggle-label">Dark</span></button>
       <button id="refresh-button" class="primary" type="button"><span class="button-icon" aria-hidden="true">R</span><span>Refresh</span></button>
-      <span id="page-status" class="status">Loading</span>
+      <span id="page-status" class="status server-status checking"><span id="server-status-light" class="status-light" aria-hidden="true"></span><span id="server-status-text">Checking server</span></span>
     </div>
   </header>
   <main>
@@ -456,6 +513,9 @@
       tenantID: "X-TraceDeck-Tenant-ID",
       actorID: "X-TraceDeck-Actor-ID"
     };
+    const UI_STORAGE = {
+      theme: "tracedeck.ui.theme"
+    };
     const state = {
       tenantID: sessionStorage.getItem(AUTH_STORAGE.tenantID) || "family-varadha",
       devices: []
@@ -493,6 +553,31 @@
     function setText(id, value) {
       const element = document.getElementById(id);
       if (element) element.textContent = value;
+    }
+
+    function initializeTheme() {
+      const saved = localStorage.getItem(UI_STORAGE.theme);
+      const preferred = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      setTheme(saved || preferred);
+      document.getElementById("theme-toggle-button").addEventListener("click", () => {
+        setTheme(document.body.classList.contains("theme-dark") ? "light" : "dark");
+      });
+    }
+
+    function setTheme(theme) {
+      const next = theme === "dark" ? "dark" : "light";
+      document.body.classList.toggle("theme-dark", next === "dark");
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem(UI_STORAGE.theme, next);
+      setText("theme-toggle-label", next === "dark" ? "Light" : "Dark");
+      document.getElementById("theme-toggle-button").setAttribute("aria-pressed", next === "dark" ? "true" : "false");
+    }
+
+    function setServerStatus(status, label) {
+      const element = document.getElementById("page-status");
+      element.classList.remove("checking", "connected", "disconnected");
+      element.classList.add(status);
+      setText("server-status-text", label);
     }
 
     function badge(status) {
@@ -545,12 +630,13 @@
       if (tenantID) {
         sessionStorage.setItem(AUTH_STORAGE.tenantID, tenantID);
       }
-      setText("page-status", "Loading");
+      setServerStatus("checking", "Checking server");
       setText("tenant-pill", tenantID || "tenant pending");
+      await loadJSON("/health");
       await loadDevices();
       const viewer = await loadJSON(`/api/v1/tenants/${encodeURIComponent(tenantID)}/browser-activity?${queryString()}`);
       render(viewer);
-      setText("page-status", "Live");
+      setServerStatus("connected", "Server connected");
     }
 
     function render(viewer) {
@@ -649,12 +735,13 @@
     });
 
     function showError(error) {
-      setText("page-status", "Error");
+      setServerStatus("disconnected", "Server not connected");
       document.getElementById("browser-status").outerHTML = badge("attention").replace("<span", '<span id="browser-status"');
       setText("browser-headline", "Browser activity could not load.");
       setText("browser-detail", error.message || "Request failed");
     }
 
+    initializeTheme();
     document.getElementById("tenant-input").value = state.tenantID;
     refresh().catch(showError);
   </script>

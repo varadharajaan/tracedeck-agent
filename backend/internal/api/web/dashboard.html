@@ -21,6 +21,22 @@
       --purple: #6941c6;
       --shadow: 0 10px 28px rgba(24, 33, 47, 0.08);
     }
+    body.theme-dark {
+      color-scheme: dark;
+      --bg: #101417;
+      --surface: #171d22;
+      --surface-2: #202831;
+      --ink: #edf2f7;
+      --muted: #a7b2bd;
+      --line: #35404b;
+      --teal: #5cbab6;
+      --green: #64c58b;
+      --amber: #f2b15c;
+      --red: #f4766d;
+      --blue: #82aaff;
+      --purple: #c3a6ff;
+      --shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+    }
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -105,6 +121,7 @@
     .status {
       display: inline-flex;
       align-items: center;
+      gap: 8px;
       min-height: 32px;
       padding: 0 12px;
       border: 1px solid #abefc6;
@@ -113,6 +130,87 @@
       color: var(--green);
       font-weight: 750;
       white-space: nowrap;
+    }
+    .status-light {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: currentColor;
+      box-shadow: 0 0 0 4px rgba(2, 122, 72, 0.13);
+    }
+    .server-status.checking {
+      border-color: #b8c7da;
+      background: #f4f7fb;
+      color: #475467;
+    }
+    .server-status.connected {
+      border-color: #abefc6;
+      background: #ecfdf3;
+      color: var(--green);
+    }
+    .server-status.locked {
+      border-color: #fedf89;
+      background: #fffaeb;
+      color: var(--amber);
+    }
+    .server-status.disconnected {
+      border-color: #fecdca;
+      background: #fff4f2;
+      color: var(--red);
+    }
+    body.theme-dark .server-status.checking {
+      border-color: #4b5563;
+      background: #202831;
+      color: #c7d2de;
+    }
+    body.theme-dark .server-status.connected {
+      border-color: rgba(100, 197, 139, 0.45);
+      background: rgba(30, 93, 64, 0.35);
+    }
+    body.theme-dark .server-status.locked {
+      border-color: rgba(242, 177, 92, 0.48);
+      background: rgba(97, 69, 24, 0.38);
+    }
+    body.theme-dark .server-status.disconnected {
+      border-color: rgba(244, 118, 109, 0.5);
+      background: rgba(92, 35, 36, 0.38);
+    }
+    .theme-toggle {
+      min-width: 98px;
+    }
+    .dashboard-page-nav {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(92px, 1fr));
+      gap: 8px;
+      position: sticky;
+      top: 0;
+      z-index: 6;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+    .dashboard-page-tab {
+      min-width: 0;
+      padding: 0 10px;
+      background: var(--surface-2);
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dashboard-page-tab.is-active {
+      border-color: var(--teal);
+      background: var(--teal);
+      color: #ffffff;
+    }
+    #dashboard-page-nav[data-layout-all="true"] .dashboard-page-tab {
+      border-style: dashed;
+    }
+    main > section[hidden] {
+      display: none !important;
     }
     .shell {
       display: grid;
@@ -1695,6 +1793,7 @@
       .command-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .command-nav { grid-template-columns: 1fr; position: static; }
       .command-nav-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .dashboard-page-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); position: static; }
       .growth-cockpit { grid-template-columns: 1fr; }
       .growth-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .growth-board { grid-template-columns: 1fr; }
@@ -1746,6 +1845,7 @@
       .route-grid { grid-template-columns: 1fr; }
       .command-board { grid-template-columns: 1fr; }
       .command-nav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .dashboard-page-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .business-dashboard { grid-template-columns: 1fr; }
       .business-kpis { grid-template-columns: 1fr; }
       .business-board { grid-template-columns: 1fr; }
@@ -1789,11 +1889,21 @@
     <div class="toolbar">
       <select id="host-select" aria-label="Host filter"></select>
       <button id="browser-activity-button" class="icon-link" type="button" title="Open Chrome, Brave, and Edge browser activity" aria-label="Open browser activity viewer" onclick="window.location.href='/browser-activity'"><span class="button-icon" aria-hidden="true">B</span><span>Browser</span></button>
+      <button id="theme-toggle-button" class="theme-toggle" type="button" title="Toggle dashboard theme" aria-label="Toggle dashboard theme"><span class="button-icon" aria-hidden="true">T</span><span id="theme-toggle-label">Dark</span></button>
       <button id="refresh-button" class="primary" type="button">Refresh</button>
-      <span id="backend-status" class="status">Local backend online</span>
+      <span id="backend-status" class="status server-status checking"><span id="server-status-light" class="status-light" aria-hidden="true"></span><span id="server-status-text">Checking server</span></span>
     </div>
   </header>
   <main>
+    <nav id="dashboard-page-nav" class="dashboard-page-nav" aria-label="dashboard pages">
+      <button class="dashboard-page-tab is-active" type="button" data-page-target="overview" aria-current="page">Overview</button>
+      <button class="dashboard-page-tab" type="button" data-page-target="operations">Operations</button>
+      <button class="dashboard-page-tab" type="button" data-page-target="notifications">Notifications</button>
+      <button class="dashboard-page-tab" type="button" data-page-target="deployment">Deployment</button>
+      <button class="dashboard-page-tab" type="button" data-page-target="portfolio">Portfolio</button>
+      <button class="dashboard-page-tab" type="button" data-page-target="hosts">Hosts</button>
+      <button class="dashboard-page-tab" type="button" data-page-target="admin">Admin</button>
+    </nav>
     <section id="auth-panel" class="auth-panel" aria-label="local dashboard access" hidden>
       <div class="section-head">
         <div>
@@ -4896,6 +5006,10 @@
       tenantID: "X-TraceDeck-Tenant-ID",
       actorID: "X-TraceDeck-Actor-ID"
     });
+    const UI_STORAGE = Object.freeze({
+      theme: "tracedeck.ui.theme",
+      dashboardPage: "tracedeck.dashboard.page"
+    });
     const HTTP_STATUS = Object.freeze({
       unauthorized: 401
     });
@@ -4908,10 +5022,58 @@
       trust: "trust-proof-section",
       hosts: "host-detail-section"
     });
+    const DASHBOARD_PAGE = Object.freeze({
+      overview: "overview",
+      operations: "operations",
+      notifications: "notifications",
+      deployment: "deployment",
+      portfolio: "portfolio",
+      hosts: "hosts",
+      admin: "admin",
+      all: "all"
+    });
+    const DASHBOARD_LAYOUT_ALL = new URLSearchParams(window.location.search).get("layout") === "all";
+    const DASHBOARD_SECTION_PAGE = Object.freeze({
+      "premium-operations-section": DASHBOARD_PAGE.overview,
+      "monetisation-overview-section": DASHBOARD_PAGE.overview,
+      "monetization-command-center-section": DASHBOARD_PAGE.overview,
+      "command-navigation": DASHBOARD_PAGE.all,
+      "onboarding-center-section": DASHBOARD_PAGE.operations,
+      "customer-settings-section": DASHBOARD_PAGE.operations,
+      "revenue-operations-section": DASHBOARD_PAGE.operations,
+      "customer-control-section": DASHBOARD_PAGE.operations,
+      "customer-success-section": DASHBOARD_PAGE.operations,
+      "business-dashboard-section": DASHBOARD_PAGE.operations,
+      "growth-cockpit-section": DASHBOARD_PAGE.operations,
+      "role-experience-section": DASHBOARD_PAGE.operations,
+      "push-activation-section": DASHBOARD_PAGE.notifications,
+      "executive-console-section": DASHBOARD_PAGE.notifications,
+      "notification-revenue-section": DASHBOARD_PAGE.notifications,
+      "premium-notification-section": DASHBOARD_PAGE.notifications,
+      "notification-preference-section": DASHBOARD_PAGE.notifications,
+      "notification-proof-section": DASHBOARD_PAGE.notifications,
+      "delivery-timeline-section": DASHBOARD_PAGE.notifications,
+      "delivery-drilldown-section": DASHBOARD_PAGE.notifications,
+      "delivery-remediation-section": DASHBOARD_PAGE.notifications,
+      "buyer-ops-section": DASHBOARD_PAGE.notifications,
+      "deployment-readiness-section": DASHBOARD_PAGE.deployment,
+      "provider-simulation-section": DASHBOARD_PAGE.deployment,
+      "archive-proof-section": DASHBOARD_PAGE.deployment,
+      "portfolio-center-section": DASHBOARD_PAGE.portfolio,
+      "account-portfolio-section": DASHBOARD_PAGE.portfolio,
+      "package-billing-section": DASHBOARD_PAGE.portfolio,
+      "paid-ops-section": DASHBOARD_PAGE.portfolio,
+      "revenue-section": DASHBOARD_PAGE.portfolio,
+      "commercial-section": DASHBOARD_PAGE.portfolio,
+      "host-metrics-section": DASHBOARD_PAGE.hosts,
+      "host-detail-section": DASHBOARD_PAGE.hosts
+    });
     const state = {
       devices: [],
       selectedDeviceId: "",
       activeCommandTarget: COMMAND_TARGET.paidOps,
+      activeDashboardPage: localStorage.getItem(UI_STORAGE.dashboardPage) || DASHBOARD_PAGE.overview,
+      layoutAll: DASHBOARD_LAYOUT_ALL,
       auth: {
         apiKey: sessionStorage.getItem(AUTH_STORAGE.apiKey) || "",
         tenantID: sessionStorage.getItem(AUTH_STORAGE.tenantID) || "family-varadha",
@@ -5023,8 +5185,12 @@
     function jumpToCommandTarget(targetID) {
       const target = document.getElementById(targetID);
       if (!target) return;
+      const targetPage = pageForTarget(targetID);
+      if (targetPage && !state.layoutAll) setDashboardPage(targetPage, { skipStorage: false });
       setActiveCommandTarget(targetID);
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.requestAnimationFrame(() => {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     }
 
     function setActiveCommandTarget(targetID) {
@@ -5035,6 +5201,74 @@
         if (active) button.setAttribute("aria-current", "true");
         else button.removeAttribute("aria-current");
       });
+    }
+
+    function initializeTheme() {
+      const saved = localStorage.getItem(UI_STORAGE.theme);
+      const preferred = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      setTheme(saved || preferred);
+      document.getElementById("theme-toggle-button").addEventListener("click", () => {
+        setTheme(document.body.classList.contains("theme-dark") ? "light" : "dark");
+      });
+    }
+
+    function setTheme(theme) {
+      const next = theme === "dark" ? "dark" : "light";
+      document.body.classList.toggle("theme-dark", next === "dark");
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem(UI_STORAGE.theme, next);
+      setText("theme-toggle-label", next === "dark" ? "Light" : "Dark");
+      document.getElementById("theme-toggle-button").setAttribute("aria-pressed", next === "dark" ? "true" : "false");
+    }
+
+    function setServerStatus(status, label) {
+      const element = document.getElementById("backend-status");
+      element.classList.remove("checking", "connected", "locked", "disconnected");
+      element.classList.add(status);
+      setText("server-status-text", label);
+    }
+
+    function initializeDashboardPages() {
+      document.querySelectorAll("main > section").forEach((section) => {
+        if (section.id === "auth-panel") return;
+        section.dataset.dashboardPage = pageForTarget(section.id) || DASHBOARD_PAGE.admin;
+      });
+      document.querySelectorAll("[data-page-target]").forEach((button) => {
+        button.addEventListener("click", () => setDashboardPage(button.dataset.pageTarget));
+      });
+      const nav = document.getElementById("dashboard-page-nav");
+      if (state.layoutAll) {
+        nav.dataset.layoutAll = "true";
+        setDashboardPage(DASHBOARD_PAGE.all, { skipStorage: true });
+        return;
+      }
+      const initialPage = Object.values(DASHBOARD_PAGE).includes(state.activeDashboardPage)
+        ? state.activeDashboardPage
+        : DASHBOARD_PAGE.overview;
+      setDashboardPage(initialPage, { skipStorage: true });
+    }
+
+    function setDashboardPage(page, options = {}) {
+      const targetPage = page === DASHBOARD_PAGE.all ? DASHBOARD_PAGE.overview : page;
+      state.activeDashboardPage = targetPage || DASHBOARD_PAGE.overview;
+      document.querySelectorAll("main > section").forEach((section) => {
+        if (section.id === "auth-panel") return;
+        const sectionPage = section.dataset.dashboardPage || pageForTarget(section.id) || DASHBOARD_PAGE.admin;
+        section.hidden = !state.layoutAll && sectionPage !== DASHBOARD_PAGE.all && sectionPage !== state.activeDashboardPage;
+      });
+      document.querySelectorAll("[data-page-target]").forEach((button) => {
+        const active = button.dataset.pageTarget === state.activeDashboardPage;
+        button.classList.toggle("is-active", active);
+        if (active) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+      });
+      if (!options.skipStorage && !state.layoutAll) {
+        localStorage.setItem(UI_STORAGE.dashboardPage, state.activeDashboardPage);
+      }
+    }
+
+    function pageForTarget(targetID) {
+      return DASHBOARD_SECTION_PAGE[targetID] || "";
     }
 
     function text(value) {
@@ -10335,11 +10569,7 @@
 
     async function refresh() {
       const health = await loadJSON(API.health);
-      const backendStatus = document.getElementById("backend-status");
-      backendStatus.textContent = "Local backend " + health.status;
-      backendStatus.style.borderColor = "#abefc6";
-      backendStatus.style.background = "#ecfdf3";
-      backendStatus.style.color = "#027a48";
+      setServerStatus("connected", "Server connected");
 
       const devices = await loadJSON(API.devices);
       hideAuthPanel();
@@ -10467,21 +10697,17 @@
     function showError(error) {
       if (error instanceof AuthRequiredError) {
         showAuthPanel();
-        document.getElementById("backend-status").textContent = "Local backend locked";
-        document.getElementById("backend-status").style.borderColor = "#fedf89";
-        document.getElementById("backend-status").style.background = "#fffaeb";
-        document.getElementById("backend-status").style.color = "#b54708";
+        setServerStatus("locked", "Server locked");
         console.warn(error);
         return;
       }
-      document.getElementById("backend-status").textContent = "Local backend error";
-      document.getElementById("backend-status").style.borderColor = "#fecdca";
-      document.getElementById("backend-status").style.background = "#fff4f2";
-      document.getElementById("backend-status").style.color = "#b42318";
+      setServerStatus("disconnected", "Server not connected");
       console.error(error);
     }
 
+    initializeTheme();
     initializeAuthPanel();
+    initializeDashboardPages();
     initializeCommandNavigation();
     refresh().catch(showError);
   </script>

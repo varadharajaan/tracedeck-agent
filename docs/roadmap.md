@@ -290,3 +290,10 @@
     non-study YouTube review, notification proof, host and browser breakdowns,
     Postman/Newman coverage, screenshot-free layout guard, docs, and full local
     verification.
+72. Phase 69: admin UI and Lambda frontend. Multipage dashboard tabs, dark
+    theme toggle, green/red server connectivity indicators, Browser Activity
+    Viewer parity, `devctl.py` for server/test/SAM/log operations, and a SAM
+    Lambda Function URL admin frontend that reads S3 as source of truth,
+    displays cache hit/miss percentages, supports a localhost `18080` source
+    switch, saves stack outputs under `data/local/output/`, and is covered by
+    smoke, Newman, contract, docs, and full local verification.

@@ -363,3 +363,15 @@ verification. It remains metadata-only and does not collect passwords,
 screenshots, raw URLs, page titles, cookies, tokens, private content, endpoint
 payloads, provider secrets, push endpoints, alert bodies, keylogging, or hidden
 collection bypasses.
+
+Phase 69 adds the admin UI shell needed for monetisable daily use: a dark
+theme toggle, explicit green/red server status light, dashboard page tabs to
+avoid one long scroll, and the same controls on the Browser Activity Viewer.
+It also adds a SAM-deployable `sam-app` frontend served by a public Lambda
+Function URL without API Gateway. The Lambda frontend reads S3 archive objects
+as source of truth, caches summaries in-memory to reduce S3 calls, displays
+cache hit/miss percentages, and includes a configurable localhost `18080`
+source switch for admin checks on the same machine. Use `python devctl.py
+server status`, `python devctl.py server restart`, `python devctl.py test
+phase69`, and `python devctl.py sam deploy`; stack outputs are saved under
+`data/local/output/`.

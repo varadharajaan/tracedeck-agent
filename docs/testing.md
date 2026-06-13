@@ -849,6 +849,29 @@ also runs backend tests, agent tests, dashboard contract, dashboard JavaScript
 syntax, browser activity JavaScript syntax, service manifest rendering, Newman,
 cross-platform builds, and root cleanliness locally.
 
+Phase 69 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-lambda-frontend-contract.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase69.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase69.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase69.ps1
+python ./devctl.py test phase69
+```
+
+The Phase 69 smoke live-boots the seeded dashboard, verifies the dark theme
+toggle, green/red server status light, multipage dashboard nav, Browser
+Activity Viewer parity, typed browser activity rows, screenshot-free layout
+contract, Lambda frontend contract, and `devctl.py` local status. Newman runs
+`postman/tracedeck-backend-phase69.postman_collection.json` against the same
+live demo and covers the new UI controls plus browser activity API privacy.
+`scripts/local/test-lambda-frontend-contract.ps1` compiles `devctl.py` and the
+Lambda handler, verifies the SAM Function URL/no-API-Gateway contract, and
+invokes local handler routes without touching S3. `scripts/verify/verify-phase69.ps1`
+also runs backend tests, agent tests, dashboard contract, dashboard JavaScript
+syntax, browser activity JavaScript syntax, service manifest rendering,
+Newman, cross-platform builds, and root cleanliness locally.
+
 Phase 13 adds:
 
 ```powershell
