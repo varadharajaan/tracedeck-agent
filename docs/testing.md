@@ -872,6 +872,28 @@ also runs backend tests, agent tests, dashboard contract, dashboard JavaScript
 syntax, browser activity JavaScript syntax, service manifest rendering,
 Newman, cross-platform builds, and root cleanliness locally.
 
+Phase 72 adds:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/upload-cloud-sample-phase72.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase72.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase72.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase72.ps1
+python ./devctl.py cloud phase72
+python ./devctl.py test phase72
+```
+
+The Phase 72 smoke uploads a metadata-only JSONL gzip archive to the configured
+TraceDeck S3 bucket, calls the deployed Lambda `/api/s3-summary?refresh=true`,
+verifies object count, sampled browser rows, Chrome/Edge/Brave grouping,
+study-safe inference from agent `Metadata`, non-study YouTube, strict forbidden
+markers, and then calls `/api/s3-summary` again to prove a cache hit. Newman
+runs `postman/tracedeck-cloud-phase72.postman_collection.json` against the
+deployed Lambda Function URL and covers health, cloud HTML controls, S3 summary
+refresh, S3 browser rows, privacy markers, and cache-hit metrics.
+`scripts/verify/verify-phase72.ps1` redeploys SAM, runs the live cloud smoke,
+runs Newman, and re-checks root cleanliness.
+
 Phase 13 adds:
 
 ```powershell

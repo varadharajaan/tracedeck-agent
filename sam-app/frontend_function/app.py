@@ -257,7 +257,12 @@ def _browser_row(record: dict[str, Any], key: str) -> dict[str, Any] | None:
     if not domain:
         return None
     category = _field(record, "category", "Category", "signal", "Signal") or "unknown"
-    study_safe = _bool_field(record, "study_safe", "StudySafe")
+    explicit_study_safe = _field(record, "study_safe", "StudySafe")
+    study_safe = (
+        _coerce_bool(explicit_study_safe)
+        if explicit_study_safe is not None
+        else _infer_study_safe(domain, category, _bool_field(record, "youtube_study_match", "YouTubeStudyMatch"))
+    )
     observed = _field(record, "observed_at", "ObservedAt", "last_observed_at", "LastObservedAt", "timestamp", "Timestamp")
     return {
         "host_name": _field(record, "host_name", "HostName") or _field(record, "device_id", "DeviceID") or "unknown-host",
@@ -274,7 +279,7 @@ def _browser_row(record: dict[str, Any], key: str) -> dict[str, Any] | None:
 
 def _field(record: dict[str, Any], *names: str) -> Any:
     containers = [record]
-    for nested in ("payload", "Payload", "data", "Data", "attributes", "Attributes"):
+    for nested in ("payload", "Payload", "data", "Data", "attributes", "Attributes", "metadata", "Metadata"):
         value = record.get(nested)
         if isinstance(value, dict):
             containers.append(value)
@@ -290,10 +295,25 @@ def _field(record: dict[str, Any], *names: str) -> Any:
 
 
 def _bool_field(record: dict[str, Any], *names: str) -> bool:
-    value = _field(record, *names)
+    return _coerce_bool(_field(record, *names))
+
+
+def _coerce_bool(value: Any) -> bool:
     if isinstance(value, bool):
         return value
     return str(value).lower() in ("true", "1", "yes", "study", "safe")
+
+
+def _infer_study_safe(domain: str, category: str, youtube_study_match: bool) -> bool:
+    category = str(category).lower().strip()
+    domain = str(domain).lower().strip()
+    if category == "study":
+        return True
+    return _is_youtube_domain(domain) and youtube_study_match
+
+
+def _is_youtube_domain(domain: str) -> bool:
+    return domain in ("youtube.com", "www.youtube.com", "youtu.be") or domain.endswith(".youtube.com")
 
 
 def _domain_from_key(key: str) -> str:
