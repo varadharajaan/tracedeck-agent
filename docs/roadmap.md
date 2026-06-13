@@ -284,3 +284,9 @@
     retention, deployment readiness, package value, commercial levers, owner
     actions, Postman/Newman coverage, screenshot-free layout guard, docs, and
     full local verification.
+71. Phase 68: browser activity viewer. Typed tenant browser-activity API and a
+    dedicated `/browser-activity` page linked from the dashboard toolbar for
+    Chrome, Edge, and Brave domain activity, host/category/study-safe filters,
+    non-study YouTube review, notification proof, host and browser breakdowns,
+    Postman/Newman coverage, screenshot-free layout guard, docs, and full local
+    verification.

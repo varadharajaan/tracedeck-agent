@@ -69,6 +69,23 @@
       background: var(--teal);
       color: #ffffff;
     }
+    button.icon-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 44px;
+    }
+    .button-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border: 1px solid currentColor;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1;
+    }
     select {
       min-width: 260px;
       padding: 0 34px 0 12px;
@@ -1771,6 +1788,7 @@
     </div>
     <div class="toolbar">
       <select id="host-select" aria-label="Host filter"></select>
+      <button id="browser-activity-button" class="icon-link" type="button" title="Open Chrome, Brave, and Edge browser activity" aria-label="Open browser activity viewer" onclick="window.location.href='/browser-activity'"><span class="button-icon" aria-hidden="true">B</span><span>Browser</span></button>
       <button id="refresh-button" class="primary" type="button">Refresh</button>
       <span id="backend-status" class="status">Local backend online</span>
     </div>

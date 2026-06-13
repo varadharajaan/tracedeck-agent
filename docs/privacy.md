@@ -196,3 +196,10 @@ collectors and does not store passwords, screenshots, raw URLs, page titles,
 alert bodies, provider secrets, push endpoints, endpoint payloads, private
 content, invoices, tokens, cookies, payment card data, raw provider payloads,
 keylogging, or hidden collection bypasses.
+
+Phase 68 browser activity viewer is metadata-only. It exposes browser names,
+host labels, domains, categories, study-safe flags, visit counts, timestamps,
+and notification proof derived from existing browser-domain telemetry. It does
+not store raw URLs, page titles, browser cookies, tokens, passwords,
+screenshots, private content, endpoint payloads, provider secrets, push
+endpoints, alert bodies, keylogging, or hidden collection bypasses.

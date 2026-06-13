@@ -1609,6 +1609,77 @@ func (m *Memory) TenantActivityFeed(_ context.Context, tenantID string, filter m
 	}, nil
 }
 
+func (m *Memory) TenantBrowserActivity(_ context.Context, tenantID string, filter model.TenantBrowserActivityFilter) (model.TenantBrowserActivityViewer, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+	filter = normalizeBrowserActivityFilter(filter)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	tenant, ok := m.tenants[tenantID]
+	if !ok {
+		return model.TenantBrowserActivityViewer{}, ErrTenantNotFound
+	}
+
+	items := make([]model.TenantBrowserActivityItem, 0)
+	sourceHosts := make(map[string]bool)
+	reportingHosts := make(map[string]bool)
+	for _, device := range m.devices {
+		if device.TenantID != tenantID {
+			continue
+		}
+		if filter.DeviceID != "" && filter.DeviceID != device.DeviceID {
+			continue
+		}
+		sourceHosts[device.DeviceID] = true
+		m.seedDashboardForDeviceLocked(device)
+		if !hasBrowserTelemetryEvents(m.telemetryEvents[device.DeviceID]) {
+			m.seedBrowserTelemetryForDeviceLocked(device)
+		}
+		events := cloneTelemetryEvents(m.telemetryEvents[device.DeviceID])
+		browserItems := browserActivityItems(tenantID, device, events, m.alertDeliveries[device.DeviceID])
+		if len(browserItems) > 0 {
+			reportingHosts[device.DeviceID] = true
+		}
+		items = append(items, browserItems...)
+	}
+	if err := m.persistLocked(); err != nil {
+		return model.TenantBrowserActivityViewer{}, err
+	}
+
+	matched := make([]model.TenantBrowserActivityItem, 0, len(items))
+	for _, item := range items {
+		if browserActivityItemMatches(item, filter) {
+			matched = append(matched, item)
+		}
+	}
+	sort.Slice(matched, func(i, j int) bool {
+		if matched[i].ObservedAt.Equal(matched[j].ObservedAt) {
+			return matched[i].Domain < matched[j].Domain
+		}
+		return matched[i].ObservedAt.After(matched[j].ObservedAt)
+	})
+
+	summary := browserActivitySummary(matched, len(sourceHosts), len(reportingHosts))
+	limited := matched
+	if len(limited) > filter.Limit {
+		limited = limited[:filter.Limit]
+	}
+
+	return model.TenantBrowserActivityViewer{
+		TenantID:        tenant.TenantID,
+		TenantName:      tenant.Name,
+		Filters:         filter,
+		Summary:         summary,
+		Hosts:           browserActivityHosts(matched),
+		Browsers:        browserActivityBrowsers(matched),
+		Items:           append([]model.TenantBrowserActivityItem(nil), limited...),
+		GeneratedAt:     now,
+		PrivacyBoundary: constants.BrowserActivityPrivacyNote,
+	}, nil
+}
+
 func normalizeActivityFeedFilter(filter model.TenantActivityFeedFilter) model.TenantActivityFeedFilter {
 	filter.DeviceID = strings.TrimSpace(filter.DeviceID)
 	filter.Kind = strings.ToLower(strings.TrimSpace(filter.Kind))
@@ -1621,6 +1692,24 @@ func normalizeActivityFeedFilter(filter model.TenantActivityFeedFilter) model.Te
 	}
 	if filter.Limit > constants.ActivityFeedMaxLimit {
 		filter.Limit = constants.ActivityFeedMaxLimit
+	}
+	return filter
+}
+
+func normalizeBrowserActivityFilter(filter model.TenantBrowserActivityFilter) model.TenantBrowserActivityFilter {
+	filter.DeviceID = strings.TrimSpace(filter.DeviceID)
+	filter.Browser = normalizeBrowserName(filter.Browser)
+	if filter.Browser == constants.BrowserNameUnknown {
+		filter.Browser = ""
+	}
+	filter.Category = strings.ToLower(strings.TrimSpace(filter.Category))
+	filter.Domain = strings.ToLower(strings.TrimSpace(filter.Domain))
+	filter.Query = strings.ToLower(strings.TrimSpace(filter.Query))
+	if filter.Limit <= 0 {
+		filter.Limit = constants.BrowserActivityDefaultLimit
+	}
+	if filter.Limit > constants.BrowserActivityMaxLimit {
+		filter.Limit = constants.BrowserActivityMaxLimit
 	}
 	return filter
 }
@@ -1813,6 +1902,325 @@ func telemetryFeedItems(tenantID string, device model.Device, events []model.Tel
 		})
 	}
 	return items
+}
+
+func browserActivityItems(tenantID string, device model.Device, events []model.TelemetryEvent, deliveries []model.AlertDelivery) []model.TenantBrowserActivityItem {
+	items := make([]model.TenantBrowserActivityItem, 0, len(events))
+	channels := browserNotificationChannels(deliveries)
+	for _, event := range events {
+		if !isBrowserTelemetryEvent(event) {
+			continue
+		}
+		domain := strings.ToLower(strings.TrimSpace(event.Metadata[constants.BrowserMetadataDomain]))
+		if domain == "" {
+			continue
+		}
+		category := strings.ToLower(strings.TrimSpace(event.Metadata[constants.BrowserMetadataCategory]))
+		if category == "" {
+			category = constants.BrowserCategoryUnknown
+		}
+		browser := normalizeBrowserName(fallbackString(event.Metadata[constants.BrowserMetadataBrowserName], event.AppName))
+		youtubeStudyMatch := telemetryBool(event.Metadata[constants.BrowserMetadataYouTubeStudyMatch])
+		studySafe := browserStudySafe(domain, category, youtubeStudyMatch)
+		item := model.TenantBrowserActivityItem{
+			ID:                   fallbackString(event.ID, browserActivityID(device.DeviceID, domain, event.ObservedAt)),
+			TenantID:             tenantID,
+			DeviceID:             device.DeviceID,
+			HostName:             device.HostName,
+			OSName:               device.OSName,
+			Browser:              browser,
+			Domain:               domain,
+			Category:             category,
+			StudySafe:            studySafe,
+			VisitCount:           telemetryInt(event.Metadata[constants.BrowserMetadataVisitCount]),
+			YouTubeStudyMatch:    youtubeStudyMatch,
+			Status:               browserActivityStatus(domain, category, studySafe),
+			Signal:               browserActivitySignal(domain, category, studySafe),
+			Recommendation:       browserActivityRecommendation(domain, category, studySafe),
+			NotificationChannels: append([]string(nil), channels...),
+			ObservedAt:           event.ObservedAt,
+		}
+		items = append(items, item)
+	}
+	return items
+}
+
+func isBrowserTelemetryEvent(event model.TelemetryEvent) bool {
+	eventType := strings.ToLower(strings.TrimSpace(event.Type))
+	source := strings.ToLower(strings.TrimSpace(event.Source))
+	if eventType == constants.TelemetryTypeBrowserDomainObserved {
+		return true
+	}
+	return strings.Contains(eventType, constants.RiskSourceBrowser) || strings.Contains(source, constants.RiskSourceBrowser)
+}
+
+func normalizeBrowserName(value string) string {
+	clean := strings.ToLower(strings.TrimSpace(value))
+	switch {
+	case clean == constants.BrowserNameChrome || strings.Contains(clean, constants.BrowserNameChrome):
+		return constants.BrowserNameChrome
+	case clean == constants.BrowserNameEdge || strings.Contains(clean, "msedge") || strings.Contains(clean, "microsoft edge"):
+		return constants.BrowserNameEdge
+	case clean == constants.BrowserNameBrave || strings.Contains(clean, constants.BrowserNameBrave):
+		return constants.BrowserNameBrave
+	default:
+		return constants.BrowserNameUnknown
+	}
+}
+
+func telemetryBool(value string) bool {
+	parsed, err := strconv.ParseBool(strings.TrimSpace(value))
+	return err == nil && parsed
+}
+
+func telemetryInt(value string) int {
+	parsed, err := strconv.Atoi(strings.TrimSpace(value))
+	if err != nil || parsed < 0 {
+		return 0
+	}
+	return parsed
+}
+
+func browserStudySafe(domain string, category string, youtubeStudyMatch bool) bool {
+	if category == constants.BrowserCategoryStudy {
+		return true
+	}
+	return isYouTubeDomain(domain) && youtubeStudyMatch
+}
+
+func isYouTubeDomain(domain string) bool {
+	domain = strings.ToLower(strings.TrimSpace(domain))
+	return domain == "youtube.com" || domain == "www.youtube.com" || domain == "youtu.be" || strings.HasSuffix(domain, ".youtube.com")
+}
+
+func browserActivityStatus(domain string, category string, studySafe bool) string {
+	switch {
+	case studySafe:
+		return constants.StatusHealthy
+	case isYouTubeDomain(domain):
+		return constants.StatusAttention
+	case browserCategoryNeedsReview(category):
+		return constants.StatusWatch
+	default:
+		return constants.StatusOK
+	}
+}
+
+func browserActivitySignal(domain string, category string, studySafe bool) string {
+	switch {
+	case studySafe:
+		return "Study-safe activity"
+	case isYouTubeDomain(domain):
+		return "Non-study YouTube"
+	case category == constants.BrowserCategoryVideoStreaming:
+		return "Streaming activity"
+	case category == constants.BrowserCategorySocialMedia:
+		return "Social browsing"
+	case category == constants.BrowserCategoryGaming:
+		return "Gaming activity"
+	case category == constants.BrowserCategoryBlocked:
+		return "Blocked domain"
+	default:
+		return "Browser domain observed"
+	}
+}
+
+func browserActivityRecommendation(domain string, category string, studySafe bool) string {
+	switch {
+	case studySafe:
+		return "Keep suppressing study-safe browser activity from alert noise."
+	case isYouTubeDomain(domain):
+		return "Alert only when repeated non-study YouTube crosses the policy window."
+	case browserCategoryNeedsReview(category):
+		return "Review category trend and add an owner rule if it repeats during study hours."
+	default:
+		return "Keep domain-level metadata for reporting without storing raw URLs or page titles."
+	}
+}
+
+func browserCategoryNeedsReview(category string) bool {
+	switch category {
+	case constants.BrowserCategoryVideoStreaming, constants.BrowserCategorySocialMedia, constants.BrowserCategoryGaming, constants.BrowserCategoryBlocked:
+		return true
+	default:
+		return false
+	}
+}
+
+func browserNotificationChannels(deliveries []model.AlertDelivery) []string {
+	seen := make(map[string]bool, len(deliveries))
+	for _, delivery := range deliveries {
+		if delivery.Status != constants.DeliveryStatusDelivered && delivery.Status != constants.DeliveryStatusRetrying {
+			continue
+		}
+		channel := strings.TrimSpace(delivery.Channel)
+		if channel == "" {
+			continue
+		}
+		seen[channel] = true
+	}
+	channels := make([]string, 0, len(seen))
+	for channel := range seen {
+		channels = append(channels, channel)
+	}
+	sort.Strings(channels)
+	return channels
+}
+
+func browserActivityID(deviceID string, domain string, observedAt time.Time) string {
+	return strings.Join([]string{
+		strings.TrimSpace(deviceID),
+		"browser",
+		strings.ReplaceAll(strings.TrimSpace(domain), ".", "-"),
+		observedAt.UTC().Format("20060102T150405Z"),
+	}, "-")
+}
+
+func browserActivityItemMatches(item model.TenantBrowserActivityItem, filter model.TenantBrowserActivityFilter) bool {
+	if filter.Browser != "" && item.Browser != filter.Browser {
+		return false
+	}
+	if filter.Category != "" && item.Category != filter.Category {
+		return false
+	}
+	if filter.Domain != "" && item.Domain != filter.Domain {
+		return false
+	}
+	if filter.StudySafe != nil && item.StudySafe != *filter.StudySafe {
+		return false
+	}
+	if filter.Query != "" && !strings.Contains(browserActivitySearchText(item), filter.Query) {
+		return false
+	}
+	return true
+}
+
+func browserActivitySearchText(item model.TenantBrowserActivityItem) string {
+	parts := []string{
+		item.ID,
+		item.TenantID,
+		item.DeviceID,
+		item.HostName,
+		item.Browser,
+		item.Domain,
+		item.Category,
+		item.Status,
+		item.Signal,
+		item.Recommendation,
+		strings.Join(item.NotificationChannels, " "),
+	}
+	return strings.ToLower(strings.Join(parts, " "))
+}
+
+func browserActivitySummary(items []model.TenantBrowserActivityItem, sourceHostCount int, reportingHosts int) model.TenantBrowserActivitySummary {
+	summary := model.TenantBrowserActivitySummary{
+		Total:               len(items),
+		SourceHostCount:     sourceHostCount,
+		ReportingHosts:      reportingHosts,
+		RecommendedPaidTier: constants.PlanFamilyPro,
+	}
+	for _, item := range items {
+		switch item.Browser {
+		case constants.BrowserNameChrome:
+			summary.Chrome++
+		case constants.BrowserNameEdge:
+			summary.Edge++
+		case constants.BrowserNameBrave:
+			summary.Brave++
+		default:
+			summary.OtherBrowsers++
+		}
+		if item.StudySafe {
+			summary.StudySafe++
+		}
+		if isYouTubeDomain(item.Domain) && !item.StudySafe {
+			summary.NonStudyYouTube++
+		}
+		if browserCategoryNeedsReview(item.Category) {
+			summary.Entertainment++
+		}
+		if item.Category == constants.BrowserCategoryBlocked {
+			summary.Risky++
+			summary.RecommendedPaidTier = constants.PlanBusiness
+		}
+		if len(item.NotificationChannels) > 0 && !item.StudySafe {
+			summary.NotificationProof++
+		}
+		if summary.LastObservedAt == nil || item.ObservedAt.After(*summary.LastObservedAt) {
+			observedAt := item.ObservedAt
+			summary.LastObservedAt = &observedAt
+		}
+	}
+	return summary
+}
+
+func browserActivityHosts(items []model.TenantBrowserActivityItem) []model.TenantBrowserActivityHost {
+	hosts := make(map[string]*model.TenantBrowserActivityHost)
+	for _, item := range items {
+		host, ok := hosts[item.DeviceID]
+		if !ok {
+			hosts[item.DeviceID] = &model.TenantBrowserActivityHost{
+				DeviceID: item.DeviceID,
+				HostName: item.HostName,
+				OSName:   item.OSName,
+			}
+			host = hosts[item.DeviceID]
+		}
+		host.Total++
+		if item.StudySafe {
+			host.StudySafe++
+		} else {
+			host.NonStudy++
+		}
+		if host.LastObservedAt == nil || item.ObservedAt.After(*host.LastObservedAt) {
+			observedAt := item.ObservedAt
+			host.LastObservedAt = &observedAt
+		}
+	}
+	result := make([]model.TenantBrowserActivityHost, 0, len(hosts))
+	for _, host := range hosts {
+		result = append(result, *host)
+	}
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].Total == result[j].Total {
+			return result[i].DeviceID < result[j].DeviceID
+		}
+		return result[i].Total > result[j].Total
+	})
+	return result
+}
+
+func browserActivityBrowsers(items []model.TenantBrowserActivityItem) []model.TenantBrowserActivityBrowser {
+	browsers := make(map[string]*model.TenantBrowserActivityBrowser)
+	for _, item := range items {
+		browser, ok := browsers[item.Browser]
+		if !ok {
+			browsers[item.Browser] = &model.TenantBrowserActivityBrowser{Name: item.Browser}
+			browser = browsers[item.Browser]
+		}
+		browser.Total++
+		if item.StudySafe {
+			browser.StudySafe++
+		}
+		if isYouTubeDomain(item.Domain) && !item.StudySafe {
+			browser.NonStudyYouTube++
+		}
+		if browser.LastObservedAt == nil || item.ObservedAt.After(*browser.LastObservedAt) {
+			observedAt := item.ObservedAt
+			browser.LastObservedAt = &observedAt
+		}
+	}
+	result := make([]model.TenantBrowserActivityBrowser, 0, len(browsers))
+	for _, browser := range browsers {
+		result = append(result, *browser)
+	}
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].Total == result[j].Total {
+			return result[i].Name < result[j].Name
+		}
+		return result[i].Total > result[j].Total
+	})
+	return result
 }
 
 func activityFeedItemMatches(item model.TenantActivityFeedItem, filter model.TenantActivityFeedFilter) bool {
@@ -3027,6 +3435,110 @@ func (m *Memory) seedDashboardForDeviceLocked(device model.Device) {
 			Recommendation:       "Review startup apps and disk usage if the score stays below 80.",
 		}
 	}
+}
+
+func hasBrowserTelemetryEvents(events []model.TelemetryEvent) bool {
+	for _, event := range events {
+		if isBrowserTelemetryEvent(event) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *Memory) seedBrowserTelemetryForDeviceLocked(device model.Device) {
+	base := device.LastSeenAt
+	if base.IsZero() {
+		base = time.Now().UTC()
+	}
+	events := []model.TelemetryEvent{
+		{
+			ID:         browserSeedTelemetryID(device.DeviceID, constants.BrowserNameChrome, 1),
+			Type:       constants.TelemetryTypeBrowserDomainObserved,
+			Source:     constants.TelemetrySourceBrowserHistory,
+			ObservedAt: base.Add(-18 * time.Minute),
+			TenantID:   device.TenantID,
+			DeviceID:   device.DeviceID,
+			HostName:   device.HostName,
+			AppName:    constants.BrowserNameChrome,
+			Metadata: map[string]string{
+				constants.BrowserMetadataBrowserName:       constants.BrowserNameChrome,
+				constants.BrowserMetadataDomain:            "docs.python.org",
+				constants.BrowserMetadataCategory:          constants.BrowserCategoryStudy,
+				constants.BrowserMetadataURLMode:           "domain_only",
+				constants.BrowserMetadataStoredURLMode:     "domain_only",
+				constants.BrowserMetadataVisitCount:        "7",
+				constants.BrowserMetadataYouTubeStudyMatch: "false",
+			},
+		},
+		{
+			ID:         browserSeedTelemetryID(device.DeviceID, constants.BrowserNameEdge, 2),
+			Type:       constants.TelemetryTypeBrowserDomainObserved,
+			Source:     constants.TelemetrySourceBrowserHistory,
+			ObservedAt: base.Add(-41 * time.Minute),
+			TenantID:   device.TenantID,
+			DeviceID:   device.DeviceID,
+			HostName:   device.HostName,
+			AppName:    constants.BrowserNameEdge,
+			Metadata: map[string]string{
+				constants.BrowserMetadataBrowserName:       constants.BrowserNameEdge,
+				constants.BrowserMetadataDomain:            "youtube.com",
+				constants.BrowserMetadataCategory:          constants.BrowserCategoryVideoStreaming,
+				constants.BrowserMetadataURLMode:           "domain_only",
+				constants.BrowserMetadataStoredURLMode:     "domain_only",
+				constants.BrowserMetadataVisitCount:        "3",
+				constants.BrowserMetadataYouTubeStudyMatch: "false",
+			},
+		},
+		{
+			ID:         browserSeedTelemetryID(device.DeviceID, constants.BrowserNameBrave, 3),
+			Type:       constants.TelemetryTypeBrowserDomainObserved,
+			Source:     constants.TelemetrySourceBrowserHistory,
+			ObservedAt: base.Add(-73 * time.Minute),
+			TenantID:   device.TenantID,
+			DeviceID:   device.DeviceID,
+			HostName:   device.HostName,
+			AppName:    constants.BrowserNameBrave,
+			Metadata: map[string]string{
+				constants.BrowserMetadataBrowserName:       constants.BrowserNameBrave,
+				constants.BrowserMetadataDomain:            "github.com",
+				constants.BrowserMetadataCategory:          constants.BrowserCategoryStudy,
+				constants.BrowserMetadataURLMode:           "domain_only",
+				constants.BrowserMetadataStoredURLMode:     "domain_only",
+				constants.BrowserMetadataVisitCount:        "5",
+				constants.BrowserMetadataYouTubeStudyMatch: "false",
+			},
+		},
+		{
+			ID:         browserSeedTelemetryID(device.DeviceID, constants.BrowserNameChrome, 4),
+			Type:       constants.TelemetryTypeBrowserDomainObserved,
+			Source:     constants.TelemetrySourceBrowserHistory,
+			ObservedAt: base.Add(-96 * time.Minute),
+			TenantID:   device.TenantID,
+			DeviceID:   device.DeviceID,
+			HostName:   device.HostName,
+			AppName:    constants.BrowserNameChrome,
+			Metadata: map[string]string{
+				constants.BrowserMetadataBrowserName:       constants.BrowserNameChrome,
+				constants.BrowserMetadataDomain:            "instagram.com",
+				constants.BrowserMetadataCategory:          constants.BrowserCategorySocialMedia,
+				constants.BrowserMetadataURLMode:           "domain_only",
+				constants.BrowserMetadataStoredURLMode:     "domain_only",
+				constants.BrowserMetadataVisitCount:        "2",
+				constants.BrowserMetadataYouTubeStudyMatch: "false",
+			},
+		},
+	}
+	m.telemetryEvents[device.DeviceID] = append(m.telemetryEvents[device.DeviceID], events...)
+}
+
+func browserSeedTelemetryID(deviceID string, browser string, sequence int) string {
+	return strings.Join([]string{
+		strings.TrimSpace(deviceID),
+		"browser-seed",
+		strings.TrimSpace(browser),
+		fmt.Sprintf("%03d", sequence),
+	}, "-")
 }
 
 func cloneRiskEvents(events []model.RiskEvent) []model.RiskEvent {

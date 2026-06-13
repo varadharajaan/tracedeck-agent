@@ -299,6 +299,139 @@ func TestTenantActivityFeedEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantBrowserActivityEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	body := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "browser-device-001",
+		"host_name": "browser-host",
+		"profile": "ai-btech-student",
+		"os_name": "windows",
+		"events": [
+			{
+				"id": "browser-event-001",
+				"type": "browser.domain.observed",
+				"source": "collector.browser.history",
+				"observed_at": "2026-06-12T08:00:00Z",
+				"app_name": "chrome",
+				"metadata": {
+					"browser_name": "chrome",
+					"domain": "docs.python.org",
+					"category": "study",
+					"visit_count": "8",
+					"youtube_study_match": "false",
+					"url_mode": "domain_only",
+					"stored_url_mode": "domain_only"
+				}
+			},
+			{
+				"id": "browser-event-002",
+				"type": "browser.domain.observed",
+				"source": "collector.browser.history",
+				"observed_at": "2026-06-12T08:02:00Z",
+				"app_name": "edge",
+				"metadata": {
+					"browser_name": "edge",
+					"domain": "youtube.com",
+					"category": "video-streaming",
+					"visit_count": "3",
+					"youtube_study_match": "false",
+					"url_mode": "domain_only",
+					"stored_url_mode": "domain_only"
+				}
+			},
+			{
+				"id": "browser-event-003",
+				"type": "browser.domain.observed",
+				"source": "collector.browser.history",
+				"observed_at": "2026-06-12T08:04:00Z",
+				"app_name": "brave",
+				"metadata": {
+					"browser_name": "brave",
+					"domain": "github.com",
+					"category": "study",
+					"visit_count": "5",
+					"youtube_study_match": "false",
+					"url_mode": "domain_only",
+					"stored_url_mode": "domain_only"
+				}
+			}
+		]
+	}`)
+	ingest := httptest.NewRecorder()
+	handler.ServeHTTP(ingest, httptest.NewRequest(http.MethodPost, constants.RouteDevices+"/browser-device-001/"+constants.RouteSegmentTelemetry, bytes.NewReader(body)))
+	if ingest.Code != http.StatusAccepted {
+		t.Fatalf("expected telemetry ingest 202, got %d: %s", ingest.Code, ingest.Body.String())
+	}
+
+	viewResponse := httptest.NewRecorder()
+	viewPath := constants.RouteTenants + "/family-varadha/" + constants.RouteSegmentBrowserActivity + "?device_id=browser-device-001&limit=10"
+	handler.ServeHTTP(viewResponse, httptest.NewRequest(http.MethodGet, viewPath, nil))
+	if viewResponse.Code != http.StatusOK {
+		t.Fatalf("expected browser activity 200, got %d: %s", viewResponse.Code, viewResponse.Body.String())
+	}
+	var viewer model.TenantBrowserActivityViewer
+	if err := json.Unmarshal(viewResponse.Body.Bytes(), &viewer); err != nil {
+		t.Fatalf("decode browser activity: %v", err)
+	}
+	if viewer.Filters.DeviceID != "browser-device-001" || viewer.Summary.Total != 3 || len(viewer.Items) != 3 {
+		t.Fatalf("expected browser activity rows: %+v", viewer)
+	}
+	if viewer.Summary.Chrome != 1 || viewer.Summary.Edge != 1 || viewer.Summary.Brave != 1 {
+		t.Fatalf("expected Chrome, Edge, and Brave counts: %+v", viewer.Summary)
+	}
+	if viewer.Summary.StudySafe != 2 || viewer.Summary.NonStudyYouTube != 1 || viewer.Summary.NotificationProof == 0 {
+		t.Fatalf("expected study-safe, YouTube review, and notification proof: %+v", viewer.Summary)
+	}
+	if viewer.Items[0].Domain == "" || viewer.Items[0].Recommendation == "" || len(viewer.Hosts) != 1 || len(viewer.Browsers) != 3 {
+		t.Fatalf("expected typed browser activity detail: %+v", viewer)
+	}
+	if !strings.Contains(viewer.PrivacyBoundary, "metadata-only") || !strings.Contains(viewer.PrivacyBoundary, "no passwords") {
+		t.Fatalf("expected browser privacy boundary: %q", viewer.PrivacyBoundary)
+	}
+	serialized := strings.ToLower(viewResponse.Body.String())
+	for _, forbidden := range []string{"raw_url", "page_title", "cookie_value", "token_value", "password_value", "screenshot_bytes"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("browser activity leaked forbidden marker %q: %s", forbidden, viewResponse.Body.String())
+		}
+	}
+
+	filteredResponse := httptest.NewRecorder()
+	filteredPath := constants.RouteTenants + "/family-varadha/" + constants.RouteSegmentBrowserActivity + "?browser=edge&study_safe=false&limit=5"
+	handler.ServeHTTP(filteredResponse, httptest.NewRequest(http.MethodGet, filteredPath, nil))
+	if filteredResponse.Code != http.StatusOK {
+		t.Fatalf("expected filtered browser activity 200, got %d: %s", filteredResponse.Code, filteredResponse.Body.String())
+	}
+	var filtered model.TenantBrowserActivityViewer
+	if err := json.Unmarshal(filteredResponse.Body.Bytes(), &filtered); err != nil {
+		t.Fatalf("decode filtered browser activity: %v", err)
+	}
+	if filtered.Filters.Browser != constants.BrowserNameEdge || filtered.Filters.StudySafe == nil || *filtered.Filters.StudySafe || len(filtered.Items) != 1 || filtered.Items[0].Browser != constants.BrowserNameEdge {
+		t.Fatalf("expected filtered Edge non-study row: %+v", filtered)
+	}
+
+	invalid := httptest.NewRecorder()
+	handler.ServeHTTP(invalid, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentBrowserActivity+"?browser=opera", nil))
+	if invalid.Code != http.StatusBadRequest {
+		t.Fatalf("expected invalid browser filter 400, got %d: %s", invalid.Code, invalid.Body.String())
+	}
+}
+
 func TestTenantDeliveryTimelineEndpoint(t *testing.T) {
 	t.Parallel()
 
