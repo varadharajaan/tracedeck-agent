@@ -94,6 +94,230 @@ def check_health(addr: str) -> tuple[bool, str]:
         return False, str(exc)
 
 
+def read_url(url: str, *, timeout: int = 8) -> dict[str, object]:
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as response:
+            body = response.read().decode("utf-8", errors="replace")
+            return {"ok": True, "status_code": response.status, "body": body, "error": ""}
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace") if exc.fp else ""
+        return {"ok": False, "status_code": exc.code, "body": body, "error": str(exc)}
+    except (urllib.error.URLError, TimeoutError) as exc:
+        return {"ok": False, "status_code": 0, "body": "", "error": str(exc)}
+
+
+def read_json(url: str, *, timeout: int = 8) -> dict[str, object]:
+    result = read_url(url, timeout=timeout)
+    if not result["ok"]:
+        result["json"] = {}
+        return result
+    try:
+        result["json"] = json.loads(str(result["body"] or "{}"))
+    except json.JSONDecodeError as exc:
+        result["ok"] = False
+        result["error"] = f"invalid JSON: {exc}"
+        result["json"] = {}
+    return result
+
+
+def required_markers(body: str, markers: list[str]) -> dict[str, object]:
+    missing = [marker for marker in markers if marker not in body]
+    return {"ok": not missing, "missing": missing, "expected": markers}
+
+
+def git_value(args: list[str]) -> str:
+    completed = subprocess.run(["git", *args], cwd=str(PROJECT_ROOT), text=True, capture_output=True, encoding="utf-8", errors="replace")
+    return completed.stdout.strip() if completed.returncode == 0 else ""
+
+
+def frontend_url_from_output() -> str:
+    url_path = OUTPUT_ROOT / "frontend-url.txt"
+    if url_path.exists():
+        return url_path.read_text(encoding="utf-8").strip().rstrip("/")
+    return ""
+
+
+def runtime_doctor_report(args: argparse.Namespace) -> dict[str, object]:
+    base_url = local_url(args.addr)
+    frontend_url = (args.frontend_url or frontend_url_from_output()).rstrip("/")
+    generated_at = datetime.now().isoformat()
+
+    report: dict[str, object] = {
+        "generated_at": generated_at,
+        "repo_root": str(PROJECT_ROOT),
+        "output_root": str(OUTPUT_ROOT),
+        "git": {
+            "branch": git_value(["branch", "--show-current"]),
+            "head": git_value(["rev-parse", "--short", "HEAD"]),
+            "clean": git_value(["status", "--short"]) == "",
+        },
+        "local": runtime_doctor_local(base_url=base_url, tenant_id=args.tenant_id),
+        "cloud": {"skipped": True, "overall": "skipped", "reason": "cloud checks skipped"},
+    }
+
+    if not args.skip_cloud:
+        report["cloud"] = runtime_doctor_cloud(frontend_url=frontend_url, refresh=not args.no_cloud_refresh)
+
+    local_ok = dict(report["local"]).get("overall") == "ok"
+    cloud = dict(report["cloud"])
+    cloud_ok = cloud.get("overall") in ("ok", "skipped")
+    report["overall"] = "ok" if local_ok and cloud_ok else "fail"
+    return report
+
+
+def runtime_doctor_local(*, base_url: str, tenant_id: str) -> dict[str, object]:
+    health = read_json(f"{base_url}/health", timeout=4)
+    health_json = dict(health.get("json") or {})
+    health_ok = bool(health["ok"]) and health_json.get("status") == "ok"
+
+    dashboard = read_url(f"{base_url}/", timeout=5)
+    dashboard_markers = required_markers(
+        str(dashboard.get("body") or ""),
+        ["TraceDeck Command Center", "theme-toggle-button", "server-status-light", "dashboard-page-nav", "browser-activity-button"],
+    )
+
+    browser_page = read_url(f"{base_url}/browser-activity", timeout=5)
+    browser_markers = required_markers(
+        str(browser_page.get("body") or ""),
+        ["TraceDeck Browser Activity", "theme-toggle-button", "server-status-light", "<th>Source</th>", "metadata-only guard"],
+    )
+
+    browser_api = read_json(f"{base_url}/api/v1/tenants/{tenant_id}/browser-activity?limit=25", timeout=6)
+    browser_payload = dict(browser_api.get("json") or {})
+    browser_items = list(browser_payload.get("items") or [])
+    browser_summary = dict(browser_payload.get("summary") or {})
+    provenance_ok = bool(browser_items) and all(
+        bool(item.get("source_kind")) and bool(item.get("evidence_scope")) and bool(item.get("evidence_detail"))
+        for item in browser_items
+        if isinstance(item, dict)
+    )
+
+    devices = read_json(f"{base_url}/api/v1/devices", timeout=5)
+    devices_payload = dict(devices.get("json") or {})
+    device_items = list(devices_payload.get("items") or [])
+    device_id = str(device_items[0].get("device_id", "")) if device_items and isinstance(device_items[0], dict) else ""
+    delivery_ok = False
+    delivery_count = 0
+    delivery_source = ""
+    if device_id:
+        deliveries = read_json(f"{base_url}/api/v1/devices/{device_id}/alert-deliveries", timeout=5)
+        delivery_payload = dict(deliveries.get("json") or {})
+        delivery_items = list(delivery_payload.get("items") or [])
+        delivery_count = int(delivery_payload.get("count") or len(delivery_items))
+        if delivery_items and isinstance(delivery_items[0], dict):
+            delivery_source = str(delivery_items[0].get("source_kind", ""))
+        delivery_ok = bool(deliveries["ok"]) and delivery_count > 0 and bool(delivery_source)
+
+    checks = {
+        "health": health_ok,
+        "dashboard": bool(dashboard["ok"]) and bool(dashboard_markers["ok"]),
+        "browser_page": bool(browser_page["ok"]) and bool(browser_markers["ok"]),
+        "browser_api": bool(browser_api["ok"]) and provenance_ok,
+        "devices": bool(devices["ok"]) and bool(device_id),
+        "deliveries": delivery_ok,
+    }
+    return {
+        "base_url": base_url,
+        "overall": "ok" if all(checks.values()) else "fail",
+        "checks": checks,
+        "health": {"ok": health_ok, "status": health_json.get("status", ""), "service": health_json.get("service", ""), "error": health.get("error", "")},
+        "dashboard": {"ok": checks["dashboard"], "status_code": dashboard.get("status_code"), **dashboard_markers},
+        "browser_page": {"ok": checks["browser_page"], "status_code": browser_page.get("status_code"), **browser_markers},
+        "browser_api": {
+            "ok": checks["browser_api"],
+            "rows": int(browser_summary.get("total") or len(browser_items)),
+            "source_kinds": sorted({str(item.get("source_kind", "")) for item in browser_items if isinstance(item, dict) and item.get("source_kind")}),
+            "privacy_boundary": browser_payload.get("privacy_boundary", ""),
+        },
+        "devices": {"ok": checks["devices"], "count": int(devices_payload.get("count") or len(device_items)), "first_device_id": device_id},
+        "deliveries": {"ok": delivery_ok, "count": delivery_count, "first_source_kind": delivery_source},
+    }
+
+
+def runtime_doctor_cloud(*, frontend_url: str, refresh: bool) -> dict[str, object]:
+    if not frontend_url:
+        return {"skipped": False, "overall": "fail", "reason": "frontend URL is not configured"}
+
+    health = read_json(f"{frontend_url}/api/health", timeout=8)
+    health_json = dict(health.get("json") or {})
+    health_ok = bool(health["ok"]) and health_json.get("status") == "ok"
+
+    summary_path = "/api/s3-summary?refresh=true" if refresh else "/api/s3-summary"
+    summary = read_json(f"{frontend_url}{summary_path}", timeout=20)
+    summary_payload = dict(summary.get("json") or {})
+    summary_body = dict(summary_payload.get("summary") or {})
+    refresh_ok = bool(summary["ok"]) and summary_payload.get("status") == "ok"
+
+    cached = read_json(f"{frontend_url}/api/s3-summary", timeout=12)
+    cached_payload = dict(cached.get("json") or {})
+    cache = dict(cached_payload.get("cache") or {})
+    cache_ok = bool(cached["ok"]) and cache.get("hit") is True
+
+    return {
+        "skipped": False,
+        "frontend_url": frontend_url,
+        "overall": "ok" if health_ok and refresh_ok and cache_ok else "fail",
+        "health": {"ok": health_ok, "status": health_json.get("status", ""), "service": health_json.get("service", ""), "error": health.get("error", "")},
+        "s3_summary": {
+            "ok": refresh_ok,
+            "status": summary_payload.get("status", ""),
+            "objects": int(summary_body.get("objects") or 0),
+            "sampled_rows": int(summary_body.get("sampled_rows") or 0),
+            "non_study_youtube": int(summary_body.get("non_study_youtube") or 0),
+            "privacy_boundary": summary_payload.get("privacy_boundary", ""),
+        },
+        "cache": {
+            "ok": cache_ok,
+            "hit": bool(cache.get("hit")),
+            "hit_percent": cache.get("hit_percent", 0),
+            "miss_percent": cache.get("miss_percent", 0),
+            "hits": cache.get("hits", 0),
+            "misses": cache.get("misses", 0),
+            "ttl_seconds": cache.get("ttl_seconds", 0),
+        },
+    }
+
+
+def save_doctor_report(report: dict[str, object]) -> None:
+    json_path = OUTPUT_ROOT / "runtime-doctor.json"
+    text_path = OUTPUT_ROOT / "runtime-doctor.txt"
+    json_path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+
+    local = dict(report.get("local") or {})
+    cloud = dict(report.get("cloud") or {})
+    browser_api = dict(local.get("browser_api") or {})
+    cloud_cache = dict(cloud.get("cache") or {})
+    cloud_summary = dict(cloud.get("s3_summary") or {})
+    lines = [
+        "TRACEDECK RUNTIME DOCTOR",
+        "=" * 80,
+        f"Generated: {report.get('generated_at', '')}",
+        f"Overall:   {report.get('overall', '')}",
+        f"Branch:    {dict(report.get('git') or {}).get('branch', '')}",
+        f"Commit:    {dict(report.get('git') or {}).get('head', '')}",
+        "",
+        f"Local:     {local.get('overall', '')} {local.get('base_url', '')}",
+        f"Browser:   rows={browser_api.get('rows', 0)} sources={', '.join(browser_api.get('source_kinds', []))}",
+        f"Device:    {dict(local.get('devices') or {}).get('first_device_id', '')}",
+        f"Delivery:  count={dict(local.get('deliveries') or {}).get('count', 0)} source={dict(local.get('deliveries') or {}).get('first_source_kind', '')}",
+        "",
+    ]
+    if cloud.get("skipped"):
+        lines.append("Cloud:     skipped")
+    else:
+        lines.extend(
+            [
+                f"Cloud:     {cloud.get('overall', '')} {cloud.get('frontend_url', '')}",
+                f"S3:        objects={cloud_summary.get('objects', 0)} rows={cloud_summary.get('sampled_rows', 0)} non_study_youtube={cloud_summary.get('non_study_youtube', 0)}",
+                f"Cache:     hit={cloud_cache.get('hit', False)} hit%={cloud_cache.get('hit_percent', 0)} miss%={cloud_cache.get('miss_percent', 0)} ttl={cloud_cache.get('ttl_seconds', 0)}s",
+            ]
+        )
+    lines.extend(["", f"JSON:      {json_path}", f"Text:      {text_path}", ""])
+    text_path.write_text("\n".join(lines), encoding="utf-8")
+    log("INFO", f"Saved runtime doctor JSON: {json_path}")
+    log("INFO", f"Saved runtime doctor text: {text_path}")
+
+
 def server_start(args: argparse.Namespace) -> int:
     run(
         powershell(
@@ -104,7 +328,8 @@ def server_start(args: argparse.Namespace) -> int:
             str(BACKEND_PID.relative_to(PROJECT_ROOT)),
             "-DataPath",
             str(BACKEND_STATE.relative_to(PROJECT_ROOT)),
-        )
+        ),
+        stream=True,
     )
     ok, body = check_health(args.addr)
     if not ok:
@@ -279,6 +504,14 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase73.ps1"))
     elif target == "verify73":
         run(powershell("./scripts/verify/verify-phase73.ps1"))
+    elif target == "phase74":
+        run(powershell("./scripts/verify/verify-phase74.ps1"))
+    elif target == "smoke74":
+        run(powershell("./scripts/local/smoke-phase74.ps1"))
+    elif target == "newman74":
+        run(powershell("./scripts/local/newman-phase74.ps1"))
+    elif target == "verify74":
+        run(powershell("./scripts/verify/verify-phase74.ps1"))
     else:
         run(powershell("./scripts/local/smoke-phase69.ps1"))
         run(powershell("./scripts/local/newman-phase69.ps1"))
@@ -358,6 +591,15 @@ def cmd_status(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def cmd_doctor(args: argparse.Namespace) -> int:
+    report = runtime_doctor_report(args)
+    save_doctor_report(report)
+    local = dict(report.get("local") or {})
+    cloud = dict(report.get("cloud") or {})
+    log("INFO", f"Runtime doctor local={local.get('overall', '')} cloud={cloud.get('overall', '')} overall={report.get('overall', '')}")
+    return 0 if report.get("overall") == "ok" else 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="TraceDeck development controller")
     parser.add_argument("--addr", default=DEFAULT_ADDR, help="Local backend address")
@@ -365,6 +607,13 @@ def main() -> int:
 
     status = sub.add_parser("status", help="Check local server, output paths, and SAM config")
     status.set_defaults(func=cmd_status)
+
+    doctor = sub.add_parser("doctor", help="Write local/cloud runtime assurance reports under data/local/output")
+    doctor.add_argument("--tenant-id", default="family-varadha", help="Tenant used for browser activity readback")
+    doctor.add_argument("--frontend-url", default="", help="Override Lambda Function URL")
+    doctor.add_argument("--skip-cloud", action="store_true", help="Check only the local backend and browser viewer")
+    doctor.add_argument("--no-cloud-refresh", action="store_true", help="Read Lambda S3 summary without a forced refresh")
+    doctor.set_defaults(func=cmd_doctor)
 
     server = sub.add_parser("server", help="Start, stop, restart, or check the local server")
     server.add_argument("action", choices=["start", "stop", "restart", "status"], nargs="?", default="status")
@@ -374,13 +623,14 @@ def main() -> int:
     sam.add_argument("action", choices=["build", "deploy", "restart", "local", "outputs", "logs", "tail"], nargs="?", default="build")
     sam.set_defaults(func=cmd_sam)
 
-    test = sub.add_parser("test", help="Run Phase 69 or Phase 72 test scripts")
+    test = sub.add_parser("test", help="Run TraceDeck smoke, Newman, live, or phase verification scripts")
     test.add_argument(
         "target",
         choices=[
             "phase69",
             "phase72",
             "phase73",
+            "phase74",
             "smoke",
             "newman",
             "verify",
@@ -390,6 +640,9 @@ def main() -> int:
             "smoke73",
             "newman73",
             "verify73",
+            "smoke74",
+            "newman74",
+            "verify74",
             "live",
         ],
         nargs="?",

@@ -59,6 +59,25 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 The Phase 73 verifier checks local dashboard/browser source badges, typed API
 provenance fields, live `18080` readback, Lambda S3 row provenance, Newman
 collections, and root artifact hygiene.
+
+Phase 74 adds runtime doctor assurance:
+
+```powershell
+python ./devctl.py doctor
+python ./devctl.py test phase74
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-runtime-doctor.ps1 -Addr 127.0.0.1:18080 -IncludeCloud
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase74.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase74.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase74.ps1
+```
+
+`devctl.py doctor` saves `data/local/output/runtime-doctor.json` and
+`data/local/output/runtime-doctor.txt`. The full verifier compiles Python,
+checks dashboard JavaScript, runs backend and agent tests, live-boots a local
+dashboard for isolated doctor smoke, runs Newman, live-boots a second temporary
+backend for local/cloud doctor proof, and re-checks root artifact hygiene. Run
+`python ./devctl.py server restart` separately when you want the persistent
+`18080` dashboard refreshed after verification.
 Browser fixture smoke data is generated under `data/local/smoke-phase3/`, and
 the smoke archive is checked to ensure raw URLs and page titles are not stored.
 Earlier phase smokes pass `--disable-browser-history` so they do not collect

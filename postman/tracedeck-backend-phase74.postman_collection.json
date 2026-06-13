@@ -1,0 +1,162 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 74",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.status).to.eql('ok');",
+              "  pm.expect(body.service).to.eql('tracedeck-backend');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Runtime Controls",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('dashboard exposes runtime controls', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('TraceDeck Command Center');",
+              "  pm.expect(html).to.include('theme-toggle-button');",
+              "  pm.expect(html).to.include('server-status-light');",
+              "  pm.expect(html).to.include('dashboard-page-nav');",
+              "  pm.expect(html).to.include('browser-activity-button');",
+              "  pm.expect(html).to.include('sourceBadge');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Browser Activity Runtime Controls",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/browser-activity"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('browser activity page exposes runtime controls', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('TraceDeck Browser Activity');",
+              "  pm.expect(html).to.include('theme-toggle-button');",
+              "  pm.expect(html).to.include('server-status-light');",
+              "  pm.expect(html).to.include('<th>Source</th>');",
+              "  pm.expect(html).to.include('metadata-only guard');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Browser Activity Runtime API",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/browser-activity?limit=25"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('browser activity API supports runtime assurance', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.summary.total).to.be.at.least(3);",
+              "  pm.expect(body.items.length).to.be.at.least(3);",
+              "  body.items.forEach(function (item) {",
+              "    pm.expect(item.source_kind).to.be.a('string').and.not.empty;",
+              "    pm.expect(item.evidence_scope).to.be.a('string').and.not.empty;",
+              "    pm.expect(item.evidence_detail).to.be.a('string').and.not.empty;",
+              "  });",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Device Runtime Index",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('device index yields a runtime host', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.count).to.be.at.least(1);",
+              "  pm.expect(body.items.length).to.be.at.least(1);",
+              "  pm.collectionVariables.set('phase74DeviceId', body.items[0].device_id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Device Delivery Runtime Provenance",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/{{phase74DeviceId}}/alert-deliveries"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('delivery rows carry runtime provenance', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.count).to.be.at.least(1);",
+              "  pm.expect(body.items.length).to.be.at.least(1);",
+              "  pm.expect(body.items[0].source_kind).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.items[0].evidence_scope).to.be.a('string').and.not.empty;",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "phase74DeviceId",
+      "value": "demo-study-laptop"
+    }
+  ]
+}

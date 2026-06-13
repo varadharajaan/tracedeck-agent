@@ -528,6 +528,14 @@ Phase 73 adds first-class verification for those provenance fields across local
 API rows, alert delivery rows, the browser activity page, the main dashboard,
 and Lambda S3 summary rows.
 
+Phase 74 does not add a new backend route. It adds `python ./devctl.py doctor`,
+which verifies existing backend and cloud contracts from the operator machine:
+local `/health`, dashboard HTML, `/browser-activity`, tenant browser activity
+rows, `/api/v1/devices`, device alert-delivery provenance, Lambda `/api/health`,
+Lambda `/api/s3-summary`, and Lambda cache-hit behavior. The report is written
+to `data/local/output/runtime-doctor.json` and
+`data/local/output/runtime-doctor.txt`.
+
 Phase 69 does not add a new local backend route. It adds a SAM Lambda frontend
 contract at `/api/health`, `/api/s3-summary`, and `/` inside `sam-app`. The
 Lambda frontend uses S3 object listing and safe JSON/JSONL/GZip sampling to
