@@ -3417,6 +3417,7 @@
         <button class="command-jump" type="button" data-jump-target="paid-ops-section">Paid Ops<span id="nav-paid-ops-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="revenue-section">Revenue<span id="nav-revenue-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="premium-notification-section">Notify Pro<span id="nav-premium-notification-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="delivery-assurance-section">Assurance<span id="nav-delivery-assurance-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="notification-proof-section">Notifs<span id="nav-notification-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="mail-report-section">Reports<span id="nav-report-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="archive-proof-section">Archive<span id="nav-archive-meta">waiting</span></button>
@@ -3830,6 +3831,66 @@
           <span id="delivery-timeline-count" class="pill">0 events</span>
         </div>
         <div id="delivery-timeline-list" class="action-list"><div class="empty">No delivery timeline evidence yet.</div></div>
+      </div>
+    </section>
+
+    <section id="delivery-assurance-section" class="content-grid" aria-label="delivery assurance center">
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Delivery Assurance Center</h2>
+            <p class="muted">Truth labels for real provider proof, dry-run rehearsal, demo-only rows, dashboard fallback, retries, and failures.</p>
+          </div>
+          <span id="delivery-assurance-status" class="badge pending">pending</span>
+        </div>
+        <div class="brief-grid">
+          <div class="brief-item"><small>Assurance Score</small><strong id="delivery-assurance-score">-</strong><span id="delivery-assurance-score-sub" class="muted">No assurance score</span></div>
+          <div class="brief-item"><small>Provider Proof</small><strong id="delivery-assurance-provider">-</strong><span id="delivery-assurance-provider-sub" class="muted">No real provider proof</span></div>
+          <div class="brief-item"><small>Demo Only</small><strong id="delivery-assurance-demo">-</strong><span id="delivery-assurance-demo-sub" class="muted">No demo rows</span></div>
+          <div class="brief-item"><small>Retrying</small><strong id="delivery-assurance-retrying">-</strong><span id="delivery-assurance-retrying-sub" class="muted">No retries</span></div>
+          <div class="brief-item"><small>Dashboard Fallback</small><strong id="delivery-assurance-dashboard">-</strong><span id="delivery-assurance-dashboard-sub" class="muted">No dashboard fallback</span></div>
+          <div class="brief-item"><small>Buyer Ready</small><strong id="delivery-assurance-buyer">-</strong><span id="delivery-assurance-buyer-sub" class="muted">No buyer-ready proof</span></div>
+        </div>
+        <div class="summary-list" style="margin-top: 12px;">
+          <div class="summary-line"><span>Next Action</span><strong id="delivery-assurance-next">Run provider proof</strong></div>
+          <div class="summary-line"><span>Boundary</span><strong id="delivery-assurance-boundary">metadata-only delivery assurance</strong></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Route Truth Matrix</h2>
+            <p class="muted">Every channel shows whether it is real provider proof, dry-run proof, demo-only, retrying, failed, or dashboard-only.</p>
+          </div>
+          <span id="delivery-assurance-route-count" class="pill">0 routes</span>
+        </div>
+        <div id="delivery-assurance-route-list" class="buyer-ops-list"><div class="empty">No delivery assurance routes yet.</div></div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Delivery Truth Events</h2>
+            <p class="muted">Recent safe delivery metadata with source kind and operator-facing truth labels.</p>
+          </div>
+          <span id="delivery-assurance-event-count" class="pill">0 events</span>
+        </div>
+        <div id="delivery-assurance-event-list" class="action-list"><div class="empty">No delivery assurance events yet.</div></div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Provider Proof Readiness</h2>
+            <p class="muted">A compact answer to whether email and push actually reached an external provider versus demo or retry state.</p>
+          </div>
+          <span id="delivery-assurance-provider-status" class="badge pending">pending</span>
+        </div>
+        <div class="summary-list">
+          <div class="summary-line"><span>Email</span><strong id="delivery-assurance-email-ready">not confirmed</strong></div>
+          <div class="summary-line"><span>Push</span><strong id="delivery-assurance-push-ready">not confirmed</strong></div>
+          <div class="summary-line"><span>Dashboard</span><strong id="delivery-assurance-dashboard-ready">not confirmed</strong></div>
+          <div class="summary-line"><span>Next Retry</span><strong id="delivery-assurance-next-retry">none</strong></div>
+          <div class="summary-line"><span>Last Provider Proof</span><strong id="delivery-assurance-last-provider">none</strong></div>
+        </div>
       </div>
     </section>
 
@@ -5053,6 +5114,7 @@
       "notification-preference-section": DASHBOARD_PAGE.notifications,
       "notification-proof-section": DASHBOARD_PAGE.notifications,
       "delivery-timeline-section": DASHBOARD_PAGE.notifications,
+      "delivery-assurance-section": DASHBOARD_PAGE.notifications,
       "delivery-drilldown-section": DASHBOARD_PAGE.notifications,
       "delivery-remediation-section": DASHBOARD_PAGE.notifications,
       "buyer-ops-section": DASHBOARD_PAGE.notifications,
@@ -5462,6 +5524,7 @@
       renderBuyerMonetizationConsole(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderDeliveryDrilldown(context.deliveryDrilldown);
       renderDeliveryTimeline(context.deliveryTimeline);
+      renderDeliveryAssurance(context.deliveryAssurance);
       renderDeliveryRemediation(context.deliveryRemediation);
       renderMonetisationLaunchDeck(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderRevenueCommandSuite(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
@@ -5572,6 +5635,8 @@
       const notificationRevenueSummary = notificationRevenue.summary || {};
       const providerSimulation = context.providerSimulationLab || {};
       const providerSimulationSummary = providerSimulation.summary || {};
+      const deliveryAssurance = context.deliveryAssurance || {};
+      const deliveryAssuranceSummary = deliveryAssurance.summary || {};
       const packageBilling = context.packageBillingReadiness || {};
       const packageBillingSummary = packageBilling.summary || {};
       const onboarding = context.onboardingCenter || {};
@@ -5621,6 +5686,7 @@
       setText("nav-paid-ops-meta", `${readiness}% ready`);
       setText("nav-revenue-meta", monetization.conversion_stage || operations.customer_health || "pilot");
       setText("nav-premium-notification-meta", notificationSummary.status || `${openAlerts} alerts`);
+      setText("nav-delivery-assurance-meta", deliveryAssuranceSummary.assurance_score ? `${deliveryAssuranceSummary.assurance_score}% proof` : `${deliveryAssuranceSummary.demo_only || 0} demo`);
       setText("nav-notification-meta", `${deliveryScore}% delivery`);
       setText("nav-report-meta", reportReady ? "email + PDF" : weekly.email_ready ? "email ready" : "pending");
       setText("nav-archive-meta", archiveProvider === "s3" ? `${archivePending} pending` : archiveProvider);
@@ -9937,6 +10003,81 @@
       `).join("");
     }
 
+    function renderDeliveryAssurance(assurance) {
+      const model = assurance || {};
+      const summary = model.summary || {};
+      const routes = model.routes || [];
+      const events = model.events || [];
+      const score = Number(summary.assurance_score || 0);
+      const status = summary.status || (routes.length > 0 ? "watch" : "pending");
+
+      document.getElementById("delivery-assurance-status").outerHTML =
+        badge(status).replace("<span", '<span id="delivery-assurance-status"');
+      document.getElementById("delivery-assurance-provider-status").outerHTML =
+        badge(summary.buyer_ready ? "healthy" : summary.provider_confirmed > 0 ? "watch" : "attention").replace("<span", '<span id="delivery-assurance-provider-status"');
+      setText("delivery-assurance-score", routes.length > 0 ? `${score}%` : "-");
+      setText("delivery-assurance-score-sub", `${summary.routes_enabled || 0}/${summary.routes_total || 0} routes enabled`);
+      setText("delivery-assurance-provider", summary.provider_confirmed || 0);
+      setText("delivery-assurance-provider-sub", `${summary.dry_run_rehearsed || 0} dry-run, ${summary.pending_provider || 0} pending provider`);
+      setText("delivery-assurance-demo", summary.demo_only || 0);
+      setText("delivery-assurance-demo-sub", "seeded rows do not mean mail or push was received");
+      setText("delivery-assurance-retrying", summary.retrying || 0);
+      setText("delivery-assurance-retrying-sub", `${summary.failed || 0} failed, ${summary.route_disabled || 0} disabled`);
+      setText("delivery-assurance-dashboard", summary.dashboard_visible || 0);
+      setText("delivery-assurance-dashboard-sub", summary.dashboard_route_ready ? "local fallback visible" : "dashboard fallback pending");
+      setText("delivery-assurance-buyer", summary.buyer_ready ? "yes" : "no");
+      setText("delivery-assurance-buyer-sub", "requires provider-confirmed email and push plus dashboard fallback");
+      setText("delivery-assurance-next", summary.next_action || "Run provider proof");
+      setText("delivery-assurance-boundary", model.privacy_boundary || "metadata-only delivery assurance");
+      setText("delivery-assurance-email-ready", summary.email_provider_ready ? "provider confirmed" : "not confirmed");
+      setText("delivery-assurance-push-ready", summary.push_provider_ready ? "provider confirmed" : "not confirmed");
+      setText("delivery-assurance-dashboard-ready", summary.dashboard_route_ready ? "fallback visible" : "not confirmed");
+      setText("delivery-assurance-next-retry", summary.next_retry_at ? formatDate(summary.next_retry_at) : "none");
+      setText("delivery-assurance-last-provider", summary.last_provider_proof_at ? formatDate(summary.last_provider_proof_at) : "none");
+      setText("delivery-assurance-route-count", `${routes.length} route${routes.length === 1 ? "" : "s"}`);
+      setText("delivery-assurance-event-count", `${events.length} event${events.length === 1 ? "" : "s"}`);
+
+      const routeTarget = document.getElementById("delivery-assurance-route-list");
+      if (routes.length === 0) {
+        routeTarget.innerHTML = '<div class="empty">No delivery assurance routes yet.</div>';
+      } else {
+        routeTarget.innerHTML = routes.map((route) => `
+          <div class="buyer-ops-list-item">
+            <strong>${escapeHTML(capitalize(route.channel || "route"))} - ${escapeHTML(route.proof_label || route.assurance_state || "pending")}</strong>
+            <span class="muted">${escapeHTML(route.operator_truth || "Provider confirmation pending.")}</span>
+            <div class="action-meta">
+              ${badge(route.assurance_state || "pending_provider")}
+              ${badge(route.latest_delivery_status || route.route_status || "pending")}
+              <span class="pill">${escapeHTML(route.provider || "provider pending")}</span>
+              <span class="pill">${escapeHTML(route.source_kind || "source pending")}</span>
+              <span class="pill">${escapeHTML(route.recipient_label || "recipient label pending")}</span>
+            </div>
+            <span class="muted">${escapeHTML(route.user_visible_label || route.next_action || "Keep route proof current.")}</span>
+          </div>
+        `).join("");
+      }
+
+      const eventTarget = document.getElementById("delivery-assurance-event-list");
+      if (events.length === 0) {
+        eventTarget.innerHTML = '<div class="empty">No delivery assurance events yet.</div>';
+        return;
+      }
+      eventTarget.innerHTML = events.map((event) => `
+        <div class="action-item">
+          <strong>${escapeHTML(capitalize(event.channel || "route"))} ${escapeHTML(event.proof_label || event.assurance_state || "pending")} - ${escapeHTML(event.host_name || event.device_id || "host pending")}</strong>
+          <span class="muted">${escapeHTML(event.operator_truth || event.summary || "Delivery truth metadata pending.")}</span>
+          <div class="action-meta">
+            ${badge(event.assurance_state || "pending_provider")}
+            ${badge(event.status || "pending")}
+            <span class="pill">${escapeHTML(event.provider || "provider pending")}</span>
+            <span class="pill">${escapeHTML(event.source_kind || "source pending")}</span>
+            <span class="pill">${escapeHTML(formatAge(event.last_attempt_at))}</span>
+          </div>
+          <span class="muted">${escapeHTML(event.next_action || "Review route assurance before relying on this notification.")}</span>
+        </div>
+      `).join("");
+    }
+
     function renderDeliveryDrilldown(drilldown) {
       const model = drilldown || {};
       const summary = model.summary || {};
@@ -10638,6 +10779,7 @@
       const premiumOperationsHub = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/premium-operations-hub`) : null;
       const notificationCommandCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-command-center`) : null;
       const deliveryTimeline = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delivery-timeline?device_id=${encodeURIComponent(overview.device.device_id)}&limit=8`) : null;
+      const deliveryAssurance = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delivery-assurance?device_id=${encodeURIComponent(overview.device.device_id)}&limit=8`) : null;
       const syncHealth = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/sync-health`) : null;
       const activityFeed = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/activity-feed?device_id=${encodeURIComponent(overview.device.device_id)}&limit=10`) : null;
       const activityViews = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/activity-views`) : null;
@@ -10680,6 +10822,7 @@
         premiumOperationsHub,
         notificationCommandCenter,
         deliveryTimeline,
+        deliveryAssurance,
         syncHealth,
         activityFeed,
         activityViews,

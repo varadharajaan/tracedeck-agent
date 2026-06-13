@@ -173,7 +173,7 @@ def runtime_doctor_local(*, base_url: str, tenant_id: str) -> dict[str, object]:
     dashboard = read_url(f"{base_url}/", timeout=5)
     dashboard_markers = required_markers(
         str(dashboard.get("body") or ""),
-        ["TraceDeck Command Center", "theme-toggle-button", "server-status-light", "dashboard-page-nav", "browser-activity-button"],
+        ["TraceDeck Command Center", "theme-toggle-button", "server-status-light", "dashboard-page-nav", "browser-activity-button", "Delivery Assurance Center"],
     )
 
     browser_page = read_url(f"{base_url}/browser-activity", timeout=5)
@@ -208,6 +208,20 @@ def runtime_doctor_local(*, base_url: str, tenant_id: str) -> dict[str, object]:
             delivery_source = str(delivery_items[0].get("source_kind", ""))
         delivery_ok = bool(deliveries["ok"]) and delivery_count > 0 and bool(delivery_source)
 
+    assurance = read_json(f"{base_url}/api/v1/tenants/{tenant_id}/delivery-assurance?limit=25", timeout=6)
+    assurance_payload = dict(assurance.get("json") or {})
+    assurance_summary = dict(assurance_payload.get("summary") or {})
+    assurance_privacy = str(assurance_payload.get("privacy_boundary", ""))
+    assurance_demo_only = int(assurance_summary.get("demo_only") or 0)
+    assurance_retrying = int(assurance_summary.get("retrying") or 0)
+    assurance_buyer_ready = bool(assurance_summary.get("buyer_ready"))
+    assurance_ok = (
+        bool(assurance["ok"])
+        and int(assurance_summary.get("routes_total") or 0) > 0
+        and "metadata-only" in assurance_privacy
+        and (assurance_demo_only == 0 or not assurance_buyer_ready)
+    )
+
     checks = {
         "health": health_ok,
         "dashboard": bool(dashboard["ok"]) and bool(dashboard_markers["ok"]),
@@ -215,6 +229,7 @@ def runtime_doctor_local(*, base_url: str, tenant_id: str) -> dict[str, object]:
         "browser_api": bool(browser_api["ok"]) and provenance_ok,
         "devices": bool(devices["ok"]) and bool(device_id),
         "deliveries": delivery_ok,
+        "delivery_assurance": assurance_ok,
     }
     return {
         "base_url": base_url,
@@ -231,6 +246,16 @@ def runtime_doctor_local(*, base_url: str, tenant_id: str) -> dict[str, object]:
         },
         "devices": {"ok": checks["devices"], "count": int(devices_payload.get("count") or len(device_items)), "first_device_id": device_id},
         "deliveries": {"ok": delivery_ok, "count": delivery_count, "first_source_kind": delivery_source},
+        "delivery_assurance": {
+            "ok": assurance_ok,
+            "status": assurance_summary.get("status", ""),
+            "score": int(assurance_summary.get("assurance_score") or 0),
+            "provider_confirmed": int(assurance_summary.get("provider_confirmed") or 0),
+            "demo_only": assurance_demo_only,
+            "retrying": assurance_retrying,
+            "buyer_ready": assurance_buyer_ready,
+            "privacy_boundary": assurance_privacy,
+        },
     }
 
 
@@ -286,6 +311,7 @@ def save_doctor_report(report: dict[str, object]) -> None:
     local = dict(report.get("local") or {})
     cloud = dict(report.get("cloud") or {})
     browser_api = dict(local.get("browser_api") or {})
+    delivery_assurance = dict(local.get("delivery_assurance") or {})
     cloud_cache = dict(cloud.get("cache") or {})
     cloud_summary = dict(cloud.get("s3_summary") or {})
     lines = [
@@ -300,6 +326,7 @@ def save_doctor_report(report: dict[str, object]) -> None:
         f"Browser:   rows={browser_api.get('rows', 0)} sources={', '.join(browser_api.get('source_kinds', []))}",
         f"Device:    {dict(local.get('devices') or {}).get('first_device_id', '')}",
         f"Delivery:  count={dict(local.get('deliveries') or {}).get('count', 0)} source={dict(local.get('deliveries') or {}).get('first_source_kind', '')}",
+        f"Assurance: score={delivery_assurance.get('score', 0)} provider={delivery_assurance.get('provider_confirmed', 0)} demo={delivery_assurance.get('demo_only', 0)} retrying={delivery_assurance.get('retrying', 0)} buyer_ready={delivery_assurance.get('buyer_ready', False)}",
         "",
     ]
     if cloud.get("skipped"):
@@ -512,6 +539,14 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase74.ps1"))
     elif target == "verify74":
         run(powershell("./scripts/verify/verify-phase74.ps1"))
+    elif target == "phase75":
+        run(powershell("./scripts/verify/verify-phase75.ps1"))
+    elif target == "smoke75":
+        run(powershell("./scripts/local/smoke-phase75.ps1"))
+    elif target == "newman75":
+        run(powershell("./scripts/local/newman-phase75.ps1"))
+    elif target == "verify75":
+        run(powershell("./scripts/verify/verify-phase75.ps1"))
     else:
         run(powershell("./scripts/local/smoke-phase69.ps1"))
         run(powershell("./scripts/local/newman-phase69.ps1"))
@@ -631,6 +666,7 @@ def main() -> int:
             "phase72",
             "phase73",
             "phase74",
+            "phase75",
             "smoke",
             "newman",
             "verify",
@@ -643,6 +679,9 @@ def main() -> int:
             "smoke74",
             "newman74",
             "verify74",
+            "smoke75",
+            "newman75",
+            "verify75",
             "live",
         ],
         nargs="?",

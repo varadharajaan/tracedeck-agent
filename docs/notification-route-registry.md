@@ -100,6 +100,22 @@ their urgent channel policy. It remains metadata-only: no provider secrets,
 SMTP passwords, push endpoint secrets, alert bodies, screenshots, raw URLs,
 page titles, cookies, tokens, or private content are stored.
 
+Phase 75 adds delivery assurance on top of routes, preferences, deliveries, and
+dashboard fallback:
+
+```text
+GET /api/v1/tenants/{tenantId}/delivery-assurance
+```
+
+The endpoint separates `provider_confirmed`, `dry_run_rehearsed`,
+`dashboard_visible`, `demo_only`, `retrying`, `failed`, `route_disabled`, and
+`pending_provider` states. This prevents demo rows from appearing as real SMTP
+or web-push delivery. A buyer-ready route requires provider-confirmed email,
+provider-confirmed push, and dashboard fallback visibility. The response keeps
+only route metadata, source labels, proof labels, timestamps, and recommended
+next actions; it does not expose provider secrets, SMTP passwords, push
+endpoints, alert bodies, tokens, cookies, screenshots, raw URLs, or page titles.
+
 ## Verification
 
 ```powershell
@@ -115,4 +131,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase49.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase49.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase49.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase75.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase75.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase75.ps1
 ```

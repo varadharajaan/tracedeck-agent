@@ -207,6 +207,9 @@ Current panels:
 - host risk command for the highest-risk anomaly, policy, or tamper signal
 - archive retention proof for S3-backed retention and backlog state
 - notification revenue stream showing email, push, and dashboard delivery proof
+- delivery assurance center showing provider-confirmed, dry-run, dashboard-
+  visible, demo-only, retrying, failed, disabled, and pending-provider route
+  truth so demo rows never look like real email or screen notification proof
 - buyer action prompts for immediate action, route proof, and upgrade lever
 - buyer assurance wall for agent sync, anomaly pipeline, mail delivery, push
   notification, weekly report mail, and archive trust in one monetisable view

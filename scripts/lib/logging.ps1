@@ -56,6 +56,7 @@ function Invoke-TraceDeckLoggedCommand {
     $previousErrorActionPreference = $ErrorActionPreference
     try {
         $ErrorActionPreference = "Continue"
+        $global:LASTEXITCODE = 0
         & $Command 2>&1 | ForEach-Object {
             $message = ($_ | Out-String).Trim()
             if ($message.Length -gt 0) {

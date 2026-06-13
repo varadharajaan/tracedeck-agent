@@ -309,3 +309,8 @@
     browser activity provenance, alert-delivery provenance, Lambda Function URL
     health, S3 summary rows, and cache hit/miss behavior, with smoke/Newman
     coverage, docs, and full local verification.
+75. Phase 75: delivery assurance truth center. Typed tenant delivery-assurance
+    API, dashboard Delivery Assurance Center, route/event truth labels for
+    provider-confirmed, dry-run, dashboard-visible, demo-only, retrying, failed,
+    disabled, and pending-provider states, runtime doctor assertions,
+    Postman/Newman coverage, docs, and full local verification.

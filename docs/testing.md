@@ -78,6 +78,20 @@ dashboard for isolated doctor smoke, runs Newman, live-boots a second temporary
 backend for local/cloud doctor proof, and re-checks root artifact hygiene. Run
 `python ./devctl.py server restart` separately when you want the persistent
 `18080` dashboard refreshed after verification.
+
+Phase 75 adds delivery assurance truth labels:
+
+```powershell
+python ./devctl.py test phase75
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase75.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase75.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase75.ps1
+```
+
+The verifier checks the typed delivery assurance API, dashboard markers, demo
+versus provider proof separation, retrying push truth labels, runtime doctor
+coverage, Newman, JavaScript syntax, Lambda frontend contract, and root
+artifact hygiene.
 Browser fixture smoke data is generated under `data/local/smoke-phase3/`, and
 the smoke archive is checked to ensure raw URLs and page titles are not stored.
 Earlier phase smokes pass `--disable-browser-history` so they do not collect

@@ -536,6 +536,26 @@ Lambda `/api/s3-summary`, and Lambda cache-hit behavior. The report is written
 to `data/local/output/runtime-doctor.json` and
 `data/local/output/runtime-doctor.txt`.
 
+Phase 75 adds `GET /api/v1/tenants/{tenantId}/delivery-assurance`. It returns a
+typed route and event truth contract for notification delivery proof. Query
+filters are `device_id`, `channel`, `assurance_state`, and `limit`.
+
+Assurance states are:
+
+- `provider_confirmed`
+- `dry_run_rehearsed`
+- `dashboard_visible`
+- `demo_only`
+- `retrying`
+- `failed`
+- `route_disabled`
+- `pending_provider`
+
+The summary includes provider-confirmed email/push readiness, dashboard
+fallback readiness, buyer-ready status, counts by assurance state, next action,
+next retry time, last provider proof time, and a strict metadata-only privacy
+boundary. Demo seed rows are never counted as provider proof.
+
 Phase 69 does not add a new local backend route. It adds a SAM Lambda frontend
 contract at `/api/health`, `/api/s3-summary`, and `/` inside `sam-app`. The
 Lambda frontend uses S3 object listing and safe JSON/JSONL/GZip sampling to

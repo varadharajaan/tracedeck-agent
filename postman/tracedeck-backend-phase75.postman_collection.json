@@ -1,0 +1,165 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 75",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Delivery Assurance Markers",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('dashboard exposes delivery assurance center', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('Delivery Assurance Center');",
+              "  pm.expect(html).to.include('Route Truth Matrix');",
+              "  pm.expect(html).to.include('Delivery Truth Events');",
+              "  pm.expect(html).to.include('Provider Proof Readiness');",
+              "  pm.expect(html).to.include('data-jump-target=\"delivery-assurance-section\"');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Device Runtime Index",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('device index yields a runtime host', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.count).to.be.at.least(1);",
+              "  pm.collectionVariables.set('phase75DeviceId', body.items[0].device_id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delivery Assurance Summary",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/delivery-assurance?device_id={{phase75DeviceId}}&limit=8"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('delivery assurance separates demo from provider proof', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.summary.routes_total).to.eql(3);",
+              "  pm.expect(body.summary.provider_confirmed).to.eql(0);",
+              "  pm.expect(body.summary.demo_only).to.be.at.least(1);",
+              "  pm.expect(body.summary.retrying).to.be.at.least(1);",
+              "  pm.expect(body.summary.email_provider_ready).to.eql(false);",
+              "  pm.expect(body.summary.push_provider_ready).to.eql(false);",
+              "  pm.expect(body.summary.buyer_ready).to.eql(false);",
+              "  pm.expect(body.summary.dashboard_route_ready).to.eql(true);",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(body.privacy_boundary).to.include('no provider secrets');",
+              "  const text = JSON.stringify(body).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'push_endpoint', 'screenshot_bytes', 'raw_url', 'page_title', 'alert_body'].forEach(function (marker) {",
+              "    pm.expect(text).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delivery Assurance Email Demo Filter",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/delivery-assurance?device_id={{phase75DeviceId}}&channel=email&assurance_state=demo_only"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('email demo-only filter is explicit', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.routes.length).to.eql(1);",
+              "  pm.expect(body.routes[0].channel).to.eql('email');",
+              "  pm.expect(body.routes[0].assurance_state).to.eql('demo_only');",
+              "  pm.expect(body.routes[0].source_kind).to.eql('demo_seed');",
+              "  pm.expect(body.routes[0].operator_truth).to.include('Seeded demo row only');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delivery Assurance Push Retry Filter",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/delivery-assurance?device_id={{phase75DeviceId}}&channel=push&assurance_state=retrying"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('push retry filter is explicit', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.routes.length).to.eql(1);",
+              "  pm.expect(body.routes[0].channel).to.eql('push');",
+              "  pm.expect(body.routes[0].assurance_state).to.eql('retrying');",
+              "  pm.expect(body.routes[0].operator_truth).to.include('no screen notification');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "phase75DeviceId",
+      "value": "demo-study-laptop"
+    }
+  ]
+}

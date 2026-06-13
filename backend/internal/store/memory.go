@@ -1476,6 +1476,60 @@ func (m *Memory) TenantDeliveryTimeline(_ context.Context, tenantID string, filt
 	}, nil
 }
 
+func (m *Memory) TenantDeliveryAssurance(_ context.Context, tenantID string, filter model.TenantDeliveryAssuranceFilter) (model.TenantDeliveryAssurance, error) {
+	now := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+	filter = normalizeDeliveryAssuranceFilter(filter)
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	tenant, ok := m.tenants[tenantID]
+	if !ok {
+		return model.TenantDeliveryAssurance{}, ErrTenantNotFound
+	}
+	m.seedNotificationRoutesForTenantLocked(tenant)
+
+	routes := append([]model.NotificationRoute(nil), m.notificationRoutes[tenantID]...)
+	deliveries := make([]model.AlertDelivery, 0)
+	sourceHosts := map[string]bool{}
+	hostNames := map[string]string{}
+	for _, device := range m.devices {
+		if device.TenantID != tenantID {
+			continue
+		}
+		if filter.DeviceID != "" && filter.DeviceID != device.DeviceID {
+			continue
+		}
+		sourceHosts[device.DeviceID] = true
+		hostNames[device.DeviceID] = device.HostName
+		m.seedDashboardForDeviceLocked(device)
+		deliveries = append(deliveries, m.alertDeliveries[device.DeviceID]...)
+	}
+	if err := m.persistLocked(); err != nil {
+		return model.TenantDeliveryAssurance{}, err
+	}
+
+	routeItems := deliveryAssuranceRoutes(routes, deliveries, filter)
+	eventItems := deliveryAssuranceEvents(deliveries, hostNames, filter)
+	summary := deliveryAssuranceSummary(routeItems, eventItems, len(sourceHosts))
+
+	if len(eventItems) > filter.Limit {
+		eventItems = eventItems[:filter.Limit]
+	}
+
+	return model.TenantDeliveryAssurance{
+		TenantID:        tenant.TenantID,
+		TenantName:      tenant.Name,
+		Filters:         filter,
+		Summary:         summary,
+		Routes:          routeItems,
+		Events:          eventItems,
+		GeneratedAt:     now,
+		PrivacyBoundary: constants.DeliveryAssurancePrivacyNote,
+	}, nil
+}
+
 func (m *Memory) TenantSyncHealth(_ context.Context, tenantID string) (model.TenantSyncHealth, error) {
 	now := time.Now().UTC()
 	tenantID = strings.TrimSpace(tenantID)
@@ -1733,6 +1787,19 @@ func normalizeDeliveryTimelineFilter(filter model.TenantDeliveryTimelineFilter) 
 	return filter
 }
 
+func normalizeDeliveryAssuranceFilter(filter model.TenantDeliveryAssuranceFilter) model.TenantDeliveryAssuranceFilter {
+	filter.DeviceID = strings.TrimSpace(filter.DeviceID)
+	filter.Channel = strings.ToLower(strings.TrimSpace(filter.Channel))
+	filter.AssuranceState = strings.ToLower(strings.TrimSpace(filter.AssuranceState))
+	if filter.Limit <= 0 {
+		filter.Limit = constants.ActivityFeedDefaultLimit
+	}
+	if filter.Limit > constants.ActivityFeedMaxLimit {
+		filter.Limit = constants.ActivityFeedMaxLimit
+	}
+	return filter
+}
+
 func riskFeedItems(tenantID string, device model.Device, events []model.RiskEvent) []model.TenantActivityFeedItem {
 	items := make([]model.TenantActivityFeedItem, 0, len(events))
 	for _, event := range events {
@@ -1868,6 +1935,372 @@ func deliveryTimelineSummary(items []model.TenantDeliveryTimelineItem, sourceHos
 		summary.NotificationScore = (summary.Delivered * 100) / len(items)
 	}
 	return summary
+}
+
+func deliveryAssuranceRoutes(routes []model.NotificationRoute, deliveries []model.AlertDelivery, filter model.TenantDeliveryAssuranceFilter) []model.TenantDeliveryAssuranceRoute {
+	items := make([]model.TenantDeliveryAssuranceRoute, 0, len(routes))
+	for _, route := range routes {
+		if filter.Channel != "" && strings.ToLower(route.Channel) != filter.Channel {
+			continue
+		}
+		latest := latestDeliveryForRoute(deliveries, route)
+		item := deliveryAssuranceRoute(route, latest)
+		if filter.AssuranceState != "" && item.AssuranceState != filter.AssuranceState {
+			continue
+		}
+		items = append(items, item)
+	}
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].Channel != items[j].Channel {
+			return items[i].Channel < items[j].Channel
+		}
+		return items[i].RouteID < items[j].RouteID
+	})
+	return items
+}
+
+func deliveryAssuranceRoute(route model.NotificationRoute, delivery *model.AlertDelivery) model.TenantDeliveryAssuranceRoute {
+	state := deliveryAssuranceState(route, delivery)
+	item := model.TenantDeliveryAssuranceRoute{
+		RouteID:              route.ID,
+		Channel:              route.Channel,
+		Provider:             route.Provider,
+		RecipientLabel:       route.RecipientLabel,
+		Enabled:              route.Enabled,
+		RouteStatus:          route.Status,
+		AssuranceState:       state,
+		LatestDeliveryStatus: constants.DeliveryStatusPending,
+		LastVerifiedAt:       route.LastVerifiedAt,
+		OperatorTruth:        deliveryAssuranceTruth(route.Channel, state),
+		ProofLabel:           deliveryAssuranceProofLabel(state),
+		UserVisibleLabel:     deliveryAssuranceVisibleLabel(route.Channel, state),
+		NextAction:           deliveryAssuranceNextAction(route.Channel, state),
+		PaidTier:             notificationCommandChannelTier(route.Channel),
+	}
+	if delivery != nil {
+		current := withDeliveryEvidenceDefaults(*delivery)
+		item.LatestDeliveryStatus = current.Status
+		item.SourceKind = current.SourceKind
+		item.EvidenceScope = current.EvidenceScope
+		item.EvidenceDetail = current.EvidenceDetail
+		item.Attempts = current.Attempts
+		item.LastAttemptAt = &current.LastAttemptAt
+		item.NextRetryAt = current.NextRetryAt
+		item.LastError = current.LastError
+		item.NextAction = firstNonEmpty(deliveryAssuranceNextAction(route.Channel, state), current.LastError, current.Summary)
+	} else if route.LastVerifiedAt != nil {
+		item.SourceKind = constants.EvidenceSourceDryRun
+		item.EvidenceScope = constants.EvidenceScopeMetadataOnly
+		item.EvidenceDetail = "Route rehearsal metadata is present; no provider payload was sent or stored."
+	}
+	return item
+}
+
+func deliveryAssuranceEvents(deliveries []model.AlertDelivery, hostNames map[string]string, filter model.TenantDeliveryAssuranceFilter) []model.TenantDeliveryAssuranceEvent {
+	items := make([]model.TenantDeliveryAssuranceEvent, 0, len(deliveries))
+	for _, delivery := range deliveries {
+		delivery = withDeliveryEvidenceDefaults(delivery)
+		if filter.Channel != "" && strings.ToLower(delivery.Channel) != filter.Channel {
+			continue
+		}
+		state := deliveryAssuranceState(model.NotificationRoute{
+			Channel:  delivery.Channel,
+			Provider: delivery.Provider,
+			Enabled:  true,
+			Status:   constants.StatusHealthy,
+		}, &delivery)
+		if filter.AssuranceState != "" && state != filter.AssuranceState {
+			continue
+		}
+		items = append(items, model.TenantDeliveryAssuranceEvent{
+			ID:             delivery.ID,
+			DeviceID:       delivery.DeviceID,
+			HostName:       hostNames[delivery.DeviceID],
+			EventID:        delivery.EventID,
+			Channel:        delivery.Channel,
+			Provider:       delivery.Provider,
+			Recipient:      delivery.Recipient,
+			Status:         delivery.Status,
+			AssuranceState: state,
+			SourceKind:     delivery.SourceKind,
+			EvidenceScope:  delivery.EvidenceScope,
+			EvidenceDetail: delivery.EvidenceDetail,
+			Attempts:       delivery.Attempts,
+			LastAttemptAt:  delivery.LastAttemptAt,
+			NextRetryAt:    delivery.NextRetryAt,
+			LastError:      delivery.LastError,
+			OperatorTruth:  deliveryAssuranceTruth(delivery.Channel, state),
+			ProofLabel:     deliveryAssuranceProofLabel(state),
+			NextAction:     deliveryAssuranceNextAction(delivery.Channel, state),
+			Summary:        delivery.Summary,
+		})
+	}
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].LastAttemptAt.Equal(items[j].LastAttemptAt) {
+			return deliveryAssuranceRank(items[i].AssuranceState) > deliveryAssuranceRank(items[j].AssuranceState)
+		}
+		return items[i].LastAttemptAt.After(items[j].LastAttemptAt)
+	})
+	return items
+}
+
+func deliveryAssuranceSummary(routes []model.TenantDeliveryAssuranceRoute, events []model.TenantDeliveryAssuranceEvent, sourceHostCount int) model.TenantDeliveryAssuranceSummary {
+	summary := model.TenantDeliveryAssuranceSummary{
+		RoutesTotal:         len(routes),
+		SourceHostCount:     sourceHostCount,
+		RecommendedPaidTier: constants.PlanFamilyPro,
+	}
+	for _, route := range routes {
+		if route.Enabled {
+			summary.RoutesEnabled++
+		}
+		applyDeliveryAssuranceState(&summary, route.Channel, route.AssuranceState, route.LastAttemptAt, route.NextRetryAt)
+		if route.PaidTier == constants.PlanBusiness {
+			summary.RecommendedPaidTier = constants.PlanBusiness
+		}
+	}
+	for _, event := range events {
+		applyDeliveryAssuranceRetry(&summary, event.AssuranceState, event.NextRetryAt)
+	}
+	if summary.RoutesTotal > 0 {
+		weighted := summary.ProviderConfirmed*100 + summary.DashboardVisible*85 + summary.DryRunRehearsed*70 + summary.DemoOnly*25
+		summary.AssuranceScore = weighted / summary.RoutesTotal
+	}
+	summary.EmailProviderReady = deliveryAssuranceChannelReady(routes, constants.DeliveryChannelEmail, constants.DeliveryAssuranceProviderConfirmed)
+	summary.PushProviderReady = deliveryAssuranceChannelReady(routes, constants.DeliveryChannelPush, constants.DeliveryAssuranceProviderConfirmed)
+	summary.DashboardRouteReady = deliveryAssuranceChannelReady(routes, constants.DeliveryChannelDashboard, constants.DeliveryAssuranceDashboardVisible) ||
+		deliveryAssuranceChannelReady(routes, constants.DeliveryChannelDashboard, constants.DeliveryAssuranceProviderConfirmed) ||
+		deliveryAssuranceChannelReady(routes, constants.DeliveryChannelDashboard, constants.DeliveryAssuranceDryRunRehearsed)
+	summary.BuyerReady = summary.EmailProviderReady && summary.PushProviderReady && summary.DashboardRouteReady
+	summary.Status = constants.StatusAttention
+	switch {
+	case summary.BuyerReady && summary.Failed == 0 && summary.Retrying == 0:
+		summary.Status = constants.StatusHealthy
+	case summary.ProviderConfirmed > 0 || summary.DryRunRehearsed > 0 || summary.DashboardRouteReady:
+		summary.Status = constants.StatusWatch
+	case summary.RoutesTotal == 0:
+		summary.Status = constants.StatusPending
+	}
+	summary.NextAction = deliveryAssuranceSummaryAction(summary)
+	return summary
+}
+
+func applyDeliveryAssuranceState(summary *model.TenantDeliveryAssuranceSummary, channel string, state string, lastAttemptAt *time.Time, nextRetryAt *time.Time) {
+	switch state {
+	case constants.DeliveryAssuranceProviderConfirmed:
+		summary.ProviderConfirmed++
+		if lastAttemptAt != nil && (summary.LastProviderProofAt == nil || lastAttemptAt.After(*summary.LastProviderProofAt)) {
+			proofAt := *lastAttemptAt
+			summary.LastProviderProofAt = &proofAt
+		}
+	case constants.DeliveryAssuranceDryRunRehearsed:
+		summary.DryRunRehearsed++
+	case constants.DeliveryAssuranceDashboardVisible:
+		summary.DashboardVisible++
+		if lastAttemptAt != nil && (summary.LastDashboardProofAt == nil || lastAttemptAt.After(*summary.LastDashboardProofAt)) {
+			proofAt := *lastAttemptAt
+			summary.LastDashboardProofAt = &proofAt
+		}
+	case constants.DeliveryAssuranceDemoOnly:
+		summary.DemoOnly++
+	case constants.DeliveryAssuranceRetrying:
+		summary.Retrying++
+	case constants.DeliveryAssuranceFailed:
+		summary.Failed++
+	case constants.DeliveryAssuranceRouteDisabled:
+		summary.RouteDisabled++
+	case constants.DeliveryAssurancePendingProvider:
+		summary.PendingProvider++
+	}
+	if channel == constants.DeliveryChannelDashboard && state == constants.DeliveryAssuranceDryRunRehearsed {
+		summary.DashboardVisible++
+	}
+	applyDeliveryAssuranceRetry(summary, state, nextRetryAt)
+}
+
+func applyDeliveryAssuranceRetry(summary *model.TenantDeliveryAssuranceSummary, state string, nextRetryAt *time.Time) {
+	if state != constants.DeliveryAssuranceRetrying || nextRetryAt == nil {
+		return
+	}
+	if summary.NextRetryAt == nil || nextRetryAt.Before(*summary.NextRetryAt) {
+		next := *nextRetryAt
+		summary.NextRetryAt = &next
+	}
+}
+
+func deliveryAssuranceChannelReady(routes []model.TenantDeliveryAssuranceRoute, channel string, state string) bool {
+	for _, route := range routes {
+		if route.Channel == channel && route.AssuranceState == state {
+			return true
+		}
+	}
+	return false
+}
+
+func deliveryAssuranceSummaryAction(summary model.TenantDeliveryAssuranceSummary) string {
+	switch {
+	case summary.BuyerReady:
+		return "Provider-confirmed email and push plus dashboard fallback are ready for paid notification promises."
+	case !summary.EmailProviderReady && summary.DemoOnly > 0:
+		return "Configure SMTP or SES and send a real email proof; current delivered email rows are demo-only."
+	case !summary.PushProviderReady && summary.Retrying > 0:
+		return "Register a real push subscription and resolve retrying web-push proof before promising screen notifications."
+	case summary.Failed > 0:
+		return "Fix failed provider routes, then rerun delivery assurance."
+	default:
+		return "Run provider-safe rehearsal and collect provider-confirmed proof before a customer review."
+	}
+}
+
+func deliveryAssuranceState(route model.NotificationRoute, delivery *model.AlertDelivery) string {
+	if !route.Enabled {
+		return constants.DeliveryAssuranceRouteDisabled
+	}
+	if route.Channel == constants.DeliveryChannelDashboard && route.Status == constants.StatusHealthy {
+		return constants.DeliveryAssuranceDashboardVisible
+	}
+	if delivery == nil {
+		if route.Status == constants.StatusHealthy && route.LastVerifiedAt != nil {
+			return constants.DeliveryAssuranceDryRunRehearsed
+		}
+		return constants.DeliveryAssurancePendingProvider
+	}
+	current := withDeliveryEvidenceDefaults(*delivery)
+	switch current.Status {
+	case constants.DeliveryStatusRetrying:
+		return constants.DeliveryAssuranceRetrying
+	case constants.DeliveryStatusFailed:
+		return constants.DeliveryAssuranceFailed
+	case constants.DeliveryStatusDelivered:
+		if current.Channel == constants.DeliveryChannelDashboard {
+			return constants.DeliveryAssuranceDashboardVisible
+		}
+		switch current.SourceKind {
+		case constants.EvidenceSourceDemoSeed:
+			return constants.DeliveryAssuranceDemoOnly
+		case constants.EvidenceSourceDryRun:
+			return constants.DeliveryAssuranceDryRunRehearsed
+		default:
+			return constants.DeliveryAssuranceProviderConfirmed
+		}
+	default:
+		if current.SourceKind == constants.EvidenceSourceDemoSeed {
+			return constants.DeliveryAssuranceDemoOnly
+		}
+	}
+	return constants.DeliveryAssurancePendingProvider
+}
+
+func deliveryAssuranceTruth(channel string, state string) string {
+	switch state {
+	case constants.DeliveryAssuranceProviderConfirmed:
+		return "Provider-confirmed delivery metadata is present for this route."
+	case constants.DeliveryAssuranceDryRunRehearsed:
+		return "Dry-run rehearsal passed; no provider payload or real recipient delivery is claimed."
+	case constants.DeliveryAssuranceDashboardVisible:
+		return "Dashboard fallback is visible locally; this is not proof of external email or push delivery."
+	case constants.DeliveryAssuranceDemoOnly:
+		return "Seeded demo row only; no SMTP, SES, or web-push provider send was attempted."
+	case constants.DeliveryAssuranceRetrying:
+		if channel == constants.DeliveryChannelPush {
+			return "Push delivery is retrying, so no screen notification should be assumed."
+		}
+		return "Delivery is retrying and needs provider confirmation."
+	case constants.DeliveryAssuranceFailed:
+		return "Provider delivery failed or was marked failed; fix the route before relying on it."
+	case constants.DeliveryAssuranceRouteDisabled:
+		return "Route is disabled and cannot deliver alerts."
+	default:
+		return "Provider confirmation is pending."
+	}
+}
+
+func deliveryAssuranceProofLabel(state string) string {
+	switch state {
+	case constants.DeliveryAssuranceProviderConfirmed:
+		return "real provider proof"
+	case constants.DeliveryAssuranceDryRunRehearsed:
+		return "dry-run proof"
+	case constants.DeliveryAssuranceDashboardVisible:
+		return "dashboard fallback"
+	case constants.DeliveryAssuranceDemoOnly:
+		return "demo only"
+	case constants.DeliveryAssuranceRetrying:
+		return "retrying"
+	case constants.DeliveryAssuranceFailed:
+		return "failed"
+	case constants.DeliveryAssuranceRouteDisabled:
+		return "disabled"
+	default:
+		return "pending"
+	}
+}
+
+func deliveryAssuranceVisibleLabel(channel string, state string) string {
+	switch channel {
+	case constants.DeliveryChannelEmail:
+		if state == constants.DeliveryAssuranceProviderConfirmed {
+			return "External email delivery confirmed."
+		}
+		return "No real external email delivery is confirmed."
+	case constants.DeliveryChannelPush:
+		if state == constants.DeliveryAssuranceProviderConfirmed {
+			return "External push notification delivery confirmed."
+		}
+		return "No screen push notification is confirmed."
+	case constants.DeliveryChannelDashboard:
+		return "Local dashboard fallback visibility is available."
+	default:
+		return "Delivery visibility pending."
+	}
+}
+
+func deliveryAssuranceNextAction(channel string, state string) string {
+	switch state {
+	case constants.DeliveryAssuranceProviderConfirmed:
+		return "Keep provider proof fresh and visible in the delivery assurance center."
+	case constants.DeliveryAssuranceDryRunRehearsed:
+		return "Move from dry-run rehearsal to provider-confirmed proof before promising real delivery."
+	case constants.DeliveryAssuranceDashboardVisible:
+		return "Use dashboard fallback as local proof and keep external provider status separate."
+	case constants.DeliveryAssuranceDemoOnly:
+		if channel == constants.DeliveryChannelEmail {
+			return "Configure SMTP or SES and send a real email proof."
+		}
+		return "Replace seeded demo proof with provider-confirmed delivery."
+	case constants.DeliveryAssuranceRetrying:
+		if channel == constants.DeliveryChannelPush {
+			return "Check web-push subscription readiness and retry after the client is registered."
+		}
+		return "Inspect provider route health and retry timing."
+	case constants.DeliveryAssuranceFailed:
+		return "Fix provider configuration, then rerun delivery assurance."
+	case constants.DeliveryAssuranceRouteDisabled:
+		return "Enable this route before using it in alert policy."
+	default:
+		return "Run provider-safe delivery proof before a paid demo."
+	}
+}
+
+func deliveryAssuranceRank(state string) int {
+	switch state {
+	case constants.DeliveryAssuranceFailed:
+		return 6
+	case constants.DeliveryAssuranceRetrying:
+		return 5
+	case constants.DeliveryAssurancePendingProvider:
+		return 4
+	case constants.DeliveryAssuranceDemoOnly:
+		return 3
+	case constants.DeliveryAssuranceRouteDisabled:
+		return 2
+	case constants.DeliveryAssuranceDryRunRehearsed:
+		return 1
+	case constants.DeliveryAssuranceProviderConfirmed, constants.DeliveryAssuranceDashboardVisible:
+		return 0
+	default:
+		return 0
+	}
 }
 
 func deliveryFeedItems(tenantID string, device model.Device, deliveries []model.AlertDelivery) []model.TenantActivityFeedItem {
