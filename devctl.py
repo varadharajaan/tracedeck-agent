@@ -125,7 +125,21 @@ def cmd_server(args: argparse.Namespace) -> int:
 
 
 def sam_exe() -> str:
-    return shutil.which("sam.cmd") or shutil.which("sam") or r"C:\Program Files\Amazon\AWSSAMCLI\bin\sam.cmd"
+    candidates = [
+        shutil.which("sam.cmd"),
+        shutil.which("sam.exe"),
+        shutil.which("sam"),
+        Path(os.environ.get("APPDATA", "")) / "Python" / f"Python{sys.version_info.major}{sys.version_info.minor}" / "Scripts" / "sam.exe",
+        Path(os.environ.get("APPDATA", "")) / "Python" / f"Python{sys.version_info.major}{sys.version_info.minor}" / "Scripts" / "sam.cmd",
+        Path(r"C:\Program Files\Amazon\AWSSAMCLI\bin\sam.cmd"),
+    ]
+    for candidate in candidates:
+        if not candidate:
+            continue
+        path = Path(candidate)
+        if path.exists():
+            return str(path)
+    return "sam"
 
 
 def aws_exe() -> str:
@@ -139,10 +153,11 @@ def sam_stack_config() -> tuple[str, str]:
     return stack, region
 
 
-def sam_build() -> None:
+def sam_build() -> Path:
     build_root = PROJECT_ROOT / "data" / "local" / "sam-build" / datetime.now().strftime("%Y%m%d-%H%M%S")
     build_root.mkdir(parents=True, exist_ok=True)
     run([sam_exe(), "build", "--template-file", str(SAM_TEMPLATE), "--build-dir", str(build_root)], cwd=SAM_DIR)
+    return build_root / "template.yaml"
 
 
 def save_stack_outputs(stack_name: str, region: str) -> None:
@@ -197,13 +212,13 @@ def cmd_sam(args: argparse.Namespace) -> int:
         sam_build()
         return 0
     if action == "deploy":
-        sam_build()
-        run([sam_exe(), "deploy", "--config-file", str(SAM_CONFIG), "--no-confirm-changeset", "--no-fail-on-empty-changeset"], cwd=SAM_DIR, stream=True)
+        built_template = sam_build()
+        run([sam_exe(), "deploy", "--template-file", str(built_template), "--config-file", str(SAM_CONFIG), "--no-confirm-changeset", "--no-fail-on-empty-changeset"], cwd=SAM_DIR, stream=True)
         save_stack_outputs(stack, region)
         return 0
     if action == "restart":
-        sam_build()
-        run([sam_exe(), "deploy", "--config-file", str(SAM_CONFIG), "--no-confirm-changeset", "--no-fail-on-empty-changeset"], cwd=SAM_DIR, stream=True)
+        built_template = sam_build()
+        run([sam_exe(), "deploy", "--template-file", str(built_template), "--config-file", str(SAM_CONFIG), "--no-confirm-changeset", "--no-fail-on-empty-changeset"], cwd=SAM_DIR, stream=True)
         save_stack_outputs(stack, region)
         return 0
     if action == "local":
