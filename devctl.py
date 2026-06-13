@@ -30,11 +30,20 @@ OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
 LOG_FILE = LOG_ROOT / f"devctl-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{os.getpid()}.log"
 
 
+def console_write(message: str, *, end: str = "\n") -> None:
+    try:
+        print(message, end=end)
+    except UnicodeEncodeError:
+        encoding = sys.stdout.encoding or "utf-8"
+        safe = message.encode(encoding, errors="replace").decode(encoding, errors="replace")
+        print(safe, end=end)
+
+
 def log(level: str, message: str) -> None:
     line = f"{datetime.now().isoformat()} [{level}] {message}"
     with LOG_FILE.open("a", encoding="utf-8") as handle:
         handle.write(line + "\n")
-    print(line)
+    console_write(line)
 
 
 def run(cmd: list[str], *, cwd: Path = PROJECT_ROOT, check: bool = True, stream: bool = False) -> subprocess.CompletedProcess[str]:
@@ -45,7 +54,14 @@ def run(cmd: list[str], *, cwd: Path = PROJECT_ROOT, check: bool = True, stream:
         if check and rc != 0:
             raise SystemExit(rc)
         return subprocess.CompletedProcess(cmd, rc, "", "")
-    completed = subprocess.run(cmd, cwd=str(cwd), text=True, capture_output=True)
+    completed = subprocess.run(
+        cmd,
+        cwd=str(cwd),
+        text=True,
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+    )
     if completed.stdout:
         for line in completed.stdout.splitlines():
             log("DEBUG", line)
@@ -272,14 +288,14 @@ def cmd_logs(args: argparse.Namespace) -> int:
                 while True:
                     line = handle.readline()
                     if line:
-                        print(line, end="")
+                        console_write(line, end="")
                     else:
                         time.sleep(0.25)
             except KeyboardInterrupt:
                 return 0
     lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
     for line in lines[-args.lines :]:
-        print(line)
+        console_write(line)
     return 0
 
 
