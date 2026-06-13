@@ -524,6 +524,10 @@ passwords, screenshots, raw URLs, page titles, cookies, tokens, private
 content, endpoint payloads, keylogging, hidden collection bypasses, provider
 secrets, push endpoints, or alert bodies.
 
+Phase 73 adds first-class verification for those provenance fields across local
+API rows, alert delivery rows, the browser activity page, the main dashboard,
+and Lambda S3 summary rows.
+
 Phase 69 does not add a new local backend route. It adds a SAM Lambda frontend
 contract at `/api/health`, `/api/s3-summary`, and `/` inside `sam-app`. The
 Lambda frontend uses S3 object listing and safe JSON/JSONL/GZip sampling to

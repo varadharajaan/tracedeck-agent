@@ -47,6 +47,7 @@ python ./devctl.py cloud seed
 python ./devctl.py cloud smoke
 python ./devctl.py cloud newman
 python ./devctl.py test phase72
+python ./devctl.py test phase73
 ```
 
 Phase 72 adds `scripts/local/upload-cloud-sample-phase72.ps1`, which writes a
