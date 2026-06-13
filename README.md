@@ -352,3 +352,14 @@ and does not collect passwords, screenshots, raw URLs, page titles, alert
 bodies, provider secrets, push endpoints, endpoint payloads, private content,
 invoices, payment card data, tokens, cookies, raw provider payloads,
 keylogging, or hidden collection bypasses.
+
+Phase 68 adds a typed Browser Activity Viewer at
+`/api/v1/tenants/{tenantId}/browser-activity` plus a `/browser-activity` page
+linked from the main dashboard toolbar. It gives buyers/admins Chrome, Edge,
+and Brave domain activity by tenant and host, with category filters,
+study-safe suppression, non-study YouTube review, notification proof, host and
+browser breakdowns, Postman/Newman coverage, live smoke testing, and local
+verification. It remains metadata-only and does not collect passwords,
+screenshots, raw URLs, page titles, cookies, tokens, private content, endpoint
+payloads, provider secrets, push endpoints, alert bodies, keylogging, or hidden
+collection bypasses.

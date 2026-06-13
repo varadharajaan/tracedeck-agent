@@ -511,3 +511,13 @@ screenshots, raw URLs, page titles, alert bodies, provider secrets, push
 endpoints, endpoint payloads, private content, invoices, tokens, cookies,
 payment card data, raw provider payloads, keylogging, or hidden collection
 bypasses.
+
+Phase 68 adds `GET /api/v1/tenants/{tenantId}/browser-activity`. It exposes a
+typed browser activity viewer contract with filters for `device_id`, `browser`,
+`category`, `domain`, `study_safe`, `q`, and `limit`. The response includes
+Chrome, Edge, Brave, study-safe, non-study YouTube, notification-proof, host,
+browser, and activity-row summaries for domain-level telemetry emitted by the
+agent browser collector. It remains metadata-only and does not collect or store
+passwords, screenshots, raw URLs, page titles, cookies, tokens, private
+content, endpoint payloads, keylogging, hidden collection bypasses, provider
+secrets, push endpoints, or alert bodies.

@@ -43,6 +43,8 @@ func TestDashboardDOMContract(t *testing.T) {
 	}
 
 	for _, marker := range []string{
+		"browser-activity-button",
+		"/browser-activity",
 		"Premium Operations Hub",
 		"Premium Value Tiles",
 		"Anomaly Notification Wall",
@@ -185,6 +187,62 @@ func TestDashboardDOMContract(t *testing.T) {
 	} {
 		if !strings.Contains(html, marker) {
 			t.Fatalf("dashboard is missing monetisation marker %q", marker)
+		}
+	}
+}
+
+func TestBrowserActivityDOMContract(t *testing.T) {
+	t.Parallel()
+
+	data, err := fs.ReadFile(dashboardFS, "web/browser_activity.html")
+	if err != nil {
+		t.Fatalf("read browser activity asset: %v", err)
+	}
+	html := string(data)
+
+	ids, duplicates := dashboardElementIDs(html)
+	if len(duplicates) > 0 {
+		t.Fatalf("browser activity page contains duplicate DOM ids: %s", strings.Join(duplicates, ", "))
+	}
+
+	referenced := dashboardReferencedIDs(html)
+	var missing []string
+	for _, id := range referenced {
+		if _, ok := ids[id]; !ok {
+			missing = append(missing, id)
+		}
+	}
+	if len(missing) > 0 {
+		t.Fatalf("browser activity JavaScript references missing DOM ids: %s", strings.Join(missing, ", "))
+	}
+
+	for _, marker := range []string{
+		"TraceDeck Browser Activity",
+		"Browser Activity Viewer",
+		"Chrome",
+		"Edge",
+		"Brave",
+		"Non-Study YouTube",
+		"Notification Proof",
+		"Host Breakdown",
+		"Browser Domain Activity",
+		"metadata-only guard",
+	} {
+		if !strings.Contains(html, marker) {
+			t.Fatalf("browser activity page is missing marker %q", marker)
+		}
+	}
+
+	for _, forbidden := range []string{
+		"raw_url",
+		"page_title",
+		"screenshot_bytes",
+		"password_value",
+		"cookie_value",
+		"token_value",
+	} {
+		if strings.Contains(strings.ToLower(html), forbidden) {
+			t.Fatalf("browser activity page contains forbidden marker %q", forbidden)
 		}
 	}
 }

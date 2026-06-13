@@ -471,6 +471,16 @@ owner actions. The command navigation adds a Premium target so the user can
 start from the sellable operating view and drill into Rev Ops, Deploy, Push,
 Portfolio, or host details only when needed.
 
+Phase 68 adds a dedicated Browser Activity Viewer at `/browser-activity` and a
+Browser button in the main dashboard toolbar. The page renders the typed
+`browser-activity` API with tenant, host, browser, category, study-safe, and
+search filters; Chrome/Edge/Brave KPIs; host and browser breakdowns; non-study
+YouTube visibility; notification proof; and a domain activity table. The page
+uses the same local session header pattern as the main dashboard and stays
+metadata-only: no raw URLs, page titles, cookies, tokens, passwords,
+screenshots, provider secrets, alert bodies, private content, or endpoint
+payloads.
+
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
 paid customer onboarding workflows.

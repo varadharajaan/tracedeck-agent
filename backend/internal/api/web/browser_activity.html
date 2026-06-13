@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TraceDeck Browser Activity</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fa;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --ink: #172033;
+      --muted: #667085;
+      --line: #d7dde6;
+      --teal: #147d7f;
+      --green: #027a48;
+      --amber: #b54708;
+      --red: #b42318;
+      --blue: #175cd3;
+      --purple: #6941c6;
+      --shadow: 0 10px 26px rgba(23, 32, 51, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      letter-spacing: 0;
+    }
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      min-height: 74px;
+      padding: 16px 28px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+    main {
+      width: calc(100% - 32px);
+      max-width: 1400px;
+      margin: 20px auto 32px;
+      display: grid;
+      gap: 16px;
+    }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 21px; font-weight: 760; }
+    h2 { font-size: 15px; font-weight: 760; }
+    h3 { font-size: 13px; font-weight: 760; }
+    button, select, input {
+      font: inherit;
+      min-height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--ink);
+    }
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 14px;
+      cursor: pointer;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+    button.primary {
+      border-color: var(--teal);
+      background: var(--teal);
+      color: #ffffff;
+    }
+    select, input {
+      width: 100%;
+      padding: 0 12px;
+    }
+    .muted { color: var(--muted); }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .button-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border: 1px solid currentColor;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0 12px;
+      border: 1px solid #abefc6;
+      border-radius: 999px;
+      background: #ecfdf3;
+      color: var(--green);
+      font-weight: 750;
+      white-space: nowrap;
+    }
+    .panel, .metric {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .panel { padding: 16px; }
+    .browser-hero {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.8fr) minmax(0, 2.2fr);
+      gap: 16px;
+      min-width: 0;
+    }
+    .hero-focus {
+      min-height: 320px;
+      display: grid;
+      align-content: space-between;
+      gap: 16px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--teal);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+    .hero-focus strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 32px;
+      line-height: 1.06;
+      overflow-wrap: anywhere;
+    }
+    .hero-focus p {
+      color: var(--muted);
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .metric {
+      min-height: 134px;
+      display: grid;
+      align-content: space-between;
+      gap: 8px;
+      padding: 14px;
+    }
+    .metric small {
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .metric strong {
+      font-size: 25px;
+      line-height: 1.08;
+      overflow-wrap: anywhere;
+    }
+    .filters {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) minmax(140px, 0.8fr) minmax(160px, 0.8fr) minmax(130px, 0.7fr) minmax(180px, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+    }
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.7fr) minmax(0, 2.3fr);
+      gap: 16px;
+      min-width: 0;
+    }
+    .stack {
+      display: grid;
+      gap: 16px;
+      min-width: 0;
+    }
+    .section-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .pill, .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .pill {
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      color: var(--muted);
+    }
+    .badge.healthy { border: 1px solid #abefc6; background: #ecfdf3; color: var(--green); }
+    .badge.attention { border: 1px solid #fecdca; background: #fef3f2; color: var(--red); }
+    .badge.watch { border: 1px solid #fedf89; background: #fffaeb; color: var(--amber); }
+    .badge.ok { border: 1px solid #b2ddff; background: #eff8ff; color: var(--blue); }
+    .badge.pending { border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); }
+    .list {
+      display: grid;
+      gap: 10px;
+    }
+    .list-item {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+      min-width: 0;
+    }
+    .list-item strong, .list-item span {
+      overflow-wrap: anywhere;
+    }
+    .meta-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+    table {
+      width: 100%;
+      min-width: 980px;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      overflow-wrap: anywhere;
+    }
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      text-transform: uppercase;
+      background: var(--surface-2);
+    }
+    tr:last-child td { border-bottom: 0; }
+    .empty {
+      padding: 14px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      background: var(--surface-2);
+    }
+    @media (max-width: 1100px) {
+      .browser-hero, .content-grid { grid-template-columns: 1fr; }
+      .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .hero-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 720px) {
+      header {
+        grid-template-columns: 1fr;
+        padding: 14px 16px;
+      }
+      main {
+        width: calc(100% - 20px);
+        margin: 14px 10px 28px;
+      }
+      .toolbar { justify-content: stretch; }
+      .toolbar > * { flex: 1 1 auto; }
+      .filters, .hero-grid { grid-template-columns: 1fr; }
+      .hero-focus strong { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>TraceDeck Browser Activity</h1>
+      <p class="muted">Chrome, Brave, and Edge domain observability by host, category, notification proof, and study-safe status</p>
+    </div>
+    <div class="toolbar">
+      <button type="button" title="Back to command center" aria-label="Back to command center" onclick="window.location.href='/'"><span class="button-icon" aria-hidden="true">C</span><span>Center</span></button>
+      <button id="refresh-button" class="primary" type="button"><span class="button-icon" aria-hidden="true">R</span><span>Refresh</span></button>
+      <span id="page-status" class="status">Loading</span>
+    </div>
+  </header>
+  <main>
+    <section class="panel" aria-label="browser activity filters">
+      <div class="filters">
+        <div class="field">
+          <label for="tenant-input">Tenant</label>
+          <input id="tenant-input" type="text" value="family-varadha" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="host-select">Host</label>
+          <select id="host-select"><option value="">All hosts</option></select>
+        </div>
+        <div class="field">
+          <label for="browser-select">Browser</label>
+          <select id="browser-select">
+            <option value="">All browsers</option>
+            <option value="chrome">Chrome</option>
+            <option value="edge">Edge</option>
+            <option value="brave">Brave</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="category-select">Category</label>
+          <select id="category-select">
+            <option value="">All categories</option>
+            <option value="study">Study</option>
+            <option value="video-streaming">Video streaming</option>
+            <option value="social-media">Social media</option>
+            <option value="gaming">Gaming</option>
+            <option value="shopping">Shopping</option>
+            <option value="blocked">Blocked</option>
+            <option value="unknown">Unknown</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="study-select">Study Safe</label>
+          <select id="study-select">
+            <option value="">All</option>
+            <option value="true">Safe</option>
+            <option value="false">Needs review</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="search-input">Search</label>
+          <input id="search-input" type="search" autocomplete="off" placeholder="domain, host, signal">
+        </div>
+        <button id="apply-button" class="primary" type="button">Apply</button>
+      </div>
+    </section>
+
+    <section class="browser-hero" aria-label="browser activity overview">
+      <div class="hero-focus">
+        <div class="section-head">
+          <div>
+            <h2>Browser Activity Viewer</h2>
+            <p id="browser-headline">Waiting for browser telemetry.</p>
+          </div>
+          <span id="browser-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Metadata-only browser domain activity</span>
+          <strong id="browser-total">0 domains</strong>
+          <p id="browser-detail">Chrome, Brave, and Edge rows will appear after telemetry ingest or demo seeding.</p>
+        </div>
+        <div class="meta-row">
+          <span id="privacy-pill" class="pill">metadata-only</span>
+          <span id="tenant-pill" class="pill">family-varadha</span>
+          <span id="last-observed-pill" class="pill">no observation yet</span>
+        </div>
+      </div>
+      <div class="hero-grid">
+        <div class="metric"><small>Chrome</small><strong id="kpi-chrome">0</strong><span id="kpi-chrome-sub" class="muted">No Chrome rows</span></div>
+        <div class="metric"><small>Edge</small><strong id="kpi-edge">0</strong><span id="kpi-edge-sub" class="muted">No Edge rows</span></div>
+        <div class="metric"><small>Brave</small><strong id="kpi-brave">0</strong><span id="kpi-brave-sub" class="muted">No Brave rows</span></div>
+        <div class="metric"><small>Study Safe</small><strong id="kpi-study">0</strong><span id="kpi-study-sub" class="muted">No safe domains</span></div>
+        <div class="metric"><small>Non-Study YouTube</small><strong id="kpi-youtube">0</strong><span id="kpi-youtube-sub" class="muted">No YouTube review rows</span></div>
+        <div class="metric"><small>Notification Proof</small><strong id="kpi-proof">0</strong><span id="kpi-proof-sub" class="muted">No alert route proof</span></div>
+      </div>
+    </section>
+
+    <section class="content-grid" aria-label="browser activity details">
+      <div class="stack">
+        <div class="panel">
+          <div class="section-head">
+            <div>
+              <h2>Host Breakdown</h2>
+              <p class="muted">Host-level browser activity summary</p>
+            </div>
+            <span id="host-count" class="pill">0 hosts</span>
+          </div>
+          <div id="host-list" class="list"><div class="empty">No host browser rows yet.</div></div>
+        </div>
+        <div class="panel">
+          <div class="section-head">
+            <div>
+              <h2>Browser Breakdown</h2>
+              <p class="muted">Chrome, Brave, Edge, and other browser totals</p>
+            </div>
+            <span id="browser-count" class="pill">0 browsers</span>
+          </div>
+          <div id="browser-list" class="list"><div class="empty">No browser breakdown yet.</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-head">
+          <div>
+            <h2>Browser Domain Activity</h2>
+            <p class="muted">Domain, category, study-safe status, notification channels, and observed time</p>
+          </div>
+          <span id="item-count" class="pill">0 rows</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Host</th>
+                <th>Browser</th>
+                <th>Domain</th>
+                <th>Category</th>
+                <th>Signal</th>
+                <th>Visits</th>
+                <th>Delivery</th>
+                <th>Observed</th>
+              </tr>
+            </thead>
+            <tbody id="activity-table">
+              <tr><td colspan="8"><div class="empty">No browser activity loaded.</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const AUTH_STORAGE = {
+      apiKey: "tracedeck.dashboard.apiKey",
+      tenantID: "tracedeck.dashboard.tenantID",
+      actorID: "tracedeck.dashboard.actorID"
+    };
+    const AUTH_HEADER = {
+      apiKey: "X-TraceDeck-API-Key",
+      tenantID: "X-TraceDeck-Tenant-ID",
+      actorID: "X-TraceDeck-Actor-ID"
+    };
+    const state = {
+      tenantID: sessionStorage.getItem(AUTH_STORAGE.tenantID) || "family-varadha",
+      devices: []
+    };
+
+    function authHeaders() {
+      const headers = {};
+      const apiKey = sessionStorage.getItem(AUTH_STORAGE.apiKey) || "";
+      const actorID = sessionStorage.getItem(AUTH_STORAGE.actorID) || "";
+      const tenantID = document.getElementById("tenant-input").value.trim() || state.tenantID;
+      if (apiKey) headers[AUTH_HEADER.apiKey] = apiKey;
+      if (tenantID) headers[AUTH_HEADER.tenantID] = tenantID;
+      if (actorID) headers[AUTH_HEADER.actorID] = actorID;
+      return headers;
+    }
+
+    async function loadJSON(url) {
+      const response = await fetch(url, { headers: authHeaders() });
+      if (!response.ok) {
+        throw new Error(`${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    }
+
+    function escapeHTML(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[char]));
+    }
+
+    function setText(id, value) {
+      const element = document.getElementById(id);
+      if (element) element.textContent = value;
+    }
+
+    function badge(status) {
+      const clean = String(status || "pending").toLowerCase();
+      const className = ["healthy", "attention", "watch", "ok"].includes(clean) ? clean : "pending";
+      return `<span class="badge ${className}">${escapeHTML(clean)}</span>`;
+    }
+
+    function formatDate(value) {
+      if (!value) return "not observed";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "not observed";
+      return date.toLocaleString();
+    }
+
+    function queryString() {
+      const params = new URLSearchParams();
+      const host = document.getElementById("host-select").value;
+      const browser = document.getElementById("browser-select").value;
+      const category = document.getElementById("category-select").value;
+      const studySafe = document.getElementById("study-select").value;
+      const query = document.getElementById("search-input").value.trim();
+      if (host) params.set("device_id", host);
+      if (browser) params.set("browser", browser);
+      if (category) params.set("category", category);
+      if (studySafe) params.set("study_safe", studySafe);
+      if (query) params.set("q", query);
+      params.set("limit", "50");
+      return params.toString();
+    }
+
+    async function loadDevices() {
+      const tenantID = document.getElementById("tenant-input").value.trim() || state.tenantID;
+      const response = await loadJSON("/api/v1/devices");
+      const devices = (response.items || []).filter((device) => !tenantID || device.tenant_id === tenantID);
+      state.devices = devices;
+      const select = document.getElementById("host-select");
+      const current = select.value;
+      select.innerHTML = '<option value="">All hosts</option>' + devices.map((device) =>
+        `<option value="${escapeHTML(device.device_id)}">${escapeHTML(device.host_name || device.device_id)}</option>`
+      ).join("");
+      if (devices.some((device) => device.device_id === current)) {
+        select.value = current;
+      }
+    }
+
+    async function refresh() {
+      const tenantID = document.getElementById("tenant-input").value.trim() || state.tenantID;
+      state.tenantID = tenantID;
+      if (tenantID) {
+        sessionStorage.setItem(AUTH_STORAGE.tenantID, tenantID);
+      }
+      setText("page-status", "Loading");
+      setText("tenant-pill", tenantID || "tenant pending");
+      await loadDevices();
+      const viewer = await loadJSON(`/api/v1/tenants/${encodeURIComponent(tenantID)}/browser-activity?${queryString()}`);
+      render(viewer);
+      setText("page-status", "Live");
+    }
+
+    function render(viewer) {
+      const summary = viewer.summary || {};
+      const total = summary.total || 0;
+      document.getElementById("browser-status").outerHTML = badge(total > 0 ? (summary.non_study_youtube > 0 ? "attention" : "healthy") : "pending").replace("<span", '<span id="browser-status"');
+      setText("browser-headline", total > 0 ? `${viewer.tenant_name || viewer.tenant_id}: ${total} browser domain rows` : "Waiting for browser telemetry.");
+      setText("browser-total", `${total} domain${total === 1 ? "" : "s"}`);
+      setText("browser-detail", `${summary.reporting_hosts || 0}/${summary.source_host_count || 0} reporting hosts, ${summary.study_safe || 0} study-safe, ${summary.entertainment || 0} needs-review rows.`);
+      setText("privacy-pill", viewer.privacy_boundary ? "metadata-only guard" : "metadata-only");
+      setText("tenant-pill", viewer.tenant_name || viewer.tenant_id || "tenant pending");
+      setText("last-observed-pill", summary.last_observed_at ? `last ${formatDate(summary.last_observed_at)}` : "no observation yet");
+      setText("kpi-chrome", summary.chrome || 0);
+      setText("kpi-chrome-sub", `${summary.chrome || 0} Chrome domain rows`);
+      setText("kpi-edge", summary.edge || 0);
+      setText("kpi-edge-sub", `${summary.edge || 0} Edge domain rows`);
+      setText("kpi-brave", summary.brave || 0);
+      setText("kpi-brave-sub", `${summary.brave || 0} Brave domain rows`);
+      setText("kpi-study", summary.study_safe || 0);
+      setText("kpi-study-sub", `${summary.study_safe || 0} rows suppressed from alert noise`);
+      setText("kpi-youtube", summary.non_study_youtube || 0);
+      setText("kpi-youtube-sub", `${summary.non_study_youtube || 0} YouTube rows need review`);
+      setText("kpi-proof", summary.notification_proof || 0);
+      setText("kpi-proof-sub", `${summary.notification_proof || 0} rows have route proof`);
+      renderHosts(viewer.hosts || []);
+      renderBrowsers(viewer.browsers || []);
+      renderItems(viewer.items || []);
+    }
+
+    function renderHosts(hosts) {
+      setText("host-count", `${hosts.length} host${hosts.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("host-list");
+      if (hosts.length === 0) {
+        target.innerHTML = '<div class="empty">No host browser rows yet.</div>';
+        return;
+      }
+      target.innerHTML = hosts.map((host) => `
+        <div class="list-item">
+          <strong>${escapeHTML(host.host_name || host.device_id)}</strong>
+          <span class="muted">${escapeHTML(host.device_id)} ${host.os_name ? "- " + escapeHTML(host.os_name) : ""}</span>
+          <div class="meta-row">
+            <span class="pill">${escapeHTML(host.total || 0)} total</span>
+            <span class="pill">${escapeHTML(host.study_safe || 0)} safe</span>
+            <span class="pill">${escapeHTML(host.non_study || 0)} review</span>
+            <span class="pill">${escapeHTML(formatDate(host.last_observed_at))}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderBrowsers(browsers) {
+      setText("browser-count", `${browsers.length} browser${browsers.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("browser-list");
+      if (browsers.length === 0) {
+        target.innerHTML = '<div class="empty">No browser breakdown yet.</div>';
+        return;
+      }
+      target.innerHTML = browsers.map((browser) => `
+        <div class="list-item">
+          <strong>${escapeHTML(browser.name)}</strong>
+          <div class="meta-row">
+            <span class="pill">${escapeHTML(browser.total || 0)} total</span>
+            <span class="pill">${escapeHTML(browser.study_safe || 0)} safe</span>
+            <span class="pill">${escapeHTML(browser.non_study_youtube || 0)} YouTube review</span>
+          </div>
+          <span class="muted">${escapeHTML(formatDate(browser.last_observed_at))}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderItems(items) {
+      setText("item-count", `${items.length} row${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("activity-table");
+      if (items.length === 0) {
+        target.innerHTML = '<tr><td colspan="8"><div class="empty">No browser activity loaded.</div></td></tr>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <tr>
+          <td><strong>${escapeHTML(item.host_name || item.device_id)}</strong><br><span class="muted">${escapeHTML(item.device_id)}</span></td>
+          <td>${escapeHTML(item.browser)}</td>
+          <td><strong>${escapeHTML(item.domain)}</strong></td>
+          <td>${escapeHTML(item.category)}<br><span class="muted">${item.study_safe ? "study-safe" : "needs review"}</span></td>
+          <td>${badge(item.status)}<br><span class="muted">${escapeHTML(item.signal || item.recommendation)}</span></td>
+          <td>${escapeHTML(item.visit_count || 0)}</td>
+          <td>${(item.notification_channels || []).length ? (item.notification_channels || []).map((channel) => `<span class="pill">${escapeHTML(channel)}</span>`).join(" ") : '<span class="muted">No route proof</span>'}</td>
+          <td>${escapeHTML(formatDate(item.observed_at))}</td>
+        </tr>
+      `).join("");
+    }
+
+    document.getElementById("refresh-button").addEventListener("click", () => refresh().catch(showError));
+    document.getElementById("apply-button").addEventListener("click", () => refresh().catch(showError));
+    document.getElementById("search-input").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") refresh().catch(showError);
+    });
+
+    function showError(error) {
+      setText("page-status", "Error");
+      document.getElementById("browser-status").outerHTML = badge("attention").replace("<span", '<span id="browser-status"');
+      setText("browser-headline", "Browser activity could not load.");
+      setText("browser-detail", error.message || "Request failed");
+    }
+
+    document.getElementById("tenant-input").value = state.tenantID;
+    refresh().catch(showError);
+  </script>
+</body>
+</html>

@@ -19,7 +19,7 @@ import (
 	"github.com/varadharajaan/tracedeck-agent/backend/internal/store"
 )
 
-//go:embed web/dashboard.html
+//go:embed web/*.html
 var dashboardFS embed.FS
 
 type Server struct {
@@ -52,6 +52,7 @@ func NewServerWithAuth(repo store.Repository, logger *slog.Logger, auth AuthConf
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc(constants.RouteDashboard, s.handleDashboard)
+	mux.HandleFunc(constants.RouteBrowserActivity, s.handleBrowserActivityPage)
 	mux.HandleFunc(constants.RouteHealth, s.handleHealth)
 	mux.HandleFunc(constants.RouteVersion, s.handleVersion)
 	mux.HandleFunc(constants.RouteDeviceEnroll, s.handleDeviceEnroll)
@@ -127,6 +128,26 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	data, err := fs.ReadFile(dashboardFS, "web/dashboard.html")
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "dashboard asset unavailable")
+		return
+	}
+	w.Header().Set("Content-Type", constants.ContentTypeHTML)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(data)
+}
+
+func (s *Server) handleBrowserActivityPage(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != constants.RouteBrowserActivity {
+		http.NotFound(w, r)
+		return
+	}
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+
+	data, err := fs.ReadFile(dashboardFS, "web/browser_activity.html")
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "browser activity asset unavailable")
 		return
 	}
 	w.Header().Set("Content-Type", constants.ContentTypeHTML)
@@ -381,6 +402,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantSyncHealth(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentActivityFeed && r.Method == http.MethodGet:
 		s.handleTenantActivityFeed(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentBrowserActivity && r.Method == http.MethodGet:
+		s.handleTenantBrowserActivity(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentActivityViews:
 		s.handleTenantActivityViews(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentDataExports:
@@ -1028,6 +1051,36 @@ func (s *Server) handleTenantActivityFeed(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusOK, feed)
 }
 
+func (s *Server) handleTenantBrowserActivity(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	filter, err := browserActivityFilterFromQuery(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if filter.Browser != "" && !knownBrowser(filter.Browser) {
+		writeError(w, http.StatusBadRequest, "unknown browser activity browser")
+		return
+	}
+	if filter.Category != "" && !knownBrowserCategory(filter.Category) {
+		writeError(w, http.StatusBadRequest, "unknown browser activity category")
+		return
+	}
+	viewer, err := s.store.TenantBrowserActivity(r.Context(), tenantID, filter)
+	if err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant browser activity lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, viewer)
+}
+
 func (s *Server) handleTenantActivityViews(w http.ResponseWriter, r *http.Request, tenantID string) {
 	if !tenantAllowed(r.Context(), tenantID) {
 		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
@@ -1088,6 +1141,34 @@ func activityFeedFilterFromQuery(r *http.Request) model.TenantActivityFeedFilter
 		Query:    strings.TrimSpace(query.Get("q")),
 		Limit:    limit,
 	}
+}
+
+func browserActivityFilterFromQuery(r *http.Request) (model.TenantBrowserActivityFilter, error) {
+	query := r.URL.Query()
+	limit := 0
+	if rawLimit := strings.TrimSpace(query.Get("limit")); rawLimit != "" {
+		parsed, err := strconv.Atoi(rawLimit)
+		if err == nil {
+			limit = parsed
+		}
+	}
+	var studySafe *bool
+	if rawStudySafe := strings.TrimSpace(query.Get("study_safe")); rawStudySafe != "" {
+		parsed, err := strconv.ParseBool(rawStudySafe)
+		if err != nil {
+			return model.TenantBrowserActivityFilter{}, fmt.Errorf("invalid study_safe value")
+		}
+		studySafe = &parsed
+	}
+	return model.TenantBrowserActivityFilter{
+		DeviceID:  strings.TrimSpace(query.Get("device_id")),
+		Browser:   strings.TrimSpace(query.Get("browser")),
+		Category:  strings.TrimSpace(query.Get("category")),
+		Domain:    strings.TrimSpace(query.Get("domain")),
+		StudySafe: studySafe,
+		Query:     strings.TrimSpace(query.Get("q")),
+		Limit:     limit,
+	}, nil
 }
 
 func (s *Server) handleTenantProviderSimulationLab(w http.ResponseWriter, r *http.Request, tenantID string) {
@@ -2040,6 +2121,30 @@ func knownChannels(channels []string) bool {
 func knownDeliveryProvider(provider string) bool {
 	switch strings.TrimSpace(provider) {
 	case constants.DeliveryProviderSMTP, constants.DeliveryProviderWebPush, constants.DeliveryProviderLocalFeed:
+		return true
+	default:
+		return false
+	}
+}
+
+func knownBrowser(browser string) bool {
+	switch strings.ToLower(strings.TrimSpace(browser)) {
+	case constants.BrowserNameChrome, constants.BrowserNameEdge, constants.BrowserNameBrave:
+		return true
+	default:
+		return false
+	}
+}
+
+func knownBrowserCategory(category string) bool {
+	switch strings.ToLower(strings.TrimSpace(category)) {
+	case constants.BrowserCategoryStudy,
+		constants.BrowserCategoryVideoStreaming,
+		constants.BrowserCategorySocialMedia,
+		constants.BrowserCategoryGaming,
+		constants.BrowserCategoryShopping,
+		constants.BrowserCategoryBlocked,
+		constants.BrowserCategoryUnknown:
 		return true
 	default:
 		return false

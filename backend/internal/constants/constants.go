@@ -15,6 +15,7 @@ const (
 const (
 	APIPrefix               = "/api/v1"
 	RouteDashboard          = "/"
+	RouteBrowserActivity    = "/browser-activity"
 	RouteHealth             = "/health"
 	RouteVersion            = APIPrefix + "/version"
 	RouteDevices            = APIPrefix + "/devices"
@@ -64,6 +65,7 @@ const (
 	RouteSegmentDeliveryRemedy   = "delivery-remediation"
 	RouteSegmentSyncHealth       = "sync-health"
 	RouteSegmentActivityFeed     = "activity-feed"
+	RouteSegmentBrowserActivity  = "browser-activity"
 	RouteSegmentActivityViews    = "activity-views"
 	RouteSegmentNotifications    = "notification-routes"
 	RouteSegmentNotificationPref = "notification-preferences"
@@ -417,6 +419,44 @@ const (
 	ActivityFeedKindRisk      = "risk"
 	ActivityFeedKindDelivery  = "delivery"
 	ActivityFeedKindTelemetry = "telemetry"
+)
+
+const (
+	BrowserActivityDefaultLimit = 25
+	BrowserActivityMaxLimit     = 100
+	BrowserActivityPrivacyNote  = "metadata-only browser activity viewer: browser name, host label, domain, category, study-safe flag, visit count, notification proof, and timestamps only; no passwords, screenshots, raw URLs, page titles, cookies, tokens, private content, endpoint payloads, keylogging, or hidden collection bypasses are collected or stored"
+)
+
+const (
+	BrowserNameChrome  = "chrome"
+	BrowserNameEdge    = "edge"
+	BrowserNameBrave   = "brave"
+	BrowserNameUnknown = "unknown-browser"
+)
+
+const (
+	BrowserCategoryStudy          = "study"
+	BrowserCategoryVideoStreaming = "video-streaming"
+	BrowserCategorySocialMedia    = "social-media"
+	BrowserCategoryGaming         = "gaming"
+	BrowserCategoryShopping       = "shopping"
+	BrowserCategoryBlocked        = "blocked"
+	BrowserCategoryUnknown        = "unknown"
+)
+
+const (
+	TelemetryTypeBrowserDomainObserved = "browser.domain.observed"
+	TelemetrySourceBrowserHistory      = "collector.browser.history"
+)
+
+const (
+	BrowserMetadataBrowserName       = "browser_name"
+	BrowserMetadataCategory          = "category"
+	BrowserMetadataDomain            = "domain"
+	BrowserMetadataStoredURLMode     = "stored_url_mode"
+	BrowserMetadataURLMode           = "url_mode"
+	BrowserMetadataVisitCount        = "visit_count"
+	BrowserMetadataYouTubeStudyMatch = "youtube_study_match"
 )
 
 const (

@@ -836,6 +836,19 @@ live demo and covers dashboard markers plus typed premium operations proof.
 dashboard contract, dashboard JavaScript syntax, service manifest rendering,
 Newman, cross-platform builds, and root cleanliness locally.
 
+The Phase 68 smoke live-boots the seeded dashboard, verifies the main dashboard
+Browser redirect, serves `/browser-activity`, checks the typed tenant
+`browser-activity` API, verifies Chrome/Edge/Brave counts, study-safe
+suppression, non-study YouTube review, notification proof, host/browser rows,
+strict privacy/forbidden markers, and reruns the screenshot-free dashboard
+layout contract. Newman runs
+`postman/tracedeck-backend-phase68.postman_collection.json` against the same
+live demo and covers dashboard markers, browser page markers, typed browser
+activity data, filters, and forbidden markers. `scripts/verify/verify-phase68.ps1`
+also runs backend tests, agent tests, dashboard contract, dashboard JavaScript
+syntax, browser activity JavaScript syntax, service manifest rendering, Newman,
+cross-platform builds, and root cleanliness locally.
+
 Phase 13 adds:
 
 ```powershell

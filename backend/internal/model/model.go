@@ -346,6 +346,82 @@ type TenantActivityFeed struct {
 	PrivacyBoundary string                    `json:"privacy_boundary"`
 }
 
+type TenantBrowserActivityFilter struct {
+	DeviceID  string `json:"device_id"`
+	Browser   string `json:"browser"`
+	Category  string `json:"category"`
+	Domain    string `json:"domain"`
+	StudySafe *bool  `json:"study_safe,omitempty"`
+	Query     string `json:"query"`
+	Limit     int    `json:"limit"`
+}
+
+type TenantBrowserActivitySummary struct {
+	Total               int        `json:"total"`
+	Chrome              int        `json:"chrome"`
+	Edge                int        `json:"edge"`
+	Brave               int        `json:"brave"`
+	OtherBrowsers       int        `json:"other_browsers"`
+	StudySafe           int        `json:"study_safe"`
+	NonStudyYouTube     int        `json:"non_study_youtube"`
+	Entertainment       int        `json:"entertainment"`
+	Risky               int        `json:"risky"`
+	NotificationProof   int        `json:"notification_proof"`
+	ReportingHosts      int        `json:"reporting_hosts"`
+	SourceHostCount     int        `json:"source_host_count"`
+	LastObservedAt      *time.Time `json:"last_observed_at,omitempty"`
+	RecommendedPaidTier string     `json:"recommended_paid_tier"`
+}
+
+type TenantBrowserActivityHost struct {
+	DeviceID       string     `json:"device_id"`
+	HostName       string     `json:"host_name"`
+	OSName         string     `json:"os_name"`
+	Total          int        `json:"total"`
+	StudySafe      int        `json:"study_safe"`
+	NonStudy       int        `json:"non_study"`
+	LastObservedAt *time.Time `json:"last_observed_at,omitempty"`
+}
+
+type TenantBrowserActivityBrowser struct {
+	Name            string     `json:"name"`
+	Total           int        `json:"total"`
+	StudySafe       int        `json:"study_safe"`
+	NonStudyYouTube int        `json:"non_study_youtube"`
+	LastObservedAt  *time.Time `json:"last_observed_at,omitempty"`
+}
+
+type TenantBrowserActivityItem struct {
+	ID                   string    `json:"id"`
+	TenantID             string    `json:"tenant_id"`
+	DeviceID             string    `json:"device_id"`
+	HostName             string    `json:"host_name"`
+	OSName               string    `json:"os_name"`
+	Browser              string    `json:"browser"`
+	Domain               string    `json:"domain"`
+	Category             string    `json:"category"`
+	StudySafe            bool      `json:"study_safe"`
+	VisitCount           int       `json:"visit_count"`
+	YouTubeStudyMatch    bool      `json:"youtube_study_match"`
+	Status               string    `json:"status"`
+	Signal               string    `json:"signal"`
+	Recommendation       string    `json:"recommendation"`
+	NotificationChannels []string  `json:"notification_channels"`
+	ObservedAt           time.Time `json:"observed_at"`
+}
+
+type TenantBrowserActivityViewer struct {
+	TenantID        string                         `json:"tenant_id"`
+	TenantName      string                         `json:"tenant_name"`
+	Filters         TenantBrowserActivityFilter    `json:"filters"`
+	Summary         TenantBrowserActivitySummary   `json:"summary"`
+	Hosts           []TenantBrowserActivityHost    `json:"hosts"`
+	Browsers        []TenantBrowserActivityBrowser `json:"browsers"`
+	Items           []TenantBrowserActivityItem    `json:"items"`
+	GeneratedAt     time.Time                      `json:"generated_at"`
+	PrivacyBoundary string                         `json:"privacy_boundary"`
+}
+
 type TenantAlertDeliveryProof struct {
 	Channel       string     `json:"channel"`
 	Status        string     `json:"status"`

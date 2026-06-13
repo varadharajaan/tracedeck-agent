@@ -45,6 +45,7 @@ type Repository interface {
 	TenantDeliveryTimeline(context.Context, string, model.TenantDeliveryTimelineFilter) (model.TenantDeliveryTimeline, error)
 	TenantSyncHealth(context.Context, string) (model.TenantSyncHealth, error)
 	TenantActivityFeed(context.Context, string, model.TenantActivityFeedFilter) (model.TenantActivityFeed, error)
+	TenantBrowserActivity(context.Context, string, model.TenantBrowserActivityFilter) (model.TenantBrowserActivityViewer, error)
 	CreateTenantActivityView(context.Context, string, model.CreateTenantActivityViewRequest) (model.TenantActivityView, error)
 	ListTenantActivityViews(context.Context, string) []model.TenantActivityView
 	CreateTenantDataExport(context.Context, string, model.CreateTenantDataExportRequest) (model.TenantDataExport, error)
