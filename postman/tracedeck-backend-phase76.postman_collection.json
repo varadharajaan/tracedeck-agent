@@ -1,0 +1,116 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 76",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Product UI",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('dashboard contains Phase 76 product UI markers', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('TraceDeck Command Center');",
+              "  pm.expect(html).to.include('Browser Activity');",
+              "  pm.expect(html).to.include('Light mode');",
+              "  pm.expect(html).to.include('server-status-light');",
+              "  pm.expect(html).to.include('dashboard-page-nav');",
+              "  pm.expect(html).to.include('overflow-x: clip');",
+              "  pm.expect(html).to.include('TraceDeck keeps it in session storage only');",
+              "  ['button-icon', '>B<', '>C<', '>T<', '>R<', 'Browser{', 'Center{'].forEach(function (marker) {",
+              "    pm.expect(html).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Browser Activity Product UI",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/browser-activity"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('browser page contains Phase 76 product UI markers', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('TraceDeck Browser Activity');",
+              "  pm.expect(html).to.include('Command Center');",
+              "  pm.expect(html).to.include('Light mode');",
+              "  pm.expect(html).to.include('Browser Activity Viewer');",
+              "  pm.expect(html).to.include('Browser Domain Activity');",
+              "  pm.expect(html).to.include('overflow-x: clip');",
+              "  ['button-icon', '>B<', '>C<', '>T<', '>R<', 'Browser{', 'Center{'].forEach(function (marker) {",
+              "    pm.expect(html).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Browser Activity Privacy Contract",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/browser-activity?limit=25"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('browser activity API remains metadata-only', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.summary.total).to.be.at.least(3);",
+              "  pm.expect(body.summary.chrome).to.be.at.least(1);",
+              "  pm.expect(body.summary.edge).to.be.at.least(1);",
+              "  pm.expect(body.summary.brave).to.be.at.least(1);",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  const serialized = JSON.stringify(body).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'push_endpoint', 'screenshot_bytes', 'raw_url', 'page_title', 'cookie_value', 'token_value', 'password_value', 'keylogger', 'alert_body'].forEach(function (marker) {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

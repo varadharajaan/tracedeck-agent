@@ -92,6 +92,20 @@ The verifier checks the typed delivery assurance API, dashboard markers, demo
 versus provider proof separation, retrying push truth labels, runtime doctor
 coverage, Newman, JavaScript syntax, Lambda frontend contract, and root
 artifact hygiene.
+
+Phase 76 adds dashboard UI revamp assurance:
+
+```powershell
+python ./devctl.py test phase76
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase76.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase76.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase76.ps1
+```
+
+The verifier checks dashboard and Browser Activity JavaScript syntax, the
+dashboard DOM contract, backend API tests, product UI markers, absence of
+pseudo-letter toolbar markers, Newman HTML/API page contracts, screenshot-free
+desktop/tablet/mobile layout containment, and root artifact hygiene.
 Browser fixture smoke data is generated under `data/local/smoke-phase3/`, and
 the smoke archive is checked to ensure raw URLs and page titles are not stored.
 Earlier phase smokes pass `--disable-browser-history` so they do not collect

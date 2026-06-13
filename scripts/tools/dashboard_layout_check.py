@@ -13,7 +13,7 @@ VIEWPORTS = (
     {"name": "mobile", "width": 390, "height": 844},
 )
 
-EXPECTED_COMMAND_JUMPS = 22
+EXPECTED_COMMAND_JUMPS = 23
 
 REQUIRED_IDS = (
     "premium-operations-section",
@@ -35,7 +35,6 @@ REQUIRED_IDS = (
     "premium-alert-list",
     "premium-delivery-list",
     "premium-action-list",
-    "nav-premium-operations-meta",
     "monetisation-overview-section",
     "monetisation-overview-status",
     "monetisation-overview-headline",
