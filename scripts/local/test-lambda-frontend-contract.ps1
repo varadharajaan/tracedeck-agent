@@ -83,6 +83,39 @@ for marker in [
 ]:
     assert marker in body, marker
 
+agent_archive_record = {
+    "ID": "phase72-agent-archive-row",
+    "Type": "browser.domain.observed",
+    "Source": "collector.browser.history",
+    "Timestamp": "2026-06-13T08:00:00Z",
+    "TenantID": "family-varadha",
+    "DeviceID": "demo-study-laptop",
+    "HostName": "demo-study-laptop",
+    "AppName": "edge",
+    "Metadata": {
+        "browser_name": "edge",
+        "domain": "youtube.com",
+        "category": "video-streaming",
+        "visit_count": "3",
+        "youtube_study_match": "false",
+        "stored_url_mode": "domain_only"
+    }
+}
+row = module._browser_row(agent_archive_record, "tenant=family-varadha/device=demo-study-laptop/sample.jsonl.gz")
+assert row["browser"] == "edge", row
+assert row["domain"] == "youtube.com", row
+assert row["study_safe"] is False, row
+assert row["visit_count"] == 3, row
+
+study_record = dict(agent_archive_record)
+study_record["Metadata"] = dict(agent_archive_record["Metadata"])
+study_record["Metadata"]["browser_name"] = "chrome"
+study_record["Metadata"]["domain"] = "docs.python.org"
+study_record["Metadata"]["category"] = "study"
+study = module._browser_row(study_record, "tenant=family-varadha/device=demo-study-laptop/sample.jsonl.gz")
+assert study["browser"] == "chrome", study
+assert study["study_safe"] is True, study
+
 summary = module.lambda_handler({"rawPath": "/api/s3-summary", "requestContext": {"http": {"method": "GET"}}}, None)
 assert summary["statusCode"] == 200, summary
 payload = json.loads(summary["body"])

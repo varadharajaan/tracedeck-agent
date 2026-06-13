@@ -36,6 +36,23 @@ data/local/output/stack-outputs.txt
 data/local/output/frontend-url.txt
 ```
 
+Seed and verify cloud archive data:
+
+```powershell
+python ./devctl.py cloud seed
+python ./devctl.py cloud smoke
+python ./devctl.py cloud newman
+python ./devctl.py test phase72
+```
+
+Phase 72 adds `scripts/local/upload-cloud-sample-phase72.ps1`, which writes a
+small metadata-only JSONL gzip archive under `data/local/cloud-seed/`, uploads
+it to the configured S3 bucket, and records a manifest under `data/local`.
+`scripts/local/smoke-phase72.ps1` refreshes the deployed Lambda S3 summary,
+verifies sampled browser rows, Chrome/Edge/Brave grouping, study-safe
+inference, non-study YouTube, and then reads again to prove the Lambda memory
+cache reports a hit.
+
 The Lambda frontend intentionally renders safe metadata only: S3 object keys,
 sizes, storage class, timestamps, host labels, browser names, domains,
 categories, study-safe status, and counts. It does not render passwords,

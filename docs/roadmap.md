@@ -297,3 +297,9 @@
     displays cache hit/miss percentages, supports a localhost `18080` source
     switch, saves stack outputs under `data/local/output/`, and is covered by
     smoke, Newman, contract, docs, and full local verification.
+73. Phase 72: cloud S3 sample and cache proof. Lambda S3 summary parser reads
+    real agent archive `Metadata` maps, a logged local script creates and
+    uploads a metadata-only JSONL gzip browser sample to S3, smoke/Newman prove
+    Chrome/Edge/Brave rows, study-safe inference, non-study YouTube, forbidden
+    privacy markers, and cache hit/miss metrics against the deployed Function
+    URL, with `devctl.py cloud` helpers and full local verification.

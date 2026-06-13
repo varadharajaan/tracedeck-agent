@@ -260,9 +260,40 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase69.ps1"))
     elif target == "verify":
         run(powershell("./scripts/verify/verify-phase69.ps1"))
+    elif target == "phase72":
+        run(powershell("./scripts/local/smoke-phase72.ps1"))
+        run(powershell("./scripts/local/newman-phase72.ps1"))
+    elif target == "smoke72":
+        run(powershell("./scripts/local/smoke-phase72.ps1"))
+    elif target == "newman72":
+        run(powershell("./scripts/local/newman-phase72.ps1"))
+    elif target == "verify72":
+        run(powershell("./scripts/verify/verify-phase72.ps1"))
     else:
         run(powershell("./scripts/local/smoke-phase69.ps1"))
         run(powershell("./scripts/local/newman-phase69.ps1"))
+    return 0
+
+
+def cloud_args(script: str, args: argparse.Namespace) -> list[str]:
+    command = powershell(script, "-Region", args.region)
+    if args.bucket:
+        command.extend(["-Bucket", args.bucket])
+    if args.frontend_url and script.endswith(("smoke-phase72.ps1", "newman-phase72.ps1")):
+        command.extend(["-FrontendUrl", args.frontend_url])
+    return command
+
+
+def cmd_cloud(args: argparse.Namespace) -> int:
+    if args.action == "seed":
+        run(cloud_args("./scripts/local/upload-cloud-sample-phase72.ps1", args))
+    elif args.action == "smoke":
+        run(cloud_args("./scripts/local/smoke-phase72.ps1", args))
+    elif args.action == "newman":
+        run(cloud_args("./scripts/local/newman-phase72.ps1", args))
+    else:
+        run(cloud_args("./scripts/local/smoke-phase72.ps1", args))
+        run(cloud_args("./scripts/local/newman-phase72.ps1", args))
     return 0
 
 
@@ -333,9 +364,21 @@ def main() -> int:
     sam.add_argument("action", choices=["build", "deploy", "restart", "local", "outputs", "logs", "tail"], nargs="?", default="build")
     sam.set_defaults(func=cmd_sam)
 
-    test = sub.add_parser("test", help="Run Phase 69 smoke, Newman, or verify scripts")
-    test.add_argument("target", choices=["phase69", "smoke", "newman", "verify"], nargs="?", default="phase69")
+    test = sub.add_parser("test", help="Run Phase 69 or Phase 72 test scripts")
+    test.add_argument(
+        "target",
+        choices=["phase69", "phase72", "smoke", "newman", "verify", "smoke72", "newman72", "verify72"],
+        nargs="?",
+        default="phase69",
+    )
     test.set_defaults(func=cmd_test)
+
+    cloud = sub.add_parser("cloud", help="Seed or verify the S3-backed Lambda frontend")
+    cloud.add_argument("action", choices=["seed", "smoke", "newman", "phase72"], nargs="?", default="phase72")
+    cloud.add_argument("--bucket", default="", help="Override S3 data bucket")
+    cloud.add_argument("--region", default="ap-south-1", help="AWS region")
+    cloud.add_argument("--frontend-url", default="", help="Override Lambda Function URL")
+    cloud.set_defaults(func=cmd_cloud)
 
     logs = sub.add_parser("logs", help="Show latest local logs")
     logs.add_argument("--kind", choices=["devctl", "backend", "smoke", "newman", "verify"], default="devctl")
