@@ -278,3 +278,9 @@
     persistence, background startup, live boot, offline replay, archive backlog,
     owner actions, Postman/Newman coverage, screenshot-free layout guard,
     service/autostart verification, docs, and full local verification.
+70. Phase 67: premium operations hub. Typed tenant premium-operations-hub API
+    and polished dashboard first screen for anomaly inbox, mail delivery proof,
+    push notification route state, dashboard fallback, weekly reports, archive
+    retention, deployment readiness, package value, commercial levers, owner
+    actions, Postman/Newman coverage, screenshot-free layout guard, docs, and
+    full local verification.

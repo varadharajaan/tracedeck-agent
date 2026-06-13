@@ -43,6 +43,12 @@ func TestDashboardDOMContract(t *testing.T) {
 	}
 
 	for _, marker := range []string{
+		"Premium Operations Hub",
+		"Premium Value Tiles",
+		"Anomaly Notification Wall",
+		"Mail And Push Delivery Ops",
+		"Premium Owner Actions",
+		"data-jump-target=\"premium-operations-section\"",
 		"Monetisation Overview",
 		"Anomaly Notification Proof",
 		"Package And Revenue Fit",

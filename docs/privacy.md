@@ -187,3 +187,12 @@ collectors and does not store passwords, screenshots, raw URLs, page titles,
 alert bodies, provider secrets, push endpoints, endpoint payloads, private
 content, invoices, tokens, cookies, payment card data, raw provider payloads,
 keylogging, or hidden collection bypasses.
+
+Phase 67 premium operations hub is metadata-only. It exposes product scores,
+host counts, anomaly categories, mail/push/dashboard delivery proof, weekly
+report readiness, archive backlog, deployment readiness, package labels,
+commercial levers, owner actions, and buyer-facing trust proof. It does not add
+collectors and does not store passwords, screenshots, raw URLs, page titles,
+alert bodies, provider secrets, push endpoints, endpoint payloads, private
+content, invoices, tokens, cookies, payment card data, raw provider payloads,
+keylogging, or hidden collection bypasses.

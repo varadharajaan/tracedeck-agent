@@ -1232,6 +1232,26 @@ func (m *Memory) TenantDeploymentReadinessCenter(ctx context.Context, tenantID s
 	return buildTenantDeploymentReadinessCenter(onboarding, settings, syncHealth, portfolio, revenueOps, generatedAt), nil
 }
 
+func (m *Memory) TenantPremiumOperationsHub(ctx context.Context, tenantID string) (model.TenantPremiumOperationsHub, error) {
+	generatedAt := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	revenueOps, err := m.TenantRevenueOperationsCenter(ctx, tenantID)
+	if err != nil {
+		return model.TenantPremiumOperationsHub{}, err
+	}
+	deployment, err := m.TenantDeploymentReadinessCenter(ctx, tenantID)
+	if err != nil {
+		return model.TenantPremiumOperationsHub{}, err
+	}
+	portfolio, err := m.TenantPortfolioCenter(ctx, tenantID)
+	if err != nil {
+		return model.TenantPremiumOperationsHub{}, err
+	}
+
+	return buildTenantPremiumOperationsHub(revenueOps, deployment, portfolio, generatedAt), nil
+}
+
 func (m *Memory) TenantExecutiveConsole(ctx context.Context, tenantID string) (model.TenantExecutiveConsole, error) {
 	generatedAt := time.Now().UTC()
 	tenantID = strings.TrimSpace(tenantID)
@@ -6366,6 +6386,176 @@ func buildTenantDeploymentReadinessCenter(
 		Actions:         deploymentActions(summary),
 		PrivacyBoundary: constants.DeploymentReadinessPrivacyNote,
 		GeneratedAt:     generatedAt,
+	}
+}
+
+func buildTenantPremiumOperationsHub(
+	revenueOps model.TenantRevenueOperationsCenter,
+	deployment model.TenantDeploymentReadinessCenter,
+	portfolio model.TenantPortfolioCenter,
+	generatedAt time.Time,
+) model.TenantPremiumOperationsHub {
+	summary := model.TenantPremiumOperationsSummary{
+		RevenueScore:           revenueOps.Summary.RevenueScore,
+		DeploymentScore:        deployment.Summary.ReadinessScore,
+		PortfolioScore:         portfolio.Summary.PortfolioScore,
+		NotificationScore:      averageScore(revenueOps.Summary.NotificationScore, portfolio.Summary.NotificationScore),
+		TrustScore:             averageScore(revenueOps.Summary.TrustScore, portfolio.Summary.TrustScore),
+		OpenAlerts:             maxInt(revenueOps.Summary.OpenAlerts, portfolio.Summary.OpenAlerts),
+		HighPriorityAlerts:     maxInt(revenueOps.Summary.HighPriorityAlerts, portfolio.Summary.HighPriorityAlerts),
+		HostsTotal:             maxInt(revenueOps.Summary.HostsTotal, deployment.Summary.HostsTotal, portfolio.Summary.HostsTotal),
+		HostsAttention:         maxInt(revenueOps.Summary.HostsAttention, portfolio.Summary.HostsAttention),
+		HostsReporting:         maxInt(deployment.Summary.HostsReporting, portfolio.Summary.HostsReporting),
+		MailDelivered:          maxInt(revenueOps.Summary.MailDelivered, portfolio.Summary.MailDelivered),
+		PushDelivered:          maxInt(revenueOps.Summary.PushDelivered, portfolio.Summary.PushDelivered),
+		DashboardDelivered:     maxInt(revenueOps.Summary.DashboardDelivered, portfolio.Summary.DashboardDelivered),
+		RoutesNeedingProof:     maxInt(revenueOps.Summary.RoutesNeedingProof, portfolio.Summary.RoutesNeedingProof),
+		WeeklyReportReady:      revenueOps.Summary.WeeklyReportReady,
+		ArchiveBacklog:         maxInt(revenueOps.Summary.ArchiveBacklog, deployment.Summary.ArchiveBacklog, portfolio.Summary.ArchiveBacklog),
+		DeploymentReady:        deployment.Summary.LiveBootReady && deployment.Summary.AutostartReady && deployment.Summary.OfflineReplayReady,
+		ProviderReady:          revenueOps.Summary.ProviderReady,
+		BillingReady:           revenueOps.Summary.BillingReady,
+		RecommendedPaidPackage: firstNonEmpty(revenueOps.Summary.RecommendedPaidPackage, deployment.Summary.RecommendedPackage, portfolio.Summary.RecommendedPaidPackage, revenueOps.PlanName),
+		OwnerNextStep:          firstNonEmpty(revenueOps.Summary.OwnerNextStep, deployment.Summary.OwnerNextStep, portfolio.Summary.OwnerNextStep),
+	}
+	summary.PremiumScore = averageScore(summary.RevenueScore, summary.DeploymentScore, summary.PortfolioScore, summary.NotificationScore, summary.TrustScore)
+	summary.Status = premiumOperationsStatus(summary)
+	summary.Headline = premiumOperationsHeadline(summary)
+	summary.Detail = premiumOperationsDetail(summary)
+
+	return model.TenantPremiumOperationsHub{
+		TenantID:        revenueOps.TenantID,
+		TenantName:      revenueOps.TenantName,
+		PlanID:          revenueOps.PlanID,
+		PlanName:        revenueOps.PlanName,
+		Audience:        firstNonEmpty(revenueOps.Audience, deployment.Audience, portfolio.Audience),
+		Summary:         summary,
+		Tiles:           premiumOperationsTiles(summary),
+		Alerts:          revenueOps.Alerts,
+		Deliveries:      revenueOps.Deliveries,
+		Levers:          revenueOps.Levers,
+		Actions:         revenueOps.Actions,
+		PrivacyBoundary: constants.PremiumOperationsPrivacyNote,
+		GeneratedAt:     generatedAt,
+	}
+}
+
+func premiumOperationsStatus(summary model.TenantPremiumOperationsSummary) string {
+	switch {
+	case summary.HighPriorityAlerts > 0 || summary.RoutesNeedingProof > 0:
+		return constants.StatusAttention
+	case summary.ArchiveBacklog > 0 || !summary.DeploymentReady || !summary.ProviderReady || !summary.BillingReady:
+		return constants.StatusWatch
+	case summary.PremiumScore >= 85 && summary.NotificationScore >= 75:
+		return constants.StatusHealthy
+	default:
+		return constants.StatusPending
+	}
+}
+
+func premiumOperationsHeadline(summary model.TenantPremiumOperationsSummary) string {
+	if summary.HighPriorityAlerts > 0 {
+		return fmt.Sprintf("%d urgent anomaly notification%s need owner proof", summary.HighPriorityAlerts, pluralSuffix(summary.HighPriorityAlerts))
+	}
+	if summary.RoutesNeedingProof > 0 {
+		return fmt.Sprintf("%d mail/push route proof gap%s block premium confidence", summary.RoutesNeedingProof, pluralSuffix(summary.RoutesNeedingProof))
+	}
+	return fmt.Sprintf("%s is %d%% premium-ready", firstNonEmpty(summary.RecommendedPaidPackage, "TraceDeck"), summary.PremiumScore)
+}
+
+func premiumOperationsDetail(summary model.TenantPremiumOperationsSummary) string {
+	return fmt.Sprintf("%d hosts, %d open anomalies, %d mail, %d push, %d dashboard deliveries, weekly report %s, archive backlog %d, deployment %s, provider %s, billing %s.",
+		summary.HostsTotal,
+		summary.OpenAlerts,
+		summary.MailDelivered,
+		summary.PushDelivered,
+		summary.DashboardDelivered,
+		boolReady(summary.WeeklyReportReady),
+		summary.ArchiveBacklog,
+		boolReady(summary.DeploymentReady),
+		boolReady(summary.ProviderReady),
+		boolReady(summary.BillingReady),
+	)
+}
+
+func premiumOperationsTiles(summary model.TenantPremiumOperationsSummary) []model.TenantPremiumOperationsTile {
+	return []model.TenantPremiumOperationsTile{
+		{
+			ID:         "anomaly-inbox",
+			Label:      "Anomaly Inbox",
+			Value:      fmt.Sprintf("%d open", summary.OpenAlerts),
+			Detail:     fmt.Sprintf("%d high-priority rows across %d hosts", summary.HighPriorityAlerts, summary.HostsTotal),
+			Status:     countStatus(summary.OpenAlerts),
+			PaidTier:   constants.PlanFamilyPro,
+			NextAction: "Review alert rows and confirm owner delivery proof.",
+		},
+		{
+			ID:         "mail-delivery",
+			Label:      "Mail Delivery",
+			Value:      fmt.Sprintf("%d delivered", summary.MailDelivered),
+			Detail:     "Email proof for anomaly alerts and weekly reports.",
+			Status:     deliveryValueStatus(summary.MailDelivered),
+			Channel:    constants.DeliveryChannelEmail,
+			PaidTier:   constants.PlanFamilyPro,
+			NextAction: "Keep SMTP route proof current without storing provider secrets.",
+		},
+		{
+			ID:         "push-notifications",
+			Label:      "Push Notifications",
+			Value:      fmt.Sprintf("%d delivered", summary.PushDelivered),
+			Detail:     fmt.Sprintf("%d route proof gaps; %d%% notification score", summary.RoutesNeedingProof, summary.NotificationScore),
+			Status:     scoreStatus(summary.NotificationScore),
+			Channel:    constants.DeliveryChannelPush,
+			PaidTier:   constants.PlanFamilyPro,
+			NextAction: "Rehearse push fallback before selling real-time alerts.",
+		},
+		{
+			ID:         "dashboard-fallback",
+			Label:      "Dashboard Fallback",
+			Value:      fmt.Sprintf("%d delivered", summary.DashboardDelivered),
+			Detail:     "In-app proof when mail or push needs retry.",
+			Status:     deliveryValueStatus(summary.DashboardDelivered),
+			Channel:    constants.DeliveryChannelDashboard,
+			PaidTier:   constants.PlanFamilyPro,
+			NextAction: "Use dashboard fallback as the visible admin safety net.",
+		},
+		{
+			ID:         "weekly-report",
+			Label:      "Weekly Report",
+			Value:      boolReady(summary.WeeklyReportReady),
+			Detail:     "Paid PDF/email report readiness for family, school, and business review.",
+			Status:     boolStatus(summary.WeeklyReportReady),
+			Channel:    constants.DeliveryChannelEmail,
+			PaidTier:   constants.PlanSchool,
+			NextAction: "Attach weekly report proof to the customer review flow.",
+		},
+		{
+			ID:         "archive-retention",
+			Label:      "Archive Retention",
+			Value:      fmt.Sprintf("%d pending", summary.ArchiveBacklog),
+			Detail:     "S3 archive and offline replay posture for retention plans.",
+			Status:     archiveValueStatus(summary.ArchiveBacklog, true),
+			PaidTier:   constants.PlanSchool,
+			NextAction: "Watch backlog until local replay and cloud archive are current.",
+		},
+		{
+			ID:         "deployment-readiness",
+			Label:      "Deployment Readiness",
+			Value:      fmt.Sprintf("%d%%", summary.DeploymentScore),
+			Detail:     fmt.Sprintf("%d/%d hosts reporting; reboot persistence %s", summary.HostsReporting, summary.HostsTotal, boolReady(summary.DeploymentReady)),
+			Status:     boolStatus(summary.DeploymentReady),
+			PaidTier:   constants.PlanBusiness,
+			NextAction: "Use native service proof before production rollout.",
+		},
+		{
+			ID:         "package-value",
+			Label:      "Package Value",
+			Value:      fmt.Sprintf("%d%%", summary.PremiumScore),
+			Detail:     fmt.Sprintf("Recommended package: %s", firstNonEmpty(summary.RecommendedPaidPackage, "review needed")),
+			Status:     scoreStatus(summary.PremiumScore),
+			PaidTier:   constants.PlanBusiness,
+			NextAction: summary.OwnerNextStep,
+		},
 	}
 }
 

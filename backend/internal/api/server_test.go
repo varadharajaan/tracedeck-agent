@@ -2431,6 +2431,93 @@ func TestTenantDeploymentReadinessCenterEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantPremiumOperationsHubEndpoint(t *testing.T) {
+	t.Parallel()
+
+	repo := store.NewMemory()
+	handler := NewServer(repo, slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "premium-hub-device-001",
+		"host_name": "premium-hub-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	response := httptest.NewRecorder()
+	route := constants.RouteTenants + "/family-varadha/" + constants.RouteSegmentPremiumOps
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, route, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected premium operations hub 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var hub model.TenantPremiumOperationsHub
+	if err := json.Unmarshal(response.Body.Bytes(), &hub); err != nil {
+		t.Fatalf("decode premium operations hub: %v", err)
+	}
+	if hub.Summary.PremiumScore == 0 || hub.Summary.NotificationScore == 0 || hub.Summary.RecommendedPaidPackage == "" || hub.Summary.OwnerNextStep == "" {
+		t.Fatalf("expected premium score, notification score, package, and owner action: %+v", hub.Summary)
+	}
+	if hub.Summary.MailDelivered == 0 || hub.Summary.DashboardDelivered == 0 || hub.Summary.HostsTotal == 0 {
+		t.Fatalf("expected mail, dashboard, and host proof: %+v", hub.Summary)
+	}
+	if len(hub.Tiles) < 8 || len(hub.Alerts) == 0 || len(hub.Deliveries) < 3 || len(hub.Actions) == 0 {
+		t.Fatalf("expected premium tiles, alerts, deliveries, and actions: %+v", hub)
+	}
+	hasMail := false
+	hasPush := false
+	hasDashboard := false
+	for _, tile := range hub.Tiles {
+		switch tile.ID {
+		case "mail-delivery":
+			hasMail = tile.Channel == constants.DeliveryChannelEmail && tile.NextAction != ""
+		case "push-notifications":
+			hasPush = tile.Channel == constants.DeliveryChannelPush && tile.NextAction != ""
+		case "dashboard-fallback":
+			hasDashboard = tile.Channel == constants.DeliveryChannelDashboard && tile.NextAction != ""
+		}
+	}
+	if !hasMail || !hasPush || !hasDashboard {
+		t.Fatalf("expected mail, push, and dashboard tile proof: %+v", hub.Tiles)
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "push_endpoint", "screenshot_bytes", "raw_url", "page_title", "alert_body", "card_number", "cvv", "payment_token", "keylogger"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("premium operations hub leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+	if !strings.Contains(hub.PrivacyBoundary, "metadata-only") || !strings.Contains(hub.PrivacyBoundary, "no passwords") || !strings.Contains(hub.PrivacyBoundary, "no screenshots") || !strings.Contains(hub.PrivacyBoundary, "hidden collection bypasses") {
+		t.Fatalf("expected strict premium operations privacy boundary, got %q", hub.PrivacyBoundary)
+	}
+
+	scopedHandler := NewServerWithAuth(repo, slog.Default(), AuthConfig{APIKey: "local-key", TenantID: "school-alpha"}).Handler()
+	scopedRequest := httptest.NewRequest(http.MethodGet, route, nil)
+	scopedRequest.Header.Set(constants.HeaderAPIKey, "local-key")
+	scopedResponse := httptest.NewRecorder()
+	scopedHandler.ServeHTTP(scopedResponse, scopedRequest)
+	if scopedResponse.Code != http.StatusForbidden {
+		t.Fatalf("expected tenant-scoped premium operations route to reject another tenant, got %d: %s", scopedResponse.Code, scopedResponse.Body.String())
+	}
+}
+
 func TestTenantNotificationRevenueCockpitEndpoint(t *testing.T) {
 	t.Parallel()
 

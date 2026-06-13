@@ -2159,6 +2159,61 @@ type TenantDeploymentReadinessCenter struct {
 	GeneratedAt     time.Time                        `json:"generated_at"`
 }
 
+type TenantPremiumOperationsSummary struct {
+	Status                 string `json:"status"`
+	Headline               string `json:"headline"`
+	Detail                 string `json:"detail"`
+	PremiumScore           int    `json:"premium_score"`
+	RevenueScore           int    `json:"revenue_score"`
+	DeploymentScore        int    `json:"deployment_score"`
+	PortfolioScore         int    `json:"portfolio_score"`
+	NotificationScore      int    `json:"notification_score"`
+	TrustScore             int    `json:"trust_score"`
+	OpenAlerts             int    `json:"open_alerts"`
+	HighPriorityAlerts     int    `json:"high_priority_alerts"`
+	HostsTotal             int    `json:"hosts_total"`
+	HostsAttention         int    `json:"hosts_attention"`
+	HostsReporting         int    `json:"hosts_reporting"`
+	MailDelivered          int    `json:"mail_delivered"`
+	PushDelivered          int    `json:"push_delivered"`
+	DashboardDelivered     int    `json:"dashboard_delivered"`
+	RoutesNeedingProof     int    `json:"routes_needing_proof"`
+	WeeklyReportReady      bool   `json:"weekly_report_ready"`
+	ArchiveBacklog         int    `json:"archive_backlog"`
+	DeploymentReady        bool   `json:"deployment_ready"`
+	ProviderReady          bool   `json:"provider_ready"`
+	BillingReady           bool   `json:"billing_ready"`
+	RecommendedPaidPackage string `json:"recommended_paid_package"`
+	OwnerNextStep          string `json:"owner_next_step"`
+}
+
+type TenantPremiumOperationsTile struct {
+	ID         string `json:"id"`
+	Label      string `json:"label"`
+	Value      string `json:"value"`
+	Detail     string `json:"detail"`
+	Status     string `json:"status"`
+	Channel    string `json:"channel,omitempty"`
+	PaidTier   string `json:"paid_tier"`
+	NextAction string `json:"next_action"`
+}
+
+type TenantPremiumOperationsHub struct {
+	TenantID        string                            `json:"tenant_id"`
+	TenantName      string                            `json:"tenant_name"`
+	PlanID          string                            `json:"plan_id"`
+	PlanName        string                            `json:"plan_name"`
+	Audience        string                            `json:"audience"`
+	Summary         TenantPremiumOperationsSummary    `json:"summary"`
+	Tiles           []TenantPremiumOperationsTile     `json:"tiles"`
+	Alerts          []TenantRevenueOperationsAlert    `json:"alerts"`
+	Deliveries      []TenantRevenueOperationsDelivery `json:"deliveries"`
+	Levers          []TenantRevenueOperationsLever    `json:"levers"`
+	Actions         []TenantRevenueOperationsAction   `json:"actions"`
+	PrivacyBoundary string                            `json:"privacy_boundary"`
+	GeneratedAt     time.Time                         `json:"generated_at"`
+}
+
 type TenantExecutiveConsoleSummary struct {
 	Status                 string `json:"status"`
 	Headline               string `json:"headline"`

@@ -1804,6 +1804,85 @@
       </div>
     </section>
 
+    <section id="premium-operations-section" class="executive-console" aria-label="premium operations hub">
+      <div class="executive-focus">
+        <div class="section-head">
+          <div>
+            <h2>Premium Operations Hub</h2>
+            <p>Monetisable first screen for anomaly inbox, push notification reach, mail delivery proof, dashboard fallback, weekly reports, archive retention, deployment readiness, package value, and owner action.</p>
+          </div>
+          <span id="premium-operations-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Paid customer command view</span>
+          <strong id="premium-operations-headline">No tenant loaded</strong>
+          <p id="premium-operations-detail">Waiting for anomaly, mail, push, dashboard, report, archive, deployment, package, and privacy proof.</p>
+        </div>
+        <div class="executive-meter">
+          <div class="score-meta"><span>Premium readiness</span><span id="premium-operations-score">0%</span></div>
+          <div class="executive-meter-track"><div id="premium-operations-score-bar" class="executive-meter-fill"></div></div>
+        </div>
+        <div class="action-meta">
+          <span id="premium-operations-package" class="pill">package pending</span>
+          <span id="premium-operations-audience" class="pill">audience pending</span>
+          <span id="premium-operations-next" class="pill">action pending</span>
+          <span id="premium-operations-privacy" class="pill">metadata-only</span>
+        </div>
+      </div>
+      <div>
+        <div class="executive-kpis">
+          <div class="executive-kpi"><small>Anomaly Inbox</small><strong id="premium-kpi-alerts">-</strong><span id="premium-kpi-alerts-sub" class="muted">No anomaly proof</span></div>
+          <div class="executive-kpi"><small>Mail Delivery</small><strong id="premium-kpi-mail">-</strong><span id="premium-kpi-mail-sub" class="muted">No mail proof</span></div>
+          <div class="executive-kpi"><small>Push Notifications</small><strong id="premium-kpi-push">-</strong><span id="premium-kpi-push-sub" class="muted">No push proof</span></div>
+          <div class="executive-kpi"><small>Dashboard Fallback</small><strong id="premium-kpi-dashboard">-</strong><span id="premium-kpi-dashboard-sub" class="muted">No dashboard proof</span></div>
+          <div class="executive-kpi"><small>Report And Archive</small><strong id="premium-kpi-report">-</strong><span id="premium-kpi-report-sub" class="muted">No report/archive proof</span></div>
+          <div class="executive-kpi"><small>Deployment</small><strong id="premium-kpi-deployment">-</strong><span id="premium-kpi-deployment-sub" class="muted">No deployment proof</span></div>
+        </div>
+        <div class="executive-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Premium Value Tiles</h2>
+                <p class="muted">Buyer-facing proof across anomaly, mail, push, dashboard, reports, archive, deployment, and package value.</p>
+              </div>
+              <span id="premium-tile-count" class="pill">0 tiles</span>
+            </div>
+            <div id="premium-tile-list" class="executive-list"><div class="empty">No premium value tiles yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Anomaly Notification Wall</h2>
+                <p class="muted">Policy, anomaly, and tamper rows with mail, push, dashboard status, SLA, and next action.</p>
+              </div>
+              <span id="premium-alert-count" class="pill">0 alerts</span>
+            </div>
+            <div id="premium-alert-list" class="executive-list"><div class="empty">No premium alert rows yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Mail And Push Delivery Ops</h2>
+                <p class="muted">Provider-safe route status, attempts, proof state, SLA, and fallback readiness.</p>
+              </div>
+              <span id="premium-delivery-count" class="pill">0 routes</span>
+            </div>
+            <div id="premium-delivery-list" class="executive-list"><div class="empty">No premium delivery proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Premium Owner Actions</h2>
+                <p class="muted">Conversion and retention actions for alert reliability, push reach, mail proof, package readiness, and trust review.</p>
+              </div>
+              <span id="premium-action-count" class="pill">0 actions</span>
+            </div>
+            <div id="premium-action-list" class="executive-list"><div class="empty">No premium owner actions yet.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="monetisation-overview-section" class="monetisation-overview" aria-label="monetisation overview">
       <div class="monetisation-focus">
         <div class="section-head">
@@ -3193,6 +3272,7 @@
         </div>
       </div>
       <nav class="command-nav-grid" aria-label="dashboard sections">
+        <button class="command-jump" type="button" data-jump-target="premium-operations-section">Premium<span id="nav-premium-operations-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="onboarding-center-section">Onboard<span id="nav-onboarding-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="customer-settings-section">Settings<span id="nav-settings-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="revenue-operations-section">Rev Ops<span id="nav-revenue-ops-meta">waiting</span></button>
@@ -4771,7 +4851,8 @@
       auditEvents: "/api/v1/audit-events",
       policyTemplates: "/api/v1/policy-templates",
       alertRuleTemplates: "/api/v1/alert-rule-templates",
-      accountPortfolio: "/api/v1/account-portfolio-index"
+      accountPortfolio: "/api/v1/account-portfolio-index",
+      premiumOperationsHub: "/api/v1/tenants/family-varadha/premium-operations-hub"
     });
     const CHANNEL = Object.freeze({
       email: "email",
@@ -5079,6 +5160,7 @@
 
       renderDeviceHealth(healthModel);
       renderTenantPlan(device, context);
+      renderPremiumOperationsHub(context.premiumOperationsHub);
       renderMonetisationOverview(overview, healthModel, policy.items.concat(anomalies.items, tamper.items), deliveries.items, context);
       renderTenantOnboardingCenter(context.onboardingCenter);
       renderTenantCustomerSettingsCenter(context.customerSettingsCenter);
@@ -5158,6 +5240,7 @@
       setText("command-nav-routes", "routes pending");
       setText("command-nav-report", "report pending");
       setText("command-nav-archive", "archive pending");
+      setText("nav-premium-operations-meta", "waiting");
       setText("nav-onboarding-meta", "waiting");
       setText("nav-settings-meta", "waiting");
       setText("nav-revenue-ops-meta", "waiting");
@@ -5881,6 +5964,137 @@
             ${badge(item.status || "pending")}
             <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
             <span class="pill">${escapeHTML(item.source || "settings")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderPremiumOperationsHub(hub) {
+      const model = hub || {};
+      const summary = model.summary || {};
+      const tiles = model.tiles || [];
+      const alerts = model.alerts || [];
+      const deliveries = model.deliveries || [];
+      const actions = model.actions || [];
+      const score = Number(summary.premium_score || 0);
+
+      document.getElementById("premium-operations-status").outerHTML =
+        badge(summary.status || "pending").replace("<span", '<span id="premium-operations-status"');
+      setText("premium-operations-headline", summary.headline || "No tenant loaded");
+      setText("premium-operations-detail", summary.detail || "Waiting for anomaly, mail, push, dashboard, report, archive, deployment, package, and privacy proof.");
+      setText("premium-operations-score", `${score}%`);
+      setPercentBar("premium-operations-score-bar", score);
+      setText("premium-operations-package", summary.recommended_paid_package || model.plan_name || "package pending");
+      setText("premium-operations-audience", model.audience || "audience pending");
+      setText("premium-operations-next", summary.owner_next_step || "action pending");
+      setText("premium-operations-privacy", model.privacy_boundary ? "metadata-only guard" : "metadata-only");
+
+      setText("premium-kpi-alerts", `${summary.open_alerts || 0} open`);
+      setText("premium-kpi-alerts-sub", `${summary.high_priority_alerts || 0} high priority, ${summary.hosts_attention || 0}/${summary.hosts_total || 0} hosts need watch`);
+      setText("premium-kpi-mail", `${summary.mail_delivered || 0} delivered`);
+      setText("premium-kpi-mail-sub", `${summary.notification_score || 0}% notification score`);
+      setText("premium-kpi-push", `${summary.push_delivered || 0} delivered`);
+      setText("premium-kpi-push-sub", `${summary.routes_needing_proof || 0} route proof gap${summary.routes_needing_proof === 1 ? "" : "s"}`);
+      setText("premium-kpi-dashboard", `${summary.dashboard_delivered || 0} delivered`);
+      setText("premium-kpi-dashboard-sub", "fallback proof for admins");
+      setText("premium-kpi-report", summary.weekly_report_ready ? "report ready" : "report pending");
+      setText("premium-kpi-report-sub", `${summary.archive_backlog || 0} archive batch${summary.archive_backlog === 1 ? "" : "es"} pending`);
+      setText("premium-kpi-deployment", `${summary.deployment_score || 0}%`);
+      setText("premium-kpi-deployment-sub", `${summary.hosts_reporting || 0}/${summary.hosts_total || 0} hosts reporting`);
+
+      setText("nav-premium-operations-meta", score > 0 ? `${score}%` : "waiting");
+      renderPremiumTiles(tiles);
+      renderPremiumAlerts(alerts);
+      renderPremiumDeliveries(deliveries);
+      renderPremiumActions(actions);
+    }
+
+    function renderPremiumTiles(tiles) {
+      const items = (tiles || []).slice(0, 8);
+      setText("premium-tile-count", `${items.length} tile${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("premium-tile-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No premium value tiles yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.label || "premium tile")}: ${escapeHTML(item.value || "-")}</strong>
+          <span class="muted">${escapeHTML(item.detail || "Premium proof pending.")}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            ${item.channel ? `<span class="pill">${escapeHTML(item.channel)}</span>` : ""}
+            <span class="pill">${escapeHTML(item.paid_tier || "paid")}</span>
+            <span class="pill">${escapeHTML(item.next_action || "review tile")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderPremiumAlerts(alerts) {
+      const items = (alerts || []).slice(0, 8);
+      setText("premium-alert-count", `${items.length} alert${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("premium-alert-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No premium alert rows yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.title || "alert")} on ${escapeHTML(item.host_name || "host")}</strong>
+          <span class="muted">${escapeHTML(item.detail || item.next_action || "Alert proof pending.")}</span>
+          <div class="action-meta">
+            ${badge(item.severity || "info")}
+            ${badge(item.status || "pending")}
+            <span class="pill">mail ${escapeHTML(item.email_status || "pending")}</span>
+            <span class="pill">push ${escapeHTML(item.push_status || "pending")}</span>
+            <span class="pill">dashboard ${escapeHTML(item.dashboard_status || "pending")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderPremiumDeliveries(deliveries) {
+      const items = (deliveries || []).slice(0, 8);
+      setText("premium-delivery-count", `${items.length} route${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("premium-delivery-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No premium delivery proof yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(capitalize(item.channel))} via ${escapeHTML(item.provider || "provider")}</strong>
+          <span class="muted">${escapeHTML(item.evidence || item.next_action || "Delivery proof pending.")}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.proof_state || "proof pending")}</span>
+            <span class="pill">${escapeHTML(item.recipient_label || "recipient label")}</span>
+            <span class="pill">${escapeHTML(item.sla || "SLA pending")}</span>
+            <span class="pill">${escapeHTML(item.attempts || 0)} attempt${Number(item.attempts || 0) === 1 ? "" : "s"}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderPremiumActions(actions) {
+      const items = (actions || []).slice(0, 8);
+      setText("premium-action-count", `${items.length} action${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("premium-action-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No premium owner actions yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.title || "premium action")}</strong>
+          <span class="muted">${escapeHTML(item.detail || "Action detail pending.")}</span>
+          <div class="action-meta">
+            ${badge(item.severity || "info")}
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.owner || "owner pending")}</span>
+            <span class="pill">${escapeHTML(item.sla || "SLA pending")}</span>
+            <span class="pill">${escapeHTML(item.source || "premium hub")}</span>
           </div>
         </div>
       `).join("");
@@ -10082,6 +10296,7 @@
       setText("host-profile", "-");
       setText("host-os", "-");
       setText("host-last-seen", "-");
+      renderPremiumOperationsHub(null);
       renderMonetisationOverview(null, {}, [], [], {});
       renderTenantOnboardingCenter(null);
       renderTenantCustomerSettingsCenter(null);
@@ -10165,6 +10380,7 @@
       const customerSettingsCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/customer-settings-center`) : null;
       const revenueOperationsCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/revenue-operations-center`) : null;
       const deploymentReadinessCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/deployment-readiness-center`) : null;
+      const premiumOperationsHub = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/premium-operations-hub`) : null;
       const notificationCommandCenter = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/notification-command-center`) : null;
       const deliveryTimeline = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/delivery-timeline?device_id=${encodeURIComponent(overview.device.device_id)}&limit=8`) : null;
       const syncHealth = tenant ? await loadOptionalJSON(`/api/v1/tenants/${encodeURIComponent(overview.device.tenant_id)}/sync-health`) : null;
@@ -10206,6 +10422,7 @@
         customerSettingsCenter,
         revenueOperationsCenter,
         deploymentReadinessCenter,
+        premiumOperationsHub,
         notificationCommandCenter,
         deliveryTimeline,
         syncHealth,

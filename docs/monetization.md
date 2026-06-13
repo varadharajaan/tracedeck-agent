@@ -475,3 +475,22 @@ Phase 66 adds a Deployment Readiness Center for paid rollout confidence:
 This helps monetisation because buyers can see whether TraceDeck survives
 restart, how it will be installed on each OS, what proof is still missing, and
 which admin action unlocks a safe paid deployment.
+
+Phase 67 adds a Premium Operations Hub for a polished paid first screen:
+
+- premium readiness score that blends revenue, deployment, portfolio,
+  notification, and trust proof
+- anomaly notification wall with host, severity, mail, push, dashboard, and
+  next-action metadata
+- mail and push delivery ops with provider-safe proof state, attempts, SLA, and
+  fallback visibility
+- premium value tiles for anomaly inbox, mail delivery, push notification,
+  dashboard fallback, weekly report, archive retention, deployment readiness,
+  and package value
+- owner actions that turn proof gaps into customer-facing conversion and
+  retention work
+
+This helps monetisation because a parent, school admin, or business buyer sees
+the paid value immediately: what happened, whether notification routes worked,
+what still needs proof, what package is recommended, and what action should be
+taken next.
