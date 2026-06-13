@@ -31,6 +31,7 @@ python ./devctl.py sam build
 python ./devctl.py sam deploy
 python ./devctl.py sam outputs
 python ./devctl.py sam tail
+python ./devctl.py doctor
 ```
 
 `devctl.py sam deploy` saves CloudFormation outputs to:
@@ -38,6 +39,8 @@ python ./devctl.py sam tail
 ```text
 data/local/output/stack-outputs.txt
 data/local/output/frontend-url.txt
+data/local/output/runtime-doctor.json
+data/local/output/runtime-doctor.txt
 ```
 
 Seed and verify cloud archive data:
@@ -57,6 +60,13 @@ it to the configured S3 bucket, and records a manifest under `data/local`.
 verifies sampled browser rows, Chrome/Edge/Brave grouping, study-safe
 inference, non-study YouTube, and then reads again to prove the Lambda memory
 cache reports a hit.
+
+Phase 74 adds `python ./devctl.py doctor` as an operator assurance command.
+With cloud checks enabled, it reads the saved Function URL, checks
+`/api/health`, refreshes `/api/s3-summary`, reads `/api/s3-summary` again to
+prove a cache hit, and saves a JSON/text report under `data/local/output/`.
+Use `python ./devctl.py doctor --skip-cloud` when only the local backend should
+be checked.
 
 The Lambda frontend intentionally renders safe metadata only: S3 object keys,
 sizes, storage class, timestamps, host labels, browser names, domains,

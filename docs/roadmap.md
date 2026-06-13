@@ -303,3 +303,9 @@
     Chrome/Edge/Brave rows, study-safe inference, non-study YouTube, forbidden
     privacy markers, and cache hit/miss metrics against the deployed Function
     URL, with `devctl.py cloud` helpers and full local verification.
+74. Phase 74: runtime doctor assurance. `python ./devctl.py doctor` writes
+    metadata-only JSON/text reports under `data/local/output/` proving local
+    backend health, dashboard controls, Browser Activity Viewer reachability,
+    browser activity provenance, alert-delivery provenance, Lambda Function URL
+    health, S3 summary rows, and cache hit/miss behavior, with smoke/Newman
+    coverage, docs, and full local verification.

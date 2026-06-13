@@ -375,3 +375,15 @@ source switch for admin checks on the same machine. Use `python devctl.py
 server status`, `python devctl.py server restart`, `python devctl.py test
 phase69`, and `python devctl.py sam deploy`; stack outputs are saved under
 `data/local/output/`.
+
+Phase 74 adds a runtime doctor command for the operator question "is everything
+actually reachable now?" Use `python devctl.py doctor` to check the local
+backend, dashboard runtime controls, Browser Activity Viewer, typed browser
+activity rows, alert-delivery provenance, Lambda Function URL health, S3
+summary rows, and cache hit/miss state. It writes
+`data/local/output/runtime-doctor.json` and
+`data/local/output/runtime-doctor.txt`. Use `--skip-cloud` for isolated local
+testing. The report is metadata-only and does not collect passwords,
+screenshots, raw URLs, page titles, cookies, tokens, private content, endpoint
+payloads, keylogging, provider secrets, push endpoints, alert bodies, payment
+data, or raw provider payloads.

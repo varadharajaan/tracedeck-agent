@@ -124,6 +124,21 @@ To rerun the full provenance hardening gate:
 python ./devctl.py test phase73
 ```
 
+To write a one-file runtime assurance report for the local dashboard, Browser
+Activity Viewer, Lambda Function URL, S3 summary, and cache state:
+
+```powershell
+python ./devctl.py doctor
+python ./devctl.py doctor --skip-cloud
+```
+
+The reports are saved under:
+
+```text
+data/local/output/runtime-doctor.json
+data/local/output/runtime-doctor.txt
+```
+
 The dashboard reads the base backend endpoints:
 
 - `/health`
