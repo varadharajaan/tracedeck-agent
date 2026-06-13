@@ -269,6 +269,8 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase72.ps1"))
     elif target == "verify72":
         run(powershell("./scripts/verify/verify-phase72.ps1"))
+    elif target == "live":
+        run(powershell("./scripts/local/test-live-server-provenance.ps1", "-BaseUrl", local_url(args.addr)))
     else:
         run(powershell("./scripts/local/smoke-phase69.ps1"))
         run(powershell("./scripts/local/newman-phase69.ps1"))
@@ -367,7 +369,7 @@ def main() -> int:
     test = sub.add_parser("test", help="Run Phase 69 or Phase 72 test scripts")
     test.add_argument(
         "target",
-        choices=["phase69", "phase72", "smoke", "newman", "verify", "smoke72", "newman72", "verify72"],
+        choices=["phase69", "phase72", "smoke", "newman", "verify", "smoke72", "newman72", "verify72", "live"],
         nargs="?",
         default="phase69",
     )

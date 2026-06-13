@@ -58,6 +58,7 @@ try {
     foreach ($expected in @(
         "theme-toggle-button",
         "server-status-light",
+        "sourceBadge",
         "dashboard-page-nav",
         "data-page-target=""notifications""",
         "data-page-target=""hosts""",
@@ -74,6 +75,7 @@ try {
         "TraceDeck Browser Activity",
         "theme-toggle-button",
         "server-status-light",
+        "<th>Source</th>",
         "Server connected",
         "Browser Domain Activity"
     )) {
@@ -85,6 +87,9 @@ try {
     $viewer = Invoke-RestMethod -Method "GET" -Uri "$baseUrl/api/v1/tenants/family-varadha/browser-activity?limit=25"
     if ($viewer.summary.total -lt 3 -or $viewer.summary.chrome -lt 1 -or $viewer.summary.edge -lt 1 -or $viewer.summary.brave -lt 1) {
         throw "Expected Chrome, Edge, and Brave browser activity rows."
+    }
+    if ([string]::IsNullOrWhiteSpace($viewer.items[0].source_kind) -or [string]::IsNullOrWhiteSpace($viewer.items[0].evidence_scope) -or [string]::IsNullOrWhiteSpace($viewer.items[0].evidence_detail)) {
+        throw "Expected browser activity provenance fields."
     }
 
     Invoke-TraceDeckLoggedCommand -Label "Phase 69 dashboard layout contract" -Command {

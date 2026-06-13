@@ -80,6 +80,8 @@ for marker in [
     "metric-miss",
     "theme-button",
     "server-status",
+    "sourceBadge",
+    "<th>Source</th>",
 ]:
     assert marker in body, marker
 
@@ -96,6 +98,9 @@ agent_archive_record = {
         "browser_name": "edge",
         "domain": "youtube.com",
         "category": "video-streaming",
+        "source_kind": "s3_sample",
+        "evidence_scope": "metadata_only",
+        "evidence_detail": "Sampled from S3 archive metadata for cloud admin rendering.",
         "visit_count": "3",
         "youtube_study_match": "false",
         "stored_url_mode": "domain_only"
@@ -106,6 +111,9 @@ assert row["browser"] == "edge", row
 assert row["domain"] == "youtube.com", row
 assert row["study_safe"] is False, row
 assert row["visit_count"] == 3, row
+assert row["source_kind"] == "s3_sample", row
+assert row["evidence_scope"] == "metadata_only", row
+assert row["evidence_detail"], row
 
 study_record = dict(agent_archive_record)
 study_record["Metadata"] = dict(agent_archive_record["Metadata"])

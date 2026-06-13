@@ -11,12 +11,16 @@ It is deployed with AWS SAM as a public Lambda Function URL:
   percentages in the UI.
 - The UI includes a source selector for either Lambda/S3 or a browser-side
   localhost backend such as `http://127.0.0.1:18080`.
+- Browser rows include provenance fields: `source_kind`, `evidence_scope`,
+  and `evidence_detail`. S3 sampled rows are labeled as `s3_sample` so cloud
+  archive evidence is not confused with live local telemetry.
 
 Run locally:
 
 ```powershell
 python ./devctl.py status
 python ./devctl.py server restart
+python ./devctl.py test live
 python ./devctl.py test phase69
 ```
 

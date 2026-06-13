@@ -1310,6 +1310,7 @@ func (m *Memory) TenantAlertInbox(_ context.Context, tenantID string) (model.Ten
 		deviceEvents = append(deviceEvents, m.anomalyEvents[device.DeviceID]...)
 		deviceEvents = append(deviceEvents, m.tamperEvents[device.DeviceID]...)
 		for _, event := range deviceEvents {
+			event = withRiskEvidenceDefaults(event)
 			proof := alertDeliveryProof(deliveriesByEvent[event.ID])
 			events = append(events, model.TenantAlertInboxItem{
 				ID:             strings.Join([]string{tenantID, device.DeviceID, event.ID}, ":"),
@@ -1325,6 +1326,9 @@ func (m *Memory) TenantAlertInbox(_ context.Context, tenantID string) (model.Ten
 				Detail:         event.Reason,
 				Recommendation: event.Recommendation,
 				Source:         event.Source,
+				SourceKind:     event.SourceKind,
+				EvidenceScope:  event.EvidenceScope,
+				EvidenceDetail: event.EvidenceDetail,
 				DeliveryState:  alertDeliveryState(proof),
 				DeliveryProof:  proof,
 				NextAction:     alertInboxNextAction(event, proof),
@@ -1732,6 +1736,7 @@ func normalizeDeliveryTimelineFilter(filter model.TenantDeliveryTimelineFilter) 
 func riskFeedItems(tenantID string, device model.Device, events []model.RiskEvent) []model.TenantActivityFeedItem {
 	items := make([]model.TenantActivityFeedItem, 0, len(events))
 	for _, event := range events {
+		event = withRiskEvidenceDefaults(event)
 		title := fallbackString(event.AppName, fallbackString(event.Domain, fallbackString(event.ResourceLabel, event.Category)))
 		items = append(items, model.TenantActivityFeedItem{
 			ID:             event.ID,
@@ -1747,6 +1752,9 @@ func riskFeedItems(tenantID string, device model.Device, events []model.RiskEven
 			Detail:         event.Reason,
 			Recommendation: event.Recommendation,
 			Source:         event.Source,
+			SourceKind:     event.SourceKind,
+			EvidenceScope:  event.EvidenceScope,
+			EvidenceDetail: event.EvidenceDetail,
 			ObservedAt:     event.ObservedAt,
 		})
 	}
@@ -1754,6 +1762,7 @@ func riskFeedItems(tenantID string, device model.Device, events []model.RiskEven
 }
 
 func deliveryTimelineItem(tenantID string, device model.Device, delivery model.AlertDelivery) model.TenantDeliveryTimelineItem {
+	delivery = withDeliveryEvidenceDefaults(delivery)
 	return model.TenantDeliveryTimelineItem{
 		ID:               delivery.ID,
 		TenantID:         tenantID,
@@ -1763,6 +1772,9 @@ func deliveryTimelineItem(tenantID string, device model.Device, delivery model.A
 		Channel:          delivery.Channel,
 		Provider:         delivery.Provider,
 		Recipient:        delivery.Recipient,
+		SourceKind:       delivery.SourceKind,
+		EvidenceScope:    delivery.EvidenceScope,
+		EvidenceDetail:   delivery.EvidenceDetail,
 		Status:           delivery.Status,
 		Attempts:         delivery.Attempts,
 		Summary:          delivery.Summary,
@@ -1861,22 +1873,26 @@ func deliveryTimelineSummary(items []model.TenantDeliveryTimelineItem, sourceHos
 func deliveryFeedItems(tenantID string, device model.Device, deliveries []model.AlertDelivery) []model.TenantActivityFeedItem {
 	items := make([]model.TenantActivityFeedItem, 0, len(deliveries))
 	for _, delivery := range deliveries {
+		delivery = withDeliveryEvidenceDefaults(delivery)
 		items = append(items, model.TenantActivityFeedItem{
-			ID:         delivery.ID,
-			TenantID:   tenantID,
-			DeviceID:   device.DeviceID,
-			HostName:   device.HostName,
-			Kind:       constants.ActivityFeedKindDelivery,
-			Type:       constants.ActivityFeedKindDelivery,
-			Channel:    delivery.Channel,
-			Status:     delivery.Status,
-			Title:      fmt.Sprintf("%s delivery %s", titleWord(delivery.Channel), delivery.Status),
-			Detail:     fallbackString(delivery.LastError, delivery.Summary),
-			Source:     delivery.Provider,
-			Provider:   delivery.Provider,
-			Recipient:  delivery.Recipient,
-			EventID:    delivery.EventID,
-			ObservedAt: delivery.LastAttemptAt,
+			ID:             delivery.ID,
+			TenantID:       tenantID,
+			DeviceID:       device.DeviceID,
+			HostName:       device.HostName,
+			Kind:           constants.ActivityFeedKindDelivery,
+			Type:           constants.ActivityFeedKindDelivery,
+			Channel:        delivery.Channel,
+			Status:         delivery.Status,
+			Title:          fmt.Sprintf("%s delivery %s", titleWord(delivery.Channel), delivery.Status),
+			Detail:         fallbackString(delivery.LastError, delivery.Summary),
+			Source:         delivery.Provider,
+			SourceKind:     delivery.SourceKind,
+			EvidenceScope:  delivery.EvidenceScope,
+			EvidenceDetail: delivery.EvidenceDetail,
+			Provider:       delivery.Provider,
+			Recipient:      delivery.Recipient,
+			EventID:        delivery.EventID,
+			ObservedAt:     delivery.LastAttemptAt,
 		})
 	}
 	return items
@@ -1887,18 +1903,21 @@ func telemetryFeedItems(tenantID string, device model.Device, events []model.Tel
 	for _, event := range events {
 		title := fallbackString(event.AppName, fallbackString(event.Type, "metadata event"))
 		items = append(items, model.TenantActivityFeedItem{
-			ID:         event.ID,
-			TenantID:   tenantID,
-			DeviceID:   device.DeviceID,
-			HostName:   device.HostName,
-			Kind:       constants.ActivityFeedKindTelemetry,
-			Type:       event.Type,
-			Category:   event.Metadata["category"],
-			Status:     constants.StatusOK,
-			Title:      title,
-			Detail:     fmt.Sprintf("%s metadata with %d redacted fields", event.Source, len(event.Metadata)),
-			Source:     event.Source,
-			ObservedAt: event.ObservedAt,
+			ID:             event.ID,
+			TenantID:       tenantID,
+			DeviceID:       device.DeviceID,
+			HostName:       device.HostName,
+			Kind:           constants.ActivityFeedKindTelemetry,
+			Type:           event.Type,
+			Category:       event.Metadata["category"],
+			Status:         constants.StatusOK,
+			Title:          title,
+			Detail:         fmt.Sprintf("%s metadata with %d redacted fields", event.Source, len(event.Metadata)),
+			Source:         event.Source,
+			SourceKind:     telemetrySourceKind(event),
+			EvidenceScope:  telemetryEvidenceScope(event),
+			EvidenceDetail: telemetryEvidenceDetail(event),
+			ObservedAt:     event.ObservedAt,
 		})
 	}
 	return items
@@ -1936,6 +1955,9 @@ func browserActivityItems(tenantID string, device model.Device, events []model.T
 			YouTubeStudyMatch:    youtubeStudyMatch,
 			Status:               browserActivityStatus(domain, category, studySafe),
 			Signal:               browserActivitySignal(domain, category, studySafe),
+			SourceKind:           telemetrySourceKind(event),
+			EvidenceScope:        telemetryEvidenceScope(event),
+			EvidenceDetail:       telemetryEvidenceDetail(event),
 			Recommendation:       browserActivityRecommendation(domain, category, studySafe),
 			NotificationChannels: append([]string(nil), channels...),
 			ObservedAt:           event.ObservedAt,
@@ -1943,6 +1965,36 @@ func browserActivityItems(tenantID string, device model.Device, events []model.T
 		items = append(items, item)
 	}
 	return items
+}
+
+func telemetrySourceKind(event model.TelemetryEvent) string {
+	if value := strings.TrimSpace(event.Metadata[constants.BrowserMetadataSourceKind]); value != "" {
+		return value
+	}
+	if strings.Contains(strings.ToLower(event.ID), "browser-seed") {
+		return constants.EvidenceSourceDemoSeed
+	}
+	return constants.EvidenceSourceLiveIngest
+}
+
+func telemetryEvidenceScope(event model.TelemetryEvent) string {
+	if value := strings.TrimSpace(event.Metadata[constants.BrowserMetadataEvidenceScope]); value != "" {
+		return value
+	}
+	if telemetrySourceKind(event) == constants.EvidenceSourceDemoSeed {
+		return constants.EvidenceScopeDemo
+	}
+	return constants.EvidenceScopeLive
+}
+
+func telemetryEvidenceDetail(event model.TelemetryEvent) string {
+	if value := strings.TrimSpace(event.Metadata[constants.BrowserMetadataEvidenceDetail]); value != "" {
+		return value
+	}
+	if telemetrySourceKind(event) == constants.EvidenceSourceDemoSeed {
+		return constants.EvidenceDetailDemoBrowser
+	}
+	return constants.EvidenceDetailLiveTelemetry
 }
 
 func isBrowserTelemetryEvent(event model.TelemetryEvent) bool {
@@ -3299,6 +3351,9 @@ func (m *Memory) seedDashboardForDeviceLocked(device model.Device) {
 				Severity:       constants.SeverityHigh,
 				Category:       constants.RiskCategoryMediaPlayback,
 				Source:         constants.RiskSourceProcess,
+				SourceKind:     constants.EvidenceSourceDemoSeed,
+				EvidenceScope:  constants.EvidenceScopeDemo,
+				EvidenceDetail: constants.EvidenceDetailDemoRisk,
 				AppName:        "VLC media player",
 				ResourceLabel:  "sample-movie-file.mkv",
 				Reason:         "Entertainment media playback during study policy hours.",
@@ -3313,6 +3368,9 @@ func (m *Memory) seedDashboardForDeviceLocked(device model.Device) {
 				Severity:       constants.SeverityMedium,
 				Category:       constants.RiskCategoryNonStudyYouTube,
 				Source:         constants.RiskSourceBrowser,
+				SourceKind:     constants.EvidenceSourceDemoSeed,
+				EvidenceScope:  constants.EvidenceScopeDemo,
+				EvidenceDetail: constants.EvidenceDetailDemoRisk,
 				Domain:         "youtube.com",
 				ResourceLabel:  "non-study video category",
 				Reason:         "YouTube activity was categorized outside coding, math, system design, or coursework.",
@@ -3332,6 +3390,9 @@ func (m *Memory) seedDashboardForDeviceLocked(device model.Device) {
 				Severity:       constants.SeverityMedium,
 				Category:       constants.RiskCategoryRiskySoftware,
 				Source:         constants.RiskSourceProcess,
+				SourceKind:     constants.EvidenceSourceDemoSeed,
+				EvidenceScope:  constants.EvidenceScopeDemo,
+				EvidenceDetail: constants.EvidenceDetailDemoRisk,
 				AppName:        "Unknown installer",
 				ResourceLabel:  "Downloads installer source",
 				Reason:         "New executable activity appeared from a downloads location.",
@@ -3346,6 +3407,9 @@ func (m *Memory) seedDashboardForDeviceLocked(device model.Device) {
 				Severity:       constants.SeverityLow,
 				Category:       constants.RiskCategoryProductivityShift,
 				Source:         constants.RiskSourceAgent,
+				SourceKind:     constants.EvidenceSourceDemoSeed,
+				EvidenceScope:  constants.EvidenceScopeDemo,
+				EvidenceDetail: constants.EvidenceDetailDemoRisk,
 				ResourceLabel:  "late-night usage pattern",
 				Reason:         "Entertainment minutes increased compared with the study baseline.",
 				Recommendation: "Use weekly AI report thresholds before escalating low severity drift.",
@@ -3364,6 +3428,9 @@ func (m *Memory) seedDashboardForDeviceLocked(device model.Device) {
 				Severity:       constants.SeverityLow,
 				Category:       constants.RiskCategoryArchiveHealth,
 				Source:         constants.RiskSourceArchive,
+				SourceKind:     constants.EvidenceSourceDemoSeed,
+				EvidenceScope:  constants.EvidenceScopeDemo,
+				EvidenceDetail: constants.EvidenceDetailDemoRisk,
 				ResourceLabel:  "S3 upload backlog",
 				Reason:         "Two archive batches are waiting for the next online upload window.",
 				Recommendation: "Keep retry visible; alert only if backlog age crosses policy threshold.",
@@ -3377,42 +3444,51 @@ func (m *Memory) seedDashboardForDeviceLocked(device model.Device) {
 	if !deliveriesOK {
 		m.alertDeliveries[device.DeviceID] = []model.AlertDelivery{
 			{
-				ID:            deliveryID(device.DeviceID, constants.DeliveryChannelEmail, 1),
-				DeviceID:      device.DeviceID,
-				EventID:       policyMediaID,
-				Channel:       constants.DeliveryChannelEmail,
-				Recipient:     "varathu09@gmail.com",
-				Provider:      constants.DeliveryProviderSMTP,
-				Status:        constants.DeliveryStatusDelivered,
-				Attempts:      1,
-				LastAttemptAt: base.Add(-36 * time.Minute),
-				Summary:       "High severity media playback alert delivered by email.",
+				ID:             deliveryID(device.DeviceID, constants.DeliveryChannelEmail, 1),
+				DeviceID:       device.DeviceID,
+				EventID:        policyMediaID,
+				Channel:        constants.DeliveryChannelEmail,
+				Recipient:      "varathu09@gmail.com",
+				Provider:       constants.DeliveryProviderSMTP,
+				SourceKind:     constants.EvidenceSourceDemoSeed,
+				EvidenceScope:  constants.EvidenceScopeDeliveryProof,
+				EvidenceDetail: constants.EvidenceDetailDemoDelivery,
+				Status:         constants.DeliveryStatusDelivered,
+				Attempts:       1,
+				LastAttemptAt:  base.Add(-36 * time.Minute),
+				Summary:        "Demo email proof row only; configure SMTP or SES for a real email send.",
 			},
 			{
-				ID:            deliveryID(device.DeviceID, constants.DeliveryChannelPush, 1),
-				DeviceID:      device.DeviceID,
-				EventID:       policyYouTubeID,
-				Channel:       constants.DeliveryChannelPush,
-				Recipient:     "parent mobile push subscription",
-				Provider:      constants.DeliveryProviderWebPush,
-				Status:        constants.DeliveryStatusRetrying,
-				Attempts:      2,
-				LastAttemptAt: base.Add(-5 * time.Minute),
-				NextRetryAt:   &retryAt,
-				LastError:     "push endpoint unavailable during demo retry window",
-				Summary:       "Non-study YouTube push alert is retrying.",
+				ID:             deliveryID(device.DeviceID, constants.DeliveryChannelPush, 1),
+				DeviceID:       device.DeviceID,
+				EventID:        policyYouTubeID,
+				Channel:        constants.DeliveryChannelPush,
+				Recipient:      "parent mobile push subscription",
+				Provider:       constants.DeliveryProviderWebPush,
+				SourceKind:     constants.EvidenceSourceDemoSeed,
+				EvidenceScope:  constants.EvidenceScopeDeliveryProof,
+				EvidenceDetail: constants.EvidenceDetailDemoDelivery,
+				Status:         constants.DeliveryStatusRetrying,
+				Attempts:       2,
+				LastAttemptAt:  base.Add(-5 * time.Minute),
+				NextRetryAt:    &retryAt,
+				LastError:      "push endpoint unavailable during demo retry window",
+				Summary:        "Non-study YouTube push alert is retrying.",
 			},
 			{
-				ID:            deliveryID(device.DeviceID, constants.DeliveryChannelDashboard, 1),
-				DeviceID:      device.DeviceID,
-				EventID:       tamperBacklogID,
-				Channel:       constants.DeliveryChannelDashboard,
-				Recipient:     "local dashboard",
-				Provider:      constants.DeliveryProviderLocalFeed,
-				Status:        constants.DeliveryStatusDelivered,
-				Attempts:      1,
-				LastAttemptAt: base.Add(-20 * time.Minute),
-				Summary:       "Archive backlog trust event is visible in dashboard.",
+				ID:             deliveryID(device.DeviceID, constants.DeliveryChannelDashboard, 1),
+				DeviceID:       device.DeviceID,
+				EventID:        tamperBacklogID,
+				Channel:        constants.DeliveryChannelDashboard,
+				Recipient:      "local dashboard",
+				Provider:       constants.DeliveryProviderLocalFeed,
+				SourceKind:     constants.EvidenceSourceDemoSeed,
+				EvidenceScope:  constants.EvidenceScopeDeliveryProof,
+				EvidenceDetail: constants.EvidenceDetailDemoDelivery,
+				Status:         constants.DeliveryStatusDelivered,
+				Attempts:       1,
+				LastAttemptAt:  base.Add(-20 * time.Minute),
+				Summary:        "Demo dashboard proof row; archive backlog trust event is visible locally.",
 			},
 		}
 	}
@@ -3465,6 +3541,9 @@ func (m *Memory) seedBrowserTelemetryForDeviceLocked(device model.Device) {
 				constants.BrowserMetadataBrowserName:       constants.BrowserNameChrome,
 				constants.BrowserMetadataDomain:            "docs.python.org",
 				constants.BrowserMetadataCategory:          constants.BrowserCategoryStudy,
+				constants.BrowserMetadataEvidenceDetail:    constants.EvidenceDetailDemoBrowser,
+				constants.BrowserMetadataEvidenceScope:     constants.EvidenceScopeDemo,
+				constants.BrowserMetadataSourceKind:        constants.EvidenceSourceDemoSeed,
 				constants.BrowserMetadataURLMode:           "domain_only",
 				constants.BrowserMetadataStoredURLMode:     "domain_only",
 				constants.BrowserMetadataVisitCount:        "7",
@@ -3484,6 +3563,9 @@ func (m *Memory) seedBrowserTelemetryForDeviceLocked(device model.Device) {
 				constants.BrowserMetadataBrowserName:       constants.BrowserNameEdge,
 				constants.BrowserMetadataDomain:            "youtube.com",
 				constants.BrowserMetadataCategory:          constants.BrowserCategoryVideoStreaming,
+				constants.BrowserMetadataEvidenceDetail:    constants.EvidenceDetailDemoBrowser,
+				constants.BrowserMetadataEvidenceScope:     constants.EvidenceScopeDemo,
+				constants.BrowserMetadataSourceKind:        constants.EvidenceSourceDemoSeed,
 				constants.BrowserMetadataURLMode:           "domain_only",
 				constants.BrowserMetadataStoredURLMode:     "domain_only",
 				constants.BrowserMetadataVisitCount:        "3",
@@ -3503,6 +3585,9 @@ func (m *Memory) seedBrowserTelemetryForDeviceLocked(device model.Device) {
 				constants.BrowserMetadataBrowserName:       constants.BrowserNameBrave,
 				constants.BrowserMetadataDomain:            "github.com",
 				constants.BrowserMetadataCategory:          constants.BrowserCategoryStudy,
+				constants.BrowserMetadataEvidenceDetail:    constants.EvidenceDetailDemoBrowser,
+				constants.BrowserMetadataEvidenceScope:     constants.EvidenceScopeDemo,
+				constants.BrowserMetadataSourceKind:        constants.EvidenceSourceDemoSeed,
 				constants.BrowserMetadataURLMode:           "domain_only",
 				constants.BrowserMetadataStoredURLMode:     "domain_only",
 				constants.BrowserMetadataVisitCount:        "5",
@@ -3522,6 +3607,9 @@ func (m *Memory) seedBrowserTelemetryForDeviceLocked(device model.Device) {
 				constants.BrowserMetadataBrowserName:       constants.BrowserNameChrome,
 				constants.BrowserMetadataDomain:            "instagram.com",
 				constants.BrowserMetadataCategory:          constants.BrowserCategorySocialMedia,
+				constants.BrowserMetadataEvidenceDetail:    constants.EvidenceDetailDemoBrowser,
+				constants.BrowserMetadataEvidenceScope:     constants.EvidenceScopeDemo,
+				constants.BrowserMetadataSourceKind:        constants.EvidenceSourceDemoSeed,
 				constants.BrowserMetadataURLMode:           "domain_only",
 				constants.BrowserMetadataStoredURLMode:     "domain_only",
 				constants.BrowserMetadataVisitCount:        "2",
@@ -3543,6 +3631,9 @@ func browserSeedTelemetryID(deviceID string, browser string, sequence int) strin
 
 func cloneRiskEvents(events []model.RiskEvent) []model.RiskEvent {
 	cloned := append([]model.RiskEvent(nil), events...)
+	for index := range cloned {
+		cloned[index] = withRiskEvidenceDefaults(cloned[index])
+	}
 	sort.Slice(cloned, func(i, j int) bool {
 		return cloned[i].ObservedAt.After(cloned[j].ObservedAt)
 	})
@@ -3551,10 +3642,39 @@ func cloneRiskEvents(events []model.RiskEvent) []model.RiskEvent {
 
 func cloneAlertDeliveries(deliveries []model.AlertDelivery) []model.AlertDelivery {
 	cloned := append([]model.AlertDelivery(nil), deliveries...)
+	for index := range cloned {
+		cloned[index] = withDeliveryEvidenceDefaults(cloned[index])
+	}
 	sort.Slice(cloned, func(i, j int) bool {
 		return cloned[i].LastAttemptAt.After(cloned[j].LastAttemptAt)
 	})
 	return cloned
+}
+
+func withRiskEvidenceDefaults(event model.RiskEvent) model.RiskEvent {
+	if strings.TrimSpace(event.SourceKind) == "" {
+		event.SourceKind = constants.EvidenceSourceDemoSeed
+	}
+	if strings.TrimSpace(event.EvidenceScope) == "" {
+		event.EvidenceScope = constants.EvidenceScopeDemo
+	}
+	if strings.TrimSpace(event.EvidenceDetail) == "" {
+		event.EvidenceDetail = constants.EvidenceDetailDemoRisk
+	}
+	return event
+}
+
+func withDeliveryEvidenceDefaults(delivery model.AlertDelivery) model.AlertDelivery {
+	if strings.TrimSpace(delivery.SourceKind) == "" {
+		delivery.SourceKind = constants.EvidenceSourceDemoSeed
+	}
+	if strings.TrimSpace(delivery.EvidenceScope) == "" {
+		delivery.EvidenceScope = constants.EvidenceScopeDeliveryProof
+	}
+	if strings.TrimSpace(delivery.EvidenceDetail) == "" {
+		delivery.EvidenceDetail = constants.EvidenceDetailDemoDelivery
+	}
+	return delivery
 }
 
 func riskID(deviceID string, riskType string, sequence int) string {
@@ -3734,6 +3854,15 @@ func normalizeTelemetryEvent(evt model.TelemetryEvent, tenantID string, device m
 			continue
 		}
 		metadata[cleanKey] = strings.TrimSpace(value)
+	}
+	if strings.TrimSpace(metadata[constants.BrowserMetadataSourceKind]) == "" {
+		metadata[constants.BrowserMetadataSourceKind] = constants.EvidenceSourceLiveIngest
+	}
+	if strings.TrimSpace(metadata[constants.BrowserMetadataEvidenceScope]) == "" {
+		metadata[constants.BrowserMetadataEvidenceScope] = constants.EvidenceScopeLive
+	}
+	if strings.TrimSpace(metadata[constants.BrowserMetadataEvidenceDetail]) == "" {
+		metadata[constants.BrowserMetadataEvidenceDetail] = constants.EvidenceDetailLiveTelemetry
 	}
 	evt.Metadata = metadata
 	return evt
@@ -4759,15 +4888,19 @@ func alertDeliveryProof(deliveries []model.AlertDelivery) []model.TenantAlertDel
 		return deliveries[i].LastAttemptAt.After(deliveries[j].LastAttemptAt)
 	})
 	for _, delivery := range deliveries {
+		delivery = withDeliveryEvidenceDefaults(delivery)
 		proof = append(proof, model.TenantAlertDeliveryProof{
-			Channel:       delivery.Channel,
-			Status:        delivery.Status,
-			Provider:      delivery.Provider,
-			Recipient:     delivery.Recipient,
-			Attempts:      delivery.Attempts,
-			LastAttemptAt: delivery.LastAttemptAt,
-			NextRetryAt:   delivery.NextRetryAt,
-			Proof:         firstNonEmpty(delivery.LastError, delivery.Summary, "Delivery attempt is visible in TraceDeck."),
+			Channel:        delivery.Channel,
+			Status:         delivery.Status,
+			Provider:       delivery.Provider,
+			Recipient:      delivery.Recipient,
+			Attempts:       delivery.Attempts,
+			LastAttemptAt:  delivery.LastAttemptAt,
+			NextRetryAt:    delivery.NextRetryAt,
+			Proof:          firstNonEmpty(delivery.LastError, delivery.Summary, "Delivery attempt is visible in TraceDeck."),
+			SourceKind:     delivery.SourceKind,
+			EvidenceScope:  delivery.EvidenceScope,
+			EvidenceDetail: delivery.EvidenceDetail,
 		})
 	}
 	return proof

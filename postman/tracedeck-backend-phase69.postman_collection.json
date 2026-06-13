@@ -41,6 +41,7 @@
               "  pm.expect(html).to.include('theme-toggle-button');",
               "  pm.expect(html).to.include('server-status-light');",
               "  pm.expect(html).to.include('dashboard-page-nav');",
+              "  pm.expect(html).to.include('sourceBadge');",
               "  pm.expect(html).to.include('data-page-target=\"notifications\"');",
               "  pm.expect(html).to.include('data-page-target=\"hosts\"');",
               "  pm.expect(html).to.include('browser-activity-button');",
@@ -69,6 +70,7 @@
               "  pm.expect(html).to.include('theme-toggle-button');",
               "  pm.expect(html).to.include('server-status-light');",
               "  pm.expect(html).to.include('Browser Domain Activity');",
+              "  pm.expect(html).to.include('<th>Source</th>');",
               "  pm.expect(html).to.include('metadata-only guard');",
               "});"
             ]
@@ -100,6 +102,9 @@
               "  pm.expect(body.hosts.length).to.be.at.least(1);",
               "  pm.expect(body.browsers.length).to.be.at.least(3);",
               "  pm.expect(body.items.length).to.be.at.least(3);",
+              "  pm.expect(body.items[0].source_kind).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.items[0].evidence_scope).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.items[0].evidence_detail).to.be.a('string').and.not.empty;",
               "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
               "  const serialized = JSON.stringify(body).toLowerCase();",
               "  ['smtp_password', 'provider_secret', 'push_endpoint', 'screenshot_bytes', 'raw_url', 'page_title', 'cookie_value', 'token_value', 'password_value', 'keylogger'].forEach(function (marker) {",

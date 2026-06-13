@@ -5356,6 +5356,12 @@
       return event.app_name || event.domain || event.resource_label || event.source || "-";
     }
 
+    function sourceBadge(item) {
+      const source = String(item.source_kind || "source_pending").replace(/_/g, " ");
+      const scope = String(item.evidence_scope || "scope pending").replace(/_/g, " ");
+      return `<span class="pill">${escapeHTML(source)}</span> <span class="pill">${escapeHTML(scope)}</span>`;
+    }
+
     function renderHostOptions() {
       const select = document.getElementById("host-select");
       if (state.devices.length === 0) {
@@ -10465,7 +10471,7 @@
           <div>
             <h3>${escapeHTML(rowDetail(event))}</h3>
             <p class="muted">${escapeHTML(event.reason)}</p>
-            <p>${badge(event.severity)} ${badge(event.type)} <span class="pill">${escapeHTML(formatDate(event.observed_at))}</span></p>
+            <p>${badge(event.severity)} ${badge(event.type)} ${sourceBadge(event)} <span class="pill">${escapeHTML(formatDate(event.observed_at))}</span></p>
           </div>
         </div>
       `).join("");
@@ -10482,6 +10488,7 @@
           ${columns.map((column) => {
             const value = column === "source" ? rowDetail(event) : event[column];
             if (column === "severity" || column === "status") return `<td>${badge(value)}</td>`;
+            if (column === "source") return `<td><strong>${escapeHTML(value)}</strong><br>${sourceBadge(event)}<br><span class="muted">${escapeHTML(event.evidence_detail || "")}</span></td>`;
             return `<td>${escapeHTML(value)}</td>`;
           }).join("")}
         </tr>
@@ -10499,7 +10506,7 @@
       target.innerHTML = items.map((event) => `
         <tr>
           <td>${badge(event.severity)}</td>
-          <td><strong>${escapeHTML(rowDetail(event))}</strong><br><span class="muted">${escapeHTML(event.reason)}</span></td>
+          <td><strong>${escapeHTML(rowDetail(event))}</strong><br><span class="muted">${escapeHTML(event.reason)}</span><br>${sourceBadge(event)}</td>
           <td>${escapeHTML(event.category)}</td>
           <td>${escapeHTML(event.recommendation)}</td>
           <td>${badge(event.status)}</td>
@@ -10517,7 +10524,7 @@
         <tr>
           <td>${badge(event.severity)}</td>
           <td>${escapeHTML(event.category)}</td>
-          <td>${escapeHTML(rowDetail(event))}<br><span class="muted">${escapeHTML(event.reason)}</span></td>
+          <td>${escapeHTML(rowDetail(event))}<br><span class="muted">${escapeHTML(event.reason)}</span><br>${sourceBadge(event)}</td>
           <td>${escapeHTML(event.recommendation)}</td>
           <td>${escapeHTML(formatDate(event.observed_at))}</td>
         </tr>
@@ -10532,9 +10539,9 @@
       }
       target.innerHTML = items.map((item) => `
         <tr>
-          <td><strong>${escapeHTML(item.channel)}</strong><br><span class="muted">${escapeHTML(item.provider)}</span></td>
+          <td><strong>${escapeHTML(item.channel)}</strong><br><span class="muted">${escapeHTML(item.provider)}</span><br>${sourceBadge(item)}</td>
           <td>${badge(item.status)}<br><span class="muted">${escapeHTML(formatDate(item.last_attempt_at))}</span></td>
-          <td>${escapeHTML(item.recipient)}<br><span class="muted">${escapeHTML(item.summary)}</span></td>
+          <td>${escapeHTML(item.recipient)}<br><span class="muted">${escapeHTML(item.summary)}</span><br><span class="muted">${escapeHTML(item.evidence_detail || "")}</span></td>
           <td>${escapeHTML(item.attempts)}</td>
         </tr>
       `).join("");

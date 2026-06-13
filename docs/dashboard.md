@@ -107,6 +107,16 @@ customer-success-packet API. It gives buyers and admins one review surface for
 anomaly proof, mail delivery, push notification evidence, weekly report and S3
 archive readiness, package fit, provider rehearsal, privacy assurances,
 objection answers, and owner actions.
+Phase 69/72 hardening adds visible source provenance on local and cloud
+dashboard rows. Demo-seeded risk and delivery rows show `demo_seed`, live
+browser telemetry shows `live_ingested`, and Lambda S3 rows show `s3_sample`.
+This prevents demo proof from being mistaken for a real SMTP/web-push send.
+
+To check the currently running local dashboard:
+
+```powershell
+python ./devctl.py test live
+```
 
 The dashboard reads the base backend endpoints:
 

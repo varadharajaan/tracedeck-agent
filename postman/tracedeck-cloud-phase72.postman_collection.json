@@ -45,6 +45,8 @@
               "  pm.expect(html).to.include('Localhost 18080');",
               "  pm.expect(html).to.include('metric-hit');",
               "  pm.expect(html).to.include('metric-miss');",
+              "  pm.expect(html).to.include('<th>Source</th>');",
+              "  pm.expect(html).to.include('sourceBadge');",
               "  pm.expect(html).to.include('server-status');",
               "  pm.expect(html).to.include('theme-button');",
               "});"
@@ -73,6 +75,9 @@
               "  pm.expect(body.summary.study_safe).to.be.at.least(2);",
               "  pm.expect(body.summary.non_study_youtube).to.be.at.least(1);",
               "  pm.expect(body.browser_rows.length).to.be.at.least(5);",
+              "  pm.expect(body.browser_rows[0].source_kind).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.browser_rows[0].evidence_scope).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.browser_rows[0].evidence_detail).to.be.a('string').and.not.empty;",
               "  const browsers = body.browsers.map(function (item) { return item.label; });",
               "  ['chrome', 'edge', 'brave'].forEach(function (name) { pm.expect(browsers).to.include(name); });",
               "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
