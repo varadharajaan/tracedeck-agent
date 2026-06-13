@@ -396,3 +396,12 @@ dashboard data is labelled `demo_only`; retrying web push is labelled as not
 screen-visible; buyer-ready proof requires provider-confirmed email, provider-
 confirmed push, and dashboard fallback. Use `python devctl.py test phase75` to
 run the full local verifier.
+
+Phase 76 revamps the embedded dashboard and Browser Activity Viewer UI for a
+more monetisable product surface. It removes pseudo-letter toolbar markers,
+tightens light and dark theme palettes, improves card hierarchy, wraps chips
+without clipped labels, contains wide tables, and hardens the screenshot-free
+layout contract against horizontal overflow on desktop, tablet, and mobile.
+Use `python devctl.py test phase76` or
+`powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase76.ps1`
+to rerun the full local verifier.

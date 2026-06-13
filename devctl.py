@@ -547,6 +547,14 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase75.ps1"))
     elif target == "verify75":
         run(powershell("./scripts/verify/verify-phase75.ps1"))
+    elif target == "phase76":
+        run(powershell("./scripts/verify/verify-phase76.ps1"))
+    elif target == "smoke76":
+        run(powershell("./scripts/local/smoke-phase76.ps1"))
+    elif target == "newman76":
+        run(powershell("./scripts/local/newman-phase76.ps1"))
+    elif target == "verify76":
+        run(powershell("./scripts/verify/verify-phase76.ps1"))
     else:
         run(powershell("./scripts/local/smoke-phase69.ps1"))
         run(powershell("./scripts/local/newman-phase69.ps1"))
@@ -667,6 +675,7 @@ def main() -> int:
             "phase73",
             "phase74",
             "phase75",
+            "phase76",
             "smoke",
             "newman",
             "verify",
@@ -682,6 +691,9 @@ def main() -> int:
             "smoke75",
             "newman75",
             "verify75",
+            "smoke76",
+            "newman76",
+            "verify76",
             "live",
         ],
         nargs="?",

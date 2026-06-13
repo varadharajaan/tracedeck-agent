@@ -529,6 +529,13 @@ shows cache hit/miss percentages, and can switch the browser-side source to a
 configured local backend such as `http://127.0.0.1:18080` when an admin is on
 the machine.
 
+Phase 76 revamps the embedded dashboard and Browser Activity Viewer visual
+system. The dashboard keeps the existing typed data and multi-page shell but
+uses a cleaner product palette, stronger hierarchy for focus panels, quieter
+KPI cards, wrapped chips, contained tables, polished light/dark modes, and no
+visible pseudo-letter toolbar markers. The screenshot-free layout contract now
+guards this shell against horizontal overflow on desktop, tablet, and mobile.
+
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
 paid customer onboarding workflows.

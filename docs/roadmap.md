@@ -314,3 +314,9 @@
     provider-confirmed, dry-run, dashboard-visible, demo-only, retrying, failed,
     disabled, and pending-provider states, runtime doctor assertions,
     Postman/Newman coverage, docs, and full local verification.
+76. Phase 76: dashboard UI revamp. Product-grade visual refresh for the
+    embedded dashboard and Browser Activity Viewer with clearer light/dark
+    palettes, no pseudo-letter toolbar markers, wrapped chips, contained
+    tables, improved card hierarchy, screenshot-free desktop/tablet/mobile
+    layout guard, Postman/Newman coverage, docs, `devctl.py test phase76`, and
+    full local verification.
