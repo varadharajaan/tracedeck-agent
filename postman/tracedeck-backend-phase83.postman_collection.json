@@ -1,0 +1,125 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 83",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ingest Agent Heartbeat",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": "{{baseUrl}}/api/v1/devices/newman-heartbeat-device/telemetry-events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"tenant_id\":\"family-varadha\",\"device_id\":\"newman-heartbeat-device\",\"host_name\":\"newman-heartbeat-host\",\"profile\":\"ai-btech-student\",\"os_name\":\"windows\",\"events\":[{\"id\":\"local-event-83\",\"type\":\"agent.health.heartbeat\",\"source\":\"collector.agent.heartbeat\",\"observed_at\":\"2026-06-14T10:00:00Z\",\"app_name\":\"tracedeck-agent\",\"metadata\":{\"profile\":\"ai-btech-student\",\"operating_system\":\"windows\",\"agent_healthy\":\"true\",\"agent_version\":\"0.1.0-dev\",\"collection_mode\":\"once\",\"collection_interval\":\"10m\",\"archive_enabled\":\"false\",\"archive_due\":\"false\",\"backend_sync_enabled\":\"true\",\"alerts_enabled\":\"false\"}}]}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('heartbeat ingest is accepted', function () {",
+              "  pm.response.to.have.status(202);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.accepted_events).to.eql(1);",
+              "  pm.expect(body.stored_events).to.be.at.least(1);",
+              "  pm.expect(body.backend_visible_host).to.eql(true);",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Heartbeat Telemetry Status",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/newman-heartbeat-device/telemetry-status"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status counts heartbeat type and source', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.counts_by_type['agent.health.heartbeat']).to.eql(1);",
+              "  pm.expect(body.counts_by_source['collector.agent.heartbeat']).to.eql(1);",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  const heartbeat = body.recent_events.find((event) => event.type === 'agent.health.heartbeat');",
+              "  pm.expect(heartbeat).to.be.an('object');",
+              "  pm.expect(heartbeat.metadata.agent_healthy).to.eql('true');",
+              "  pm.expect(heartbeat.metadata.backend_sync_enabled).to.eql('true');",
+              "  pm.expect(heartbeat.metadata.collection_mode).to.eql('once');",
+              "  ['password', 'screenshot', 'raw_url', 'page_title', 'cookie', 'token', 'keylog'].forEach(function (key) {",
+              "    pm.expect(heartbeat.metadata).to.not.have.property(key);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Sync Health Includes Heartbeat Host",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/sync-health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('sync health surfaces heartbeat host proof', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.backend_visible).to.eql(true);",
+              "  pm.expect(body.offline_replay_ready).to.eql(true);",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  const device = body.devices.find((item) => item.device_id === 'newman-heartbeat-device');",
+              "  pm.expect(device).to.be.an('object');",
+              "  pm.expect(device.backend_visible).to.eql(true);",
+              "  pm.expect(device.health_events).to.be.at.least(1);",
+              "  pm.expect(device.recent_event_ids).to.include('local-event-83');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

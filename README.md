@@ -154,6 +154,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase50.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-service-manifests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-windows-task.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase83.ps1
+python ./devctl.py test phase83
 ```
 
 All repeatable setup and verification work is kept under `scripts/`, and script
@@ -442,3 +444,13 @@ palettes are unified, command tiles and badges are larger and less debug-like,
 and the static DOM, Playwright, Lambda visual, and Newman gates reject stale
 `TD`, `Browser{}`, `Center{}`, bracket shortcut, and terse debug copy. Use
 `python devctl.py test phase82` for the full local verifier.
+
+Phase 83 adds an agent heartbeat telemetry event emitted on every collection
+cycle. The event type is `agent.health.heartbeat` from
+`collector.agent.heartbeat`; it records typed readiness metadata such as agent
+version, collection mode, collection interval, archive enabled/due state,
+backend sync enabled state, alerts enabled state, profile, and operating
+system. It is metadata-only and does not collect passwords, screenshots, raw
+URLs, page titles, cookies, tokens, private content, endpoint payloads,
+provider secrets, alert bodies, keylogging, or hidden collection bypasses. Use
+`python devctl.py test phase83` for the full local verifier.

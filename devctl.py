@@ -587,6 +587,14 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase82.ps1"))
     elif target == "verify82":
         run(powershell("./scripts/verify/verify-phase82.ps1"))
+    elif target == "phase83":
+        run(powershell("./scripts/verify/verify-phase83.ps1"))
+    elif target == "smoke83":
+        run(powershell("./scripts/local/smoke-phase83.ps1"))
+    elif target == "newman83":
+        run(powershell("./scripts/local/newman-phase83.ps1"))
+    elif target == "verify83":
+        run(powershell("./scripts/verify/verify-phase83.ps1"))
     elif target == "theme":
         run(powershell("./scripts/local/test-dashboard-theme.ps1", "-BaseUrl", local_url(args.addr)))
     elif target == "visual":
@@ -717,6 +725,8 @@ def main() -> int:
             "phase78",
             "phase80",
             "phase81",
+            "phase82",
+            "phase83",
             "smoke",
             "newman",
             "verify",
@@ -744,6 +754,12 @@ def main() -> int:
             "smoke81",
             "newman81",
             "verify81",
+            "smoke82",
+            "newman82",
+            "verify82",
+            "smoke83",
+            "newman83",
+            "verify83",
             "theme",
             "visual",
             "live",

@@ -11,6 +11,7 @@ import (
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/archive"
 	browsercollector "github.com/varadharajaan/tracedeck-agent/agent/internal/collector/browser"
 	healthcollector "github.com/varadharajaan/tracedeck-agent/agent/internal/collector/health"
+	heartbeatcollector "github.com/varadharajaan/tracedeck-agent/agent/internal/collector/heartbeat"
 	processcollector "github.com/varadharajaan/tracedeck-agent/agent/internal/collector/process"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/config"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/constants"
@@ -52,6 +53,7 @@ type RunResult struct {
 	AlertDelivered   bool
 	BrowserEvents    int
 	HealthEvents     int
+	HeartbeatEvents  int
 	TelemetrySynced  bool
 	TelemetryEvents  int
 	TelemetryBacklog int
@@ -203,6 +205,19 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 	}
 	events = append(events, browserEvents...)
 
+	heartbeatEvents, err := heartbeatcollector.New(platformAdapter, heartbeatcollector.Options{
+		ContinuousMode:     !r.opts.Once,
+		CollectionInterval: r.opts.CollectionInterval,
+		ArchiveEnabled:     r.policy.Archive.Enabled,
+		ArchiveDue:         archiveEnabled,
+		BackendSyncEnabled: r.policy.BackendSync.Enabled,
+		AlertsEnabled:      alertEnabled,
+	}).Collect(ctx, r.policy)
+	if err != nil {
+		return RunResult{}, err
+	}
+	events = append(events, heartbeatEvents...)
+
 	for _, evt := range events {
 		if err := r.store.SaveEvent(ctx, evt); err != nil {
 			return RunResult{}, err
@@ -214,7 +229,14 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 		return RunResult{}, err
 	}
 
-	result := RunResult{Cycles: 1, CollectedEvents: len(events), StoredEvents: total, BrowserEvents: len(browserEvents), HealthEvents: len(healthEvents)}
+	result := RunResult{
+		Cycles:          1,
+		CollectedEvents: len(events),
+		StoredEvents:    total,
+		BrowserEvents:   len(browserEvents),
+		HealthEvents:    len(healthEvents),
+		HeartbeatEvents: len(heartbeatEvents),
+	}
 
 	if r.policy.BackendSync.Enabled {
 		syncOutcome, err := r.syncBackendTelemetry(ctx, platformAdapter)
@@ -286,6 +308,7 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 		"process_events", len(processEvents),
 		"health_events", len(healthEvents),
 		"browser_events", len(browserEvents),
+		"heartbeat_events", len(heartbeatEvents),
 		"stored_events", total,
 	)
 
@@ -399,6 +422,7 @@ func (r *RunResult) merge(next RunResult) {
 	r.AlertsRaised += next.AlertsRaised
 	r.BrowserEvents += next.BrowserEvents
 	r.HealthEvents += next.HealthEvents
+	r.HeartbeatEvents += next.HeartbeatEvents
 	if next.AlertOutboxPath != "" {
 		r.AlertOutboxPath = next.AlertOutboxPath
 	}
@@ -421,12 +445,13 @@ func parseDurationOrDefault(value string, fallback string) (time.Duration, error
 
 func FormatRunResult(result RunResult) string {
 	return fmt.Sprintf(
-		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d browser_events=%d health_events=%d telemetry_synced=%t telemetry_events=%d telemetry_backlog=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_delivery=%s alert_delivered=%t",
+		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d browser_events=%d health_events=%d heartbeat_events=%d telemetry_synced=%t telemetry_events=%d telemetry_backlog=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_delivery=%s alert_delivered=%t",
 		result.Cycles,
 		result.CollectedEvents,
 		result.StoredEvents,
 		result.BrowserEvents,
 		result.HealthEvents,
+		result.HeartbeatEvents,
 		result.TelemetrySynced,
 		result.TelemetryEvents,
 		result.TelemetryBacklog,

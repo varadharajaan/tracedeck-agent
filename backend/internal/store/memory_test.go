@@ -344,6 +344,13 @@ func TestTenantSyncHealthSummarizesOfflineReplayProof(t *testing.T) {
 				ObservedAt: time.Date(2026, 6, 12, 8, 1, 0, 0, time.UTC),
 				Metadata:   map[string]string{"battery": "ok"},
 			},
+			{
+				ID:         "local-event-9",
+				Type:       constants.TelemetryTypeAgentHeartbeat,
+				Source:     constants.TelemetrySourceAgentHeartbeat,
+				ObservedAt: time.Date(2026, 6, 12, 8, 2, 0, 0, time.UTC),
+				Metadata:   map[string]string{"agent_healthy": "true", "agent_version": "0.1.0-dev"},
+			},
 		},
 	})
 	if err != nil {
@@ -354,20 +361,20 @@ func TestTenantSyncHealthSummarizesOfflineReplayProof(t *testing.T) {
 	if err != nil {
 		t.Fatalf("tenant sync health: %v", err)
 	}
-	if summary.HostsReporting != 1 || summary.HostsPending != 0 || summary.StoredEvents != 2 {
+	if summary.HostsReporting != 1 || summary.HostsPending != 0 || summary.StoredEvents != 3 {
 		t.Fatalf("unexpected sync health counts: %+v", summary)
 	}
-	if summary.LastLocalEventID != 8 || !summary.OfflineReplayReady || !summary.BackendVisible {
+	if summary.LastLocalEventID != 9 || !summary.OfflineReplayReady || !summary.BackendVisible {
 		t.Fatalf("expected replay proof and backend visibility: %+v", summary)
 	}
 	if summary.PrivacyBoundary == "" || len(summary.Devices) != 1 {
 		t.Fatalf("expected privacy boundary and one device summary: %+v", summary)
 	}
 	device := summary.Devices[0]
-	if device.ProcessEvents != 1 || device.HealthEvents != 1 || device.LastLocalEventID != 8 {
+	if device.ProcessEvents != 1 || device.HealthEvents != 2 || device.LastLocalEventID != 9 {
 		t.Fatalf("unexpected device source counts: %+v", device)
 	}
-	if len(device.RecentEventIDs) != 2 || device.RecentEventIDs[0] != "local-event-8" {
+	if len(device.RecentEventIDs) != 3 || device.RecentEventIDs[0] != "local-event-9" {
 		t.Fatalf("expected recent stable event IDs newest first: %+v", device.RecentEventIDs)
 	}
 }

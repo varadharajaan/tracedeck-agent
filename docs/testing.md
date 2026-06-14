@@ -1025,6 +1025,23 @@ dashboard and Browser Activity JavaScript syntax; runs backend API tests;
 smoke-tests local and Lambda visual polish; runs Newman; cleans bytecode; and
 re-checks root artifact hygiene.
 
+Phase 83 adds agent heartbeat telemetry proof:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase83.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase83.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase83.ps1
+python ./devctl.py test phase83
+```
+
+The Phase 83 verifier compiles Go and Python, runs agent/backend tests,
+checks dashboard and Browser Activity JavaScript, runs the Lambda contract,
+boots an isolated backend, runs the real agent once with backend sync enabled,
+verifies one metadata-only `agent.health.heartbeat` event, checks telemetry
+status counts by type/source, verifies tenant sync-health/replay proof, runs
+Newman, runs screenshot-free dashboard/theme/Lambda visual checks, cleans
+Python bytecode, and re-checks root artifact hygiene.
+
 Phase 13 adds:
 
 ```powershell

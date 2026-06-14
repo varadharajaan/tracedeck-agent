@@ -46,6 +46,7 @@ func TestRunResultMerge(t *testing.T) {
 		CollectedEvents: 5,
 		StoredEvents:    5,
 		HealthEvents:    1,
+		HeartbeatEvents: 1,
 	}
 	result.merge(RunResult{
 		Cycles:           1,
@@ -55,6 +56,7 @@ func TestRunResultMerge(t *testing.T) {
 		AlertsRaised:     2,
 		AlertOutboxPath:  "alert.json",
 		HealthEvents:     1,
+		HeartbeatEvents:  1,
 		TelemetrySynced:  true,
 		TelemetryEvents:  4,
 		TelemetryBacklog: 3,
@@ -77,6 +79,9 @@ func TestRunResultMerge(t *testing.T) {
 	}
 	if result.HealthEvents != 2 {
 		t.Fatalf("expected 2 health events, got %d", result.HealthEvents)
+	}
+	if result.HeartbeatEvents != 2 {
+		t.Fatalf("expected 2 heartbeat events, got %d", result.HeartbeatEvents)
 	}
 	if !result.TelemetrySynced || result.TelemetryEvents != 4 {
 		t.Fatalf("expected telemetry sync merge, got %+v", result)

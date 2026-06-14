@@ -347,3 +347,10 @@
     checks against stale `TD`, `Browser{}`, `Center{}`, bracket shortcut, and
     debug-abbreviation copy; add smoke/Newman/verify/publish scripts, docs, and
     `devctl.py test phase82`.
+81. Phase 83: agent heartbeat telemetry. Emit one metadata-only
+    `agent.health.heartbeat` event from `collector.agent.heartbeat` per agent
+    collection cycle; expose agent version, collection mode/interval, archive
+    due state, backend sync state, alert state, profile, and operating system
+    as typed metadata; verify backend telemetry status counts, tenant
+    sync-health/replay proof, dashboard/Lambda visual contracts, Newman, docs,
+    and `devctl.py test phase83`.

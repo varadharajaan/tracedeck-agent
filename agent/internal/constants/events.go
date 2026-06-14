@@ -5,12 +5,14 @@ const (
 	EventTypeBrowserObserved = "browser.domain.observed"
 	EventTypeAlertRaised     = "alert.raised"
 	EventTypeDeviceHealth    = "device.health.observed"
+	EventTypeAgentHeartbeat  = "agent.health.heartbeat"
 )
 
 const (
 	EventSourceProcessCollector = "collector.process"
 	EventSourceBrowserCollector = "collector.browser.history"
 	EventSourceHealthCollector  = "collector.device.health"
+	EventSourceHeartbeat        = "collector.agent.heartbeat"
 )
 
 const (
@@ -31,6 +33,19 @@ const (
 	EventMetadataBootTimeUnix    = "boot_time_unix"
 	EventMetadataUptimeSeconds   = "uptime_seconds"
 	EventMetadataHealthStatus    = "health_status"
+	EventMetadataAgentHealthy    = "agent_healthy"
+	EventMetadataAgentVersion    = "agent_version"
+	EventMetadataCollectionMode  = "collection_mode"
+	EventMetadataCollectionEvery = "collection_interval"
+	EventMetadataArchiveEnabled  = "archive_enabled"
+	EventMetadataArchiveDue      = "archive_due"
+	EventMetadataBackendSync     = "backend_sync_enabled"
+	EventMetadataAlertsEnabled   = "alerts_enabled"
+)
+
+const (
+	HeartbeatCollectionModeOnce       = "once"
+	HeartbeatCollectionModeContinuous = "continuous"
 )
 
 const (
