@@ -173,7 +173,7 @@ def runtime_doctor_local(*, base_url: str, tenant_id: str) -> dict[str, object]:
     dashboard = read_url(f"{base_url}/", timeout=5)
     dashboard_markers = required_markers(
         str(dashboard.get("body") or ""),
-        ["TraceDeck Command Center", "theme-toggle-button", "server-status-light", "dashboard-page-nav", "browser-activity-button", "Delivery Assurance Center"],
+        ["TraceDeck Console", "theme-toggle-button", "server-status-light", "dashboard-page-nav", "browser-activity-button", "Delivery Assurance Center"],
     )
 
     browser_page = read_url(f"{base_url}/browser-activity", timeout=5)
@@ -555,8 +555,18 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase76.ps1"))
     elif target == "verify76":
         run(powershell("./scripts/verify/verify-phase76.ps1"))
+    elif target == "phase78":
+        run(powershell("./scripts/verify/verify-phase78.ps1"))
+    elif target == "smoke78":
+        run(powershell("./scripts/local/smoke-phase78.ps1"))
+    elif target == "newman78":
+        run(powershell("./scripts/local/newman-phase78.ps1"))
+    elif target == "verify78":
+        run(powershell("./scripts/verify/verify-phase78.ps1"))
     elif target == "theme":
         run(powershell("./scripts/local/test-dashboard-theme.ps1", "-BaseUrl", local_url(args.addr)))
+    elif target == "visual":
+        run(powershell("./scripts/local/test-dashboard-visual-quality.ps1", "-BaseUrl", local_url(args.addr)))
     else:
         run(powershell("./scripts/local/smoke-phase69.ps1"))
         run(powershell("./scripts/local/newman-phase69.ps1"))
@@ -678,6 +688,7 @@ def main() -> int:
             "phase74",
             "phase75",
             "phase76",
+            "phase78",
             "smoke",
             "newman",
             "verify",
@@ -696,6 +707,9 @@ def main() -> int:
             "smoke76",
             "newman76",
             "verify76",
+            "smoke78",
+            "newman78",
+            "verify78",
             "theme",
             "live",
         ],

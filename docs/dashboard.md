@@ -116,6 +116,14 @@ product shell: neutral light/dark palettes, stronger brand header, cleaner
 toolbar actions, modern page tabs, calmer status chips, readable cards, and a
 screenshot-free theme contract for both desktop and mobile.
 
+Phase 78 tightens the paid-product shell again. The main page is labelled
+`TraceDeck Console`, the browser drilldown is labelled `Browser Viewer`, and
+the old command shortcut language is presented as a `Workspace Navigator` with
+full product labels instead of abbreviations. A new visual-quality contract
+checks rendered light and dark pages for stale brace labels, pseudo-letter
+markers, tiny visible controls, dark-mode color posture, visible server lights,
+and horizontal overflow without capturing screenshots.
+
 To check the currently running local dashboard:
 
 ```powershell
@@ -149,6 +157,13 @@ capturing screenshots:
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-theme.ps1 -BaseUrl http://127.0.0.1:18080
 python ./devctl.py test theme
+```
+
+To verify the product visual-quality contract:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-visual-quality.ps1 -BaseUrl http://127.0.0.1:18080
+python ./devctl.py test visual
 ```
 
 The dashboard reads the base backend endpoints:
@@ -547,6 +562,14 @@ uses a cleaner product palette, stronger hierarchy for focus panels, quieter
 KPI cards, wrapped chips, contained tables, polished light/dark modes, and no
 visible pseudo-letter toolbar markers. The screenshot-free layout contract now
 guards this shell against horizontal overflow on desktop, tablet, and mobile.
+
+Phase 78 adds the Notification Provider Setup Center after the Provider
+Simulation Lab. It shows configured versus provider-confirmed email, push, and
+dashboard fallback setup; demo-only and retrying truth labels; buyer readiness;
+setup checklist; owner actions; and metadata-only provider boundaries. It also
+renames the shell to TraceDeck Console, uses Browser Viewer as the browser
+drilldown label, removes internal abbreviations from the navigator, and adds
+the screenshot-free visual-quality gate.
 
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and

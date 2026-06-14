@@ -38,7 +38,7 @@
               "pm.test('dashboard contains Phase 76 product UI markers', function () {",
               "  pm.response.to.have.status(200);",
               "  const html = pm.response.text();",
-              "  pm.expect(html).to.include('TraceDeck Command Center');",
+              "  pm.expect(html).to.include('TraceDeck Console');",
               "  pm.expect(html).to.include('Browser Activity');",
               "  pm.expect(html).to.include('Light mode');",
               "  pm.expect(html).to.include('server-status-light');",

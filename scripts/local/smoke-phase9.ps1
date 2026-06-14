@@ -124,7 +124,7 @@ try {
     $dashboard = Invoke-WebRequest -UseBasicParsing -Method "GET" -Uri "$baseUrl/"
     if (
         $dashboard.StatusCode -ne 200 -or
-        $dashboard.Content -notmatch "TraceDeck Command Center" -or
+        $dashboard.Content -notmatch "TraceDeck Console" -or
         $dashboard.Content -notmatch "Alert Delivery" -or
         $dashboard.Content -notmatch "Tamper And Trust"
     ) {

@@ -407,3 +407,12 @@ layout contract against horizontal overflow on desktop, tablet, and mobile.
 Use `python devctl.py test phase76` or
 `powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase76.ps1`
 to rerun the full local verifier.
+
+Phase 78 adds a Notification Provider Setup Center and refreshes the dashboard
+shell as `TraceDeck Console` with a `Browser Viewer` drilldown. The provider
+setup view separates configured email/push/dashboard routes from provider-
+confirmed delivery, demo-only proof, retrying routes, buyer readiness, setup
+checklist, owner actions, and metadata-only boundaries. The UI verifier now
+also runs `scripts/local/test-dashboard-visual-quality.ps1` to block stale
+debug labels, tiny chips/buttons, dark-mode regressions, and horizontal
+overflow. Use `python devctl.py test phase78` for the full local gate.

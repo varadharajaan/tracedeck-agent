@@ -58,8 +58,8 @@ try {
     Invoke-TraceDeckLoggedCommand -Label "Read Phase 76 dashboard product UI markers" -Command {
         $dashboard = Invoke-WebRequest -UseBasicParsing -Uri "$baseUrl/"
         foreach ($expected in @(
-            "TraceDeck Command Center",
-            "Browser Activity",
+            "TraceDeck Console",
+            "Browser Viewer",
             "Light mode",
             "server-status-light",
             "dashboard-page-nav",

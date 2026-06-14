@@ -567,6 +567,16 @@ fallback readiness, buyer-ready status, counts by assurance state, next action,
 next retry time, last provider proof time, and a strict metadata-only privacy
 boundary. Demo seed rows are never counted as provider proof.
 
+Phase 78 adds `GET /api/v1/tenants/{tenantId}/notification-provider-setup`.
+It returns a typed notification provider setup contract for dashboard rendering
+and buyer readiness. The response includes configured versus provider-confirmed
+email, push, and dashboard fallback setup; demo-only, retrying, pending-provider,
+and dry-run counts; setup score; recommended paid package; next best action;
+provider setup channels; checklist rows; owner actions; and a strict
+metadata-only privacy boundary. It does not include provider secrets, SMTP
+passwords, push endpoints, alert bodies, raw provider payloads, screenshots,
+raw URLs, page titles, cookies, tokens, private content, or payment data.
+
 Phase 69 does not add a new local backend route. It adds a SAM Lambda frontend
 contract at `/api/health`, `/api/s3-summary`, and `/` inside `sam-app`. The
 Lambda frontend uses S3 object listing and safe JSON/JSONL/GZip sampling to

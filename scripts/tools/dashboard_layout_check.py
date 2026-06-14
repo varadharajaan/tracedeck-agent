@@ -13,7 +13,7 @@ VIEWPORTS = (
     {"name": "mobile", "width": 390, "height": 844},
 )
 
-EXPECTED_COMMAND_JUMPS = 23
+EXPECTED_COMMAND_JUMPS = 24
 
 REQUIRED_IDS = (
     "premium-operations-section",
@@ -136,6 +136,21 @@ REQUIRED_IDS = (
     "provider-simulation-route-list",
     "provider-simulation-scenario-list",
     "provider-simulation-action-list",
+    "notification-provider-setup-section",
+    "notification-provider-setup-status",
+    "notification-provider-setup-headline",
+    "notification-provider-setup-score",
+    "notification-provider-email",
+    "notification-provider-push",
+    "notification-provider-dashboard",
+    "notification-provider-demo",
+    "notification-provider-retrying",
+    "notification-provider-buyer",
+    "notification-provider-next",
+    "notification-provider-boundary",
+    "notification-provider-channel-list",
+    "notification-provider-checklist-list",
+    "notification-provider-action-list",
     "package-billing-section",
     "package-billing-status",
     "package-billing-headline",

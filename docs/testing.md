@@ -111,6 +111,11 @@ desktop/tablet/mobile layout containment, and root artifact hygiene.
 The theme contract checks both light and dark modes for the dashboard and
 Browser Activity pages, verifies clean toolbar labels, confirms visible server
 status, and records metrics only under `data/local/dashboard-theme/`.
+The visual-quality contract checks the rendered TraceDeck Console and Browser
+Viewer for stale brace labels, pseudo-letter shortcuts, internal abbreviations,
+tiny visible buttons/chips, dark/light color posture, visible server lights, and
+horizontal overflow. It records metrics only under
+`data/local/dashboard-visual-quality/` and does not capture screenshots.
 Browser fixture smoke data is generated under `data/local/smoke-phase3/`, and
 the smoke archive is checked to ensure raw URLs and page titles are not stored.
 Earlier phase smokes pass `--disable-browser-history` so they do not collect

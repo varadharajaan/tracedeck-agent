@@ -111,7 +111,7 @@ try {
     }
 
     $dashboard = Invoke-WebRequest -UseBasicParsing -Method "GET" -Uri "$baseUrl/"
-    if ($dashboard.StatusCode -ne 200 -or $dashboard.Content -notmatch "TraceDeck Command Center") {
+    if ($dashboard.StatusCode -ne 200 -or $dashboard.Content -notmatch "TraceDeck Console") {
         Write-TraceDeckLog -Level "ERROR" -Message "Dashboard HTML verification failed."
         exit 1
     }

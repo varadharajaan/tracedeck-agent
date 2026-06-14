@@ -12,13 +12,13 @@
       ] } }]
     },
     {
-      "name": "Dashboard Has Command Navigation",
+      "name": "Dashboard Has Workspace Navigator",
       "request": { "method": "GET", "url": "{{baseUrl}}/" },
       "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
         "pm.test('dashboard has command navigation and jump targets', function () {",
         "  pm.response.to.have.status(200);",
         "  const html = pm.response.text();",
-        "  pm.expect(html).to.include('Command Navigation');",
+        "  pm.expect(html).to.include('Workspace Navigator');",
         "  pm.expect(html).to.include('command-nav-status');",
         "  pm.expect(html).to.include('command-nav-title');",
         "  pm.expect(html).to.include('data-jump-target=\"paid-ops-section\"');",

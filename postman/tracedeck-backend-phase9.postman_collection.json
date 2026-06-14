@@ -242,7 +242,7 @@
               "pm.test('dashboard exposes host risk surface', function () {",
               "  pm.response.to.have.status(200);",
               "  const html = pm.response.text();",
-              "  pm.expect(html).to.include('TraceDeck Command Center');",
+              "  pm.expect(html).to.include('TraceDeck Console');",
               "  pm.expect(html).to.include('Alert Delivery');",
               "  pm.expect(html).to.include('Tamper And Trust');",
               "});"
