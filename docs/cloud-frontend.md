@@ -85,6 +85,20 @@ metrics under `data/local/lambda-frontend-visual/` without screenshots. The
 Phase 80 verifier deploys the SAM app, runs Newman against the saved Function
 URL, and runs `python ./devctl.py doctor` with cloud checks enabled.
 
+Phase 84 aligns the Lambda Cloud Admin with the local dashboard visual system.
+It keeps the public Lambda Function URL and S3 source-of-truth model, but the
+hosted UI now shares the same symbolic brand mark, app header, source rail,
+segmented navigation, larger chips, evidence cards, dark theme, and table
+treatment as the local TraceDeck Console and Browser Viewer. The hosted visual
+contract remains screenshot-free and checks rendered layout metrics only.
+
+Rerun the Phase 84 UI gate with:
+
+```powershell
+python ./devctl.py test phase84
+python ./devctl.py cloud visual
+```
+
 The Lambda frontend intentionally renders safe metadata only: S3 object keys,
 sizes, storage class, timestamps, host labels, browser names, domains,
 categories, study-safe status, and counts. It does not render passwords,

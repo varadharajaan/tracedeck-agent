@@ -138,6 +138,16 @@ system, command tiles and status chips have larger readable treatment, and the
 contracts reject stale `Browser{}`, `Center{}`, bracket shortcut, `TD`, and
 internal abbreviation copy.
 
+Phase 84 adds a final customer-grade visual layer for the local dashboard and
+Browser Viewer. The dashboard now reads as a calm endpoint observability command
+center: a stronger app header, polished segmented page navigation, larger
+status chips, aligned evidence cards, readable tables, and a consistent dark
+theme. The Workspace Navigator metadata is stacked under full product labels
+instead of appearing as tiny side labels. The Phase 84 smoke, Newman, visual,
+theme, and layout contracts reject debug-looking brace labels, pseudo-letter
+shortcuts, terse internal abbreviations, tiny visible controls, and horizontal
+overflow.
+
 To check the currently running local dashboard:
 
 ```powershell
@@ -178,6 +188,15 @@ To verify the product visual-quality contract:
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-visual-quality.ps1 -BaseUrl http://127.0.0.1:18080
 python ./devctl.py test visual
+```
+
+To rerun the full Phase 84 UI revamp gate:
+
+```powershell
+python ./devctl.py test phase84
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase84.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase84.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase84.ps1
 ```
 
 The dashboard reads the base backend endpoints:

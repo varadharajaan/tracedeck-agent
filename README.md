@@ -155,6 +155,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-service-manifests.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/render-windows-task.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase83.ps1
+python ./devctl.py test phase84
 python ./devctl.py test phase83
 ```
 
