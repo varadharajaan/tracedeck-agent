@@ -711,6 +711,7 @@ def main() -> int:
             "newman78",
             "verify78",
             "theme",
+            "visual",
             "live",
         ],
         nargs="?",
