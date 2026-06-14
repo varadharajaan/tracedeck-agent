@@ -563,6 +563,14 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase78.ps1"))
     elif target == "verify78":
         run(powershell("./scripts/verify/verify-phase78.ps1"))
+    elif target == "phase80":
+        run(powershell("./scripts/verify/verify-phase80.ps1"))
+    elif target == "smoke80":
+        run(powershell("./scripts/local/smoke-phase80.ps1"))
+    elif target == "newman80":
+        run(powershell("./scripts/local/newman-phase80.ps1"))
+    elif target == "verify80":
+        run(powershell("./scripts/verify/verify-phase80.ps1"))
     elif target == "theme":
         run(powershell("./scripts/local/test-dashboard-theme.ps1", "-BaseUrl", local_url(args.addr)))
     elif target == "visual":
@@ -585,6 +593,8 @@ def cloud_args(script: str, args: argparse.Namespace) -> list[str]:
 def cmd_cloud(args: argparse.Namespace) -> int:
     if args.action == "seed":
         run(cloud_args("./scripts/local/upload-cloud-sample-phase72.ps1", args))
+    elif args.action == "visual":
+        run(powershell("./scripts/local/test-lambda-frontend-visual.ps1"))
     elif args.action == "smoke":
         run(cloud_args("./scripts/local/smoke-phase72.ps1", args))
     elif args.action == "newman":
@@ -689,6 +699,7 @@ def main() -> int:
             "phase75",
             "phase76",
             "phase78",
+            "phase80",
             "smoke",
             "newman",
             "verify",
@@ -710,6 +721,9 @@ def main() -> int:
             "smoke78",
             "newman78",
             "verify78",
+            "smoke80",
+            "newman80",
+            "verify80",
             "theme",
             "visual",
             "live",
@@ -720,7 +734,7 @@ def main() -> int:
     test.set_defaults(func=cmd_test)
 
     cloud = sub.add_parser("cloud", help="Seed or verify the S3-backed Lambda frontend")
-    cloud.add_argument("action", choices=["seed", "smoke", "newman", "phase72"], nargs="?", default="phase72")
+    cloud.add_argument("action", choices=["seed", "visual", "smoke", "newman", "phase72"], nargs="?", default="phase72")
     cloud.add_argument("--bucket", default="", help="Override S3 data bucket")
     cloud.add_argument("--region", default="ap-south-1", help="AWS region")
     cloud.add_argument("--frontend-url", default="", help="Override Lambda Function URL")

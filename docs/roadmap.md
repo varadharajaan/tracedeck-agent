@@ -328,3 +328,9 @@
     and a screenshot-free visual-quality contract for stale debug copy, tiny
     controls, dark-mode posture, server lights, and overflow, with Postman,
     Newman, docs, `devctl.py test phase78`, and full local verification.
+78. Phase 80: Lambda Cloud Admin visual parity. Refresh the public Function URL
+    frontend with the TraceDeck admin shell, symbolic brand mark, Workspace
+    Source sidebar, full page labels, text-only theme control, product-grade
+    light/dark cards/chips/tables, cache metric rendering, localhost source
+    switch, screenshot-free Lambda visual-quality checks, SAM deployment, cloud
+    Newman, runtime doctor, docs, and `devctl.py test phase80`.

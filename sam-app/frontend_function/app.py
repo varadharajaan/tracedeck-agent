@@ -350,150 +350,250 @@ def _index_html() -> str:
   <style>
     :root {{
       color-scheme: light;
-      --bg: #f6f7f9;
+      --bg: #f4f7fb;
+      --bg-band: #e7edf4;
       --surface: #ffffff;
       --surface-2: #f8fafc;
-      --ink: #18212f;
-      --muted: #667085;
-      --line: #d7dde6;
-      --teal: #147d7f;
-      --green: #027a48;
-      --amber: #b54708;
-      --red: #b42318;
-      --shadow: 0 10px 28px rgba(24, 33, 47, 0.08);
+      --surface-3: #eef3f7;
+      --ink: #17212b;
+      --muted: #647386;
+      --line: #d8e1ea;
+      --line-strong: #a7b7c6;
+      --teal: #087f7b;
+      --teal-strong: #055f5b;
+      --green: #17764c;
+      --amber: #ad6412;
+      --red: #b84438;
+      --blue: #285fba;
+      --accent-soft: #e5f6f3;
+      --success-surface: #e8f7ed;
+      --warning-surface: #fff4df;
+      --danger-surface: #fff0ed;
+      --info-surface: #eaf3ff;
+      --shadow-soft: 0 14px 34px rgba(23, 33, 43, 0.08);
+      --shadow-line: 0 1px 0 rgba(167, 183, 198, 0.28);
     }}
     body.theme-dark {{
       color-scheme: dark;
-      --bg: #101417;
-      --surface: #171d22;
-      --surface-2: #202831;
-      --ink: #edf2f7;
-      --muted: #a7b2bd;
-      --line: #35404b;
-      --teal: #5cbab6;
-      --green: #64c58b;
-      --amber: #f2b15c;
-      --red: #f4766d;
-      --shadow: 0 12px 28px rgba(0,0,0,0.28);
+      --bg: #0f1214;
+      --bg-band: #171c20;
+      --surface: #181d21;
+      --surface-2: #20272c;
+      --surface-3: #2a3339;
+      --ink: #f4f7f6;
+      --muted: #aab6bb;
+      --line: #334047;
+      --line-strong: #60707a;
+      --teal: #5ad1c8;
+      --teal-strong: #9ce7df;
+      --green: #7bd998;
+      --amber: #efbf72;
+      --red: #f08a82;
+      --blue: #8ebcff;
+      --accent-soft: #163733;
+      --success-surface: #173324;
+      --warning-surface: #382a15;
+      --danger-surface: #3a2020;
+      --info-surface: #1a2a3d;
+      --shadow-soft: 0 16px 38px rgba(0, 0, 0, 0.30);
+      --shadow-line: 0 1px 0 rgba(96, 112, 122, 0.30);
     }}
     * {{ box-sizing: border-box; }}
-    body {{ margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }}
-    header {{ display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; min-height: 74px; padding: 16px 28px; border-bottom: 1px solid var(--line); background: var(--surface); }}
+    html {{ max-width: 100%; overflow-x: clip; background: var(--bg); }}
+    body {{ margin: 0; max-width: 100%; overflow-x: clip; background: linear-gradient(180deg, var(--bg-band) 0, var(--bg) 340px, var(--bg) 100%); color: var(--ink); font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: 0; }}
     h1, h2, h3, p {{ margin: 0; }}
-    h1 {{ font-size: 21px; font-weight: 760; }}
-    h2 {{ font-size: 15px; font-weight: 760; }}
-    button, select, input {{ min-height: 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; }}
-    button {{ display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 14px; cursor: pointer; font-weight: 750; }}
-    button.primary, .tab.is-active {{ border-color: var(--teal); background: var(--teal); color: #fff; }}
+    h1 {{ font-size: 24px; font-weight: 840; line-height: 1.1; }}
+    h2 {{ font-size: 20px; font-weight: 820; line-height: 1.2; }}
+    h3 {{ font-size: 14px; font-weight: 790; line-height: 1.2; }}
+    button, select, input {{ min-height: 42px; border: 1px solid color-mix(in srgb, var(--line) 88%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--surface) 96%, var(--surface-2)); color: var(--ink); font: inherit; }}
+    button {{ display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 14px; cursor: pointer; font-weight: 780; white-space: nowrap; }}
+    button:hover {{ border-color: var(--line-strong); background: var(--surface); }}
+    button.primary {{ border-color: #12312f; background: #12312f; color: #fff; box-shadow: 0 10px 22px rgba(8, 127, 123, 0.16); }}
+    body.theme-dark button.primary {{ border-color: color-mix(in srgb, var(--teal-strong) 78%, #fff); background: color-mix(in srgb, var(--teal-strong) 88%, #fff); color: #0f1718; box-shadow: none; }}
     input, select {{ width: 100%; padding: 0 12px; }}
-    main {{ width: calc(100% - 32px); max-width: 1380px; margin: 18px auto 32px; display: grid; gap: 14px; }}
     .muted {{ color: var(--muted); }}
-    .toolbar, .status-row, .tabs, .meta-row {{ display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }}
-    .status {{ display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 12px; border: 1px solid #b8c7da; border-radius: 999px; background: #f4f7fb; color: #475467; font-weight: 750; white-space: nowrap; }}
-    .status.connected {{ border-color: #abefc6; background: #ecfdf3; color: var(--green); }}
-    .status.disconnected {{ border-color: #fecdca; background: #fff4f2; color: var(--red); }}
-    .status-light {{ width: 9px; height: 9px; border-radius: 999px; background: currentColor; box-shadow: 0 0 0 4px rgba(2,122,72,.13); }}
-    .panel, .metric {{ min-width: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: var(--shadow); }}
-    .panel {{ padding: 16px; }}
-    .grid {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }}
-    .two {{ display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 12px; }}
-    .metric {{ padding: 14px; display: grid; gap: 4px; }}
-    .metric strong {{ font-size: 24px; line-height: 1.1; overflow-wrap: anywhere; }}
-    .tabs {{ position: sticky; top: 0; z-index: 4; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: var(--shadow); }}
-    .tab {{ flex: 1 1 130px; min-width: 0; background: var(--surface-2); color: var(--muted); }}
-    .page[hidden] {{ display: none !important; }}
-    .source-grid {{ display: grid; grid-template-columns: 170px minmax(180px, 1fr) minmax(180px, 1fr) auto; gap: 10px; align-items: end; }}
+    .eyebrow {{ color: var(--teal-strong); font-size: 12px; font-weight: 820; text-transform: uppercase; }}
+    .topbar {{ position: sticky; top: 0; z-index: 12; display: grid; grid-template-columns: minmax(340px, 1fr) minmax(0, auto); gap: 18px; align-items: center; min-height: 84px; padding: 16px 30px; border-bottom: 1px solid color-mix(in srgb, var(--line) 82%, transparent); background: color-mix(in srgb, var(--surface) 94%, transparent); box-shadow: var(--shadow-line), 0 16px 36px rgba(23, 33, 43, 0.06); backdrop-filter: blur(14px); }}
+    body.theme-dark .topbar {{ box-shadow: var(--shadow-line), 0 18px 42px rgba(0, 0, 0, 0.24); }}
+    .brand-lockup {{ display: flex; align-items: center; gap: 14px; min-width: 0; }}
+    .brand-lockup p.muted {{ margin-top: 4px; max-width: 760px; }}
+    .brand-mark {{ display: grid; width: 46px; height: 46px; flex: 0 0 46px; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 9px; border: 1px solid color-mix(in srgb, var(--teal) 42%, var(--line)); border-radius: 8px; background: color-mix(in srgb, var(--surface) 90%, var(--accent-soft)); box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 40%, transparent); }}
+    .brand-mark span {{ border-radius: 3px; background: var(--teal); }}
+    .brand-mark span:nth-child(2) {{ background: var(--blue); transform: translateY(5px); }}
+    .brand-mark span:nth-child(3) {{ background: var(--green); transform: translateY(10px); }}
+    body.theme-dark .brand-mark {{ background: color-mix(in srgb, var(--surface-2) 88%, var(--accent-soft)); box-shadow: none; }}
+    .toolbar, .status-row, .meta-row, .hero-actions {{ display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }}
+    .toolbar {{ justify-content: flex-end; }}
+    .status {{ display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 12px; border: 1px solid #b8c7da; border-radius: 8px; background: var(--surface-2); color: #475467; font-weight: 780; white-space: nowrap; }}
+    .status.checking {{ border-color: #b8c7da; background: var(--surface-2); color: #475467; }}
+    .status.connected {{ border-color: #abefc6; background: var(--success-surface); color: var(--green); }}
+    .status.disconnected {{ border-color: #fecdca; background: var(--danger-surface); color: var(--red); }}
+    body.theme-dark .status {{ border-color: #4b5563; background: var(--surface-2); color: #c7d2de; }}
+    body.theme-dark .status.connected {{ border-color: rgba(100, 197, 139, 0.45); background: rgba(30, 93, 64, 0.35); color: var(--green); }}
+    body.theme-dark .status.disconnected {{ border-color: rgba(244, 118, 109, 0.5); background: rgba(92, 35, 36, 0.38); color: var(--red); }}
+    .status-light {{ width: 9px; height: 9px; border-radius: 999px; background: currentColor; box-shadow: 0 0 0 4px rgba(2, 122, 72, 0.13); }}
+    .app-shell {{ width: calc(100% - 32px); max-width: 1460px; margin: 22px auto 34px; display: grid; grid-template-columns: 286px minmax(0, 1fr); gap: 18px; min-width: 0; }}
+    .side-rail {{ position: sticky; top: 106px; align-self: start; display: grid; gap: 14px; min-width: 0; }}
+    .source-card, .panel, .metric, .hero-panel {{ min-width: 0; border: 1px solid color-mix(in srgb, var(--line) 90%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--surface) 98%, var(--surface-2)); box-shadow: var(--shadow-soft); }}
+    .source-card, .panel, .hero-panel {{ padding: 18px; overflow: hidden; }}
+    .rail-title {{ display: grid; gap: 4px; margin-bottom: 14px; }}
+    .rail-title strong {{ font-size: 15px; }}
+    .source-grid {{ display: grid; gap: 12px; }}
     .field {{ display: grid; gap: 6px; }}
-    .field label {{ color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; }}
+    .field label {{ color: var(--muted); font-size: 12.5px; font-weight: 780; }}
+    .tabs {{ display: grid; gap: 8px; padding: 8px; border: 1px solid color-mix(in srgb, var(--line) 86%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--surface) 95%, transparent); box-shadow: var(--shadow-line); }}
+    .tab {{ justify-content: flex-start; width: 100%; min-height: 46px; border-color: transparent; background: transparent; color: var(--muted); box-shadow: none; }}
+    .tab:hover {{ border-color: color-mix(in srgb, var(--line-strong) 60%, transparent); background: var(--surface-2); color: var(--ink); }}
+    .tab.is-active {{ border-color: color-mix(in srgb, var(--teal) 48%, var(--line)); background: color-mix(in srgb, var(--teal) 12%, var(--surface)); color: var(--teal-strong); box-shadow: inset 3px 0 0 var(--teal); }}
+    .content-stack {{ display: grid; gap: 16px; min-width: 0; }}
+    .hero-panel {{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, auto); gap: 16px; align-items: center; background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 96%, var(--accent-soft)), var(--surface)); }}
+    body.theme-dark .hero-panel {{ background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 92%, var(--accent-soft)), var(--surface)); }}
+    .hero-panel h2 {{ max-width: 720px; margin-top: 4px; }}
+    .hero-panel p.muted {{ margin-top: 6px; max-width: 760px; }}
+    .page {{ display: grid; gap: 14px; min-width: 0; }}
+    .page[hidden] {{ display: none !important; }}
+    .grid {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }}
+    .two {{ display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); gap: 12px; }}
+    .metric {{ min-height: 136px; padding: 15px; display: grid; align-content: space-between; gap: 8px; border-top: 3px solid color-mix(in srgb, var(--teal) 72%, var(--line)); background: var(--surface); }}
+    .metric strong {{ color: var(--ink); font-size: 30px; font-weight: 840; line-height: 1.05; overflow-wrap: anywhere; }}
+    .metric-label {{ color: var(--muted); font-size: 12.5px; font-weight: 780; }}
+    .section-header {{ display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }}
+    .section-header p {{ margin-top: 4px; }}
     .list {{ display: grid; gap: 8px; }}
-    .item {{ display: grid; gap: 4px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); overflow-wrap: anywhere; }}
-    .pill {{ display: inline-flex; align-items: center; min-height: 26px; padding: 0 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 12px; font-weight: 750; }}
-    table {{ width: 100%; border-collapse: collapse; table-layout: fixed; }}
-    th, td {{ padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; overflow-wrap: anywhere; }}
-    th {{ color: var(--muted); font-size: 11px; text-transform: uppercase; }}
-    .table-wrap {{ overflow-x: auto; }}
+    .item {{ display: grid; gap: 7px; padding: 12px; border: 1px solid color-mix(in srgb, var(--line) 84%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--surface-2) 90%, var(--surface)); overflow-wrap: anywhere; }}
+    .settings-grid {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }}
+    .settings-grid .item:nth-child(2) {{ grid-column: span 2; }}
+    .pill {{ display: inline-flex; align-items: center; min-height: 28px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 8px; background: color-mix(in srgb, var(--surface-2) 86%, var(--surface)); color: var(--muted); font-size: 12.5px; font-weight: 760; line-height: 1.18; }}
+    .strong-pill {{ border-color: color-mix(in srgb, var(--teal) 45%, var(--line)); background: var(--accent-soft); color: var(--teal-strong); }}
+    table {{ width: 100%; min-width: 980px; border-collapse: collapse; }}
+    th, td {{ padding: 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; overflow-wrap: anywhere; }}
+    th {{ color: var(--muted); font-size: 12.5px; font-weight: 790; background: color-mix(in srgb, var(--surface-2) 92%, var(--surface)); }}
+    .table-wrap {{ max-width: 100%; overflow-x: auto; border: 1px solid color-mix(in srgb, var(--line) 90%, transparent); border-radius: 8px; background: var(--surface); box-shadow: var(--shadow-soft); }}
     .empty {{ min-height: 90px; display: grid; place-items: center; padding: 14px; border: 1px dashed var(--line); border-radius: 8px; background: var(--surface-2); color: var(--muted); text-align: center; }}
-    @media (max-width: 900px) {{ header, .two, .source-grid {{ grid-template-columns: 1fr; }} .toolbar > *, .source-grid button {{ width: 100%; }} .grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} }}
-    @media (max-width: 520px) {{ main {{ width: auto; margin: 14px 10px 28px; }} .grid {{ grid-template-columns: 1fr; }} }}
+    @media (max-width: 980px) {{ .topbar, .app-shell, .hero-panel, .two {{ grid-template-columns: 1fr; }} .topbar {{ position: static; padding: 14px 16px; }} .toolbar {{ justify-content: stretch; }} .toolbar > * {{ flex: 1 1 180px; min-width: 0; }} .side-rail {{ position: static; }} .tabs {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} .grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} }}
+    @media (max-width: 560px) {{ .app-shell {{ width: auto; margin: 14px 10px 28px; }} .grid, .settings-grid, .tabs {{ grid-template-columns: 1fr; }} .settings-grid .item:nth-child(2) {{ grid-column: auto; }} .toolbar > * {{ flex-basis: 100%; }} }}
   </style>
 </head>
 <body>
-  <header>
-    <div>
-      <h1>TraceDeck Cloud Admin</h1>
-      <p class="muted">S3 archive, browser activity, host posture, cache efficiency, and local backend switch</p>
+  <header class="topbar">
+    <div class="brand-lockup">
+      <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+      <div>
+        <p class="eyebrow">Endpoint Risk Observability</p>
+        <h1>TraceDeck Cloud Admin</h1>
+        <p class="muted">Archive-backed activity review, host posture, cache efficiency, and localhost fallback in one admin console.</p>
+      </div>
     </div>
     <div class="toolbar">
-      <button id="theme-button" type="button"><span>T</span><span id="theme-label">Dark</span></button>
+      <button id="theme-button" type="button" aria-label="Toggle cloud admin theme"><span id="theme-label">Theme: Light</span></button>
       <button id="refresh-button" class="primary" type="button">Refresh</button>
       <span id="server-status" class="status"><span class="status-light" aria-hidden="true"></span><span id="server-status-text">Checking</span></span>
     </div>
   </header>
-  <main>
-    <section class="panel">
-      <div class="source-grid">
-        <div class="field">
-          <label for="source-select">Source</label>
-          <select id="source-select">
-            <option value="s3">Lambda S3</option>
-            <option value="local">Localhost 18080</option>
-          </select>
+  <main class="app-shell">
+    <aside class="side-rail">
+      <section class="source-card">
+        <div class="rail-title">
+          <strong>Workspace Source</strong>
+          <span class="muted">Choose archive or localhost data.</span>
         </div>
-        <div class="field">
-          <label for="tenant-input">Tenant</label>
-          <input id="tenant-input" value="family-varadha" autocomplete="off">
+        <div class="source-grid">
+          <div class="field">
+            <label for="source-select">Source</label>
+            <select id="source-select">
+              <option value="s3">Lambda S3 Archive</option>
+              <option value="local">Localhost 18080</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="tenant-input">Tenant</label>
+            <input id="tenant-input" value="family-varadha" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="local-input">Local Backend</label>
+            <input id="local-input" value="{local_backend}" autocomplete="off">
+          </div>
+          <button id="force-refresh-button" type="button">Bypass Cache</button>
         </div>
-        <div class="field">
-          <label for="local-input">Local Backend</label>
-          <input id="local-input" value="{local_backend}" autocomplete="off">
+      </section>
+      <nav class="tabs" aria-label="Cloud admin pages">
+        <button class="tab is-active" type="button" data-page="overview">Overview</button>
+        <button class="tab" type="button" data-page="browser">Browser Activity</button>
+        <button class="tab" type="button" data-page="archive">S3 Archive</button>
+        <button class="tab" type="button" data-page="settings">Source &amp; Cache</button>
+      </nav>
+    </aside>
+    <div class="content-stack">
+      <section class="hero-panel">
+        <div>
+          <p class="eyebrow">Live Archive Console</p>
+          <h2>Activity, cache, and host signal from the selected source</h2>
+          <p class="muted">Designed for quick admin review without exposing passwords, screenshots, raw URLs, page titles, tokens, cookies, or private content.</p>
         </div>
-        <button id="force-refresh-button" type="button">Bypass Cache</button>
-      </div>
-    </section>
-    <nav class="tabs" aria-label="admin pages">
-      <button class="tab is-active" type="button" data-page="overview">Overview</button>
-      <button class="tab" type="button" data-page="browser">Browser</button>
-      <button class="tab" type="button" data-page="archive">Archive</button>
-      <button class="tab" type="button" data-page="settings">Settings</button>
-    </nav>
-    <section id="overview-page" class="page">
-      <div class="grid">
-        <div class="metric"><span class="muted">Objects</span><strong id="metric-objects">-</strong><span id="metric-objects-sub" class="muted">waiting</span></div>
-        <div class="metric"><span class="muted">Sampled Rows</span><strong id="metric-rows">-</strong><span id="metric-rows-sub" class="muted">waiting</span></div>
-        <div class="metric"><span class="muted">Cache Hit</span><strong id="metric-hit">-</strong><span id="metric-hit-sub" class="muted">waiting</span></div>
-        <div class="metric"><span class="muted">Cache Miss</span><strong id="metric-miss">-</strong><span id="metric-miss-sub" class="muted">waiting</span></div>
-      </div>
-      <div class="two" style="margin-top:12px">
-        <div class="panel"><div class="status-row"><h2>Hosts</h2><span id="host-count" class="pill">0 hosts</span></div><div id="host-list" class="list" style="margin-top:10px"><div class="empty">No host rows loaded.</div></div></div>
-        <div class="panel"><div class="status-row"><h2>Browsers</h2><span id="browser-count" class="pill">0 browsers</span></div><div id="browser-list" class="list" style="margin-top:10px"><div class="empty">No browser rows loaded.</div></div></div>
-      </div>
-    </section>
-    <section id="browser-page" class="page" hidden>
-      <div class="panel">
-        <div class="status-row"><h2>Browser Domain Activity</h2><span id="row-count" class="pill">0 rows</span></div>
-        <div class="table-wrap" style="margin-top:10px">
-          <table><thead><tr><th>Host</th><th>Browser</th><th>Domain</th><th>Category</th><th>Study</th><th>Source</th><th>Observed</th></tr></thead><tbody id="browser-table"><tr><td colspan="7"><div class="empty">No browser data loaded.</div></td></tr></tbody></table>
+        <div class="hero-actions">
+          <span id="cache-state" class="pill strong-pill">cache waiting</span>
+          <span id="last-refresh-pill" class="pill">waiting for refresh</span>
         </div>
-      </div>
-    </section>
-    <section id="archive-page" class="page" hidden>
-      <div class="panel">
-        <div class="status-row"><h2>S3 Archive Objects</h2><span id="object-count" class="pill">0 objects</span></div>
-        <div class="table-wrap" style="margin-top:10px">
-          <table><thead><tr><th>Key</th><th>Size</th><th>Storage</th><th>Modified</th></tr></thead><tbody id="object-table"><tr><td colspan="4"><div class="empty">No S3 objects loaded.</div></td></tr></tbody></table>
+      </section>
+      <section id="overview-page" class="page">
+        <div class="grid">
+          <div class="metric"><span class="metric-label">Archive Objects</span><strong id="metric-objects">-</strong><span id="metric-objects-sub" class="muted">waiting</span></div>
+          <div class="metric"><span class="metric-label">Sampled Rows</span><strong id="metric-rows">-</strong><span id="metric-rows-sub" class="muted">waiting</span></div>
+          <div class="metric"><span class="metric-label">Cache Hit Rate</span><strong id="metric-hit">-</strong><span id="metric-hit-sub" class="muted">waiting</span></div>
+          <div class="metric"><span class="metric-label">Cache Miss Rate</span><strong id="metric-miss">-</strong><span id="metric-miss-sub" class="muted">waiting</span></div>
         </div>
-      </div>
-    </section>
-    <section id="settings-page" class="page" hidden>
-      <div class="panel">
-        <div class="status-row"><h2>Source And Cache</h2><span id="cache-state" class="pill">cache waiting</span></div>
-        <div class="list" style="margin-top:10px">
-          <div class="item"><strong id="bucket-label">Bucket pending</strong><span id="prefix-label" class="muted">Prefix pending</span></div>
-          <div class="item"><strong id="generated-label">Generated pending</strong><span id="privacy-label" class="muted">Metadata-only rendering</span></div>
-          <div class="item"><strong id="local-label">Local backend pending</strong><span class="muted">Local mode uses your browser to contact the selected localhost URL.</span></div>
+        <div class="two">
+          <div class="panel">
+            <div class="section-header">
+              <div><h2>Hosts</h2><p class="muted">Reporting hosts from the current source.</p></div>
+              <span id="host-count" class="pill">0 hosts</span>
+            </div>
+            <div id="host-list" class="list"><div class="empty">No host rows loaded.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-header">
+              <div><h2>Browsers</h2><p class="muted">Chrome, Edge, Brave, and other browser summaries.</p></div>
+              <span id="browser-count" class="pill">0 browsers</span>
+            </div>
+            <div id="browser-list" class="list"><div class="empty">No browser rows loaded.</div></div>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+      <section id="browser-page" class="page" hidden>
+        <div class="panel">
+          <div class="section-header">
+            <div><h2>Browser Domain Activity</h2><p class="muted">Metadata-only domain, category, study status, and source proof.</p></div>
+            <span id="row-count" class="pill">0 rows</span>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Host</th><th>Browser</th><th>Domain</th><th>Category</th><th>Study</th><th>Source</th><th>Observed</th></tr></thead><tbody id="browser-table"><tr><td colspan="7"><div class="empty">No browser data loaded.</div></td></tr></tbody></table>
+          </div>
+        </div>
+      </section>
+      <section id="archive-page" class="page" hidden>
+        <div class="panel">
+          <div class="section-header">
+            <div><h2>S3 Archive Objects</h2><p class="muted">Recent archive objects sampled for admin rendering.</p></div>
+            <span id="object-count" class="pill">0 objects</span>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Key</th><th>Size</th><th>Storage</th><th>Modified</th></tr></thead><tbody id="object-table"><tr><td colspan="4"><div class="empty">No S3 objects loaded.</div></td></tr></tbody></table>
+          </div>
+        </div>
+      </section>
+      <section id="settings-page" class="page" hidden>
+        <div class="panel">
+          <div class="section-header">
+            <div><h2>Source &amp; Cache</h2><p class="muted">Current bucket, prefix, refresh time, privacy boundary, and localhost target.</p></div>
+          </div>
+          <div class="settings-grid">
+            <div class="item"><span class="muted">Bucket</span><strong id="bucket-label">Bucket pending</strong><span id="prefix-label" class="muted">Prefix pending</span></div>
+            <div class="item"><span class="muted">Last Generated</span><strong id="generated-label">Generated pending</strong><span id="privacy-label" class="muted">Metadata-only rendering</span></div>
+            <div class="item"><span class="muted">Local Backend</span><strong id="local-label">Local backend pending</strong><span class="muted">Local mode uses your browser to contact the selected localhost URL.</span></div>
+          </div>
+        </div>
+      </section>
+    </div>
   </main>
   <script>
     const storage = {{ theme: "tracedeck.ui.theme", source: "tracedeck.cloud.source", page: "tracedeck.cloud.page" }};
@@ -511,8 +611,8 @@ def _index_html() -> str:
     }}
     function setStatus(kind, label) {{
       const status = document.getElementById("server-status");
-      status.classList.remove("connected", "disconnected");
-      if (kind) status.classList.add(kind);
+      status.classList.remove("checking", "connected", "disconnected");
+      status.classList.add(kind || "checking");
       setText("server-status-text", label);
     }}
     function sourceBadge(row) {{
@@ -524,7 +624,7 @@ def _index_html() -> str:
       const next = theme === "dark" ? "dark" : "light";
       document.body.classList.toggle("theme-dark", next === "dark");
       localStorage.setItem(storage.theme, next);
-      setText("theme-label", next === "dark" ? "Light" : "Dark");
+      setText("theme-label", next === "dark" ? "Theme: Dark" : "Theme: Light");
     }}
     function setPage(page) {{
       const next = page || "overview";
@@ -592,6 +692,7 @@ def _index_html() -> str:
       setText("metric-miss", (cache.miss_percent ?? 0) + "%");
       setText("metric-miss-sub", (cache.misses || 0) + " misses");
       setText("cache-state", cache.hit ? "cache hit" : "cache miss");
+      setText("last-refresh-pill", summary.latest_object_at ? "latest object " + summary.latest_object_at : "waiting for archive");
       setText("bucket-label", payload.bucket || "Bucket pending");
       setText("prefix-label", payload.prefix ? "Prefix " + payload.prefix : "No prefix configured");
       setText("generated-label", payload.generated_at || "Generated pending");

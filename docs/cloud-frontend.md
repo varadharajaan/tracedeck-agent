@@ -14,6 +14,11 @@ It is deployed with AWS SAM as a public Lambda Function URL:
 - Browser rows include provenance fields: `source_kind`, `evidence_scope`,
   and `evidence_detail`. S3 sampled rows are labeled as `s3_sample` so cloud
   archive evidence is not confused with live local telemetry.
+- Phase 80 refreshes the visual shell to match a sellable TraceDeck admin
+  console: symbolic brand mark, Workspace Source sidebar, full page labels,
+  product-grade light/dark colors, text-only theme control, cards, chips, and
+  tables, plus visual-quality checks that reject pseudo-letter controls and
+  stale debug copy.
 
 Run locally:
 
@@ -47,10 +52,12 @@ Seed and verify cloud archive data:
 
 ```powershell
 python ./devctl.py cloud seed
+python ./devctl.py cloud visual
 python ./devctl.py cloud smoke
 python ./devctl.py cloud newman
 python ./devctl.py test phase72
 python ./devctl.py test phase73
+python ./devctl.py test phase80
 ```
 
 Phase 72 adds `scripts/local/upload-cloud-sample-phase72.ps1`, which writes a
@@ -67,6 +74,16 @@ With cloud checks enabled, it reads the saved Function URL, checks
 prove a cache hit, and saves a JSON/text report under `data/local/output/`.
 Use `python ./devctl.py doctor --skip-cloud` when only the local backend should
 be checked.
+
+Phase 80 adds `scripts/local/test-lambda-frontend-visual.ps1`, which renders
+the Lambda HTML through Playwright with a mocked metadata-only S3 summary. It
+checks both light and dark modes on desktop and mobile, verifies cache metrics
+render, confirms the status light is visible, requires the app shell, sidebar,
+hero panel, symbolic brand mark, clear page labels, and Workspace Source
+controls, rejects standalone pseudo-letter controls such as `T`, and records
+metrics under `data/local/lambda-frontend-visual/` without screenshots. The
+Phase 80 verifier deploys the SAM app, runs Newman against the saved Function
+URL, and runs `python ./devctl.py doctor` with cloud checks enabled.
 
 The Lambda frontend intentionally renders safe metadata only: S3 object keys,
 sizes, storage class, timestamps, host labels, browser names, domains,

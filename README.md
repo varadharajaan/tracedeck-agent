@@ -54,6 +54,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboa
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-layout.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-theme.ps1
 python ./devctl.py test theme
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-lambda-frontend-visual.ps1
+python ./devctl.py cloud visual
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-autostart-assurance.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase5.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase5.ps1
@@ -416,3 +418,12 @@ checklist, owner actions, and metadata-only boundaries. The UI verifier now
 also runs `scripts/local/test-dashboard-visual-quality.ps1` to block stale
 debug labels, tiny chips/buttons, dark-mode regressions, and horizontal
 overflow. Use `python devctl.py test phase78` for the full local gate.
+
+Phase 80 brings the same product-quality guard to the public Lambda Cloud
+Admin frontend. The Function URL page now uses a TraceDeck admin shell with a
+symbolic brand mark, Workspace Source sidebar, full page labels, text-only
+`Theme: Light/Dark` control, cache metrics, S3/localhost source switching, and
+polished light/dark tables without pseudo-letter controls. Use
+`python devctl.py cloud visual` for the local Lambda visual contract and
+`python devctl.py test phase80` to compile, smoke, deploy SAM, run cloud
+Newman, run runtime doctor, and re-check root hygiene.

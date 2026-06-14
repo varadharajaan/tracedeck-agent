@@ -74,16 +74,30 @@ assert html["statusCode"] == 200, html
 body = html["body"]
 for marker in [
     "TraceDeck Cloud Admin",
+    "Endpoint Risk Observability",
+    "Workspace Source",
+    "Lambda S3 Archive",
+    "Browser Activity",
+    "S3 Archive",
+    "Source &amp; Cache",
+    "app-shell",
+    "side-rail",
+    "hero-panel",
+    "source-card",
     "source-select",
     "Localhost 18080",
     "metric-hit",
     "metric-miss",
     "theme-button",
+    "Theme: Light",
+    "brand-mark",
     "server-status",
     "sourceBadge",
     "<th>Source</th>",
 ]:
     assert marker in body, marker
+for forbidden in [">T<", "<span>T</span>", ">TD<", "Browser{", "Center{", "[T]", "{T}", "Rev Ops", "Notif Rev", "Notify Pro", "Notifs"]:
+    assert forbidden not in body, forbidden
 
 agent_archive_record = {
     "ID": "phase72-agent-archive-row",

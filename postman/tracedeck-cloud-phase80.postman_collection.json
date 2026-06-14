@@ -1,0 +1,111 @@
+{
+  "info": {
+    "name": "TraceDeck Cloud Frontend Phase 80",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Lambda Health",
+      "request": {
+        "method": "GET",
+        "url": "{{lambdaUrl}}/api/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('lambda health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.status).to.eql('ok');",
+              "  pm.expect(body.service).to.eql('tracedeck-lambda-frontend');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cloud Admin Product HTML",
+      "request": {
+        "method": "GET",
+        "url": "{{lambdaUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('cloud admin renders product shell without pseudo labels', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  ['TraceDeck Cloud Admin', 'Endpoint Risk Observability', 'Workspace Source', 'Lambda S3 Archive', 'Browser Activity', 'S3 Archive', 'Source &amp; Cache', 'app-shell', 'side-rail', 'hero-panel', 'source-card', 'brand-mark', 'Theme: Light', 'source-select', 'Localhost 18080', 'metric-hit', 'metric-miss', '<th>Source</th>', 'sourceBadge', 'server-status'].forEach(function (marker) {",
+              "    pm.expect(html).to.include(marker);",
+              "  });",
+              "  ['<span>T</span>', '>T<', '>TD<', 'Browser{', 'Center{', '[T]', '{T}', 'Rev Ops', 'Notif Rev', 'Notify Pro', 'Notifs'].forEach(function (marker) {",
+              "    pm.expect(html).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "S3 Summary Refresh",
+      "request": {
+        "method": "GET",
+        "url": "{{lambdaUrl}}/api/s3-summary?refresh=true"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('s3 summary reads uploaded metadata rows', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.status).to.eql('ok');",
+              "  pm.expect(body.summary.objects).to.be.at.least(1);",
+              "  pm.expect(body.summary.sampled_rows).to.be.at.least(5);",
+              "  pm.expect(body.summary.study_safe).to.be.at.least(2);",
+              "  pm.expect(body.summary.non_study_youtube).to.be.at.least(1);",
+              "  pm.expect(body.cache.hit).to.eql(false);",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  const serialized = JSON.stringify(body).toLowerCase();",
+              "  ['https://', 'http://', 'raw_url', 'page_title', 'password', 'cookie_value', 'token_value', 'screenshot', 'push_endpoint', 'provider_secret', 'keylogger'].forEach(function (marker) {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "S3 Summary Cache Hit",
+      "request": {
+        "method": "GET",
+        "url": "{{lambdaUrl}}/api/s3-summary"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('s3 summary second read uses cache', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.status).to.eql('ok');",
+              "  pm.expect(body.cache.hit).to.eql(true);",
+              "  pm.expect(body.cache.hit_percent).to.be.above(0);",
+              "  pm.expect(body.summary.sampled_rows).to.be.at.least(5);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
