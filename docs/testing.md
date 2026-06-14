@@ -116,6 +116,12 @@ Viewer for stale brace labels, pseudo-letter shortcuts, internal abbreviations,
 tiny visible buttons/chips, dark/light color posture, visible server lights, and
 horizontal overflow. It records metrics only under
 `data/local/dashboard-visual-quality/` and does not capture screenshots.
+The Lambda frontend visual-quality contract renders the Cloud Admin page with a
+mocked metadata-only S3 summary, checks light/dark desktop/mobile layout,
+requires the app shell, symbolic brand mark, Workspace Source sidebar, clear
+page labels, cache hit/miss labels, and connected status light, rejects
+pseudo-letter controls, and records metrics only under
+`data/local/lambda-frontend-visual/`.
 Browser fixture smoke data is generated under `data/local/smoke-phase3/`, and
 the smoke archive is checked to ensure raw URLs and page titles are not stored.
 Earlier phase smokes pass `--disable-browser-history` so they do not collect
@@ -965,6 +971,23 @@ deployed Lambda Function URL and covers health, cloud HTML controls, S3 summary
 refresh, S3 browser rows, privacy markers, and cache-hit metrics.
 `scripts/verify/verify-phase72.ps1` redeploys SAM, runs the live cloud smoke,
 runs Newman, and re-checks root cleanliness.
+
+Phase 80 adds Lambda Cloud Admin visual parity:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-lambda-frontend-visual.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase80.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase80.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase80.ps1
+python ./devctl.py cloud visual
+python ./devctl.py test phase80
+```
+
+The Phase 80 verifier compiles `devctl.py`, the Lambda app, and the visual
+checker; runs the local Lambda contract and screenshot-free visual contract;
+deploys the SAM Function URL; uploads a metadata-only S3 sample; runs Newman
+against the deployed URL; runs runtime doctor with cloud checks enabled; cleans
+bytecode; and re-checks root artifact hygiene.
 
 Phase 13 adds:
 
