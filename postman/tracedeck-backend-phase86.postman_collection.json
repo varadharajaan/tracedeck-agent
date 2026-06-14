@@ -1,0 +1,220 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 86",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Phase 86 Premium UI Shell",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('dashboard serves premium console shell', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  ['TraceDeck Console', 'Phase 86 monetisation-grade UI layer', 'Premium endpoint activity', 'dashboard-page-nav', 'Workspace Navigator', 'Browser Evidence', 'Sync View', 'server-status-light'].forEach(function (marker) {",
+              "    pm.expect(html).to.include(marker);",
+              "  });",
+              "  [/Browser\\s*\\{/, /Center\\s*\\{/, /\\[[BCTR]\\]/, /\\{[BCTR]\\}/, /\\bTD\\b/, /\\bRev Ops\\b/, /\\bNotif Rev\\b/, /\\bNotify Pro\\b/, /\\bNotifs\\b/].forEach(function (pattern) {",
+              "    pm.expect(html).to.not.match(pattern);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Browser Viewer Phase 86 Evidence UI Shell",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/browser-activity"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('browser viewer serves premium evidence shell', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  ['TraceDeck Browser Activity', 'Phase 86 browser evidence UI layer', 'Browser Viewer', 'Chrome, Brave, and Edge evidence', 'Sync View', '<th>Source</th>', 'metadata-only guard'].forEach(function (marker) {",
+              "    pm.expect(html).to.include(marker);",
+              "  });",
+              "  [/Browser\\s*\\{/, /Center\\s*\\{/, /\\[[BCTR]\\]/, /\\{[BCTR]\\}/, /\\bTD\\b/, /\\bRev Ops\\b/, /\\bNotif Rev\\b/, /\\bNotify Pro\\b/, /\\bNotifs\\b/].forEach(function (pattern) {",
+              "    pm.expect(html).to.not.match(pattern);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Browser Activity Metadata Boundary",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/browser-activity?limit=25"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('browser activity remains metadata-only and source-backed', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(body.items).to.be.an('array');",
+              "  pm.expect(body.summary).to.be.an('object');",
+              "  if (body.items.length > 0) {",
+              "    pm.expect(body.items[0].source_kind).to.be.a('string').and.not.empty;",
+              "    pm.expect(body.items[0].evidence_scope).to.be.a('string').and.not.empty;",
+              "    pm.expect(body.items[0].evidence_detail).to.be.a('string').and.not.empty;",
+              "    ['password', 'screenshot', 'raw_url', 'page_title', 'cookie', 'token', 'keylog'].forEach(function (key) {",
+              "      pm.expect(body.items[0]).to.not.have.property(key);",
+              "    });",
+              "  }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delivery Assurance Truth Boundary",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/delivery-assurance?limit=25"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('delivery assurance does not treat demo-only proof as buyer-ready', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(body.summary).to.be.an('object');",
+              "  pm.expect(body.summary.routes_total).to.be.at.least(1);",
+              "  if ((body.summary.demo_only || 0) > 0) {",
+              "    pm.expect(body.summary.buyer_ready).to.eql(false);",
+              "  }",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Default Host Evidence Excludes Demo Seed",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/demo-study-laptop/policy-violations"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('default policy endpoint does not leak seeded demo rows', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  const text = pm.response.text();",
+              "  pm.expect(body.count).to.eql(0);",
+              "  pm.expect(body.items).to.be.an('array').that.is.empty;",
+              "  pm.expect(text).to.not.include('VLC media player');",
+              "  pm.expect(text).to.not.include('demo_seed');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Default Host Deliveries Exclude Demo Seed",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/demo-study-laptop/alert-deliveries"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('default delivery endpoint does not claim demo sends', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  const text = pm.response.text();",
+              "  pm.expect(body.count).to.eql(0);",
+              "  pm.expect(body.items).to.be.an('array').that.is.empty;",
+              "  pm.expect(text).to.not.include('demo_seed');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Opt-In Demo Evidence Keeps Provenance",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/demo-study-laptop/policy-violations?include_demo=true"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('demo evidence is available only with explicit opt-in', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.count).to.be.above(0);",
+              "  pm.expect(body.items[0].source_kind).to.eql('demo_seed');",
+              "  pm.expect(body.items[0].evidence_scope).to.eql('demo');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

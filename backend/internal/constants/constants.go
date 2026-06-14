@@ -91,9 +91,25 @@ const (
 )
 
 const (
-	HeaderAPIKey   = "X-TraceDeck-API-Key"
+	HeaderAPIKey   = "X-TraceDeck-API-Key" // #nosec G101 -- HTTP header name only; the API key value is runtime input, never a hardcoded secret.
 	HeaderTenantID = "X-TraceDeck-Tenant-ID"
 	HeaderActorID  = "X-TraceDeck-Actor-ID"
+	HeaderCache    = "Cache-Control"
+	HeaderPragma   = "Pragma"
+	HeaderExpires  = "Expires"
+)
+
+const (
+	CacheNoStore  = "no-store, no-cache, must-revalidate, max-age=0"
+	PragmaNoCache = "no-cache"
+	ExpiresNow    = "0"
+)
+
+const (
+	QueryIncludeDemo = "include_demo"
+	QueryValueTrue   = "true"
+	QueryValueOne    = "1"
+	QueryValueYes    = "yes"
 )
 
 const (
@@ -237,6 +253,25 @@ const (
 	RiskLevelLow    = "low"
 	RiskLevelMedium = "medium"
 	RiskLevelHigh   = "high"
+)
+
+const (
+	RiskScoreNone            = 0
+	RiskScoreInfo            = 10
+	RiskScoreLow             = 25
+	RiskScoreMedium          = 50
+	RiskScoreHigh            = 75
+	RiskScoreCritical        = 95
+	RiskScoreMediumThreshold = 40
+	RiskScoreHighThreshold   = 75
+	RiskScoreCountPenalty    = 5
+	RiskScoreMaximum         = 100
+	ComplianceScoreClean     = 100
+)
+
+const (
+	SummaryMetricNone          = 0
+	DataCompletenessUnknownPct = 0
 )
 
 const (
@@ -500,6 +535,12 @@ const (
 	EvidenceDetailDemoBrowser   = "Seeded browser activity demo row; live rows come from browser telemetry ingest or S3 archive sampling."
 	EvidenceDetailLiveTelemetry = "Accepted through local backend telemetry ingest from the endpoint agent."
 	EvidenceDetailS3Sample      = "Sampled from S3 archive metadata for cloud admin rendering."
+)
+
+const (
+	DemoRiskMediaAppName       = "VLC media player"
+	DemoRiskMediaResourceLabel = "sample-movie-file.mkv"
+	DemoRiskMediaReason        = "Entertainment media playback during study policy hours."
 )
 
 const (

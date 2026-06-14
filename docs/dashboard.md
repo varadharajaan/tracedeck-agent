@@ -617,6 +617,14 @@ and replay proof without showing screenshots, passwords, raw URLs, page titles,
 cookies, tokens, private content, endpoint payloads, provider secrets, alert
 bodies, keylogs, or hidden collection bypass data.
 
+The dashboard treats seeded examples as opt-in demo content. Default host risk,
+anomaly, tamper, alert-delivery, daily-summary, and weekly-report calls suppress
+`source_kind=demo_seed`, including the VLC/media-playback sample and seeded
+email/push rows from older local state. Demo rows are available only through
+explicit `include_demo=true` API calls used by demo scripts. The Mail Delivery
+Center marks email as delivered only when a non-demo delivered email proof row
+exists; a generated report/PDF alone shows as not sent.
+
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
 paid customer onboarding workflows.

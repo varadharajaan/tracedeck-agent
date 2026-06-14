@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -177,6 +178,9 @@ LIMIT ?`, afterID, limit)
 		stored.Event.ID = fmt.Sprintf("%s%d", constants.BackendSyncEventIDPrefix, stored.LocalID)
 		stored.Event.Timestamp = parsedAt.UTC()
 		if processID.Valid {
+			if processID.Int64 < math.MinInt32 || processID.Int64 > math.MaxInt32 {
+				return nil, fmt.Errorf("pending event process_id %d is outside int32 range", processID.Int64)
+			}
 			stored.Event.ProcessID = int32(processID.Int64)
 		}
 		if pathHash.Valid {

@@ -1058,6 +1058,53 @@ status counts by type/source, verifies tenant sync-health/replay proof, runs
 Newman, runs screenshot-free dashboard/theme/Lambda visual checks, cleans
 Python bytecode, and re-checks root artifact hygiene.
 
+Phase 85 adds strict Go quality gates:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-go-quality-gates.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase85.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase85.ps1
+python ./devctl.py test quality
+python ./devctl.py test phase85
+```
+
+The Phase 85 quality script writes reports under `data/local/go-quality/` and
+logs under `logs/local/test/`. It requires `go`, `golangci-lint`,
+`govulncheck`, and `gosec` on PATH, then runs gofmt, `go test ./...`,
+`go test -race ./...`, `go vet ./...`, `golangci-lint run ./...`,
+`govulncheck ./...`, and `gosec ./...`. The verifier also runs Newman against
+an isolated live backend to prove the runtime still boots and keeps browser
+activity and delivery assurance metadata-only.
+
+Phase 86 now includes a live demo-provenance guard:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase86.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase86.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-live-server-provenance.ps1
+```
+
+The smoke and Newman runs boot an isolated backend, enroll the demo host, then
+verify default `/policy-violations` and `/alert-deliveries` do not expose
+`demo_seed` rows or the VLC/media-playback sample. They also verify
+`?include_demo=true` is the only path that returns seeded demo evidence with
+its provenance. The live-server provenance script checks the same contract
+against a running local server.
+
+Phase 87 packages the quality/UI/provenance hardening bundle:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase87.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/repo/publish-phase87.ps1
+python ./devctl.py test phase87
+```
+
+The Phase 87 verifier reruns the Phase 86 gate, reruns the strict Go quality
+gate, restarts the persistent local backend on `127.0.0.1:18080`, runs the live
+server provenance guard against that backend, and re-checks root artifact
+hygiene. This is the preferred local proof before publishing the combined
+Phase 85/86/provenance hardening work.
+
 Phase 13 adds:
 
 ```powershell
@@ -1087,6 +1134,7 @@ and verifies weekly report readiness. Newman runs
 `postman/tracedeck-backend-phase12.postman_collection.json` against a live
 API-key-protected backend.
 
-`go test -race ./...` is run when the local Go toolchain supports it. On
-Windows shells where CGO is disabled or no race-capable C toolchain is active,
-the verification script logs a warning and continues.
+`go test -race ./...` is run by the Phase 85 gate when the local Go toolchain
+supports it. If `go env CGO_ENABLED` is not `1`, the script records
+`unsupported_cgo_disabled` in its summary and writes the skip reason under
+`data/local/go-quality/.../go-test-race.txt`.

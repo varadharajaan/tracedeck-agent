@@ -3807,9 +3807,9 @@ func (m *Memory) seedDashboardForDeviceLocked(device model.Device) {
 				SourceKind:     constants.EvidenceSourceDemoSeed,
 				EvidenceScope:  constants.EvidenceScopeDemo,
 				EvidenceDetail: constants.EvidenceDetailDemoRisk,
-				AppName:        "VLC media player",
-				ResourceLabel:  "sample-movie-file.mkv",
-				Reason:         "Entertainment media playback during study policy hours.",
+				AppName:        constants.DemoRiskMediaAppName,
+				ResourceLabel:  constants.DemoRiskMediaResourceLabel,
+				Reason:         constants.DemoRiskMediaReason,
 				Recommendation: "Review the usage window and tighten Exam Mode if this repeats.",
 				Status:         constants.RiskStatusOpen,
 				ObservedAt:     base.Add(-38 * time.Minute),
@@ -6282,7 +6282,7 @@ func buildTenantRoleExperience(
 		}
 	}
 	onboarding := roleOnboardingItems(operations, monetization, business, preferences, timeline, syncHealth)
-	status := constants.StatusPending
+	var status string
 	score := averageRoleReadiness(roles)
 	switch {
 	case score >= 80 && ready == len(roles):
@@ -7139,21 +7139,7 @@ func revenueOperationsSignals(summary model.TenantRevenueOperationsSummary, onbo
 func revenueOperationsAlerts(controlAlerts []model.TenantCustomerControlAlert, portfolioAlerts []model.TenantPortfolioAlertNotification) []model.TenantRevenueOperationsAlert {
 	alerts := make([]model.TenantRevenueOperationsAlert, 0, 8)
 	for _, item := range controlAlerts {
-		alerts = append(alerts, model.TenantRevenueOperationsAlert{
-			ID:              item.ID,
-			Title:           item.Title,
-			Detail:          item.Detail,
-			Severity:        item.Severity,
-			Status:          item.Status,
-			HostName:        item.HostName,
-			Category:        item.Category,
-			EmailStatus:     item.EmailStatus,
-			PushStatus:      item.PushStatus,
-			DashboardStatus: item.DashboardStatus,
-			NextAction:      item.NextAction,
-			PaidTier:        item.PaidTier,
-			ObservedAt:      item.ObservedAt,
-		})
+		alerts = append(alerts, model.TenantRevenueOperationsAlert(item))
 		if len(alerts) >= 6 {
 			break
 		}
@@ -7196,19 +7182,7 @@ func revenueOperationsHasAlert(alerts []model.TenantRevenueOperationsAlert, titl
 func revenueOperationsDeliveries(controlDeliveries []model.TenantCustomerControlDelivery, providerRoutes []model.TenantProviderSimulationRoute) []model.TenantRevenueOperationsDelivery {
 	deliveries := make([]model.TenantRevenueOperationsDelivery, 0, 6)
 	for _, item := range controlDeliveries {
-		deliveries = append(deliveries, model.TenantRevenueOperationsDelivery{
-			Channel:        item.Channel,
-			Provider:       item.Provider,
-			RecipientLabel: item.RecipientLabel,
-			Status:         item.Status,
-			ProofState:     item.ProofState,
-			Attempts:       item.Attempts,
-			LastDeliveryAt: item.LastDeliveryAt,
-			SLA:            item.SLA,
-			Evidence:       item.Evidence,
-			NextAction:     item.NextAction,
-			PaidTier:       item.PaidTier,
-		})
+		deliveries = append(deliveries, model.TenantRevenueOperationsDelivery(item))
 		if len(deliveries) >= 3 {
 			break
 		}
@@ -7332,33 +7306,13 @@ func revenueOperationsActions(
 		if len(actions) >= 5 {
 			break
 		}
-		actions = append(actions, model.TenantRevenueOperationsAction{
-			Title:      action.Title,
-			Detail:     action.Detail,
-			Owner:      action.Owner,
-			Status:     action.Status,
-			Severity:   action.Severity,
-			SLA:        action.SLA,
-			PaidTier:   action.PaidTier,
-			Source:     action.Source,
-			ObservedAt: action.ObservedAt,
-		})
+		actions = append(actions, model.TenantRevenueOperationsAction(action))
 	}
 	for _, action := range pushActions {
 		if len(actions) >= 7 {
 			break
 		}
-		actions = append(actions, model.TenantRevenueOperationsAction{
-			Title:      action.Title,
-			Detail:     action.Detail,
-			Owner:      action.Owner,
-			Status:     action.Status,
-			Severity:   action.Severity,
-			SLA:        action.SLA,
-			PaidTier:   action.PaidTier,
-			Source:     action.Source,
-			ObservedAt: action.ObservedAt,
-		})
+		actions = append(actions, model.TenantRevenueOperationsAction(action))
 	}
 	for _, action := range settingsActions {
 		if len(actions) >= 8 {
@@ -8113,21 +8067,7 @@ func executiveConsoleTiles(summary model.TenantExecutiveConsoleSummary, business
 func executiveConsoleAlerts(alerts []model.TenantBusinessDashboardAlert) []model.TenantExecutiveConsoleAlert {
 	items := make([]model.TenantExecutiveConsoleAlert, 0, len(alerts))
 	for _, alert := range alerts {
-		items = append(items, model.TenantExecutiveConsoleAlert{
-			ID:              alert.ID,
-			Title:           alert.Title,
-			Detail:          alert.Detail,
-			Severity:        alert.Severity,
-			Status:          alert.Status,
-			HostName:        alert.HostName,
-			Category:        alert.Category,
-			EmailStatus:     alert.EmailStatus,
-			PushStatus:      alert.PushStatus,
-			DashboardStatus: alert.DashboardStatus,
-			NextAction:      alert.NextAction,
-			PaidTier:        alert.PaidTier,
-			ObservedAt:      alert.ObservedAt,
-		})
+		items = append(items, model.TenantExecutiveConsoleAlert(alert))
 	}
 	if len(items) > 6 {
 		return items[:6]
@@ -8166,18 +8106,7 @@ func executiveConsoleActions(
 		if len(actions) >= 4 {
 			break
 		}
-		actions = append(actions, model.TenantExecutiveConsoleAction{
-			Title:      action.Title,
-			Detail:     action.Detail,
-			Severity:   action.Severity,
-			Status:     action.Status,
-			Owner:      action.Owner,
-			Channel:    action.Channel,
-			SLA:        action.SLA,
-			PaidTier:   action.PaidTier,
-			Source:     action.Source,
-			ObservedAt: action.ObservedAt,
-		})
+		actions = append(actions, model.TenantExecutiveConsoleAction(action))
 	}
 	for _, action := range commandActions {
 		if len(actions) >= 6 {
@@ -8423,21 +8352,7 @@ func customerControlTiles(
 func customerControlAlerts(alerts []model.TenantExecutiveConsoleAlert) []model.TenantCustomerControlAlert {
 	items := make([]model.TenantCustomerControlAlert, 0, len(alerts))
 	for _, alert := range alerts {
-		items = append(items, model.TenantCustomerControlAlert{
-			ID:              alert.ID,
-			Title:           alert.Title,
-			Detail:          alert.Detail,
-			Severity:        alert.Severity,
-			Status:          alert.Status,
-			HostName:        alert.HostName,
-			Category:        alert.Category,
-			EmailStatus:     alert.EmailStatus,
-			PushStatus:      alert.PushStatus,
-			DashboardStatus: alert.DashboardStatus,
-			NextAction:      alert.NextAction,
-			PaidTier:        alert.PaidTier,
-			ObservedAt:      alert.ObservedAt,
-		})
+		items = append(items, model.TenantCustomerControlAlert(alert))
 	}
 	if len(items) > 6 {
 		return items[:6]
@@ -8506,35 +8421,13 @@ func customerControlActions(
 		if len(actions) >= 3 {
 			break
 		}
-		actions = append(actions, model.TenantCustomerControlAction{
-			Title:      action.Title,
-			Detail:     action.Detail,
-			Severity:   action.Severity,
-			Status:     action.Status,
-			Owner:      action.Owner,
-			Channel:    action.Channel,
-			SLA:        action.SLA,
-			PaidTier:   action.PaidTier,
-			Source:     action.Source,
-			ObservedAt: action.ObservedAt,
-		})
+		actions = append(actions, model.TenantCustomerControlAction(action))
 	}
 	for _, action := range executiveActions {
 		if len(actions) >= 5 {
 			break
 		}
-		actions = append(actions, model.TenantCustomerControlAction{
-			Title:      action.Title,
-			Detail:     action.Detail,
-			Severity:   action.Severity,
-			Status:     action.Status,
-			Owner:      action.Owner,
-			Channel:    action.Channel,
-			SLA:        action.SLA,
-			PaidTier:   action.PaidTier,
-			Source:     action.Source,
-			ObservedAt: action.ObservedAt,
-		})
+		actions = append(actions, model.TenantCustomerControlAction(action))
 	}
 	for _, action := range packageActions {
 		if len(actions) >= 8 {

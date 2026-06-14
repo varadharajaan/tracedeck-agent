@@ -603,6 +603,26 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase84.ps1"))
     elif target == "verify84":
         run(powershell("./scripts/verify/verify-phase84.ps1"))
+    elif target == "phase85":
+        run(powershell("./scripts/verify/verify-phase85.ps1"))
+    elif target == "newman85":
+        run(powershell("./scripts/local/newman-phase85.ps1"))
+    elif target == "verify85":
+        run(powershell("./scripts/verify/verify-phase85.ps1"))
+    elif target == "phase86":
+        run(powershell("./scripts/verify/verify-phase86.ps1"))
+    elif target == "smoke86":
+        run(powershell("./scripts/local/smoke-phase86.ps1"))
+    elif target == "newman86":
+        run(powershell("./scripts/local/newman-phase86.ps1"))
+    elif target == "verify86":
+        run(powershell("./scripts/verify/verify-phase86.ps1"))
+    elif target == "phase87":
+        run(powershell("./scripts/verify/verify-phase87.ps1"))
+    elif target == "verify87":
+        run(powershell("./scripts/verify/verify-phase87.ps1"))
+    elif target == "quality":
+        run(powershell("./scripts/local/test-go-quality-gates.ps1"))
     elif target == "theme":
         run(powershell("./scripts/local/test-dashboard-theme.ps1", "-BaseUrl", local_url(args.addr)))
     elif target == "visual":
@@ -736,6 +756,9 @@ def main() -> int:
             "phase82",
             "phase83",
             "phase84",
+            "phase85",
+            "phase86",
+            "phase87",
             "smoke",
             "newman",
             "verify",
@@ -772,6 +795,13 @@ def main() -> int:
             "smoke84",
             "newman84",
             "verify84",
+            "newman85",
+            "verify85",
+            "smoke86",
+            "newman86",
+            "verify86",
+            "verify87",
+            "quality",
             "theme",
             "visual",
             "live",

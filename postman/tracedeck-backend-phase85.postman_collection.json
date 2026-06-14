@@ -1,0 +1,95 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 85",
+    "_postman_id": "6bb3f558-c47d-4d74-a4f7-86a0c0f25d85",
+    "description": "Phase 85 quality-gate runtime guard. Verifies the local backend still boots, serves metadata-only browser activity, and keeps demo delivery proof from being marked buyer-ready.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.status).to.eql('ok');",
+              "  pm.expect(body.service).to.eql('tracedeck-backend');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Browser Activity Privacy Boundary",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/browser-activity?limit=10"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('browser activity stays metadata-only', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(body.summary.total).to.be.above(0);",
+              "  const first = body.items[0];",
+              "  pm.expect(first).to.have.property('domain');",
+              "  pm.expect(first).to.have.property('category');",
+              "  pm.expect(first).to.have.property('source_kind');",
+              "  ['raw_url', 'url', 'title', 'password', 'token', 'cookie', 'screenshot'].forEach((key) => {",
+              "    pm.expect(first).to.not.have.property(key);",
+              "  });",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delivery Assurance Demo Boundary",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/delivery-assurance?limit=25"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('delivery assurance does not overclaim demo proof', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(body.summary.routes_total).to.be.above(0);",
+              "  if (body.summary.demo_only > 0) {",
+              "    pm.expect(body.summary.buyer_ready).to.eql(false);",
+              "  }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:18241"
+    }
+  ]
+}

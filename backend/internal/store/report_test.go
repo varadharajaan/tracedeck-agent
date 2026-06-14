@@ -9,7 +9,7 @@ import (
 	"github.com/varadharajaan/tracedeck-agent/backend/internal/model"
 )
 
-func TestWeeklyReportGeneratesEmailAndPDFReadyPayload(t *testing.T) {
+func TestWeeklyReportGeneratesPDFAndRequiresRealEmailProof(t *testing.T) {
 	t.Parallel()
 
 	report := WeeklyReport(model.HostOverview{
@@ -32,8 +32,8 @@ func TestWeeklyReportGeneratesEmailAndPDFReadyPayload(t *testing.T) {
 		GeneratedAt: time.Now().UTC(),
 	})
 
-	if !report.Generated || !report.EmailReady || !report.PDFReady {
-		t.Fatalf("expected generated email/pdf ready report: %+v", report)
+	if !report.Generated || report.EmailReady || !report.PDFReady {
+		t.Fatalf("expected generated PDF report without email proof: %+v", report)
 	}
 	if report.EmailSubject == "" || len(report.Highlights) == 0 || len(report.Risks) == 0 {
 		t.Fatalf("expected report content: %+v", report)
@@ -45,5 +45,45 @@ func TestWeeklyReportGeneratesEmailAndPDFReadyPayload(t *testing.T) {
 	}
 	if !bytes.Contains(pdf, []byte("TraceDeck Weekly Report")) {
 		t.Fatal("expected report title in PDF")
+	}
+}
+
+func TestWeeklyReportEmailReadyIgnoresDemoDeliveryRows(t *testing.T) {
+	t.Parallel()
+
+	base := model.HostOverview{
+		Device: model.Device{DeviceID: "email-proof-device"},
+		Summary: model.DeviceSummary{
+			ComplianceScore:     100,
+			DataCompletenessPct: 100,
+		},
+		RiskLevel: constants.RiskLevelLow,
+		Health: model.DeviceHealth{
+			Score:  100,
+			Status: constants.HealthStatusHealthy,
+		},
+	}
+	demo := base
+	demo.AlertDeliveries = []model.AlertDelivery{
+		{
+			Channel:    constants.DeliveryChannelEmail,
+			Status:     constants.DeliveryStatusDelivered,
+			SourceKind: constants.EvidenceSourceDemoSeed,
+		},
+	}
+	if report := WeeklyReport(demo); report.EmailReady {
+		t.Fatalf("demo delivery must not mark report email-ready: %+v", report)
+	}
+
+	live := base
+	live.AlertDeliveries = []model.AlertDelivery{
+		{
+			Channel:    constants.DeliveryChannelEmail,
+			Status:     constants.DeliveryStatusDelivered,
+			SourceKind: constants.EvidenceSourceLiveIngest,
+		},
+	}
+	if report := WeeklyReport(live); !report.EmailReady {
+		t.Fatalf("non-demo delivered email should mark report email-ready: %+v", report)
 	}
 }

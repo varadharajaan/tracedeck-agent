@@ -77,7 +77,7 @@ const (
 	EmailEnvSMTPHost      = "TRACEDECK_SMTP_HOST"
 	EmailEnvSMTPPort      = "TRACEDECK_SMTP_PORT"
 	EmailEnvSMTPUsername  = "TRACEDECK_SMTP_USERNAME"
-	EmailEnvSMTPPassword  = "TRACEDECK_SMTP_PASSWORD"
+	EmailEnvSMTPPassword  = "TRACEDECK_SMTP_PASSWORD" // #nosec G101 -- environment variable name only; SMTP password value is supplied outside source.
 	EmailEnvSMTPServerTLS = "TRACEDECK_SMTP_SERVER_TLS"
 	EmailEnvAWSRegion     = "AWS_REGION"
 )

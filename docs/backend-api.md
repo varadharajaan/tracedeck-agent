@@ -567,6 +567,16 @@ fallback readiness, buyer-ready status, counts by assurance state, next action,
 next retry time, last provider proof time, and a strict metadata-only privacy
 boundary. Demo seed rows are never counted as provider proof.
 
+Default host APIs are live-truth views. `GET /api/v1/devices/{deviceId}/overview`,
+`/summary/daily`, `/policy-violations`, `/anomalies`, `/tamper-events`,
+`/alert-deliveries`, `/reports/weekly`, and `/reports/weekly/pdf` suppress rows
+with `source_kind=demo_seed`. This includes old persisted seeded rows such as
+the VLC/media-playback sample and demo email/push proof rows. Demo evidence is
+available only for explicit demos by passing `?include_demo=true`; callers must
+not use that mode for live host reporting or delivery proof. Weekly report
+`email_ready` requires a non-demo delivered email route; generated PDF/report
+packaging alone is not a delivered email claim.
+
 Phase 78 adds `GET /api/v1/tenants/{tenantId}/notification-provider-setup`.
 It returns a typed notification provider setup contract for dashboard rendering
 and buyer readiness. The response includes configured versus provider-confirmed

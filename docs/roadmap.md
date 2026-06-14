@@ -354,3 +354,16 @@
     as typed metadata; verify backend telemetry status counts, tenant
     sync-health/replay proof, dashboard/Lambda visual contracts, Newman, docs,
     and `devctl.py test phase83`.
+82. Phase 85: strict Go quality gates. Add a reusable script and verifier for
+    gofmt, `go test ./...`, `go test -race ./...`, `go vet ./...`,
+    `golangci-lint run ./...`, `govulncheck ./...`, and `gosec ./...`; keep
+    reports under `data/local/go-quality/`, add Newman runtime guard,
+    Postman/docs/devctl hooks, and verify root hygiene.
+83. Phase 86: premium UI and provenance recovery. Apply the final local
+    TraceDeck Console and Browser Viewer visual layer, remove debug-looking
+    labels, add smoke/Newman/visual/theme/layout gates, and prove default host
+    policy/delivery APIs do not expose seeded demo evidence.
+84. Phase 87: trust, quality, and UI hardening wrapper. Package the Phase 85
+    quality gates, Phase 86 UI checks, demo-provenance API fix, weekly report
+    email-proof correction, persistent live-server restart/provenance check,
+    docs, Postman, publish script, and `devctl.py test phase87`.

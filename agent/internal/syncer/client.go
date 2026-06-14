@@ -114,7 +114,9 @@ func (c *Client) IngestEvents(ctx context.Context, policy *config.Policy, hostNa
 	if err != nil {
 		return IngestResult{}, fmt.Errorf("post backend telemetry: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	if resp.StatusCode != http.StatusAccepted {
 		return IngestResult{}, fmt.Errorf("backend telemetry ingest returned %s", resp.Status)
 	}
