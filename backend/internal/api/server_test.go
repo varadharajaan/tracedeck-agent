@@ -2912,6 +2912,70 @@ func TestTenantProviderSimulationLabEndpoint(t *testing.T) {
 	}
 }
 
+func TestTenantNotificationProviderSetupEndpoint(t *testing.T) {
+	t.Parallel()
+
+	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	tenantBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"name": "Family Varadha",
+		"plan_id": "family_pro",
+		"retention_tier_id": "family_cloud_90_365_archive",
+		"primary_profile": "ai-btech-student"
+	}`)
+
+	createTenant := httptest.NewRecorder()
+	handler.ServeHTTP(createTenant, httptest.NewRequest(http.MethodPost, constants.RouteTenants, bytes.NewReader(tenantBody)))
+	if createTenant.Code != http.StatusCreated {
+		t.Fatalf("expected tenant create 201, got %d: %s", createTenant.Code, createTenant.Body.String())
+	}
+
+	deviceBody := []byte(`{
+		"tenant_id": "family-varadha",
+		"device_id": "provider-setup-device-001",
+		"host_name": "provider-setup-study-laptop",
+		"profile": "ai-btech-student",
+		"os_name": "windows"
+	}`)
+	enroll := httptest.NewRecorder()
+	handler.ServeHTTP(enroll, httptest.NewRequest(http.MethodPost, constants.RouteDeviceEnroll, bytes.NewReader(deviceBody)))
+	if enroll.Code != http.StatusCreated {
+		t.Fatalf("expected device enroll 201, got %d: %s", enroll.Code, enroll.Body.String())
+	}
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentProviderSetup, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected notification provider setup 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var setup model.TenantNotificationProviderSetup
+	if err := json.Unmarshal(response.Body.Bytes(), &setup); err != nil {
+		t.Fatalf("decode notification provider setup: %v", err)
+	}
+	if setup.Summary.RoutesTotal != 3 || setup.Summary.ChannelsTotal != 3 || len(setup.Channels) != 3 {
+		t.Fatalf("expected email, push, and dashboard setup channels: %+v", setup.Summary)
+	}
+	if setup.Summary.DemoOnly == 0 || setup.Summary.Retrying == 0 {
+		t.Fatalf("expected demo-only and retrying truth labels: %+v", setup.Summary)
+	}
+	if setup.Summary.EmailProviderConfirmed || setup.Summary.PushProviderConfirmed || setup.Summary.BuyerReady {
+		t.Fatalf("expected setup to avoid false provider-confirmed claims: %+v", setup.Summary)
+	}
+	if len(setup.Checklist) == 0 || len(setup.Actions) == 0 {
+		t.Fatalf("expected provider setup checklist and actions: %+v", setup)
+	}
+	if !strings.Contains(setup.PrivacyBoundary, "metadata-only") || !strings.Contains(setup.PrivacyBoundary, "no provider secrets") {
+		t.Fatalf("expected provider setup privacy boundary: %q", setup.PrivacyBoundary)
+	}
+
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password", "provider_secret", "push_endpoint", "screenshot_bytes", "raw_url", "page_title", "alert_body", "raw_provider_payload"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("provider setup leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+}
+
 func TestTenantPackageBillingReadinessEndpoint(t *testing.T) {
 	t.Parallel()
 

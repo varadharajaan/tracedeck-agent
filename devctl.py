@@ -555,6 +555,8 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase76.ps1"))
     elif target == "verify76":
         run(powershell("./scripts/verify/verify-phase76.ps1"))
+    elif target == "theme":
+        run(powershell("./scripts/local/test-dashboard-theme.ps1", "-BaseUrl", local_url(args.addr)))
     else:
         run(powershell("./scripts/local/smoke-phase69.ps1"))
         run(powershell("./scripts/local/newman-phase69.ps1"))
@@ -694,6 +696,7 @@ def main() -> int:
             "smoke76",
             "newman76",
             "verify76",
+            "theme",
             "live",
         ],
         nargs="?",

@@ -58,6 +58,7 @@ const (
 	RouteSegmentExecutiveConsole = "executive-console"
 	RouteSegmentNotificationRev  = "notification-revenue-cockpit"
 	RouteSegmentProviderSim      = "provider-simulation-lab"
+	RouteSegmentProviderSetup    = "notification-provider-setup"
 	RouteSegmentPackageBilling   = "package-billing-readiness"
 	RouteSegmentNotificationCmd  = "notification-command-center"
 	RouteSegmentDeliveryTimeline = "delivery-timeline"
@@ -307,6 +308,7 @@ const (
 const (
 	ProviderSimulationModeDryRun  = "dry_run"
 	ProviderSimulationPrivacyNote = "metadata-only provider simulation: route labels, channel, provider type, delivery status, SLA result, retry posture, and buyer value only; no provider secrets, SMTP passwords, push endpoint payloads, alert bodies, screenshots, raw URLs, tokens, cookies, private content, or endpoint payloads are collected or stored"
+	ProviderSetupPrivacyNote      = "metadata-only notification provider setup: channel labels, provider labels, recipient labels, route status, proof state, checklist state, owner action, and setup readiness only; no provider secrets, SMTP passwords, push endpoints, raw provider payloads, alert bodies, screenshots, raw URLs, page titles, tokens, cookies, private content, endpoint payloads, or passwords are collected or stored"
 )
 
 const (

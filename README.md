@@ -52,6 +52,8 @@ go run ./agent/cmd/tracedeck-agent schema --version v1alpha1 --out ./docs/schema
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-policy-schema.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-contract.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-layout.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-theme.ps1
+python ./devctl.py test theme
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-autostart-assurance.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase5.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase5.ps1

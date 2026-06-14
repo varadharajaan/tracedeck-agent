@@ -23,6 +23,7 @@ type Repository interface {
 	RunTenantDeliveryRemediation(context.Context, string, model.RunDeliveryRemediationRequest) (model.TenantDeliveryRemediation, error)
 	TenantProviderSimulationLab(context.Context, string) (model.TenantProviderSimulationLab, error)
 	RunTenantProviderSimulation(context.Context, string, model.RunProviderSimulationRequest) (model.TenantProviderSimulationLab, error)
+	TenantNotificationProviderSetup(context.Context, string) (model.TenantNotificationProviderSetup, error)
 	TenantPackageBillingReadiness(context.Context, string) (model.TenantPackageBillingReadiness, error)
 	TenantOperationsSummary(context.Context, string) (model.TenantOperationsSummary, error)
 	TenantMonetizationSummary(context.Context, string) (model.TenantMonetizationSummary, error)

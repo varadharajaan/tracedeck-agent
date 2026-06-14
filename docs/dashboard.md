@@ -111,6 +111,10 @@ Phase 69/72 hardening adds visible source provenance on local and cloud
 dashboard rows. Demo-seeded risk and delivery rows show `demo_seed`, live
 browser telemetry shows `live_ingested`, and Lambda S3 rows show `s3_sample`.
 This prevents demo proof from being mistaken for a real SMTP/web-push send.
+Phase 76/77 UI polish gives the dashboard and Browser Activity viewer a cleaner
+product shell: neutral light/dark palettes, stronger brand header, cleaner
+toolbar actions, modern page tabs, calmer status chips, readable cards, and a
+screenshot-free theme contract for both desktop and mobile.
 
 To check the currently running local dashboard:
 
@@ -137,6 +141,14 @@ The reports are saved under:
 ```text
 data/local/output/runtime-doctor.json
 data/local/output/runtime-doctor.txt
+```
+
+To verify the dashboard and Browser Activity light/dark theme contract without
+capturing screenshots:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-theme.ps1 -BaseUrl http://127.0.0.1:18080
+python ./devctl.py test theme
 ```
 
 The dashboard reads the base backend endpoints:
