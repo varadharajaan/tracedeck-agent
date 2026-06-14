@@ -1613,6 +1613,80 @@ type TenantProviderSimulationLab struct {
 	GeneratedAt     time.Time                          `json:"generated_at"`
 }
 
+type TenantNotificationProviderSetupSummary struct {
+	Status                 string `json:"status"`
+	Headline               string `json:"headline"`
+	Detail                 string `json:"detail"`
+	SetupScore             int    `json:"setup_score"`
+	RoutesTotal            int    `json:"routes_total"`
+	ChannelsReady          int    `json:"channels_ready"`
+	ChannelsTotal          int    `json:"channels_total"`
+	ProviderConfirmed      int    `json:"provider_confirmed"`
+	DryRunRehearsed        int    `json:"dry_run_rehearsed"`
+	DemoOnly               int    `json:"demo_only"`
+	Retrying               int    `json:"retrying"`
+	PendingProvider        int    `json:"pending_provider"`
+	EmailConfigured        bool   `json:"email_configured"`
+	EmailProviderConfirmed bool   `json:"email_provider_confirmed"`
+	PushConfigured         bool   `json:"push_configured"`
+	PushProviderConfirmed  bool   `json:"push_provider_confirmed"`
+	DashboardConfigured    bool   `json:"dashboard_configured"`
+	BuyerReady             bool   `json:"buyer_ready"`
+	RecommendedPaidPackage string `json:"recommended_paid_package"`
+	NextBestAction         string `json:"next_best_action"`
+}
+
+type TenantNotificationProviderSetupChannel struct {
+	Channel           string `json:"channel"`
+	Provider          string `json:"provider"`
+	RecipientLabel    string `json:"recipient_label"`
+	RouteStatus       string `json:"route_status"`
+	AssuranceState    string `json:"assurance_state"`
+	SetupState        string `json:"setup_state"`
+	Configured        bool   `json:"configured"`
+	ProviderConfirmed bool   `json:"provider_confirmed"`
+	UserVisible       bool   `json:"user_visible"`
+	ProofLabel        string `json:"proof_label"`
+	WhyNotDelivered   string `json:"why_not_delivered"`
+	RequiredAction    string `json:"required_action"`
+	EvidenceLabel     string `json:"evidence_label"`
+	PaidTier          string `json:"paid_tier"`
+}
+
+type TenantNotificationProviderSetupChecklistItem struct {
+	ID       string `json:"id"`
+	Label    string `json:"label"`
+	Status   string `json:"status"`
+	Ready    bool   `json:"ready"`
+	Detail   string `json:"detail"`
+	Owner    string `json:"owner"`
+	PaidTier string `json:"paid_tier"`
+}
+
+type TenantNotificationProviderSetupAction struct {
+	Title           string `json:"title"`
+	Detail          string `json:"detail"`
+	Owner           string `json:"owner"`
+	Channel         string `json:"channel"`
+	Status          string `json:"status"`
+	ConversionLever string `json:"conversion_lever"`
+	PaidTier        string `json:"paid_tier"`
+}
+
+type TenantNotificationProviderSetup struct {
+	TenantID        string                                         `json:"tenant_id"`
+	TenantName      string                                         `json:"tenant_name"`
+	PlanID          string                                         `json:"plan_id"`
+	PlanName        string                                         `json:"plan_name"`
+	Audience        string                                         `json:"audience"`
+	Summary         TenantNotificationProviderSetupSummary         `json:"summary"`
+	Channels        []TenantNotificationProviderSetupChannel       `json:"channels"`
+	Checklist       []TenantNotificationProviderSetupChecklistItem `json:"checklist"`
+	Actions         []TenantNotificationProviderSetupAction        `json:"actions"`
+	PrivacyBoundary string                                         `json:"privacy_boundary"`
+	GeneratedAt     time.Time                                      `json:"generated_at"`
+}
+
 type TenantPackageBillingSummary struct {
 	Status             string `json:"status"`
 	Headline           string `json:"headline"`

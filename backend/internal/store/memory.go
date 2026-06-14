@@ -557,6 +557,26 @@ func (m *Memory) RunTenantProviderSimulation(ctx context.Context, tenantID strin
 	return m.TenantProviderSimulationLab(ctx, tenantID)
 }
 
+func (m *Memory) TenantNotificationProviderSetup(ctx context.Context, tenantID string) (model.TenantNotificationProviderSetup, error) {
+	generatedAt := time.Now().UTC()
+	tenantID = strings.TrimSpace(tenantID)
+
+	tenant, err := m.GetTenant(ctx, tenantID)
+	if err != nil {
+		return model.TenantNotificationProviderSetup{}, err
+	}
+	assurance, err := m.TenantDeliveryAssurance(ctx, tenantID, model.TenantDeliveryAssuranceFilter{Limit: 12})
+	if err != nil {
+		return model.TenantNotificationProviderSetup{}, err
+	}
+	provider, err := m.TenantProviderSimulationLab(ctx, tenantID)
+	if err != nil {
+		return model.TenantNotificationProviderSetup{}, err
+	}
+
+	return buildTenantNotificationProviderSetup(tenant, assurance, provider, generatedAt), nil
+}
+
 func (m *Memory) TenantPackageBillingReadiness(ctx context.Context, tenantID string) (model.TenantPackageBillingReadiness, error) {
 	generatedAt := time.Now().UTC()
 	tenantID = strings.TrimSpace(tenantID)
@@ -10972,6 +10992,338 @@ func buildTenantProviderSimulationLab(operations model.TenantOperationsSummary, 
 		PrivacyBoundary: constants.ProviderSimulationPrivacyNote,
 		GeneratedAt:     generatedAt,
 	}
+}
+
+func buildTenantNotificationProviderSetup(tenant model.Tenant, assurance model.TenantDeliveryAssurance, provider model.TenantProviderSimulationLab, generatedAt time.Time) model.TenantNotificationProviderSetup {
+	channels := notificationProviderSetupChannels(assurance.Routes)
+	summary := notificationProviderSetupSummary(assurance, provider, channels)
+	summary.Headline, summary.Detail = notificationProviderSetupNarrative(summary)
+	summary.NextBestAction = notificationProviderSetupNextAction(summary)
+
+	return model.TenantNotificationProviderSetup{
+		TenantID:        tenant.TenantID,
+		TenantName:      tenant.Name,
+		PlanID:          tenant.PlanID,
+		PlanName:        firstNonEmpty(provider.PlanName, tenant.PlanID),
+		Audience:        firstNonEmpty(provider.Audience, tenant.PrimaryProfile),
+		Summary:         summary,
+		Channels:        channels,
+		Checklist:       notificationProviderSetupChecklist(summary, provider),
+		Actions:         notificationProviderSetupActions(summary, channels, provider),
+		PrivacyBoundary: constants.ProviderSetupPrivacyNote,
+		GeneratedAt:     generatedAt,
+	}
+}
+
+func notificationProviderSetupChannels(routes []model.TenantDeliveryAssuranceRoute) []model.TenantNotificationProviderSetupChannel {
+	channels := []string{constants.DeliveryChannelEmail, constants.DeliveryChannelPush, constants.DeliveryChannelDashboard}
+	items := make([]model.TenantNotificationProviderSetupChannel, 0, len(channels))
+	for _, channel := range channels {
+		items = append(items, notificationProviderSetupChannel(channel, notificationProviderSetupRoute(routes, channel)))
+	}
+	return items
+}
+
+func notificationProviderSetupRoute(routes []model.TenantDeliveryAssuranceRoute, channel string) *model.TenantDeliveryAssuranceRoute {
+	for index := range routes {
+		if routes[index].Channel == channel {
+			return &routes[index]
+		}
+	}
+	return nil
+}
+
+func notificationProviderDefaultProvider(channel string) string {
+	switch channel {
+	case constants.DeliveryChannelEmail:
+		return constants.DeliveryProviderSMTP
+	case constants.DeliveryChannelPush:
+		return constants.DeliveryProviderWebPush
+	case constants.DeliveryChannelDashboard:
+		return constants.DeliveryProviderLocalFeed
+	default:
+		return "provider_pending"
+	}
+}
+
+func notificationProviderSetupChannel(channel string, route *model.TenantDeliveryAssuranceRoute) model.TenantNotificationProviderSetupChannel {
+	provider := notificationProviderDefaultProvider(channel)
+	recipient := "recipient label pending"
+	routeStatus := constants.DeliveryStatusPending
+	assuranceState := constants.DeliveryAssurancePendingProvider
+	proofLabel := "provider proof pending"
+	evidenceLabel := "metadata-only setup proof pending"
+	configured := false
+
+	if route != nil {
+		provider = firstNonEmpty(route.Provider, provider)
+		recipient = firstNonEmpty(route.RecipientLabel, recipient)
+		routeStatus = firstNonEmpty(route.RouteStatus, route.LatestDeliveryStatus, routeStatus)
+		assuranceState = firstNonEmpty(route.AssuranceState, assuranceState)
+		proofLabel = firstNonEmpty(route.ProofLabel, proofLabel)
+		evidenceLabel = firstNonEmpty(route.EvidenceDetail, route.OperatorTruth, route.UserVisibleLabel, evidenceLabel)
+		configured = route.Enabled && strings.TrimSpace(route.Provider) != ""
+	}
+
+	providerConfirmed := assuranceState == constants.DeliveryAssuranceProviderConfirmed
+	userVisible := providerConfirmed ||
+		assuranceState == constants.DeliveryAssuranceDashboardVisible ||
+		(channel == constants.DeliveryChannelDashboard && assuranceState == constants.DeliveryAssuranceDryRunRehearsed)
+
+	return model.TenantNotificationProviderSetupChannel{
+		Channel:           channel,
+		Provider:          provider,
+		RecipientLabel:    recipient,
+		RouteStatus:       routeStatus,
+		AssuranceState:    assuranceState,
+		SetupState:        notificationProviderSetupState(channel, assuranceState, configured),
+		Configured:        configured,
+		ProviderConfirmed: providerConfirmed,
+		UserVisible:       userVisible,
+		ProofLabel:        proofLabel,
+		WhyNotDelivered:   notificationProviderWhyNotDelivered(channel, assuranceState),
+		RequiredAction:    notificationProviderRequiredAction(channel, assuranceState, configured),
+		EvidenceLabel:     evidenceLabel,
+		PaidTier:          notificationCommandChannelTier(channel),
+	}
+}
+
+func notificationProviderSetupState(channel string, state string, configured bool) string {
+	switch state {
+	case constants.DeliveryAssuranceProviderConfirmed, constants.DeliveryAssuranceDashboardVisible:
+		return constants.StatusHealthy
+	case constants.DeliveryAssuranceDryRunRehearsed:
+		if channel == constants.DeliveryChannelDashboard {
+			return constants.StatusHealthy
+		}
+		return constants.StatusWatch
+	case constants.DeliveryAssuranceRetrying, constants.DeliveryAssuranceFailed:
+		return constants.StatusAttention
+	case constants.DeliveryAssuranceDemoOnly, constants.DeliveryAssurancePendingProvider:
+		if configured {
+			return constants.StatusWatch
+		}
+		return constants.StatusPending
+	case constants.DeliveryAssuranceRouteDisabled:
+		return constants.StatusAttention
+	default:
+		if configured {
+			return constants.StatusWatch
+		}
+		return constants.StatusPending
+	}
+}
+
+func notificationProviderWhyNotDelivered(channel string, state string) string {
+	switch state {
+	case constants.DeliveryAssuranceProviderConfirmed:
+		return "Provider delivery has customer-safe proof."
+	case constants.DeliveryAssuranceDashboardVisible:
+		return "Dashboard fallback is visible; no external provider delivery is required for this channel."
+	case constants.DeliveryAssuranceDryRunRehearsed:
+		return "Only dry-run proof exists; a production provider delivery has not been confirmed."
+	case constants.DeliveryAssuranceDemoOnly:
+		return "Current proof is demo-only and should not be described as delivered to the recipient."
+	case constants.DeliveryAssuranceRetrying:
+		return "Provider delivery is retrying; the recipient should not be promised a received alert yet."
+	case constants.DeliveryAssuranceFailed:
+		return "Provider delivery failed and needs route repair before buyer-facing claims."
+	case constants.DeliveryAssuranceRouteDisabled:
+		return "Route is disabled and cannot deliver until enabled."
+	default:
+		return fmt.Sprintf("%s route is waiting for provider confirmation.", capitalizeLabel(channel))
+	}
+}
+
+func notificationProviderRequiredAction(channel string, state string, configured bool) string {
+	if !configured && channel != constants.DeliveryChannelDashboard {
+		return fmt.Sprintf("Configure the %s provider and recipient label, then send a provider-safe proof event.", channel)
+	}
+	switch state {
+	case constants.DeliveryAssuranceProviderConfirmed, constants.DeliveryAssuranceDashboardVisible:
+		return "Keep proof current and visible in the customer dashboard."
+	case constants.DeliveryAssuranceDryRunRehearsed:
+		return "Run a real provider confirmation before promising production notification delivery."
+	case constants.DeliveryAssuranceRetrying:
+		return "Resolve retry cause and confirm recipient-visible provider delivery."
+	case constants.DeliveryAssuranceFailed:
+		return "Repair provider route and rerun delivery assurance."
+	case constants.DeliveryAssuranceRouteDisabled:
+		return "Enable the route or remove it from paid notification promises."
+	case constants.DeliveryAssuranceDemoOnly:
+		return "Replace demo-only evidence with production provider proof."
+	default:
+		return "Complete provider setup and collect metadata-only delivery proof."
+	}
+}
+
+func notificationProviderSetupSummary(assurance model.TenantDeliveryAssurance, provider model.TenantProviderSimulationLab, channels []model.TenantNotificationProviderSetupChannel) model.TenantNotificationProviderSetupSummary {
+	summary := model.TenantNotificationProviderSetupSummary{
+		RoutesTotal:            assurance.Summary.RoutesTotal,
+		ChannelsTotal:          len(channels),
+		ProviderConfirmed:      assurance.Summary.ProviderConfirmed,
+		DryRunRehearsed:        assurance.Summary.DryRunRehearsed,
+		DemoOnly:               assurance.Summary.DemoOnly,
+		Retrying:               assurance.Summary.Retrying,
+		PendingProvider:        assurance.Summary.PendingProvider,
+		RecommendedPaidPackage: firstNonEmpty(provider.Summary.RecommendedPaidPackage, assurance.Summary.RecommendedPaidTier, constants.PlanFamilyPro),
+	}
+	totalScore := 0
+	for _, channel := range channels {
+		totalScore += notificationProviderChannelScore(channel)
+		if channel.SetupState == constants.StatusHealthy {
+			summary.ChannelsReady++
+		}
+		if channel.Channel == constants.DeliveryChannelEmail {
+			summary.EmailConfigured = channel.Configured
+			summary.EmailProviderConfirmed = channel.ProviderConfirmed
+		}
+		if channel.Channel == constants.DeliveryChannelPush {
+			summary.PushConfigured = channel.Configured
+			summary.PushProviderConfirmed = channel.ProviderConfirmed
+		}
+		if channel.Channel == constants.DeliveryChannelDashboard {
+			summary.DashboardConfigured = channel.Configured || channel.UserVisible
+		}
+	}
+	if len(channels) > 0 {
+		summary.SetupScore = totalScore / len(channels)
+	}
+	if assurance.Summary.AssuranceScore > 0 || provider.Summary.ReadinessScore > 0 {
+		summary.SetupScore = averageScore(summary.SetupScore, assurance.Summary.AssuranceScore, provider.Summary.ReadinessScore)
+	}
+	summary.BuyerReady = summary.EmailProviderConfirmed && summary.PushProviderConfirmed && summary.DashboardConfigured
+	summary.Status = constants.StatusAttention
+	switch {
+	case summary.BuyerReady:
+		summary.Status = constants.StatusHealthy
+	case summary.ProviderConfirmed > 0 || summary.DryRunRehearsed > 0 || summary.ChannelsReady > 0:
+		summary.Status = constants.StatusWatch
+	case summary.RoutesTotal == 0:
+		summary.Status = constants.StatusPending
+	}
+	return summary
+}
+
+func notificationProviderChannelScore(channel model.TenantNotificationProviderSetupChannel) int {
+	switch channel.SetupState {
+	case constants.StatusHealthy:
+		return 100
+	case constants.StatusWatch:
+		if channel.AssuranceState == constants.DeliveryAssuranceDryRunRehearsed {
+			return 70
+		}
+		return 55
+	case constants.StatusAttention:
+		return 25
+	default:
+		if channel.Configured {
+			return 40
+		}
+		return 10
+	}
+}
+
+func notificationProviderSetupNarrative(summary model.TenantNotificationProviderSetupSummary) (string, string) {
+	switch {
+	case summary.BuyerReady:
+		return "Notification provider setup is buyer-ready", "Email and push have provider-confirmed proof, and dashboard fallback is visible for admins."
+	case summary.EmailProviderConfirmed && !summary.PushProviderConfirmed:
+		return "Email proof is ready; push still needs provider confirmation", "Push notifications must be confirmed before promising screen-visible anomaly alerts."
+	case summary.PushProviderConfirmed && !summary.EmailProviderConfirmed:
+		return "Push proof is ready; email still needs provider confirmation", "Critical mail should be confirmed before weekly report or high-severity anomaly promises."
+	case summary.DemoOnly > 0 || summary.Retrying > 0:
+		return "Notification setup needs delivery proof", fmt.Sprintf("%d demo-only and %d retrying route signals must be resolved before paid claims.", summary.DemoOnly, summary.Retrying)
+	default:
+		return "Notification provider setup is waiting for proof", "Configure email, push, and dashboard routes, then collect metadata-only provider confirmation."
+	}
+}
+
+func notificationProviderSetupNextAction(summary model.TenantNotificationProviderSetupSummary) string {
+	switch {
+	case !summary.EmailConfigured:
+		return "Configure SMTP or SES metadata and send a provider-safe email proof."
+	case !summary.EmailProviderConfirmed:
+		return "Send a real email proof; demo-only mail should stay labeled as not delivered."
+	case !summary.PushConfigured:
+		return "Register a web-push route without storing push endpoint payloads."
+	case !summary.PushProviderConfirmed:
+		return "Resolve push retry and collect recipient-visible provider confirmation."
+	case !summary.DashboardConfigured:
+		return "Enable dashboard fallback so every alert has an admin-visible route."
+	default:
+		return "Keep notification setup proof current for Family Pro, school, and business walkthroughs."
+	}
+}
+
+func notificationProviderSetupChecklist(summary model.TenantNotificationProviderSetupSummary, provider model.TenantProviderSimulationLab) []model.TenantNotificationProviderSetupChecklistItem {
+	return []model.TenantNotificationProviderSetupChecklistItem{
+		notificationProviderChecklistItem("email-provider", "Email Provider", summary.EmailProviderConfirmed, "Provider-confirmed mail proof is required for critical anomaly and weekly report claims.", constants.RoleBusinessManager, constants.PlanFamilyPro),
+		notificationProviderChecklistItem("push-provider", "Push Provider", summary.PushProviderConfirmed, "Provider-confirmed push proof is required before promising screen notifications.", constants.RoleBusinessManager, constants.PlanFamilyPro),
+		notificationProviderChecklistItem("dashboard-fallback", "Dashboard Fallback", summary.DashboardConfigured, "Dashboard fallback must be visible even when mail or push retries.", constants.RoleParent, constants.PlanFamilyPro),
+		notificationProviderChecklistItem("dry-run-current", "Dry Run Current", summary.DryRunRehearsed > 0 || provider.Summary.SimulatedRoutes > 0, "Provider simulation or dry-run evidence should stay current between production proofs.", constants.RoleBusinessManager, constants.PlanFamilyPro),
+		notificationProviderChecklistItem("demo-labels", "Demo Labels", summary.DemoOnly == 0, "Demo-only delivery rows must never look like actual recipient delivery.", constants.RoleBusinessManager, constants.PlanFamilyPro),
+		notificationProviderChecklistItem("retry-clean", "Retry Queue", summary.Retrying == 0, "Retrying provider routes need owner-visible action before delivery promises.", constants.RoleBusinessManager, constants.PlanFamilyPro),
+		notificationProviderChecklistItem("privacy-boundary", "Privacy Boundary", true, constants.ProviderSetupPrivacyNote, constants.RoleBusinessManager, constants.PlanBusiness),
+	}
+}
+
+func notificationProviderChecklistItem(id string, label string, ready bool, detail string, owner string, paidTier string) model.TenantNotificationProviderSetupChecklistItem {
+	status := constants.StatusAttention
+	if ready {
+		status = constants.StatusHealthy
+	}
+	return model.TenantNotificationProviderSetupChecklistItem{
+		ID:       id,
+		Label:    label,
+		Status:   status,
+		Ready:    ready,
+		Detail:   detail,
+		Owner:    owner,
+		PaidTier: paidTier,
+	}
+}
+
+func notificationProviderSetupActions(summary model.TenantNotificationProviderSetupSummary, channels []model.TenantNotificationProviderSetupChannel, provider model.TenantProviderSimulationLab) []model.TenantNotificationProviderSetupAction {
+	actions := []model.TenantNotificationProviderSetupAction{}
+	for _, channel := range channels {
+		if channel.ProviderConfirmed && channel.SetupState == constants.StatusHealthy {
+			continue
+		}
+		status := channel.SetupState
+		if status == constants.StatusPending {
+			status = constants.StatusWatch
+		}
+		actions = append(actions, model.TenantNotificationProviderSetupAction{
+			Title:           fmt.Sprintf("%s setup needs proof", capitalizeLabel(channel.Channel)),
+			Detail:          channel.RequiredAction,
+			Owner:           constants.RoleBusinessManager,
+			Channel:         channel.Channel,
+			Status:          status,
+			ConversionLever: "turn notification setup into buyer-trust proof",
+			PaidTier:        channel.PaidTier,
+		})
+	}
+	if len(actions) == 0 {
+		actions = append(actions, model.TenantNotificationProviderSetupAction{
+			Title:           "Provider setup ready for paid walkthrough",
+			Detail:          firstNonEmpty(provider.Summary.NextBestAction, summary.NextBestAction),
+			Owner:           constants.RoleBusinessManager,
+			Channel:         constants.DeliveryChannelDashboard,
+			Status:          constants.StatusHealthy,
+			ConversionLever: "show provider-confirmed mail, push, and dashboard proof",
+			PaidTier:        firstNonEmpty(summary.RecommendedPaidPackage, constants.PlanFamilyPro),
+		})
+	}
+	return actions
+}
+
+func capitalizeLabel(value string) string {
+	clean := strings.TrimSpace(strings.ReplaceAll(value, "_", " "))
+	if clean == "" {
+		return "Provider"
+	}
+	return strings.ToUpper(clean[:1]) + clean[1:]
 }
 
 func providerSimulationStatus(summary model.TenantProviderSimulationSummary) string {

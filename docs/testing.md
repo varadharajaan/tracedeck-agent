@@ -100,12 +100,17 @@ python ./devctl.py test phase76
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase76.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase76.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase76.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-theme.ps1 -BaseUrl http://127.0.0.1:18080
+python ./devctl.py test theme
 ```
 
 The verifier checks dashboard and Browser Activity JavaScript syntax, the
 dashboard DOM contract, backend API tests, product UI markers, absence of
 pseudo-letter toolbar markers, Newman HTML/API page contracts, screenshot-free
 desktop/tablet/mobile layout containment, and root artifact hygiene.
+The theme contract checks both light and dark modes for the dashboard and
+Browser Activity pages, verifies clean toolbar labels, confirms visible server
+status, and records metrics only under `data/local/dashboard-theme/`.
 Browser fixture smoke data is generated under `data/local/smoke-phase3/`, and
 the smoke archive is checked to ensure raw URLs and page titles are not stored.
 Earlier phase smokes pass `--disable-browser-history` so they do not collect

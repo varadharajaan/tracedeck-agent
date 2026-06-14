@@ -388,6 +388,8 @@ func (s *Server) handleTenantRoutes(w http.ResponseWriter, r *http.Request) {
 		s.handleTenantNotificationRevenueCockpit(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentProviderSim:
 		s.handleTenantProviderSimulationLab(w, r, tenantID)
+	case len(parts) == 2 && parts[1] == constants.RouteSegmentProviderSetup && r.Method == http.MethodGet:
+		s.handleTenantNotificationProviderSetup(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentPackageBilling && r.Method == http.MethodGet:
 		s.handleTenantPackageBillingReadiness(w, r, tenantID)
 	case len(parts) == 2 && parts[1] == constants.RouteSegmentNotificationCmd && r.Method == http.MethodGet:
@@ -1240,6 +1242,23 @@ func (s *Server) handleTenantProviderSimulationLab(w http.ResponseWriter, r *htt
 	default:
 		writeMethodNotAllowed(w)
 	}
+}
+
+func (s *Server) handleTenantNotificationProviderSetup(w http.ResponseWriter, r *http.Request, tenantID string) {
+	if !tenantAllowed(r.Context(), tenantID) {
+		writeError(w, http.StatusForbidden, "tenant scope is not allowed")
+		return
+	}
+	setup, err := s.store.TenantNotificationProviderSetup(r.Context(), tenantID)
+	if err != nil {
+		if errors.Is(err, store.ErrTenantNotFound) {
+			writeError(w, http.StatusNotFound, "tenant not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "tenant notification provider setup lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, setup)
 }
 
 func (s *Server) handleTenantPackageBillingReadiness(w http.ResponseWriter, r *http.Request, tenantID string) {

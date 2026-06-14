@@ -76,6 +76,7 @@ GET  /api/v1/tenants/{tenantId}/executive-console
 GET  /api/v1/tenants/{tenantId}/notification-revenue-cockpit
 GET  /api/v1/tenants/{tenantId}/provider-simulation-lab
 POST /api/v1/tenants/{tenantId}/provider-simulation-lab
+GET  /api/v1/tenants/{tenantId}/notification-provider-setup
 GET  /api/v1/tenants/{tenantId}/package-billing-readiness
 GET  /api/v1/tenants/{tenantId}/onboarding-center
 GET  /api/v1/tenants/{tenantId}/customer-settings-center
@@ -338,6 +339,16 @@ and strict metadata-only privacy proof. The POST endpoint accepts typed
 rejected. It does not store provider secrets, SMTP passwords, push endpoint
 payloads, alert bodies, screenshots, passwords, tokens, cookies, raw URLs, page
 titles, private content, or endpoint payloads.
+
+Phase 77 adds `GET /api/v1/tenants/{tenantId}/notification-provider-setup`.
+It composes delivery assurance and provider simulation metadata into a typed
+setup readiness contract for email, push, and dashboard routes. The response
+separates configured routes, provider-confirmed proof, dry-run proof, demo-only
+rows, retrying routes, checklist state, and owner actions so demo evidence is
+not mistaken for actual email or push delivery. It stores metadata only and
+does not collect provider secrets, SMTP passwords, push endpoints, raw provider
+payloads, alert bodies, screenshots, raw URLs, page titles, tokens, cookies,
+private content, endpoint payloads, or passwords.
 
 Phase 56 adds `GET /api/v1/tenants/{tenantId}/package-billing-readiness`.
 The response composes operations, monetisation, business dashboard, role
