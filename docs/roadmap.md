@@ -320,3 +320,11 @@
     tables, improved card hierarchy, screenshot-free desktop/tablet/mobile
     layout guard, Postman/Newman coverage, docs, `devctl.py test phase76`, and
     full local verification.
+77. Phase 78: notification provider setup center and UI quality guard. Typed
+    tenant provider setup API and dashboard section that separates configured
+    routes from provider-confirmed delivery, demo-only proof, retrying routes,
+    checklist rows, buyer readiness, and owner actions. The shell is refreshed
+    as TraceDeck Console with Browser Viewer, full Workspace Navigator labels,
+    and a screenshot-free visual-quality contract for stale debug copy, tiny
+    controls, dark-mode posture, server lights, and overflow, with Postman,
+    Newman, docs, `devctl.py test phase78`, and full local verification.

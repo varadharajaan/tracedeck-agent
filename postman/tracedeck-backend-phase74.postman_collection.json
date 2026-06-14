@@ -40,7 +40,7 @@
               "pm.test('dashboard exposes runtime controls', function () {",
               "  pm.response.to.have.status(200);",
               "  const html = pm.response.text();",
-              "  pm.expect(html).to.include('TraceDeck Command Center');",
+              "  pm.expect(html).to.include('TraceDeck Console');",
               "  pm.expect(html).to.include('theme-toggle-button');",
               "  pm.expect(html).to.include('server-status-light');",
               "  pm.expect(html).to.include('dashboard-page-nav');",

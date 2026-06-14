@@ -54,7 +54,7 @@ try {
 
     $dashboard = Invoke-WebRequest -UseBasicParsing -Uri "$baseUrl/"
     foreach ($expected in @(
-        "Command Navigation",
+        "Workspace Navigator",
         "command-navigation",
         "command-nav-status",
         "command-nav-title",

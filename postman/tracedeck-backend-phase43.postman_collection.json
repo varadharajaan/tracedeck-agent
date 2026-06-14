@@ -18,7 +18,7 @@
         "pm.test('dashboard contains screenshot-free layout contract markers', function () {",
         "  pm.response.to.have.status(200);",
         "  const html = pm.response.text();",
-        "  pm.expect(html).to.include('Command Navigation');",
+        "  pm.expect(html).to.include('Workspace Navigator');",
         "  pm.expect(html).to.include('Buyer Operations Brief');",
         "  pm.expect(html).to.include('buyer-ops-section');",
         "  pm.expect(html).to.include('Push Notification Dispatch');",
@@ -32,7 +32,7 @@
       ] } }]
     },
     {
-      "name": "Command Navigation KPI Data Still Works",
+      "name": "Workspace Navigator KPI Data Still Works",
       "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/monetization-summary" },
       "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
         "pm.test('monetisation summary still backs command navigation', function () {",
