@@ -124,6 +124,13 @@ checks rendered light and dark pages for stale brace labels, pseudo-letter
 markers, tiny visible controls, dark-mode color posture, visible server lights,
 and horizontal overflow without capturing screenshots.
 
+Phase 81 makes those Workspace Navigator labels explicit in the markup. Each
+navigation tile has a stable `command-label` row, such as `Deployment
+Readiness`, `Customer Control Room`, `Provider Setup`, `Paid Operations`, and
+`Delivery Assurance`, plus a separate `command-meta` row for live counts or
+scores. The dashboard visual-quality contract now verifies the full product
+labels and rejects the older terse shortcut labels.
+
 To check the currently running local dashboard:
 
 ```powershell

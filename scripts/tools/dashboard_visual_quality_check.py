@@ -95,6 +95,9 @@ def main() -> int:
                                   const bodyText = document.body.innerText || "";
                                   const toolbarLabels = Array.from(document.querySelectorAll(".toolbar button"))
                                     .map((button) => button.textContent.trim());
+                                  const commandLabels = Array.from(document.querySelectorAll(".command-jump .command-label"))
+                                    .map((label) => label.textContent.trim());
+                                  const commandMetaCount = document.querySelectorAll(".command-jump .command-meta").length;
                                   const tinyInteractive = Array.from(document.querySelectorAll(".toolbar button, .dashboard-page-tab, .command-jump, .badge, .pill"))
                                     .filter((element) => {
                                       const rect = element.getBoundingClientRect();
@@ -106,12 +109,39 @@ def main() -> int:
                                       height: Number(element.getBoundingClientRect().height.toFixed(2)),
                                     }));
                                   const commandStacked = Array.from(document.querySelectorAll(".command-jump")).every((button) => {
-                                    const span = button.querySelector("span");
+                                    const span = button.querySelector(".command-meta");
                                     if (!span) return true;
                                     const buttonRect = button.getBoundingClientRect();
                                     const spanRect = span.getBoundingClientRect();
                                     return spanRect.top > buttonRect.top + 16;
                                   });
+                                  const expectedCommandLabels = [
+                                    "Premium Operations",
+                                    "Onboarding Center",
+                                    "Customer Settings",
+                                    "Revenue Operations",
+                                    "Deployment Readiness",
+                                    "Customer Control Room",
+                                    "Customer Success Packet",
+                                    "Push Activation",
+                                    "Host Portfolio",
+                                    "Account Portfolio",
+                                    "Executive Console",
+                                    "Notification Revenue",
+                                    "Provider Simulation",
+                                    "Provider Setup",
+                                    "Package Billing",
+                                    "Paid Operations",
+                                    "Growth Dashboard",
+                                    "Notification Command",
+                                    "Delivery Assurance",
+                                    "Notification Proof",
+                                    "Weekly Reports",
+                                    "Archive Proof",
+                                    "Trust & Consent",
+                                    "Host Details"
+                                  ];
+                                  const staleCommandLabels = new Set(["Premium", "Onboard", "Settings", "Revenue Ops", "Deploy", "Control", "Success", "Push", "Portfolio", "Account", "Executive", "Provider", "Setup", "Packages", "Paid Ops", "Revenue", "Notification Pro", "Assurance", "Notifications", "Reports", "Archive", "Trust", "Hosts"]);
                                   const backgroundColor = root.getPropertyValue("--bg").trim();
                                   const surfaceColor = root.getPropertyValue("--surface").trim();
                                   const bgLuma = luminance(parseColor(backgroundColor));
@@ -145,6 +175,21 @@ def main() -> int:
                                       detail: commandStacked ? "shortcut metadata stacks under labels" : "shortcut metadata still renders as side labels"
                                     },
                                     {
+                                      name: "command-labels-are-product-grade",
+                                      ok: document.querySelectorAll(".command-jump").length === 0 || expectedCommandLabels.every((label) => commandLabels.includes(label)),
+                                      detail: commandLabels.join(", ")
+                                    },
+                                    {
+                                      name: "no-terse-command-labels",
+                                      ok: commandLabels.every((label) => !staleCommandLabels.has(label)),
+                                      detail: commandLabels.join(", ")
+                                    },
+                                    {
+                                      name: "command-metadata-classed",
+                                      ok: document.querySelectorAll(".command-jump").length === 0 || commandMetaCount === document.querySelectorAll(".command-jump").length,
+                                      detail: `${commandMetaCount}/${document.querySelectorAll(".command-jump").length} command buttons have metadata rows`
+                                    },
+                                    {
                                       name: "theme-luminance",
                                       ok: theme === "dark" ? bgLuma < 0.08 && surfaceLuma < 0.14 : bgLuma > 0.78 && surfaceLuma > 0.92,
                                       detail: `bg=${backgroundColor}(${bgLuma.toFixed(3)}) surface=${surfaceColor}(${surfaceLuma.toFixed(3)})`
@@ -159,6 +204,7 @@ def main() -> int:
                                     h1: h1 ? h1.textContent.trim() : "",
                                     status_text: status ? status.textContent.trim() : "",
                                     toolbar_labels: toolbarLabels,
+                                    command_labels: commandLabels,
                                     body_text: bodyText,
                                     checks,
                                   };
