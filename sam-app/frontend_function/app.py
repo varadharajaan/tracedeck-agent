@@ -472,6 +472,87 @@ def _index_html() -> str:
     .empty {{ min-height: 90px; display: grid; place-items: center; padding: 14px; border: 1px dashed var(--line); border-radius: 8px; background: var(--surface-2); color: var(--muted); text-align: center; }}
     @media (max-width: 980px) {{ .topbar, .app-shell, .hero-panel, .two {{ grid-template-columns: 1fr; }} .topbar {{ position: static; padding: 14px 16px; }} .toolbar {{ justify-content: stretch; }} .toolbar > * {{ flex: 1 1 180px; min-width: 0; }} .side-rail {{ position: static; }} .tabs {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} .grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} }}
     @media (max-width: 560px) {{ .app-shell {{ width: auto; margin: 14px 10px 28px; }} .grid, .settings-grid, .tabs {{ grid-template-columns: 1fr; }} .settings-grid .item:nth-child(2) {{ grid-column: auto; }} .toolbar > * {{ flex-basis: 100%; }} }}
+
+    /* Phase 82 hosted admin polish. */
+    :root {{
+      --bg: #f5f7fb;
+      --bg-band: #edf2f7;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --surface-3: #eef3f8;
+      --ink: #111827;
+      --muted: #5f6f82;
+      --line: #d9e2ec;
+      --line-strong: #a8b6c6;
+      --teal: #0f8c86;
+      --teal-strong: #075f5c;
+      --green: #1f7a4d;
+      --amber: #aa6212;
+      --red: #b94338;
+      --blue: #2d62b7;
+      --accent-soft: #e8f6f4;
+      --success-surface: #eaf7ef;
+      --warning-surface: #fff5df;
+      --danger-surface: #fff0ed;
+      --info-surface: #eaf2ff;
+      --shadow-soft: 0 10px 24px rgba(17, 24, 39, 0.07);
+      --shadow-line: 0 1px 0 rgba(168, 182, 198, 0.32);
+    }}
+    body.theme-dark {{
+      --bg: #0f1318;
+      --bg-band: #151b22;
+      --surface: #181e25;
+      --surface-2: #202832;
+      --surface-3: #2a3440;
+      --ink: #f2f6fb;
+      --muted: #a7b4c2;
+      --line: #34404d;
+      --line-strong: #657486;
+      --teal: #57c9c2;
+      --teal-strong: #9be3de;
+      --green: #7bd99b;
+      --amber: #efbd72;
+      --red: #f08a82;
+      --blue: #8ebcff;
+      --accent-soft: #173734;
+      --success-surface: #173322;
+      --warning-surface: #382a15;
+      --danger-surface: #3a2020;
+      --info-surface: #192a3f;
+      --shadow-soft: 0 14px 32px rgba(0, 0, 0, 0.26);
+      --shadow-line: 0 1px 0 rgba(101, 116, 134, 0.28);
+    }}
+    body {{ background: linear-gradient(180deg, var(--bg-band) 0, var(--bg) 320px, var(--bg) 100%); color: var(--ink); }}
+    .topbar {{ min-height: 82px; border-bottom-color: color-mix(in srgb, var(--line) 86%, transparent); background: color-mix(in srgb, var(--surface) 96%, transparent); box-shadow: var(--shadow-line), 0 16px 34px rgba(17, 24, 39, 0.06); }}
+    .brand-mark {{ width: 46px; height: 46px; flex-basis: 46px; border-color: color-mix(in srgb, var(--teal) 42%, var(--line)); background: color-mix(in srgb, var(--surface) 88%, var(--accent-soft)); box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 40%, transparent); }}
+    .brand-mark span {{ background: var(--teal); }}
+    .brand-mark span:nth-child(2) {{ background: var(--blue); }}
+    .brand-mark span:nth-child(3) {{ background: var(--green); }}
+    .eyebrow {{ color: var(--teal-strong); font-size: 12.5px; font-weight: 830; text-transform: uppercase; }}
+    button, select, input {{ border-color: color-mix(in srgb, var(--line) 88%, transparent); background: color-mix(in srgb, var(--surface) 96%, var(--surface-2)); color: var(--ink); box-shadow: none; }}
+    button:hover, select:hover {{ border-color: var(--line-strong); background: var(--surface); }}
+    button.primary {{ border-color: #111827; background: #111827; color: #ffffff; box-shadow: 0 12px 24px rgba(17, 24, 39, 0.16); }}
+    button.primary:hover {{ border-color: #283344; background: #283344; }}
+    body.theme-dark button.primary, body.theme-dark button.primary:hover {{ border-color: #f2f6fb; background: #f2f6fb; color: #111827; box-shadow: none; }}
+    .status {{ min-height: 42px; border-radius: 8px; font-weight: 790; box-shadow: none; }}
+    .app-shell {{ gap: 18px; max-width: 1480px; }}
+    .source-card, .panel, .metric, .hero-panel {{ border-color: color-mix(in srgb, var(--line) 88%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--surface) 98%, var(--surface-2)); box-shadow: var(--shadow-soft); }}
+    .hero-panel {{ border-top: 4px solid var(--teal); background: color-mix(in srgb, var(--surface) 98%, var(--accent-soft)); }}
+    .tabs {{ border-color: color-mix(in srgb, var(--line) 88%, transparent); background: color-mix(in srgb, var(--surface) 96%, transparent); box-shadow: var(--shadow-line); }}
+    .tab {{ min-height: 48px; border-radius: 8px; color: var(--muted); font-weight: 790; }}
+    .tab.is-active {{ border-color: #111827; background: #111827; color: #ffffff; box-shadow: none; }}
+    body.theme-dark .tab.is-active {{ border-color: #f2f6fb; background: #f2f6fb; color: #111827; }}
+    .metric {{ min-height: 140px; border-top: 3px solid color-mix(in srgb, var(--teal) 70%, var(--line)); background: color-mix(in srgb, var(--surface) 98%, var(--surface-2)); }}
+    .metric strong {{ color: var(--ink); font-weight: 840; }}
+    .metric-label {{ color: var(--muted); font-size: 12.5px; font-weight: 780; }}
+    .section-header {{ gap: 14px; margin-bottom: 16px; }}
+    .section-header h2 {{ color: var(--ink); font-size: 18px; font-weight: 830; }}
+    .section-header p {{ color: var(--muted); font-size: 13.5px; }}
+    .pill {{ min-height: 32px; border-color: color-mix(in srgb, var(--line) 92%, transparent); border-radius: 8px; padding: 6px 11px; background: color-mix(in srgb, var(--surface-2) 86%, var(--surface)); color: var(--muted); font-size: 13px; font-weight: 780; white-space: normal; overflow-wrap: anywhere; }}
+    .strong-pill {{ border-color: color-mix(in srgb, var(--teal) 45%, var(--line)); background: var(--accent-soft); color: var(--teal-strong); }}
+    .item, .empty {{ border-color: color-mix(in srgb, var(--line) 84%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--surface-2) 90%, var(--surface)); }}
+    .table-wrap {{ border-color: color-mix(in srgb, var(--line) 90%, transparent); border-radius: 8px; background: var(--surface); box-shadow: var(--shadow-soft); }}
+    th {{ color: var(--muted); font-size: 12.5px; font-weight: 790; background: color-mix(in srgb, var(--surface-2) 92%, var(--surface)); }}
   </style>
 </head>
 <body>

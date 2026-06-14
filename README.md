@@ -434,3 +434,11 @@ navigator now uses full product labels such as `Deployment Readiness`,
 Assurance`, with separate live metadata rows, instead of terse shortcut text.
 The visual-quality checker and Phase 81 smoke/Newman gates reject the old
 shortcut markup. Use `python devctl.py test phase81` for the local verifier.
+
+Phase 82 applies a modern admin UI polish pass across the local TraceDeck
+Console, Browser Activity drilldown, and Lambda Cloud Admin frontend. The
+visible text-logo mark is replaced with a symbolic product mark, light/dark
+palettes are unified, command tiles and badges are larger and less debug-like,
+and the static DOM, Playwright, Lambda visual, and Newman gates reject stale
+`TD`, `Browser{}`, `Center{}`, bracket shortcut, and terse debug copy. Use
+`python devctl.py test phase82` for the full local verifier.

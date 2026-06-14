@@ -120,6 +120,9 @@ Phase 81 extends that contract to require product-grade Workspace Navigator
 labels, such as `Deployment Readiness`, `Customer Control Room`, `Provider
 Setup`, `Paid Operations`, and `Delivery Assurance`, and to verify every
 navigator tile has a separate `command-meta` row.
+Phase 82 extends the same screenshot-free contract to require symbolic brand
+marks and to reject stale `TD`, `Browser{}`, `Center{}`, bracket shortcut, and
+debug-abbreviation copy across the dashboard and Browser Activity page.
 The Lambda frontend visual-quality contract renders the Cloud Admin page with a
 mocked metadata-only S3 summary, checks light/dark desktop/mobile layout,
 requires the app shell, symbolic brand mark, Workspace Source sidebar, clear
@@ -1006,6 +1009,21 @@ The Phase 81 verifier compiles `devctl.py` and the dashboard visual checker,
 runs the dashboard DOM contract, checks dashboard and Browser Activity
 JavaScript syntax, runs backend API tests, smoke-tests the rendered navigator
 labels, runs Newman, cleans bytecode, and re-checks root artifact hygiene.
+
+Phase 82 adds modern admin UI polish:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase82.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase82.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase82.ps1
+python ./devctl.py test phase82
+```
+
+The Phase 82 verifier compiles `devctl.py`, the dashboard and Lambda visual
+checkers, and the Lambda frontend app; runs the dashboard DOM contract; checks
+dashboard and Browser Activity JavaScript syntax; runs backend API tests;
+smoke-tests local and Lambda visual polish; runs Newman; cleans bytecode; and
+re-checks root artifact hygiene.
 
 Phase 13 adds:
 

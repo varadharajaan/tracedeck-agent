@@ -706,12 +706,353 @@
       }
       .hero-focus strong { font-size: 26px; }
     }
+
+    /* Phase 82 product polish: keep Browser Activity aligned with the admin console. */
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --bg-band: #edf2f7;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --surface-3: #eef3f8;
+      --ink: #111827;
+      --muted: #5f6f82;
+      --line: #d9e2ec;
+      --line-strong: #a8b6c6;
+      --teal: #0f8c86;
+      --teal-strong: #075f5c;
+      --green: #1f7a4d;
+      --amber: #aa6212;
+      --red: #b94338;
+      --blue: #2d62b7;
+      --purple: #6d5aa7;
+      --accent-soft: #e8f6f4;
+      --success-surface: #eaf7ef;
+      --warning-surface: #fff5df;
+      --danger-surface: #fff0ed;
+      --info-surface: #eaf2ff;
+      --shadow: 0 22px 42px rgba(17, 24, 39, 0.10);
+      --shadow-soft: 0 10px 24px rgba(17, 24, 39, 0.07);
+      --shadow-line: 0 1px 0 rgba(168, 182, 198, 0.32);
+    }
+    body.theme-dark {
+      color-scheme: dark;
+      --bg: #0f1318;
+      --bg-band: #151b22;
+      --surface: #181e25;
+      --surface-2: #202832;
+      --surface-3: #2a3440;
+      --ink: #f2f6fb;
+      --muted: #a7b4c2;
+      --line: #34404d;
+      --line-strong: #657486;
+      --teal: #57c9c2;
+      --teal-strong: #9be3de;
+      --green: #7bd99b;
+      --amber: #efbd72;
+      --red: #f08a82;
+      --blue: #8ebcff;
+      --purple: #c6b2f0;
+      --accent-soft: #173734;
+      --success-surface: #173322;
+      --warning-surface: #382a15;
+      --danger-surface: #3a2020;
+      --info-surface: #192a3f;
+      --shadow: 0 24px 52px rgba(0, 0, 0, 0.34);
+      --shadow-soft: 0 14px 32px rgba(0, 0, 0, 0.26);
+      --shadow-line: 0 1px 0 rgba(101, 116, 134, 0.28);
+    }
+    body {
+      background: linear-gradient(180deg, var(--bg-band) 0, var(--bg) 320px, var(--bg) 100%);
+      color: var(--ink);
+    }
+    header {
+      grid-template-columns: minmax(360px, 1fr) minmax(0, auto);
+      min-height: 82px;
+      padding: 16px 30px;
+      border-bottom-color: color-mix(in srgb, var(--line) 86%, transparent);
+      background: color-mix(in srgb, var(--surface) 96%, transparent);
+      box-shadow: var(--shadow-line), 0 16px 34px rgba(17, 24, 39, 0.06);
+      backdrop-filter: blur(16px);
+    }
+    body.theme-dark header {
+      box-shadow: var(--shadow-line), 0 18px 42px rgba(0, 0, 0, 0.25);
+    }
+    .brand-lockup {
+      gap: 14px;
+    }
+    .brand-mark {
+      display: grid;
+      width: 46px;
+      height: 46px;
+      flex: 0 0 46px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      padding: 9px;
+      border: 1px solid color-mix(in srgb, var(--teal) 42%, var(--line));
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface) 88%, var(--accent-soft));
+      box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 40%, transparent);
+    }
+    .brand-mark > span {
+      display: block;
+      min-width: 0;
+      border-radius: 3px;
+      background: var(--teal);
+    }
+    .brand-mark > span:nth-child(2) {
+      background: var(--blue);
+      transform: translateY(5px);
+    }
+    .brand-mark > span:nth-child(3) {
+      background: var(--green);
+      transform: translateY(10px);
+    }
+    body.theme-dark .brand-mark {
+      background: color-mix(in srgb, var(--surface-2) 86%, var(--accent-soft));
+      box-shadow: none;
+    }
+    header h1 {
+      font-size: 24px;
+      font-weight: 840;
+      letter-spacing: 0;
+    }
+    header p {
+      margin-top: 4px;
+      max-width: 820px;
+      color: var(--muted);
+      font-size: 13.5px;
+    }
+    main {
+      max-width: 1480px;
+      gap: 18px;
+    }
+    button, select, input {
+      border-color: color-mix(in srgb, var(--line) 88%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface) 96%, var(--surface-2));
+      color: var(--ink);
+      box-shadow: none;
+    }
+    button:hover, select:hover {
+      border-color: var(--line-strong);
+      background: var(--surface);
+    }
+    .toolbar {
+      gap: 10px;
+    }
+    .toolbar-action,
+    .theme-toggle,
+    #refresh-button,
+    .status {
+      min-height: 42px;
+      border-radius: 8px;
+    }
+    .toolbar-action,
+    .theme-toggle {
+      padding-inline: 14px;
+      color: var(--ink);
+      font-weight: 780;
+    }
+    button.primary,
+    #refresh-button.primary {
+      border-color: #111827;
+      background: #111827;
+      color: #ffffff;
+      box-shadow: 0 12px 24px rgba(17, 24, 39, 0.16);
+    }
+    button.primary:hover,
+    #refresh-button.primary:hover {
+      border-color: #283344;
+      background: #283344;
+    }
+    body.theme-dark button.primary,
+    body.theme-dark button.primary:hover,
+    body.theme-dark #refresh-button.primary,
+    body.theme-dark #refresh-button.primary:hover {
+      border-color: #f2f6fb;
+      background: #f2f6fb;
+      color: #111827;
+      box-shadow: none;
+    }
+    .status {
+      padding: 0 12px;
+      border-color: #b8c7da;
+      background: var(--surface-2);
+      color: #475467;
+      font-weight: 790;
+      box-shadow: none;
+    }
+    .server-status.connected {
+      border-color: color-mix(in srgb, var(--green) 36%, var(--line));
+      background: var(--success-surface);
+      color: var(--green);
+    }
+    .server-status.disconnected {
+      border-color: color-mix(in srgb, var(--red) 38%, var(--line));
+      background: var(--danger-surface);
+      color: var(--red);
+    }
+    .panel,
+    .metric {
+      border-color: color-mix(in srgb, var(--line) 88%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface) 98%, var(--surface-2));
+      box-shadow: var(--shadow-soft);
+    }
+    .panel {
+      padding: 20px;
+    }
+    .browser-hero {
+      gap: 18px;
+    }
+    .hero-focus {
+      border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+      border-top: 4px solid var(--teal);
+      border-left: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface) 98%, var(--accent-soft));
+      box-shadow: var(--shadow);
+    }
+    .section-head {
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .section-head h2 {
+      color: var(--ink);
+      font-size: 18px;
+      font-weight: 830;
+      line-height: 1.2;
+    }
+    .section-head p {
+      max-width: 820px;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.42;
+    }
+    .badge,
+    .pill,
+    .section-head > .badge,
+    .section-head > .pill,
+    .section-head .badge,
+    .section-head .pill {
+      min-height: 32px;
+      border-radius: 8px;
+      padding: 6px 11px;
+      font-size: 13px;
+      font-weight: 780;
+      line-height: 1.15;
+      letter-spacing: 0;
+      text-transform: none;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    .pill {
+      border: 1px solid color-mix(in srgb, var(--line) 92%, transparent);
+      background: color-mix(in srgb, var(--surface-2) 86%, var(--surface));
+      color: var(--muted);
+    }
+    .badge.pending,
+    .badge.watch {
+      border-color: color-mix(in srgb, var(--amber) 42%, var(--line));
+      background: var(--warning-surface);
+      color: var(--amber);
+    }
+    .badge.healthy,
+    .badge.ok {
+      border-color: color-mix(in srgb, var(--green) 38%, var(--line));
+      background: var(--success-surface);
+      color: var(--green);
+    }
+    .badge.attention {
+      border-color: color-mix(in srgb, var(--red) 40%, var(--line));
+      background: var(--danger-surface);
+      color: var(--red);
+    }
+    .metric {
+      border-top: 3px solid color-mix(in srgb, var(--teal) 70%, var(--line));
+    }
+    .metric small {
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 770;
+      text-transform: none;
+    }
+    .metric strong {
+      color: var(--ink);
+      font-weight: 840;
+    }
+    .list-item,
+    .empty {
+      border-color: color-mix(in srgb, var(--line) 84%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface-2) 90%, var(--surface));
+      box-shadow: none;
+    }
+    .table-wrap {
+      border-color: color-mix(in srgb, var(--line) 90%, transparent);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }
+    th {
+      background: color-mix(in srgb, var(--surface-2) 92%, var(--surface));
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 790;
+      text-transform: none;
+    }
+    td {
+      color: var(--ink);
+    }
+    @media (max-width: 1100px) {
+      header {
+        grid-template-columns: 1fr;
+      }
+      .toolbar {
+        justify-content: flex-start;
+      }
+      .toolbar > * {
+        flex: 1 1 180px;
+        min-width: 0;
+      }
+    }
+    @media (max-width: 720px) {
+      header {
+        padding: 14px 16px;
+      }
+      .brand-mark {
+        width: 42px;
+        height: 42px;
+        flex-basis: 42px;
+      }
+      .toolbar {
+        justify-content: stretch;
+      }
+      .toolbar > *,
+      .toolbar-action,
+      .theme-toggle,
+      #refresh-button,
+      .status {
+        width: 100%;
+        flex: 1 1 100%;
+      }
+      main {
+        width: auto;
+        margin: 16px 10px 30px;
+      }
+      .panel {
+        padding: 16px;
+      }
+    }
   </style>
 </head>
 <body>
   <header>
     <div class="brand-lockup">
-      <span class="brand-mark" aria-hidden="true">TD</span>
+      <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
       <div>
         <h1>Browser Viewer</h1>
         <p class="muted">Chrome, Brave, and Edge domain observability by host, category, notification proof, and study-safe status</p>

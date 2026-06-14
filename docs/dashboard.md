@@ -131,6 +131,13 @@ Readiness`, `Customer Control Room`, `Provider Setup`, `Paid Operations`, and
 scores. The dashboard visual-quality contract now verifies the full product
 labels and rejects the older terse shortcut labels.
 
+Phase 82 adds the modern admin polish layer across the local dashboard,
+Browser Activity drilldown, and Lambda Cloud Admin frontend. The visible `TD`
+text mark is replaced by a symbolic mark, light/dark palettes share one visual
+system, command tiles and status chips have larger readable treatment, and the
+contracts reject stale `Browser{}`, `Center{}`, bracket shortcut, `TD`, and
+internal abbreviation copy.
+
 To check the currently running local dashboard:
 
 ```powershell
@@ -577,6 +584,10 @@ setup checklist; owner actions; and metadata-only provider boundaries. It also
 renames the shell to TraceDeck Console, uses Browser Viewer as the browser
 drilldown label, removes internal abbreviations from the navigator, and adds
 the screenshot-free visual-quality gate.
+
+Phase 82 keeps the same functionality but raises the buyer-facing UI baseline:
+symbolic brand mark, unified local/cloud light and dark themes, larger status
+chips, cleaner panels and KPI cards, and product-grade command navigation.
 
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
