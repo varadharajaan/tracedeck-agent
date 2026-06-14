@@ -123,6 +123,22 @@ navigator tile has a separate `command-meta` row.
 Phase 82 extends the same screenshot-free contract to require symbolic brand
 marks and to reject stale `TD`, `Browser{}`, `Center{}`, bracket shortcut, and
 debug-abbreviation copy across the dashboard and Browser Activity page.
+Phase 84 adds the modern admin UI revamp gate:
+
+```powershell
+python ./devctl.py test phase84
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase84.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase84.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase84.ps1
+```
+
+The Phase 84 verifier checks Go formatting, Python compile, agent and backend
+tests, dashboard DOM/JavaScript contracts, Lambda frontend contract, live UI
+smoke, Newman UI/API coverage, screenshot-free dashboard visual quality,
+light/dark theme, layout containment, Lambda frontend visual quality, and root
+artifact hygiene. The smoke and Newman gates explicitly reject stale
+`Browser{}`, `Center{}`, bracket shortcut, `TD`, `Rev Ops`, `Notif Rev`, and
+`Notify Pro` copy.
 The Lambda frontend visual-quality contract renders the Cloud Admin page with a
 mocked metadata-only S3 summary, checks light/dark desktop/mobile layout,
 requires the app shell, symbolic brand mark, Workspace Source sidebar, clear

@@ -1247,6 +1247,401 @@ def _index_html() -> str:
         flex-basis: 100%;
       }}
     }}
+    /* Phase 84 hosted admin UI layer: match the local TraceDeck command center. */
+    :root {{
+      color-scheme: light;
+      --bg: #f7f8fb;
+      --bg-band: #edf2f6;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --surface-3: #eef2f6;
+      --ink: #171b22;
+      --muted: #667085;
+      --line: #d9e0e8;
+      --line-strong: #a8b3c1;
+      --teal: #0f8b7f;
+      --teal-strong: #075f59;
+      --green: #237a55;
+      --amber: #b46616;
+      --red: #bd4238;
+      --blue: #315f9e;
+      --accent-soft: #e8f5f2;
+      --success-surface: #ecf8f1;
+      --warning-surface: #fff5e4;
+      --danger-surface: #fff0ee;
+      --info-surface: #edf4ff;
+      --shadow: 0 24px 54px rgba(17, 24, 39, 0.10);
+      --shadow-soft: 0 12px 30px rgba(17, 24, 39, 0.07);
+      --shadow-line: 0 1px 0 rgba(168, 179, 193, 0.32);
+    }}
+    body.theme-dark {{
+      color-scheme: dark;
+      --bg: #111313;
+      --bg-band: #191c1b;
+      --surface: #1e2221;
+      --surface-2: #252a28;
+      --surface-3: #303633;
+      --ink: #f4f7f5;
+      --muted: #aab6b0;
+      --line: #39413e;
+      --line-strong: #68756f;
+      --teal: #5ec9be;
+      --teal-strong: #a6e8df;
+      --green: #8bd9a6;
+      --amber: #eebf78;
+      --red: #f09088;
+      --blue: #98bdec;
+      --accent-soft: #183431;
+      --success-surface: #183426;
+      --warning-surface: #3b2c18;
+      --danger-surface: #3c2221;
+      --info-surface: #1d2b3a;
+      --shadow: 0 28px 58px rgba(0, 0, 0, 0.36);
+      --shadow-soft: 0 16px 36px rgba(0, 0, 0, 0.28);
+      --shadow-line: 0 1px 0 rgba(104, 117, 111, 0.28);
+    }}
+    html,
+    body {{
+      background: var(--bg);
+    }}
+    body {{
+      background:
+        linear-gradient(180deg, var(--bg-band) 0, var(--bg) 310px, var(--bg) 100%);
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.45;
+    }}
+    .topbar {{
+      grid-template-columns: minmax(360px, 1fr) minmax(0, auto);
+      min-height: 78px;
+      padding: 15px 30px;
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+      background: color-mix(in srgb, var(--surface) 94%, transparent);
+      box-shadow: var(--shadow-line), 0 16px 36px rgba(17, 24, 39, 0.06);
+      backdrop-filter: blur(18px);
+    }}
+    body.theme-dark .topbar {{
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      box-shadow: var(--shadow-line), 0 18px 42px rgba(0, 0, 0, 0.34);
+    }}
+    .brand-lockup {{
+      gap: 14px;
+    }}
+    .brand-mark {{
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      align-items: end;
+      gap: 4px;
+      width: 46px;
+      height: 46px;
+      flex: 0 0 46px;
+      padding: 10px;
+      border: 1px solid color-mix(in srgb, var(--teal) 40%, var(--line));
+      border-radius: 8px;
+      background: linear-gradient(145deg, color-mix(in srgb, var(--accent-soft) 58%, var(--surface)), var(--surface));
+      box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 44%, transparent), 0 12px 24px rgba(15, 139, 127, 0.12);
+    }}
+    .brand-mark > span {{
+      display: block;
+      width: 100%;
+      border-radius: 3px;
+      background: var(--teal);
+    }}
+    .brand-mark > span:nth-child(1) {{ height: 11px; }}
+    .brand-mark > span:nth-child(2) {{ height: 18px; background: var(--blue); transform: none; }}
+    .brand-mark > span:nth-child(3) {{ height: 25px; background: var(--green); transform: none; }}
+    body.theme-dark .brand-mark {{
+      background: linear-gradient(145deg, var(--surface-2), color-mix(in srgb, var(--accent-soft) 64%, var(--surface)));
+      box-shadow: none;
+    }}
+    .eyebrow {{
+      color: var(--teal-strong);
+      font-size: 12px;
+      font-weight: 820;
+      letter-spacing: 0;
+      text-transform: none;
+    }}
+    body.theme-dark .eyebrow {{
+      color: var(--teal);
+    }}
+    h1 {{
+      font-size: 24px;
+      font-weight: 830;
+      line-height: 1.08;
+    }}
+    .topbar p.muted {{
+      max-width: 840px;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13.5px;
+    }}
+    button,
+    select,
+    input {{
+      min-height: 42px;
+      border-color: color-mix(in srgb, var(--line) 90%, transparent);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: none;
+      outline-color: color-mix(in srgb, var(--teal) 52%, transparent);
+    }}
+    button:hover,
+    select:hover,
+    input:hover {{
+      border-color: var(--line-strong);
+      background: color-mix(in srgb, var(--surface) 86%, var(--surface-2));
+    }}
+    button.primary,
+    #refresh-button.primary {{
+      border-color: #171b22;
+      background: #171b22;
+      color: #ffffff;
+      box-shadow: 0 12px 24px rgba(17, 24, 39, 0.18);
+    }}
+    body.theme-dark button.primary,
+    body.theme-dark #refresh-button.primary {{
+      border-color: #edf2f6;
+      background: #edf2f6;
+      color: #171b22;
+      box-shadow: none;
+    }}
+    .toolbar {{
+      gap: 9px;
+    }}
+    .status {{
+      min-height: 42px;
+      padding: 0 13px;
+      border: 1px solid color-mix(in srgb, var(--line-strong) 62%, var(--line));
+      border-radius: 8px;
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 13.5px;
+      font-weight: 780;
+    }}
+    .status-light {{
+      width: 10px;
+      height: 10px;
+      box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 15%, transparent);
+    }}
+    .status.connected {{
+      border-color: color-mix(in srgb, var(--green) 38%, var(--line));
+      background: var(--success-surface);
+      color: var(--green);
+    }}
+    .status.disconnected {{
+      border-color: color-mix(in srgb, var(--red) 40%, var(--line));
+      background: var(--danger-surface);
+      color: var(--red);
+    }}
+    .app-shell {{
+      width: calc(100% - 40px);
+      max-width: 1520px;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 18px;
+      margin: 22px auto 40px;
+    }}
+    .side-rail {{
+      top: 100px;
+      gap: 14px;
+    }}
+    .source-card,
+    .panel,
+    .metric,
+    .hero-panel {{
+      border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }}
+    .source-card,
+    .panel,
+    .hero-panel {{
+      padding: 20px;
+    }}
+    .tabs {{
+      gap: 6px;
+      padding: 6px;
+      border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface) 96%, transparent);
+      box-shadow: var(--shadow-line);
+    }}
+    .tab {{
+      min-height: 46px;
+      border-color: transparent;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13.5px;
+      font-weight: 780;
+      box-shadow: none;
+    }}
+    .tab:hover {{
+      border-color: color-mix(in srgb, var(--line-strong) 54%, transparent);
+      background: var(--surface-2);
+      color: var(--ink);
+    }}
+    .tab.is-active,
+    body.theme-dark .tab.is-active {{
+      border-color: #171b22;
+      background: #171b22;
+      color: #ffffff;
+      box-shadow: none;
+    }}
+    body.theme-dark .tab.is-active {{
+      border-color: #edf2f6;
+      background: #edf2f6;
+      color: #171b22;
+    }}
+    .hero-panel {{
+      grid-template-columns: minmax(0, 1fr) minmax(260px, auto);
+      border-left: 5px solid var(--teal);
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 68%, var(--surface)), var(--surface) 54%);
+      box-shadow: var(--shadow);
+    }}
+    body.theme-dark .hero-panel {{
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 58%, var(--surface)), var(--surface) 58%);
+    }}
+    .hero-panel h2 {{
+      color: var(--ink);
+      font-size: clamp(28px, 2.2vw, 38px);
+      font-weight: 830;
+      letter-spacing: 0;
+      line-height: 1.08;
+    }}
+    .grid,
+    .two,
+    .settings-grid {{
+      gap: 12px;
+    }}
+    .metric {{
+      min-height: 128px;
+      padding: 15px;
+      align-content: space-between;
+    }}
+    .metric-label,
+    .field label {{
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 790;
+      text-transform: none;
+    }}
+    .metric strong {{
+      color: var(--ink);
+      font-size: 28px;
+      line-height: 1.05;
+    }}
+    .section-header {{
+      gap: 14px;
+      margin-bottom: 14px;
+    }}
+    .section-header h2 {{
+      color: var(--ink);
+      font-size: 18px;
+      font-weight: 820;
+      line-height: 1.18;
+    }}
+    .section-header p,
+    p.muted,
+    .muted {{
+      color: var(--muted);
+    }}
+    .pill {{
+      min-height: 30px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      border-color: color-mix(in srgb, var(--line) 88%, transparent);
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 760;
+      line-height: 1.16;
+    }}
+    .strong-pill {{
+      color: var(--teal-strong);
+      background: var(--accent-soft);
+      border-color: color-mix(in srgb, var(--teal) 36%, var(--line));
+    }}
+    .item,
+    .list-item,
+    .empty {{
+      border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface-2) 88%, var(--surface));
+      box-shadow: none;
+    }}
+    .table-wrap {{
+      border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: none;
+    }}
+    table {{
+      border-collapse: separate;
+      border-spacing: 0;
+    }}
+    th {{
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: color-mix(in srgb, var(--surface-2) 94%, var(--surface));
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: none;
+    }}
+    td {{
+      color: var(--ink);
+    }}
+    @media (max-width: 980px) {{
+      .topbar,
+      .app-shell,
+      .hero-panel,
+      .two {{
+        grid-template-columns: 1fr;
+      }}
+      .topbar {{
+        position: static;
+        padding: 14px 16px;
+      }}
+      .toolbar {{
+        justify-content: stretch;
+      }}
+      .toolbar > * {{
+        flex: 1 1 180px;
+        min-width: 0;
+      }}
+      .side-rail {{
+        position: static;
+      }}
+      .tabs,
+      .grid {{
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }}
+    }}
+    @media (max-width: 560px) {{
+      .app-shell {{
+        width: auto;
+        margin: 14px 10px 28px;
+      }}
+      .grid,
+      .settings-grid,
+      .tabs {{
+        grid-template-columns: 1fr;
+      }}
+      .toolbar > * {{
+        flex-basis: 100%;
+      }}
+      .source-card,
+      .panel,
+      .hero-panel {{
+        padding: 16px;
+      }}
+      .hero-panel h2 {{
+        font-size: 28px;
+      }}
+    }}
   </style>
 </head>
 <body>
