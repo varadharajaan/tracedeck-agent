@@ -339,3 +339,11 @@
     tile into `command-label` and `command-meta` rows, harden the
     screenshot-free visual-quality contract against stale shortcut labels, add
     smoke/Newman/verify/publish scripts, docs, and `devctl.py test phase81`.
+80. Phase 82: modern admin UI polish. Apply a unified buyer-facing light/dark
+    visual system across the local TraceDeck Console, Browser Activity
+    drilldown, and Lambda Cloud Admin frontend; replace visible text-logo marks
+    with symbolic marks; enlarge command tiles, status chips, panels, KPI
+    cards, and tables; harden Go DOM, Playwright, Lambda visual, and Newman
+    checks against stale `TD`, `Browser{}`, `Center{}`, bracket shortcut, and
+    debug-abbreviation copy; add smoke/Newman/verify/publish scripts, docs, and
+    `devctl.py test phase82`.

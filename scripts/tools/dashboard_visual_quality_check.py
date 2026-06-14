@@ -33,6 +33,7 @@ VIEWPORTS = (
 FORBIDDEN_TEXT_PATTERNS = (
     r"Browser\s*\{",
     r"Center\s*\{",
+    r"\bTD\b",
     r"\bRev Ops\b",
     r"\bNotif Rev\b",
     r"\bNotify Pro\b",
@@ -92,6 +93,7 @@ def main() -> int:
                                   const root = window.getComputedStyle(document.body);
                                   const h1 = document.querySelector("h1");
                                   const status = document.getElementById(statusID);
+                                  const brandMark = document.querySelector(".brand-mark");
                                   const bodyText = document.body.innerText || "";
                                   const toolbarLabels = Array.from(document.querySelectorAll(".toolbar button"))
                                     .map((button) => button.textContent.trim());
@@ -158,6 +160,11 @@ def main() -> int:
                                       name: "status-visible",
                                       ok: Boolean(status && status.getBoundingClientRect().height >= 26),
                                       detail: status ? status.textContent.trim() : "missing"
+                                    },
+                                    {
+                                      name: "symbolic-brand-mark",
+                                      ok: Boolean(brandMark && brandMark.textContent.trim() === "" && brandMark.querySelectorAll("span").length >= 3),
+                                      detail: brandMark ? `text=${brandMark.textContent.trim() || "empty"} marks=${brandMark.querySelectorAll("span").length}` : "missing"
                                     },
                                     {
                                       name: "no-debug-toolbar-labels",

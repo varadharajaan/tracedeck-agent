@@ -49,6 +49,8 @@ func TestDashboardDOMContract(t *testing.T) {
 		"server-status-light",
 		"sourceBadge",
 		"dashboard-page-nav",
+		"Phase 82 product polish",
+		"<span class=\"brand-mark\" aria-hidden=\"true\"><span></span><span></span><span></span></span>",
 		"data-page-target=\"notifications\"",
 		"Premium Operations Hub",
 		"Premium Value Tiles",
@@ -215,6 +217,18 @@ func TestDashboardDOMContract(t *testing.T) {
 			t.Fatalf("dashboard is missing monetisation marker %q", marker)
 		}
 	}
+
+	for _, forbidden := range []string{
+		"<span class=\"brand-mark\" aria-hidden=\"true\">TD</span>",
+		"Browser{",
+		"Center{",
+		"[B]",
+		"{C}",
+	} {
+		if strings.Contains(html, forbidden) {
+			t.Fatalf("dashboard contains stale visual marker %q", forbidden)
+		}
+	}
 }
 
 func TestBrowserActivityDOMContract(t *testing.T) {
@@ -245,6 +259,8 @@ func TestBrowserActivityDOMContract(t *testing.T) {
 	for _, marker := range []string{
 		"TraceDeck Browser Activity",
 		"Browser Activity Viewer",
+		"Phase 82 product polish",
+		"<span class=\"brand-mark\" aria-hidden=\"true\"><span></span><span></span><span></span></span>",
 		"theme-toggle-button",
 		"server-status-light",
 		"Chrome",
@@ -270,8 +286,13 @@ func TestBrowserActivityDOMContract(t *testing.T) {
 		"password_value",
 		"cookie_value",
 		"token_value",
+		"<span class=\"brand-mark\" aria-hidden=\"true\">TD</span>",
+		"Browser{",
+		"Center{",
+		"[B]",
+		"{C}",
 	} {
-		if strings.Contains(strings.ToLower(html), forbidden) {
+		if strings.Contains(strings.ToLower(html), strings.ToLower(forbidden)) {
 			t.Fatalf("browser activity page contains forbidden marker %q", forbidden)
 		}
 	}
