@@ -104,7 +104,7 @@ try {
     } | ConvertTo-Json -Compress
     Invoke-TraceDeckJson -Method "POST" -Uri "$baseUrl/api/v1/devices/enroll" -Body $deviceBody | Out-Null
 
-    $overview = Invoke-TraceDeckJson -Method "GET" -Uri "$baseUrl/api/v1/devices/demo-study-laptop/overview"
+    $overview = Invoke-TraceDeckJson -Method "GET" -Uri "$baseUrl/api/v1/devices/demo-study-laptop/overview?include_demo=true"
     if ($overview.device.device_id -ne "demo-study-laptop" -or $overview.policy_violations.Count -lt 1) {
         Write-TraceDeckLog -Level "ERROR" -Message "Dashboard demo seed failed."
         exit 1

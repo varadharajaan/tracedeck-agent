@@ -130,6 +130,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "dashboard asset unavailable")
 		return
 	}
+	setNoStoreHeaders(w)
 	w.Header().Set("Content-Type", constants.ContentTypeHTML)
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(data)
@@ -150,6 +151,7 @@ func (s *Server) handleBrowserActivityPage(w http.ResponseWriter, r *http.Reques
 		writeError(w, http.StatusInternalServerError, "browser activity asset unavailable")
 		return
 	}
+	setNoStoreHeaders(w)
 	w.Header().Set("Content-Type", constants.ContentTypeHTML)
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(data)
@@ -1512,6 +1514,9 @@ func (s *Server) handleDailySummary(w http.ResponseWriter, r *http.Request, devi
 		writeError(w, http.StatusInternalServerError, "daily summary lookup failed")
 		return
 	}
+	if !requestIncludesDemoEvidence(r) {
+		summary = withoutDemoDeviceSummary(summary)
+	}
 	writeJSON(w, http.StatusOK, summary)
 }
 
@@ -1528,6 +1533,9 @@ func (s *Server) handleHostOverview(w http.ResponseWriter, r *http.Request, devi
 		writeError(w, http.StatusInternalServerError, "host overview lookup failed")
 		return
 	}
+	if !requestIncludesDemoEvidence(r) {
+		overview = withoutDemoHostOverviewEvidence(overview)
+	}
 	writeJSON(w, http.StatusOK, overview)
 }
 
@@ -1543,6 +1551,9 @@ func (s *Server) handlePolicyViolations(w http.ResponseWriter, r *http.Request, 
 		}
 		writeError(w, http.StatusInternalServerError, "policy violation lookup failed")
 		return
+	}
+	if !requestIncludesDemoEvidence(r) {
+		events = withoutDemoRiskEvents(events)
 	}
 	writeJSON(w, http.StatusOK, model.ListResponse[model.RiskEvent]{Items: events, Count: len(events)})
 }
@@ -1576,6 +1587,9 @@ func (s *Server) handleAnomalies(w http.ResponseWriter, r *http.Request, deviceI
 		writeError(w, http.StatusInternalServerError, "anomaly lookup failed")
 		return
 	}
+	if !requestIncludesDemoEvidence(r) {
+		events = withoutDemoRiskEvents(events)
+	}
 	writeJSON(w, http.StatusOK, model.ListResponse[model.RiskEvent]{Items: events, Count: len(events)})
 }
 
@@ -1592,6 +1606,9 @@ func (s *Server) handleTamperEvents(w http.ResponseWriter, r *http.Request, devi
 		writeError(w, http.StatusInternalServerError, "tamper event lookup failed")
 		return
 	}
+	if !requestIncludesDemoEvidence(r) {
+		events = withoutDemoRiskEvents(events)
+	}
 	writeJSON(w, http.StatusOK, model.ListResponse[model.RiskEvent]{Items: events, Count: len(events)})
 }
 
@@ -1607,6 +1624,9 @@ func (s *Server) handleAlertDeliveries(w http.ResponseWriter, r *http.Request, d
 		}
 		writeError(w, http.StatusInternalServerError, "alert delivery lookup failed")
 		return
+	}
+	if !requestIncludesDemoEvidence(r) {
+		deliveries = withoutDemoAlertDeliveries(deliveries)
 	}
 	writeJSON(w, http.StatusOK, model.ListResponse[model.AlertDelivery]{Items: deliveries, Count: len(deliveries)})
 }
@@ -1666,6 +1686,9 @@ func (s *Server) handleWeeklyReport(w http.ResponseWriter, r *http.Request, devi
 		writeError(w, http.StatusInternalServerError, "weekly report lookup failed")
 		return
 	}
+	if !requestIncludesDemoEvidence(r) {
+		overview = withoutDemoHostOverviewEvidence(overview)
+	}
 	writeJSON(w, http.StatusOK, store.WeeklyReport(overview))
 }
 
@@ -1679,12 +1702,170 @@ func (s *Server) handleWeeklyReportPDF(w http.ResponseWriter, r *http.Request, d
 		writeError(w, http.StatusInternalServerError, "weekly report pdf lookup failed")
 		return
 	}
+	if !requestIncludesDemoEvidence(r) {
+		overview = withoutDemoHostOverviewEvidence(overview)
+	}
 	report := store.WeeklyReport(overview)
 	data := store.WeeklyReportPDF(report)
 	w.Header().Set("Content-Type", constants.ContentTypePDF)
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"tracedeck-weekly-%s.pdf\"", report.DeviceID))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"tracedeck-weekly-%s.pdf\"", safeAttachmentFilenamePart(report.DeviceID)))
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(data)
+	_, _ = w.Write(data) // #nosec G705 -- PDF bytes are generated server-side and text is escaped by store.WeeklyReportPDF.
+}
+
+func safeAttachmentFilenamePart(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return "device"
+	}
+	var builder strings.Builder
+	for _, r := range value {
+		switch {
+		case r >= 'a' && r <= 'z':
+			builder.WriteRune(r)
+		case r >= 'A' && r <= 'Z':
+			builder.WriteRune(r)
+		case r >= '0' && r <= '9':
+			builder.WriteRune(r)
+		case r == '-', r == '_', r == '.':
+			builder.WriteRune(r)
+		default:
+			builder.WriteByte('-')
+		}
+	}
+	clean := strings.Trim(builder.String(), "-_.")
+	if clean == "" {
+		return "device"
+	}
+	return clean
+}
+
+func requestIncludesDemoEvidence(r *http.Request) bool {
+	value := strings.ToLower(strings.TrimSpace(r.URL.Query().Get(constants.QueryIncludeDemo)))
+	switch value {
+	case constants.QueryValueTrue, constants.QueryValueOne, constants.QueryValueYes:
+		return true
+	default:
+		return false
+	}
+}
+
+func withoutDemoHostOverviewEvidence(overview model.HostOverview) model.HostOverview {
+	originalTamperCount := len(overview.TamperEvents)
+	overview.PolicyViolations = withoutDemoRiskEvents(overview.PolicyViolations)
+	overview.Anomalies = withoutDemoRiskEvents(overview.Anomalies)
+	overview.TamperEvents = withoutDemoRiskEvents(overview.TamperEvents)
+	overview.AlertDeliveries = withoutDemoAlertDeliveries(overview.AlertDeliveries)
+	overview.Summary = withoutDemoDeviceSummary(overview.Summary)
+	overview.Summary.PolicyViolations = len(overview.PolicyViolations)
+	overview.Summary.AlertsRaised = len(overview.AlertDeliveries)
+	overview.RiskScore = riskScoreForVisibleEvents(overview.PolicyViolations, overview.Anomalies, overview.TamperEvents)
+	overview.RiskLevel = riskLevelForVisibleScore(overview.RiskScore)
+	overview.Summary.ComplianceScore = complianceScoreForVisibleRisk(overview.RiskScore)
+	if originalTamperCount > 0 && len(overview.TamperEvents) == 0 {
+		overview.Summary.ArchiveBacklog = constants.RiskScoreNone
+		overview.Archive.PendingBatches = constants.RiskScoreNone
+		overview.Archive.Status = constants.StatusHealthy
+	}
+	return overview
+}
+
+func withoutDemoDeviceSummary(summary model.DeviceSummary) model.DeviceSummary {
+	summary.StudyMinutes = constants.SummaryMetricNone
+	summary.CodingMinutes = constants.SummaryMetricNone
+	summary.EntertainmentMins = constants.SummaryMetricNone
+	summary.PolicyViolations = constants.SummaryMetricNone
+	summary.ArchiveBacklog = constants.SummaryMetricNone
+	summary.AlertsRaised = constants.SummaryMetricNone
+	summary.ComplianceScore = constants.ComplianceScoreClean
+	summary.DataCompletenessPct = constants.DataCompletenessUnknownPct
+	return summary
+}
+
+func withoutDemoRiskEvents(events []model.RiskEvent) []model.RiskEvent {
+	filtered := make([]model.RiskEvent, 0, len(events))
+	for _, event := range events {
+		if isDemoEvidence(event.SourceKind) {
+			continue
+		}
+		filtered = append(filtered, event)
+	}
+	return filtered
+}
+
+func withoutDemoAlertDeliveries(deliveries []model.AlertDelivery) []model.AlertDelivery {
+	filtered := make([]model.AlertDelivery, 0, len(deliveries))
+	for _, delivery := range deliveries {
+		if isDemoEvidence(delivery.SourceKind) {
+			continue
+		}
+		filtered = append(filtered, delivery)
+	}
+	return filtered
+}
+
+func isDemoEvidence(sourceKind string) bool {
+	return strings.EqualFold(strings.TrimSpace(sourceKind), constants.EvidenceSourceDemoSeed)
+}
+
+func riskScoreForVisibleEvents(groups ...[]model.RiskEvent) int {
+	score := constants.RiskScoreNone
+	count := constants.RiskScoreNone
+	for _, events := range groups {
+		for _, event := range events {
+			if event.Status == constants.RiskStatusResolved {
+				continue
+			}
+			count++
+			eventScore := riskScoreForSeverity(event.Severity)
+			if eventScore > score {
+				score = eventScore
+			}
+		}
+	}
+	if count > 1 {
+		score += (count - 1) * constants.RiskScoreCountPenalty
+	}
+	if score > constants.RiskScoreMaximum {
+		return constants.RiskScoreMaximum
+	}
+	return score
+}
+
+func riskScoreForSeverity(severity string) int {
+	switch severity {
+	case constants.SeverityCritical:
+		return constants.RiskScoreCritical
+	case constants.SeverityHigh:
+		return constants.RiskScoreHigh
+	case constants.SeverityMedium:
+		return constants.RiskScoreMedium
+	case constants.SeverityLow:
+		return constants.RiskScoreLow
+	case constants.SeverityInfo:
+		return constants.RiskScoreInfo
+	default:
+		return constants.RiskScoreNone
+	}
+}
+
+func riskLevelForVisibleScore(score int) string {
+	switch {
+	case score >= constants.RiskScoreHighThreshold:
+		return constants.RiskLevelHigh
+	case score >= constants.RiskScoreMediumThreshold:
+		return constants.RiskLevelMedium
+	default:
+		return constants.RiskLevelLow
+	}
+}
+
+func complianceScoreForVisibleRisk(score int) int {
+	compliance := constants.ComplianceScoreClean - score
+	if compliance < constants.RiskScoreNone {
+		return constants.RiskScoreNone
+	}
+	return compliance
 }
 
 func (s *Server) handlePolicyTemplates(w http.ResponseWriter, r *http.Request) {
@@ -2406,9 +2587,16 @@ func buildConsentCenter(tenant model.Tenant, auditEvents []model.AuditEvent, rul
 }
 
 func writeJSON(w http.ResponseWriter, status int, body any) {
+	setNoStoreHeaders(w)
 	w.Header().Set("Content-Type", constants.ContentTypeJSON)
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(body)
+}
+
+func setNoStoreHeaders(w http.ResponseWriter) {
+	w.Header().Set(constants.HeaderCache, constants.CacheNoStore)
+	w.Header().Set(constants.HeaderPragma, constants.PragmaNoCache)
+	w.Header().Set(constants.HeaderExpires, constants.ExpiresNow)
 }
 
 func writeError(w http.ResponseWriter, status int, message string) {

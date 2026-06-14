@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/varadharajaan/tracedeck-agent/backend/internal/constants"
 	"github.com/varadharajaan/tracedeck-agent/backend/internal/model"
 )
 
@@ -29,6 +30,7 @@ func WeeklyReport(overview model.HostOverview) model.WeeklyReport {
 
 	subject := fmt.Sprintf("TraceDeck weekly report for %s", deviceID)
 	preview := fmt.Sprintf("Compliance %d, risk %d, health %d.", summary.ComplianceScore, overview.RiskScore, overview.Health.Score)
+	emailReady := hasConfirmedEmailDelivery(overview.AlertDeliveries)
 	return model.WeeklyReport{
 		DeviceID:      deviceID,
 		Week:          week,
@@ -36,13 +38,29 @@ func WeeklyReport(overview model.HostOverview) model.WeeklyReport {
 		Highlights:    highlights,
 		Risks:         risks,
 		Generated:     true,
-		GeneratedNote: "weekly report generated from current host overview",
-		EmailReady:    true,
+		GeneratedNote: "weekly report generated from current host overview; email proof requires a non-demo delivered email route",
+		EmailReady:    emailReady,
 		EmailSubject:  subject,
 		EmailPreview:  preview,
 		PDFReady:      true,
 		GeneratedAt:   generatedAt,
 	}
+}
+
+func hasConfirmedEmailDelivery(deliveries []model.AlertDelivery) bool {
+	for _, delivery := range deliveries {
+		if delivery.Channel != constants.DeliveryChannelEmail {
+			continue
+		}
+		if delivery.Status != constants.DeliveryStatusDelivered {
+			continue
+		}
+		if delivery.SourceKind == constants.EvidenceSourceDemoSeed {
+			continue
+		}
+		return true
+	}
+	return false
 }
 
 func WeeklyReportPDF(report model.WeeklyReport) []byte {
@@ -95,15 +113,15 @@ func simplePDF(lines []string) []byte {
 	offsets = append(offsets, 0)
 	for index, object := range objects {
 		offsets = append(offsets, output.Len())
-		output.WriteString(fmt.Sprintf("%d 0 obj\n%s\nendobj\n", index+1, object))
+		fmt.Fprintf(&output, "%d 0 obj\n%s\nendobj\n", index+1, object)
 	}
 	xrefOffset := output.Len()
-	output.WriteString(fmt.Sprintf("xref\n0 %d\n", len(objects)+1))
+	fmt.Fprintf(&output, "xref\n0 %d\n", len(objects)+1)
 	output.WriteString("0000000000 65535 f \n")
 	for _, offset := range offsets[1:] {
-		output.WriteString(fmt.Sprintf("%010d 00000 n \n", offset))
+		fmt.Fprintf(&output, "%010d 00000 n \n", offset)
 	}
-	output.WriteString(fmt.Sprintf("trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n", len(objects)+1, xrefOffset))
+	fmt.Fprintf(&output, "trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n", len(objects)+1, xrefOffset)
 	return output.Bytes()
 }
 

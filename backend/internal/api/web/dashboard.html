@@ -5117,6 +5117,642 @@
         font-size: 28px;
       }
     }
+
+    /* Phase 86 monetisation-grade UI layer: premium console polish. */
+    :root {
+      color-scheme: light;
+      --bg: #f4f6fa;
+      --bg-band: #e8edf4;
+      --surface: #ffffff;
+      --surface-2: #f7f9fc;
+      --surface-3: #eef3f8;
+      --ink: #111820;
+      --muted: #5f6b7a;
+      --line: #d5dde7;
+      --line-strong: #9caabb;
+      --teal: #118a7e;
+      --teal-strong: #075f59;
+      --green: #247a57;
+      --amber: #b96c20;
+      --red: #c0443e;
+      --blue: #3c62a5;
+      --purple: #725aa3;
+      --accent-soft: #e7f5f2;
+      --success-surface: #edf8f1;
+      --warning-surface: #fff5e7;
+      --danger-surface: #fff0ef;
+      --info-surface: #eef4ff;
+      --shadow: 0 20px 48px rgba(17, 24, 32, 0.10);
+      --shadow-soft: 0 8px 22px rgba(17, 24, 32, 0.07);
+      --shadow-line: 0 1px 0 rgba(156, 170, 187, 0.30);
+    }
+    body.theme-dark {
+      color-scheme: dark;
+      --bg: #0f1110;
+      --bg-band: #171916;
+      --surface: #1b1d1a;
+      --surface-2: #232720;
+      --surface-3: #2e342a;
+      --ink: #f5f4ec;
+      --muted: #b6b3a7;
+      --line: #3b4037;
+      --line-strong: #737a68;
+      --teal: #62cdbf;
+      --teal-strong: #a8eee4;
+      --green: #8fd6a2;
+      --amber: #efbf78;
+      --red: #f08f87;
+      --blue: #9ebbea;
+      --purple: #c8b6ee;
+      --accent-soft: #17342f;
+      --success-surface: #183323;
+      --warning-surface: #3a2b18;
+      --danger-surface: #3b2220;
+      --info-surface: #1d2a39;
+      --shadow: 0 24px 54px rgba(0, 0, 0, 0.38);
+      --shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.28);
+      --shadow-line: 0 1px 0 rgba(115, 122, 104, 0.26);
+    }
+    html,
+    body {
+      background: var(--bg);
+    }
+    body {
+      background: linear-gradient(180deg, var(--bg-band) 0, var(--bg) 300px, var(--bg) 100%);
+      color: var(--ink);
+    }
+    header {
+      grid-template-columns: minmax(360px, 1fr) minmax(0, auto);
+      min-height: 82px;
+      padding: 16px 30px;
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+      background: color-mix(in srgb, var(--surface) 94%, transparent);
+      box-shadow: var(--shadow-line), 0 16px 34px rgba(17, 24, 32, 0.06);
+      backdrop-filter: blur(18px);
+    }
+    body.theme-dark header {
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      box-shadow: var(--shadow-line), 0 18px 40px rgba(0, 0, 0, 0.34);
+    }
+    .brand-lockup {
+      gap: 14px;
+    }
+    .brand-mark {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      align-items: end;
+      gap: 4px;
+      width: 46px;
+      height: 46px;
+      flex: 0 0 46px;
+      padding: 10px;
+      border: 1px solid color-mix(in srgb, var(--teal) 40%, var(--line));
+      border-radius: 8px;
+      background: linear-gradient(145deg, color-mix(in srgb, var(--accent-soft) 68%, var(--surface)), var(--surface));
+      box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 46%, transparent), 0 12px 24px rgba(17, 138, 126, 0.12);
+    }
+    .brand-mark > span {
+      display: block;
+      width: 100%;
+      border-radius: 3px;
+      background: var(--teal);
+    }
+    .brand-mark > span:nth-child(1) { height: 11px; }
+    .brand-mark > span:nth-child(2) { height: 18px; background: var(--blue); transform: none; }
+    .brand-mark > span:nth-child(3) { height: 25px; background: var(--green); transform: none; }
+    body.theme-dark .brand-mark {
+      background: linear-gradient(145deg, var(--surface-2), color-mix(in srgb, var(--accent-soft) 66%, var(--surface)));
+      box-shadow: none;
+    }
+    header h1 {
+      color: var(--ink);
+      font-size: 24px;
+      font-weight: 850;
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+    header p {
+      max-width: 860px;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13.5px;
+    }
+    main {
+      width: calc(100% - 40px);
+      max-width: 1540px;
+      margin: 22px auto 40px;
+      gap: 18px;
+    }
+    button,
+    select,
+    input {
+      border-color: color-mix(in srgb, var(--line) 90%, transparent);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: none;
+      outline-color: color-mix(in srgb, var(--teal) 52%, transparent);
+    }
+    button:hover,
+    select:hover,
+    input:hover {
+      border-color: var(--line-strong);
+      background: color-mix(in srgb, var(--surface) 88%, var(--surface-2));
+    }
+    .toolbar {
+      gap: 9px;
+    }
+    .toolbar select,
+    .toolbar-action,
+    .theme-toggle,
+    #refresh-button,
+    .status {
+      min-height: 42px;
+      border-radius: 8px;
+      font-size: 13.5px;
+    }
+    .toolbar select {
+      min-width: 240px;
+      background: var(--surface);
+    }
+    .toolbar-action,
+    .theme-toggle {
+      padding-inline: 14px;
+      color: var(--ink);
+      font-weight: 780;
+    }
+    button.primary,
+    #refresh-button.primary {
+      border-color: #121820;
+      background: #121820;
+      color: #ffffff;
+      box-shadow: 0 12px 24px rgba(17, 24, 32, 0.18);
+    }
+    button.primary:hover,
+    #refresh-button.primary:hover {
+      border-color: #263241;
+      background: #263241;
+    }
+    body.theme-dark button.primary,
+    body.theme-dark button.primary:hover,
+    body.theme-dark #refresh-button.primary,
+    body.theme-dark #refresh-button.primary:hover {
+      border-color: #f4f2e8;
+      background: #f4f2e8;
+      color: #111820;
+      box-shadow: none;
+    }
+    .status {
+      padding: 0 13px;
+      border-color: color-mix(in srgb, var(--line-strong) 62%, var(--line));
+      background: var(--surface-2);
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .status-light {
+      width: 10px;
+      height: 10px;
+      box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 15%, transparent);
+    }
+    .server-status.connected {
+      border-color: color-mix(in srgb, var(--green) 38%, var(--line));
+      background: var(--success-surface);
+      color: var(--green);
+    }
+    .server-status.locked,
+    .server-status.checking {
+      border-color: color-mix(in srgb, var(--amber) 36%, var(--line));
+      background: var(--warning-surface);
+      color: var(--amber);
+    }
+    .server-status.disconnected {
+      border-color: color-mix(in srgb, var(--red) 40%, var(--line));
+      background: var(--danger-surface);
+      color: var(--red);
+    }
+    .dashboard-page-nav {
+      position: sticky;
+      top: 82px;
+      z-index: 18;
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+      padding: 6px;
+      border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface) 96%, transparent);
+      box-shadow: var(--shadow-line), 0 12px 26px rgba(17, 24, 32, 0.05);
+      backdrop-filter: blur(16px);
+      overflow: visible;
+    }
+    body.theme-dark .dashboard-page-nav {
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+    }
+    .dashboard-page-tab {
+      min-width: 0;
+      min-height: 44px;
+      padding: 0 12px;
+      border-color: transparent;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13.5px;
+      font-weight: 800;
+      box-shadow: none;
+    }
+    .dashboard-page-tab:hover {
+      border-color: color-mix(in srgb, var(--line-strong) 54%, transparent);
+      background: var(--surface-2);
+      color: var(--ink);
+    }
+    .dashboard-page-tab.is-active,
+    body.theme-dark .dashboard-page-tab.is-active {
+      border-color: #121820;
+      background: #121820;
+      color: #ffffff;
+      box-shadow: none;
+    }
+    body.theme-dark .dashboard-page-tab.is-active {
+      border-color: #f4f2e8;
+      background: #f4f2e8;
+      color: #111820;
+    }
+    .panel,
+    .metric,
+    .executive-kpi,
+    .monetisation-proof,
+    .business-kpi,
+    .growth-tile,
+    .command-center-tile,
+    .paid-ops-tile,
+    .commercial-tile,
+    .suite-tile,
+    .brief-item,
+    .host-card,
+    .catalog-item,
+    .timeline-item,
+    .signal,
+    .proof-lane {
+      border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }
+    .panel {
+      padding: 20px;
+    }
+    .executive-focus,
+    .monetisation-focus,
+    .business-focus,
+    .growth-focus,
+    .command-center-focus,
+    .buyer-ops-focus,
+    .paid-ops-focus,
+    .notification-revenue-focus,
+    .provider-simulation-focus,
+    .package-billing-focus,
+    .commercial-hero,
+    .suite-focus {
+      border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+      border-left: 5px solid var(--teal);
+      border-top: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+      border-radius: 8px;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 70%, var(--surface)), var(--surface) 56%);
+      box-shadow: var(--shadow);
+    }
+    body.theme-dark .executive-focus,
+    body.theme-dark .monetisation-focus,
+    body.theme-dark .business-focus,
+    body.theme-dark .growth-focus,
+    body.theme-dark .command-center-focus,
+    body.theme-dark .buyer-ops-focus,
+    body.theme-dark .paid-ops-focus,
+    body.theme-dark .notification-revenue-focus,
+    body.theme-dark .provider-simulation-focus,
+    body.theme-dark .package-billing-focus,
+    body.theme-dark .commercial-hero,
+    body.theme-dark .suite-focus {
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 58%, var(--surface)), var(--surface) 58%);
+    }
+    .executive-focus strong,
+    .monetisation-focus strong,
+    .business-focus strong,
+    .growth-focus strong,
+    .command-center-focus strong,
+    .buyer-ops-focus strong,
+    .paid-ops-focus strong,
+    .notification-revenue-focus strong,
+    .provider-simulation-focus strong,
+    .package-billing-focus strong,
+    .commercial-hero strong,
+    .suite-focus strong {
+      color: var(--ink);
+      font-size: 36px;
+      font-weight: 850;
+      letter-spacing: 0;
+      line-height: 1.04;
+    }
+    .executive-kpis,
+    .monetisation-proof-grid,
+    .business-grid,
+    .growth-grid,
+    .command-center-grid,
+    .buyer-ops-grid,
+    .paid-ops-grid,
+    .commercial-grid,
+    .suite-grid,
+    .brief-grid {
+      gap: 12px;
+    }
+    .executive-kpi,
+    .monetisation-proof,
+    .business-kpi,
+    .growth-tile,
+    .command-center-tile,
+    .paid-ops-tile,
+    .commercial-tile,
+    .suite-tile,
+    .brief-item,
+    .metric {
+      min-height: 128px;
+      padding: 15px;
+      align-content: space-between;
+    }
+    .executive-kpi small,
+    .monetisation-proof small,
+    .business-kpi small,
+    .growth-tile small,
+    .command-center-tile small,
+    .paid-ops-tile small,
+    .commercial-tile small,
+    .suite-tile small,
+    .brief-item small,
+    .metric small,
+    .metric-label {
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 800;
+      line-height: 1.2;
+      text-transform: none;
+    }
+    .executive-kpi strong,
+    .monetisation-proof strong,
+    .business-kpi strong,
+    .growth-tile strong,
+    .command-center-tile strong,
+    .paid-ops-tile strong,
+    .commercial-tile strong,
+    .suite-tile strong,
+    .brief-item strong,
+    .metric strong {
+      color: var(--ink);
+      font-size: 28px;
+      line-height: 1.05;
+    }
+    .section-head {
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .section-head h2 {
+      color: var(--ink);
+      font-size: 18px;
+      font-weight: 850;
+      line-height: 1.18;
+    }
+    .section-head p,
+    p.muted,
+    .muted {
+      color: var(--muted);
+    }
+    .badge,
+    .pill {
+      min-height: 30px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 780;
+      line-height: 1.16;
+      background: var(--surface-2);
+      border-color: color-mix(in srgb, var(--line) 88%, transparent);
+      color: var(--muted);
+    }
+    .badge.critical,
+    .badge.high,
+    .badge.failed,
+    .badge.attention,
+    .badge.open {
+      background: var(--danger-surface);
+      border-color: color-mix(in srgb, var(--red) 36%, var(--line));
+      color: var(--red);
+    }
+    .badge.medium,
+    .badge.retrying,
+    .badge.pending,
+    .badge.watch {
+      background: var(--warning-surface);
+      border-color: color-mix(in srgb, var(--amber) 36%, var(--line));
+      color: var(--amber);
+    }
+    .badge.low,
+    .badge.info,
+    .badge.delivered,
+    .badge.resolved,
+    .badge.healthy,
+    .badge.ok {
+      background: var(--success-surface);
+      border-color: color-mix(in srgb, var(--green) 36%, var(--line));
+      color: var(--green);
+    }
+    .action-meta,
+    .meta-row,
+    .route-meta {
+      gap: 8px;
+    }
+    .summary-line,
+    .executive-item,
+    .buyer-ops-list-item,
+    .monetisation-item,
+    .business-item,
+    .growth-item,
+    .command-center-item,
+    .route-proof-item,
+    .notification-revenue-item,
+    .list-item,
+    .launch-action,
+    .empty {
+      border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface-2) 88%, var(--surface));
+      box-shadow: none;
+    }
+    .command-nav {
+      position: sticky;
+      top: 146px;
+      z-index: 12;
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 14px;
+      padding: 14px;
+      border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface) 96%, transparent);
+      box-shadow: var(--shadow-line), 0 14px 30px rgba(17, 24, 32, 0.06);
+      backdrop-filter: blur(16px);
+      min-width: 0;
+      overflow: hidden;
+    }
+    body.theme-dark .command-nav {
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+    }
+    .command-nav-summary strong {
+      font-size: 18px;
+      font-weight: 850;
+    }
+    .command-nav-grid {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 8px;
+      min-width: 0;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 2px;
+      scrollbar-width: thin;
+    }
+    .command-jump {
+      flex: 0 0 184px;
+      min-height: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 4px;
+      padding: 10px 12px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--ink);
+      text-align: left;
+      box-shadow: none;
+      white-space: normal;
+    }
+    .command-jump:hover {
+      border-color: color-mix(in srgb, var(--line-strong) 48%, var(--line));
+      background: var(--surface-2);
+      transform: none;
+    }
+    .command-jump.is-active,
+    body.theme-dark .command-jump.is-active {
+      border-color: color-mix(in srgb, var(--teal) 42%, var(--line));
+      background: color-mix(in srgb, var(--teal) 12%, var(--surface));
+      color: var(--ink);
+      box-shadow: inset 4px 0 0 var(--teal);
+    }
+    .command-label {
+      display: block;
+      color: inherit;
+      font-size: 13.5px;
+      font-weight: 830;
+      line-height: 1.15;
+    }
+    .command-meta,
+    .command-jump span.command-meta {
+      display: block;
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .table-wrap {
+      border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: none;
+    }
+    table {
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: color-mix(in srgb, var(--surface-2) 94%, var(--surface));
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 820;
+      text-transform: none;
+    }
+    td {
+      color: var(--ink);
+    }
+    @media (max-width: 1180px) {
+      header {
+        grid-template-columns: 1fr;
+      }
+      .toolbar {
+        justify-content: stretch;
+      }
+      .toolbar > * {
+        flex: 1 1 190px;
+        min-width: 0;
+      }
+      .dashboard-page-nav {
+        position: static;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+      .command-nav {
+        position: static;
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 720px) {
+      header {
+        padding: 14px 16px;
+      }
+      main {
+        width: auto;
+        margin: 16px 10px 30px;
+      }
+      .toolbar > *,
+      .toolbar select,
+      .toolbar-action,
+      .theme-toggle,
+      #refresh-button,
+      .status {
+        width: 100%;
+        flex: 1 1 100%;
+      }
+      .dashboard-page-nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .dashboard-page-tab {
+        min-height: 42px;
+      }
+      .panel {
+        padding: 16px;
+      }
+      .command-nav {
+        padding: 12px;
+      }
+      .command-jump {
+        flex-basis: 170px;
+      }
+      .executive-focus strong,
+      .monetisation-focus strong,
+      .business-focus strong,
+      .growth-focus strong,
+      .command-center-focus strong,
+      .buyer-ops-focus strong,
+      .paid-ops-focus strong,
+      .notification-revenue-focus strong,
+      .provider-simulation-focus strong,
+      .package-billing-focus strong,
+      .commercial-hero strong,
+      .suite-focus strong {
+        font-size: 28px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -5125,14 +5761,14 @@
       <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
       <div>
         <h1>TraceDeck Console</h1>
-        <p class="muted">Host activity, anomaly delivery, archive health, and customer-ready product views.</p>
+        <p class="muted">Premium endpoint activity, anomaly delivery, archive health, and account operations in one admin view.</p>
       </div>
     </div>
     <div class="toolbar">
       <select id="host-select" aria-label="Host filter"></select>
-      <button id="browser-activity-button" class="toolbar-action" type="button" title="Open Chrome, Brave, and Edge browser activity" aria-label="Open browser activity viewer" onclick="window.location.href='/browser-activity'">Browser Activity</button>
+      <button id="browser-activity-button" class="toolbar-action" type="button" title="Open Chrome, Brave, and Edge browser activity" aria-label="Open browser activity viewer" onclick="window.location.href='/browser-activity'">Browser Evidence</button>
       <button id="theme-toggle-button" class="theme-toggle" type="button" title="Toggle dashboard theme" aria-label="Toggle dashboard theme"><span id="theme-toggle-label">Theme: Light</span></button>
-      <button id="refresh-button" class="primary" type="button">Refresh</button>
+      <button id="refresh-button" class="primary" type="button">Sync View</button>
       <span id="backend-status" class="status server-status checking"><span id="server-status-light" class="status-light" aria-hidden="true"></span><span id="server-status-text">Checking server</span></span>
     </div>
   </header>
@@ -5140,9 +5776,9 @@
     <nav id="dashboard-page-nav" class="dashboard-page-nav" aria-label="dashboard pages">
       <button class="dashboard-page-tab is-active" type="button" data-page-target="overview" aria-current="page">Overview</button>
       <button class="dashboard-page-tab" type="button" data-page-target="operations">Operations</button>
-      <button class="dashboard-page-tab" type="button" data-page-target="notifications">Notifications</button>
-      <button class="dashboard-page-tab" type="button" data-page-target="deployment">Deployment</button>
-      <button class="dashboard-page-tab" type="button" data-page-target="portfolio">Portfolio</button>
+      <button class="dashboard-page-tab" type="button" data-page-target="notifications">Alerts</button>
+      <button class="dashboard-page-tab" type="button" data-page-target="deployment">Rollout</button>
+      <button class="dashboard-page-tab" type="button" data-page-target="portfolio">Revenue</button>
       <button class="dashboard-page-tab" type="button" data-page-target="hosts">Hosts</button>
       <button class="dashboard-page-tab" type="button" data-page-target="admin">Admin</button>
     </nav>
@@ -12420,13 +13056,14 @@
 
     function renderMailDelivery(weekly, deliveries) {
       const latestEmail = latestDelivery(deliveryByChannel(deliveries, CHANNEL.email));
-      const mailReady = weekly.email_ready && (latestEmail ? latestEmail.status === DELIVERY_STATUS.delivered : true);
+      const mailDelivered = Boolean(latestEmail && latestEmail.status === DELIVERY_STATUS.delivered);
+      const packageReady = Boolean(weekly.generated && weekly.pdf_ready);
       document.getElementById("mail-status").outerHTML =
-        badge(mailReady ? "delivered" : "watch").replace("<span", '<span id="mail-status"');
-      setText("mail-recipient", latestEmail ? latestEmail.recipient : "configured report recipients");
+        badge(mailDelivered ? "delivered" : packageReady ? "watch" : "pending").replace("<span", '<span id="mail-status"');
+      setText("mail-recipient", latestEmail ? latestEmail.recipient : "no delivered recipient");
       setText("mail-subject", weekly.email_subject || "TraceDeck weekly report");
       setText("mail-preview", weekly.email_preview || weekly.generated_note || "No preview available");
-      setText("mail-pdf", weekly.pdf_ready ? "PDF ready for email attachment" : "PDF pending");
+      setText("mail-pdf", weekly.pdf_ready ? "PDF generated; email not sent" : "PDF pending");
       setText("mail-last-send", latestEmail ? formatDate(latestEmail.last_attempt_at) : "report not sent yet");
     }
 

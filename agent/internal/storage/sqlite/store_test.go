@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -134,5 +135,47 @@ func TestBackendSyncCursorAndPendingEvents(t *testing.T) {
 	}
 	if cursor != 2 {
 		t.Fatalf("expected cursor not to move backwards, got %d", cursor)
+	}
+}
+
+func TestPendingBackendSyncEventsRejectsOverflowProcessID(t *testing.T) {
+	t.Parallel()
+
+	store, err := Open(t.TempDir())
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	defer func() {
+		if err := store.Close(); err != nil {
+			t.Fatalf("close store: %v", err)
+		}
+	}()
+
+	_, err = store.db.ExecContext(context.Background(), `
+INSERT INTO events (
+  event_type, source, observed_at, tenant_id, device_id, host_name,
+  app_name, process_id, path_hash, metadata_json
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		constants.EventTypeProcessObserved,
+		constants.EventSourceProcessCollector,
+		time.Date(2026, 6, 14, 12, 0, 0, 0, time.UTC).Format(time.RFC3339Nano),
+		constants.DefaultTenantID,
+		constants.DefaultDeviceID,
+		constants.DefaultDeviceID,
+		constants.AppName,
+		int64(2147483648),
+		"hash-only",
+		`{"profile":"default"}`,
+	)
+	if err != nil {
+		t.Fatalf("insert overflow event fixture: %v", err)
+	}
+
+	_, err = store.PendingBackendSyncEvents(context.Background(), 0, 10)
+	if err == nil {
+		t.Fatal("expected overflow process_id to be rejected")
+	}
+	if !strings.Contains(err.Error(), "process_id") {
+		t.Fatalf("expected process_id error, got %v", err)
 	}
 }

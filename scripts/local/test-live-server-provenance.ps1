@@ -7,19 +7,30 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 . (Join-Path $PSScriptRoot "..\lib\logging.ps1")
+. (Join-Path $PSScriptRoot "..\lib\http-constants.ps1")
 Initialize-TraceDeckScriptLog -Name "test-live-server-provenance" -LogRoot "logs/local/test" | Out-Null
 
 try {
     $cleanBaseUrl = $BaseUrl.TrimEnd("/")
+    $demoSourceKind = "demo_seed"
+    $demoMediaApp = "VLC media player"
+    $includeDemoQuery = "include_demo=true"
 
     Write-TraceDeckLog -Level "INFO" -Message "Checking live server health at $cleanBaseUrl/health"
-    $health = Invoke-RestMethod -Method "GET" -Uri "$cleanBaseUrl/health"
+    $healthResponse = Invoke-WebRequest -UseBasicParsing -Uri "$cleanBaseUrl/health"
+    if ($healthResponse.Headers[$TraceDeckHeaderCacheControl] -ne $TraceDeckCacheNoStore) {
+        throw "Expected no-store cache header on live health endpoint."
+    }
+    $health = $healthResponse.Content | ConvertFrom-Json
     if ($health.status -ne "ok") {
         throw "Expected live server health status ok."
     }
 
     Write-TraceDeckLog -Level "INFO" -Message "Checking live dashboard provenance markers"
     $dashboard = Invoke-WebRequest -UseBasicParsing -Uri "$cleanBaseUrl/"
+    if ($dashboard.Headers[$TraceDeckHeaderCacheControl] -ne $TraceDeckCacheNoStore) {
+        throw "Expected no-store cache header on live dashboard."
+    }
     foreach ($expected in @("theme-toggle-button", "server-status-light", "sourceBadge", "dashboard-page-nav", "browser-activity-button")) {
         if ($dashboard.Content -notmatch [regex]::Escape($expected)) {
             throw "Expected live dashboard marker '$expected'."
@@ -28,6 +39,9 @@ try {
 
     Write-TraceDeckLog -Level "INFO" -Message "Checking live browser activity provenance markers"
     $browserPage = Invoke-WebRequest -UseBasicParsing -Uri "$cleanBaseUrl/browser-activity"
+    if ($browserPage.Headers[$TraceDeckHeaderCacheControl] -ne $TraceDeckCacheNoStore) {
+        throw "Expected no-store cache header on live browser activity page."
+    }
     foreach ($expected in @("TraceDeck Browser Activity", "<th>Source</th>", "sourceBadge", "server-status-light")) {
         if ($browserPage.Content -notmatch [regex]::Escape($expected)) {
             throw "Expected live browser activity marker '$expected'."
@@ -45,15 +59,31 @@ try {
         }
     }
 
-    Write-TraceDeckLog -Level "INFO" -Message "Checking live delivery API provenance"
+    Write-TraceDeckLog -Level "INFO" -Message "Checking live risk and delivery API provenance"
     $devices = Invoke-RestMethod -Method "GET" -Uri "$cleanBaseUrl/api/v1/devices"
     if ($devices.count -lt 1) {
         throw "Expected at least one live device."
     }
     $deviceID = $devices.items[0].device_id
+    $policy = Invoke-RestMethod -Method "GET" -Uri "$cleanBaseUrl/api/v1/devices/$deviceID/policy-violations"
+    $policyJson = $policy | ConvertTo-Json -Depth 20
+    if ($policy.count -ne 0 -or $policyJson.Contains($demoMediaApp) -or $policyJson.Contains($demoSourceKind)) {
+        throw "Default policy endpoint leaked demo evidence for $deviceID."
+    }
+
     $deliveries = Invoke-RestMethod -Method "GET" -Uri "$cleanBaseUrl/api/v1/devices/$deviceID/alert-deliveries"
-    if ($deliveries.count -lt 1 -or [string]::IsNullOrWhiteSpace($deliveries.items[0].source_kind)) {
-        throw "Expected alert delivery provenance."
+    $deliveryJson = $deliveries | ConvertTo-Json -Depth 20
+    if ($deliveries.count -ne 0 -or $deliveryJson.Contains($demoSourceKind)) {
+        throw "Default alert delivery endpoint leaked demo delivery evidence for $deviceID."
+    }
+
+    $demoPolicy = Invoke-RestMethod -Method "GET" -Uri "$cleanBaseUrl/api/v1/devices/$deviceID/policy-violations?$includeDemoQuery"
+    if ($demoPolicy.count -lt 1 -or $demoPolicy.items[0].source_kind -ne $demoSourceKind) {
+        throw "Expected opt-in demo policy provenance for $deviceID."
+    }
+    $demoDeliveries = Invoke-RestMethod -Method "GET" -Uri "$cleanBaseUrl/api/v1/devices/$deviceID/alert-deliveries?$includeDemoQuery"
+    if ($demoDeliveries.count -lt 1 -or $demoDeliveries.items[0].source_kind -ne $demoSourceKind) {
+        throw "Expected opt-in demo delivery provenance for $deviceID."
     }
 
     Write-TraceDeckLog -Level "INFO" -Message "Live server provenance passed base_url=$cleanBaseUrl tenant=$TenantID browser_rows=$($viewer.summary.total) device=$deviceID"

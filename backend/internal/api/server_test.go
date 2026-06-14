@@ -24,6 +24,9 @@ func TestHealthAndVersion(t *testing.T) {
 	if health.Code != http.StatusOK {
 		t.Fatalf("expected health 200, got %d", health.Code)
 	}
+	if health.Header().Get(constants.HeaderCache) != constants.CacheNoStore {
+		t.Fatalf("expected no-store health cache header, got %s", health.Header().Get(constants.HeaderCache))
+	}
 	if !strings.Contains(health.Body.String(), `"status":"ok"`) {
 		t.Fatalf("expected ok health response, got %s", health.Body.String())
 	}
@@ -52,6 +55,9 @@ func TestDashboardLocalAuthPanel(t *testing.T) {
 	handler.ServeHTTP(dashboard, httptest.NewRequest(http.MethodGet, constants.RouteDashboard, nil))
 	if dashboard.Code != http.StatusOK {
 		t.Fatalf("expected dashboard 200 without API key, got %d", dashboard.Code)
+	}
+	if dashboard.Header().Get(constants.HeaderCache) != constants.CacheNoStore {
+		t.Fatalf("expected no-store dashboard cache header, got %s", dashboard.Header().Get(constants.HeaderCache))
 	}
 	body := dashboard.Body.String()
 	for _, marker := range []string{
@@ -699,11 +705,17 @@ func TestHostDashboardRiskEndpoints(t *testing.T) {
 	if err := json.Unmarshal(overview.Body.Bytes(), &host); err != nil {
 		t.Fatalf("decode host overview: %v", err)
 	}
-	if host.Device.DeviceID != "laptop-cousin-001" || host.Summary.PolicyViolations == 0 {
+	if host.Device.DeviceID != "laptop-cousin-001" {
 		t.Fatalf("unexpected host overview: %+v", host)
 	}
-	if len(host.AlertDeliveries) == 0 || host.AlertDeliveries[0].Channel == "" {
-		t.Fatalf("expected alert delivery visibility: %+v", host.AlertDeliveries)
+	if host.Summary.PolicyViolations != 0 || host.Summary.AlertsRaised != 0 || host.RiskScore != constants.RiskScoreNone {
+		t.Fatalf("expected default overview to hide demo evidence: %+v", host)
+	}
+	if len(host.PolicyViolations) != 0 || len(host.Anomalies) != 0 || len(host.TamperEvents) != 0 || len(host.AlertDeliveries) != 0 {
+		t.Fatalf("expected default overview lists to hide demo evidence: %+v", host)
+	}
+	if strings.Contains(overview.Body.String(), constants.DemoRiskMediaAppName) || strings.Contains(overview.Body.String(), constants.EvidenceSourceDemoSeed) {
+		t.Fatalf("default overview leaked demo evidence: %s", overview.Body.String())
 	}
 	if host.Health.Score == 0 || host.Health.Status == "" {
 		t.Fatalf("expected host health score: %+v", host.Health)
@@ -731,11 +743,28 @@ func TestHostDashboardRiskEndpoints(t *testing.T) {
 	if err := json.Unmarshal(policy.Body.Bytes(), &policyEvents); err != nil {
 		t.Fatalf("decode policy violations: %v", err)
 	}
-	if policyEvents.Count == 0 || policyEvents.Items[0].Type != constants.RiskTypePolicyViolation {
-		t.Fatalf("unexpected policy events: %+v", policyEvents)
+	if policyEvents.Count != 0 || len(policyEvents.Items) != 0 {
+		t.Fatalf("expected default policy endpoint to hide demo evidence: %+v", policyEvents)
 	}
-	if policyEvents.Items[0].SourceKind != constants.EvidenceSourceDemoSeed || policyEvents.Items[0].EvidenceScope != constants.EvidenceScopeDemo || policyEvents.Items[0].EvidenceDetail == "" {
-		t.Fatalf("expected seeded risk provenance: %+v", policyEvents.Items[0])
+	if strings.Contains(policy.Body.String(), constants.DemoRiskMediaAppName) || strings.Contains(policy.Body.String(), constants.EvidenceSourceDemoSeed) {
+		t.Fatalf("default policy endpoint leaked demo evidence: %s", policy.Body.String())
+	}
+
+	demoPolicy := httptest.NewRecorder()
+	demoPolicyPath := constants.RouteDevices + "/laptop-cousin-001/" + constants.RouteSegmentPolicyEvents + "?" + constants.QueryIncludeDemo + "=" + constants.QueryValueTrue
+	handler.ServeHTTP(demoPolicy, httptest.NewRequest(http.MethodGet, demoPolicyPath, nil))
+	if demoPolicy.Code != http.StatusOK {
+		t.Fatalf("expected demo policy violations 200, got %d", demoPolicy.Code)
+	}
+	var demoPolicyEvents model.ListResponse[model.RiskEvent]
+	if err := json.Unmarshal(demoPolicy.Body.Bytes(), &demoPolicyEvents); err != nil {
+		t.Fatalf("decode demo policy violations: %v", err)
+	}
+	if demoPolicyEvents.Count == 0 || demoPolicyEvents.Items[0].Type != constants.RiskTypePolicyViolation {
+		t.Fatalf("unexpected demo policy events: %+v", demoPolicyEvents)
+	}
+	if demoPolicyEvents.Items[0].SourceKind != constants.EvidenceSourceDemoSeed || demoPolicyEvents.Items[0].EvidenceScope != constants.EvidenceScopeDemo || demoPolicyEvents.Items[0].AppName != constants.DemoRiskMediaAppName {
+		t.Fatalf("expected opt-in seeded risk provenance: %+v", demoPolicyEvents.Items[0])
 	}
 
 	deliveries := httptest.NewRecorder()
@@ -743,15 +772,29 @@ func TestHostDashboardRiskEndpoints(t *testing.T) {
 	if deliveries.Code != http.StatusOK {
 		t.Fatalf("expected alert deliveries 200, got %d", deliveries.Code)
 	}
-	if !strings.Contains(deliveries.Body.String(), constants.DeliveryChannelEmail) {
-		t.Fatalf("expected email delivery visibility, got %s", deliveries.Body.String())
-	}
 	var deliveryEvents model.ListResponse[model.AlertDelivery]
 	if err := json.Unmarshal(deliveries.Body.Bytes(), &deliveryEvents); err != nil {
 		t.Fatalf("decode alert deliveries: %v", err)
 	}
-	if deliveryEvents.Count == 0 || deliveryEvents.Items[0].SourceKind != constants.EvidenceSourceDemoSeed || deliveryEvents.Items[0].EvidenceScope != constants.EvidenceScopeDeliveryProof {
-		t.Fatalf("expected seeded delivery provenance: %+v", deliveryEvents)
+	if deliveryEvents.Count != 0 || len(deliveryEvents.Items) != 0 {
+		t.Fatalf("expected default alert deliveries to hide demo evidence: %+v", deliveryEvents)
+	}
+	if strings.Contains(deliveries.Body.String(), constants.EvidenceSourceDemoSeed) {
+		t.Fatalf("default deliveries leaked demo evidence: %s", deliveries.Body.String())
+	}
+
+	demoDeliveries := httptest.NewRecorder()
+	demoDeliveriesPath := constants.RouteDevices + "/laptop-cousin-001/" + constants.RouteSegmentAlertDelivery + "?" + constants.QueryIncludeDemo + "=" + constants.QueryValueTrue
+	handler.ServeHTTP(demoDeliveries, httptest.NewRequest(http.MethodGet, demoDeliveriesPath, nil))
+	if demoDeliveries.Code != http.StatusOK {
+		t.Fatalf("expected demo alert deliveries 200, got %d", demoDeliveries.Code)
+	}
+	var demoDeliveryEvents model.ListResponse[model.AlertDelivery]
+	if err := json.Unmarshal(demoDeliveries.Body.Bytes(), &demoDeliveryEvents); err != nil {
+		t.Fatalf("decode demo alert deliveries: %v", err)
+	}
+	if demoDeliveryEvents.Count == 0 || demoDeliveryEvents.Items[0].SourceKind != constants.EvidenceSourceDemoSeed || demoDeliveryEvents.Items[0].EvidenceScope != constants.EvidenceScopeDeliveryProof {
+		t.Fatalf("expected opt-in seeded delivery provenance: %+v", demoDeliveryEvents)
 	}
 
 	weekly := httptest.NewRecorder()
@@ -763,8 +806,8 @@ func TestHostDashboardRiskEndpoints(t *testing.T) {
 	if err := json.Unmarshal(weekly.Body.Bytes(), &report); err != nil {
 		t.Fatalf("decode weekly report: %v", err)
 	}
-	if !report.Generated || !report.EmailReady || !report.PDFReady {
-		t.Fatalf("expected generated weekly report: %+v", report)
+	if !report.Generated || report.EmailReady || !report.PDFReady {
+		t.Fatalf("expected generated weekly report without fake email proof: %+v", report)
 	}
 
 	pdf := httptest.NewRecorder()

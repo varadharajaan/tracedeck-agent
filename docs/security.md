@@ -58,3 +58,19 @@ and provider-confirmed states. Demo seed data cannot satisfy buyer-ready
 notification proof, and the API does not expose provider secrets, push
 endpoints, SMTP passwords, alert bodies, raw provider payloads, screenshots,
 raw URLs, page titles, cookies, tokens, or private content.
+
+Phase 85 adds a strict Go quality gate for security and reliability checks.
+`scripts/local/test-go-quality-gates.ps1` runs `govulncheck ./...` and
+`gosec ./...` alongside tests, race tests, vet, and lint. Reports stay under
+`data/local/go-quality/` and logs under `logs/local/test/`. The gate inspects
+source and generated metadata only; it does not collect passwords,
+screenshots, raw URLs, page titles, cookies, tokens, private content, endpoint
+payloads, provider secrets, alert bodies, keylogging data, hidden collection
+bypasses, or raw provider payloads.
+
+Phase 87 hardens demo provenance. Default host overview, summary, risk,
+delivery, and weekly-report endpoints suppress `source_kind=demo_seed`, so
+seeded examples such as VLC/media playback and demo email/push delivery rows
+cannot appear as live host truth. Demo rows require explicit
+`include_demo=true`, and weekly report `email_ready` requires non-demo delivered
+email proof.

@@ -2165,6 +2165,399 @@
         font-size: 30px;
       }
     }
+
+    /* Phase 86 browser evidence UI layer: premium console polish. */
+    :root {
+      color-scheme: light;
+      --bg: #f4f6fa;
+      --bg-band: #e8edf4;
+      --surface: #ffffff;
+      --surface-2: #f7f9fc;
+      --surface-3: #eef3f8;
+      --ink: #111820;
+      --muted: #5f6b7a;
+      --line: #d5dde7;
+      --line-strong: #9caabb;
+      --teal: #118a7e;
+      --teal-strong: #075f59;
+      --green: #247a57;
+      --amber: #b96c20;
+      --red: #c0443e;
+      --blue: #3c62a5;
+      --purple: #725aa3;
+      --accent-soft: #e7f5f2;
+      --success-surface: #edf8f1;
+      --warning-surface: #fff5e7;
+      --danger-surface: #fff0ef;
+      --info-surface: #eef4ff;
+      --shadow: 0 20px 48px rgba(17, 24, 32, 0.10);
+      --shadow-soft: 0 8px 22px rgba(17, 24, 32, 0.07);
+      --shadow-line: 0 1px 0 rgba(156, 170, 187, 0.30);
+    }
+    body.theme-dark {
+      color-scheme: dark;
+      --bg: #0f1110;
+      --bg-band: #171916;
+      --surface: #1b1d1a;
+      --surface-2: #232720;
+      --surface-3: #2e342a;
+      --ink: #f5f4ec;
+      --muted: #b6b3a7;
+      --line: #3b4037;
+      --line-strong: #737a68;
+      --teal: #62cdbf;
+      --teal-strong: #a8eee4;
+      --green: #8fd6a2;
+      --amber: #efbf78;
+      --red: #f08f87;
+      --blue: #9ebbea;
+      --purple: #c8b6ee;
+      --accent-soft: #17342f;
+      --success-surface: #183323;
+      --warning-surface: #3a2b18;
+      --danger-surface: #3b2220;
+      --info-surface: #1d2a39;
+      --shadow: 0 24px 54px rgba(0, 0, 0, 0.38);
+      --shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.28);
+      --shadow-line: 0 1px 0 rgba(115, 122, 104, 0.26);
+    }
+    html,
+    body {
+      background: var(--bg);
+    }
+    body {
+      background: linear-gradient(180deg, var(--bg-band) 0, var(--bg) 300px, var(--bg) 100%);
+      color: var(--ink);
+    }
+    header {
+      grid-template-columns: minmax(360px, 1fr) minmax(0, auto);
+      min-height: 82px;
+      padding: 16px 30px;
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+      background: color-mix(in srgb, var(--surface) 94%, transparent);
+      box-shadow: var(--shadow-line), 0 16px 34px rgba(17, 24, 32, 0.06);
+      backdrop-filter: blur(18px);
+    }
+    body.theme-dark header {
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      box-shadow: var(--shadow-line), 0 18px 40px rgba(0, 0, 0, 0.34);
+    }
+    .brand-lockup {
+      gap: 14px;
+    }
+    .brand-mark {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      align-items: end;
+      gap: 4px;
+      width: 46px;
+      height: 46px;
+      flex: 0 0 46px;
+      padding: 10px;
+      border: 1px solid color-mix(in srgb, var(--teal) 40%, var(--line));
+      border-radius: 8px;
+      background: linear-gradient(145deg, color-mix(in srgb, var(--accent-soft) 68%, var(--surface)), var(--surface));
+      box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 46%, transparent), 0 12px 24px rgba(17, 138, 126, 0.12);
+    }
+    .brand-mark > span {
+      display: block;
+      width: 100%;
+      border-radius: 3px;
+      background: var(--teal);
+    }
+    .brand-mark > span:nth-child(1) { height: 11px; }
+    .brand-mark > span:nth-child(2) { height: 18px; background: var(--blue); transform: none; }
+    .brand-mark > span:nth-child(3) { height: 25px; background: var(--green); transform: none; }
+    body.theme-dark .brand-mark {
+      background: linear-gradient(145deg, var(--surface-2), color-mix(in srgb, var(--accent-soft) 66%, var(--surface)));
+      box-shadow: none;
+    }
+    header h1 {
+      color: var(--ink);
+      font-size: 24px;
+      font-weight: 850;
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+    header p {
+      max-width: 860px;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13.5px;
+    }
+    main {
+      width: calc(100% - 40px);
+      max-width: 1500px;
+      margin: 22px auto 40px;
+      gap: 18px;
+    }
+    button,
+    select,
+    input {
+      border-color: color-mix(in srgb, var(--line) 90%, transparent);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: none;
+      outline-color: color-mix(in srgb, var(--teal) 52%, transparent);
+    }
+    button:hover,
+    select:hover,
+    input:hover {
+      border-color: var(--line-strong);
+      background: color-mix(in srgb, var(--surface) 88%, var(--surface-2));
+    }
+    .toolbar {
+      gap: 9px;
+    }
+    .toolbar-action,
+    .theme-toggle,
+    #refresh-button,
+    .status {
+      min-height: 42px;
+      border-radius: 8px;
+      font-size: 13.5px;
+    }
+    .toolbar-action,
+    .theme-toggle {
+      padding-inline: 14px;
+      color: var(--ink);
+      font-weight: 780;
+    }
+    button.primary,
+    #refresh-button.primary {
+      border-color: #121820;
+      background: #121820;
+      color: #ffffff;
+      box-shadow: 0 12px 24px rgba(17, 24, 32, 0.18);
+    }
+    button.primary:hover,
+    #refresh-button.primary:hover {
+      border-color: #263241;
+      background: #263241;
+    }
+    body.theme-dark button.primary,
+    body.theme-dark button.primary:hover,
+    body.theme-dark #refresh-button.primary,
+    body.theme-dark #refresh-button.primary:hover {
+      border-color: #f4f2e8;
+      background: #f4f2e8;
+      color: #111820;
+      box-shadow: none;
+    }
+    .status {
+      padding: 0 13px;
+      border-color: color-mix(in srgb, var(--line-strong) 62%, var(--line));
+      background: var(--surface-2);
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .status-light {
+      width: 10px;
+      height: 10px;
+      box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 15%, transparent);
+    }
+    .server-status.connected {
+      border-color: color-mix(in srgb, var(--green) 38%, var(--line));
+      background: var(--success-surface);
+      color: var(--green);
+    }
+    .server-status.checking {
+      border-color: color-mix(in srgb, var(--amber) 36%, var(--line));
+      background: var(--warning-surface);
+      color: var(--amber);
+    }
+    .server-status.disconnected {
+      border-color: color-mix(in srgb, var(--red) 40%, var(--line));
+      background: var(--danger-surface);
+      color: var(--red);
+    }
+    .panel,
+    .metric {
+      border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }
+    .panel {
+      padding: 20px;
+    }
+    .filters {
+      grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(120px, auto);
+      gap: 12px;
+    }
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: none;
+    }
+    .browser-hero {
+      grid-template-columns: minmax(360px, 0.82fr) minmax(0, 2.18fr);
+      gap: 18px;
+    }
+    .hero-focus {
+      border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+      border-left: 5px solid var(--teal);
+      border-top: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+      border-radius: 8px;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 70%, var(--surface)), var(--surface) 56%);
+      box-shadow: var(--shadow);
+    }
+    body.theme-dark .hero-focus {
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 58%, var(--surface)), var(--surface) 58%);
+    }
+    .hero-focus strong {
+      color: var(--ink);
+      font-size: 38px;
+      font-weight: 850;
+      letter-spacing: 0;
+      line-height: 1.04;
+    }
+    .hero-grid {
+      gap: 12px;
+    }
+    .metric {
+      min-height: 128px;
+      padding: 15px;
+      align-content: space-between;
+    }
+    .metric small {
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 800;
+      text-transform: none;
+    }
+    .metric strong {
+      color: var(--ink);
+      font-size: 28px;
+      line-height: 1.05;
+    }
+    .content-grid {
+      grid-template-columns: minmax(310px, 0.74fr) minmax(0, 2.26fr);
+      gap: 18px;
+    }
+    .section-head {
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .section-head h2 {
+      color: var(--ink);
+      font-size: 18px;
+      font-weight: 850;
+      line-height: 1.18;
+    }
+    .section-head p,
+    .muted {
+      color: var(--muted);
+    }
+    .badge,
+    .pill {
+      min-height: 30px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 780;
+      line-height: 1.16;
+      background: var(--surface-2);
+      border-color: color-mix(in srgb, var(--line) 88%, transparent);
+      color: var(--muted);
+    }
+    .badge.attention {
+      background: var(--danger-surface);
+      border-color: color-mix(in srgb, var(--red) 36%, var(--line));
+      color: var(--red);
+    }
+    .badge.watch,
+    .badge.pending {
+      background: var(--warning-surface);
+      border-color: color-mix(in srgb, var(--amber) 36%, var(--line));
+      color: var(--amber);
+    }
+    .badge.healthy,
+    .badge.ok {
+      background: var(--success-surface);
+      border-color: color-mix(in srgb, var(--green) 36%, var(--line));
+      color: var(--green);
+    }
+    .meta-row {
+      gap: 8px;
+    }
+    .list-item,
+    .empty {
+      border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface-2) 88%, var(--surface));
+      box-shadow: none;
+    }
+    .table-wrap {
+      border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: none;
+    }
+    table {
+      min-width: 1040px;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: color-mix(in srgb, var(--surface-2) 94%, var(--surface));
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 820;
+      text-transform: none;
+    }
+    td {
+      color: var(--ink);
+    }
+    @media (max-width: 1180px) {
+      header,
+      .browser-hero,
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+      .toolbar {
+        justify-content: stretch;
+      }
+      .toolbar > * {
+        flex: 1 1 180px;
+        min-width: 0;
+      }
+      .filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 720px) {
+      header {
+        padding: 14px 16px;
+      }
+      main {
+        width: auto;
+        margin: 16px 10px 30px;
+      }
+      .toolbar > *,
+      .toolbar-action,
+      .theme-toggle,
+      #refresh-button,
+      .status {
+        width: 100%;
+        flex: 1 1 100%;
+      }
+      .filters,
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+      .panel {
+        padding: 16px;
+      }
+      .hero-focus strong {
+        font-size: 30px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -2173,13 +2566,13 @@
       <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
       <div>
         <h1>Browser Viewer</h1>
-        <p class="muted">Chrome, Brave, and Edge domain observability by host, category, notification proof, and study-safe status</p>
+        <p class="muted">Chrome, Brave, and Edge evidence by host, category, alert route, and study-safe status.</p>
       </div>
     </div>
     <div class="toolbar">
       <button class="toolbar-action" type="button" title="Back to dashboard" aria-label="Back to dashboard" onclick="window.location.href='/'">Dashboard</button>
       <button id="theme-toggle-button" class="theme-toggle" type="button" title="Toggle browser activity theme" aria-label="Toggle browser activity theme"><span id="theme-toggle-label">Theme: Light</span></button>
-      <button id="refresh-button" class="primary" type="button">Refresh</button>
+      <button id="refresh-button" class="primary" type="button">Sync View</button>
       <span id="page-status" class="status server-status checking"><span id="server-status-light" class="status-light" aria-hidden="true"></span><span id="server-status-text">Checking server</span></span>
     </div>
   </header>
@@ -2242,7 +2635,7 @@
           <span id="browser-status" class="badge pending">pending</span>
         </div>
         <div>
-          <span class="muted">Metadata-only browser domain activity</span>
+          <span class="muted">Metadata-only browser evidence</span>
           <strong id="browser-total">0 domains</strong>
           <p id="browser-detail">Chrome, Brave, and Edge rows will appear after telemetry ingest or demo seeding.</p>
         </div>

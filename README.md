@@ -455,3 +455,19 @@ system. It is metadata-only and does not collect passwords, screenshots, raw
 URLs, page titles, cookies, tokens, private content, endpoint payloads,
 provider secrets, alert bodies, keylogging, or hidden collection bypasses. Use
 `python devctl.py test phase83` for the full local verifier.
+
+Phase 85 adds the strict Go quality gate required by the engineering contract.
+Use `python devctl.py test quality` to run gofmt, `go test ./...`,
+`go test -race ./...`, `go vet ./...`, `golangci-lint run ./...`,
+`govulncheck ./...`, and `gosec ./...`; reports are written under
+`data/local/go-quality/` and logs under `logs/local/test/`. Use
+`python devctl.py test phase85` to run the quality gate, Phase 85 Newman
+runtime guard, runtime doctor, and root-clean check.
+
+Phase 87 packages the current trust hardening bundle. Use
+`python devctl.py test phase87` to rerun the Phase 86 premium UI/provenance
+gate, the strict Go quality gate, a persistent local backend restart, the live
+server provenance guard, and root-clean. Default host APIs suppress
+`demo_seed` rows such as the seeded VLC/media-playback sample unless
+`include_demo=true` is explicit, and weekly report email readiness requires
+non-demo delivered email proof.
