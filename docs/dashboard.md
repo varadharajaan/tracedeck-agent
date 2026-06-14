@@ -589,6 +589,15 @@ Phase 82 keeps the same functionality but raises the buyer-facing UI baseline:
 symbolic brand mark, unified local/cloud light and dark themes, larger status
 chips, cleaner panels and KPI cards, and product-grade command navigation.
 
+Phase 83 adds backend-visible agent heartbeat proof. The agent emits
+`agent.health.heartbeat` from `collector.agent.heartbeat` once per collection
+cycle with readiness metadata such as version, collection mode, archive due
+state, backend sync state, alert state, profile, and operating system. The
+dashboard and sync-health views can use that event as host-level agent health
+and replay proof without showing screenshots, passwords, raw URLs, page titles,
+cookies, tokens, private content, endpoint payloads, provider secrets, alert
+bodies, keylogs, or hidden collection bypass data.
+
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
 paid customer onboarding workflows.

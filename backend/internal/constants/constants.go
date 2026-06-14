@@ -461,7 +461,9 @@ const (
 
 const (
 	TelemetryTypeBrowserDomainObserved = "browser.domain.observed"
+	TelemetryTypeAgentHeartbeat        = "agent.health.heartbeat"
 	TelemetrySourceBrowserHistory      = "collector.browser.history"
+	TelemetrySourceAgentHeartbeat      = "collector.agent.heartbeat"
 )
 
 const (

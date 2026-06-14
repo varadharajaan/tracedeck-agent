@@ -583,3 +583,15 @@ Lambda frontend uses S3 object listing and safe JSON/JSONL/GZip sampling to
 summarize archive object counts, byte totals, host/browser/domain metadata,
 source provenance, and cache hit/miss percentages. It is deployed with a Lambda Function URL and
 does not define API Gateway resources.
+
+Phase 83 extends the existing telemetry ingest/status and tenant sync-health
+contracts with `agent.health.heartbeat` events from
+`collector.agent.heartbeat`. The heartbeat event stores only typed readiness
+metadata: profile, operating system, agent health, agent version, collection
+mode, collection interval, archive enabled/due state, backend sync enabled
+state, and alerts enabled state. `/api/v1/devices/{deviceId}/telemetry-status`
+counts the event by type and source, and `/api/v1/tenants/{tenantId}/sync-health`
+uses it as backend-visible agent health/replay proof. It does not include
+passwords, screenshots, raw URLs, page titles, cookies, tokens, private
+content, endpoint payloads, provider secrets, alert bodies, keylogs, or hidden
+collection bypass data.

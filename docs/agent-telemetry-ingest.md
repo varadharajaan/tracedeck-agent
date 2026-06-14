@@ -74,3 +74,30 @@ The verifier regenerates the policy schema, runs backend tests, runs agent
 tests, starts a live backend, runs the real agent once with backend sync
 enabled, checks backend telemetry status, runs Newman, cross-builds the agent
 and backend, and checks root artifact hygiene.
+
+Phase 83 adds the agent heartbeat event to that ingest stream. Every agent
+cycle emits one metadata-only event:
+
+```text
+type:   agent.health.heartbeat
+source: collector.agent.heartbeat
+```
+
+The heartbeat metadata is intentionally small and typed:
+
+- `profile`
+- `operating_system`
+- `agent_healthy`
+- `agent_version`
+- `collection_mode` (`once` or `continuous`)
+- `collection_interval`
+- `archive_enabled`
+- `archive_due`
+- `backend_sync_enabled`
+- `alerts_enabled`
+
+The backend telemetry status endpoint counts the heartbeat by type/source and
+the tenant sync-health endpoint treats it as backend-visible agent health proof
+for the host. The heartbeat does not include passwords, screenshots, raw URLs,
+page titles, cookies, tokens, private content, endpoint payloads, provider
+secrets, alert bodies, keylogs, or hidden collection bypass data.

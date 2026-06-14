@@ -553,6 +553,700 @@ def _index_html() -> str:
     .item, .empty {{ border-color: color-mix(in srgb, var(--line) 84%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--surface-2) 90%, var(--surface)); }}
     .table-wrap {{ border-color: color-mix(in srgb, var(--line) 90%, transparent); border-radius: 8px; background: var(--surface); box-shadow: var(--shadow-soft); }}
     th {{ color: var(--muted); font-size: 12.5px; font-weight: 790; background: color-mix(in srgb, var(--surface-2) 92%, var(--surface)); }}
+
+    /* Phase 83 visual reset: hosted admin matches the premium local console. */
+    :root {{
+      --bg: #f6f7f9;
+      --bg-band: #eceff3;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --surface-3: #eef2f6;
+      --ink: #151a21;
+      --muted: #64707d;
+      --line: #d8dee6;
+      --line-strong: #aab4c0;
+      --teal: #0f8f83;
+      --teal-strong: #08635d;
+      --green: #25724f;
+      --amber: #a85f11;
+      --red: #b54238;
+      --blue: #2f5f9f;
+      --accent-soft: #e7f4f1;
+      --success-surface: #eaf6ef;
+      --warning-surface: #fff4df;
+      --danger-surface: #fff0ed;
+      --info-surface: #eaf1fb;
+      --shadow-soft: 0 8px 22px rgba(21, 26, 33, 0.07);
+      --shadow-line: 0 1px 0 rgba(170, 180, 192, 0.34);
+    }}
+    body.theme-dark {{
+      --bg: #101214;
+      --bg-band: #161a1e;
+      --surface: #191e23;
+      --surface-2: #21272e;
+      --surface-3: #2b333c;
+      --ink: #f3f6f8;
+      --muted: #a9b4bf;
+      --line: #343d46;
+      --line-strong: #65717e;
+      --teal: #55c6bd;
+      --teal-strong: #9de4dd;
+      --green: #80d49b;
+      --amber: #ecbb73;
+      --red: #ee8b82;
+      --blue: #93b8ea;
+      --accent-soft: #173331;
+      --success-surface: #183224;
+      --warning-surface: #382b18;
+      --danger-surface: #3b2020;
+      --info-surface: #1b2a3a;
+      --shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.24);
+      --shadow-line: 0 1px 0 rgba(101, 113, 126, 0.30);
+    }}
+    html,
+    body {{
+      background: var(--bg);
+    }}
+    body {{
+      background: linear-gradient(180deg, var(--bg-band) 0, var(--bg) 280px, var(--bg) 100%);
+      color: var(--ink);
+      font-size: 14px;
+    }}
+    .topbar {{
+      min-height: 76px;
+      padding: 14px 28px;
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+      background: color-mix(in srgb, var(--surface) 94%, transparent);
+      box-shadow: var(--shadow-line), 0 12px 30px rgba(21, 26, 33, 0.06);
+      backdrop-filter: blur(16px);
+    }}
+    body.theme-dark .topbar {{
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      box-shadow: var(--shadow-line), 0 16px 36px rgba(0, 0, 0, 0.28);
+    }}
+    .brand-lockup {{
+      gap: 13px;
+    }}
+    .brand-mark {{
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
+      padding: 9px;
+      border: 1px solid color-mix(in srgb, var(--teal) 38%, var(--line));
+      border-radius: 8px;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 82%, var(--accent-soft)), var(--surface));
+      box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 42%, transparent), 0 8px 18px rgba(15, 143, 131, 0.12);
+    }}
+    .brand-mark span {{
+      border-radius: 3px;
+      background: var(--teal);
+    }}
+    .brand-mark span:nth-child(2) {{
+      background: var(--blue);
+      transform: translateY(4px);
+    }}
+    .brand-mark span:nth-child(3) {{
+      background: var(--green);
+      transform: translateY(8px);
+    }}
+    body.theme-dark .brand-mark {{
+      background: linear-gradient(135deg, var(--surface-2), color-mix(in srgb, var(--accent-soft) 72%, var(--surface)));
+      box-shadow: none;
+    }}
+    .topbar h1 {{
+      font-size: 23px;
+      font-weight: 820;
+      line-height: 1.1;
+    }}
+    .brand-lockup p.muted {{
+      max-width: 850px;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13.5px;
+    }}
+    .eyebrow {{
+      color: var(--teal-strong);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }}
+    .app-shell {{
+      width: calc(100% - 36px);
+      max-width: 1500px;
+      margin: 22px auto 36px;
+      gap: 18px;
+      grid-template-columns: 292px minmax(0, 1fr);
+    }}
+    button,
+    select,
+    input {{
+      min-height: 40px;
+      border-color: color-mix(in srgb, var(--line) 88%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface) 94%, var(--surface-2));
+      color: var(--ink);
+      box-shadow: none;
+    }}
+    button:hover,
+    select:hover {{
+      border-color: var(--line-strong);
+      background: var(--surface);
+    }}
+    button.primary {{
+      border-color: #17202c;
+      background: #17202c;
+      color: #ffffff;
+      box-shadow: 0 10px 22px rgba(23, 32, 44, 0.16);
+    }}
+    button.primary:hover {{
+      border-color: #263241;
+      background: #263241;
+    }}
+    body.theme-dark button.primary,
+    body.theme-dark button.primary:hover {{
+      border-color: #eef3f7;
+      background: #eef3f7;
+      color: #151a21;
+      box-shadow: none;
+    }}
+    .status {{
+      min-height: 40px;
+      border-color: color-mix(in srgb, var(--line-strong) 58%, var(--line));
+      background: var(--surface-2);
+      color: var(--muted);
+      font-weight: 780;
+    }}
+    .status.connected {{
+      border-color: color-mix(in srgb, var(--green) 36%, var(--line));
+      background: var(--success-surface);
+      color: var(--green);
+    }}
+    .status.disconnected {{
+      border-color: color-mix(in srgb, var(--red) 40%, var(--line));
+      background: var(--danger-surface);
+      color: var(--red);
+    }}
+    .source-card,
+    .panel,
+    .metric,
+    .hero-panel {{
+      border-color: color-mix(in srgb, var(--line) 86%, transparent);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }}
+    .source-card,
+    .panel,
+    .hero-panel {{
+      padding: 20px;
+    }}
+    .hero-panel {{
+      border-left: 5px solid var(--teal);
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 70%, var(--surface)), var(--surface) 48%);
+    }}
+    .tabs {{
+      gap: 6px;
+      padding: 6px;
+      border-color: color-mix(in srgb, var(--line) 86%, transparent);
+      background: color-mix(in srgb, var(--surface) 95%, transparent);
+      box-shadow: var(--shadow-line), 0 10px 24px rgba(21, 26, 33, 0.05);
+    }}
+    .tab {{
+      min-height: 42px;
+      border-color: transparent;
+      border-radius: 7px;
+      color: var(--muted);
+      font-weight: 770;
+    }}
+    .tab:hover {{
+      border-color: color-mix(in srgb, var(--line-strong) 55%, transparent);
+      background: var(--surface-2);
+      color: var(--ink);
+    }}
+    .tab.is-active {{
+      border-color: #17202c;
+      background: #17202c;
+      color: #ffffff;
+    }}
+    body.theme-dark .tab.is-active {{
+      border-color: #eef3f7;
+      background: #eef3f7;
+      color: #151a21;
+    }}
+    .metric {{
+      border-top: 3px solid color-mix(in srgb, var(--teal) 66%, var(--line));
+      background: var(--surface);
+    }}
+    .metric strong {{
+      color: var(--ink);
+      font-weight: 830;
+    }}
+    .metric-label,
+    .section-header p {{
+      color: var(--muted);
+      font-size: 13px;
+    }}
+    .section-header h2 {{
+      color: var(--ink);
+      font-size: 18px;
+      font-weight: 810;
+    }}
+    .pill {{
+      min-height: 30px;
+      border-color: color-mix(in srgb, var(--line) 90%, transparent);
+      border-radius: 8px;
+      padding: 5px 10px;
+      background: color-mix(in srgb, var(--surface-2) 88%, var(--surface));
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 760;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }}
+    .strong-pill {{
+      border-color: color-mix(in srgb, var(--teal) 45%, var(--line));
+      background: var(--accent-soft);
+      color: var(--teal-strong);
+    }}
+    .item,
+    .empty {{
+      border-color: color-mix(in srgb, var(--line) 82%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface-2) 88%, var(--surface));
+      box-shadow: none;
+    }}
+    .table-wrap {{
+      border-color: color-mix(in srgb, var(--line) 88%, transparent);
+      background: var(--surface);
+      box-shadow: none;
+    }}
+    table {{
+      border-collapse: separate;
+      border-spacing: 0;
+    }}
+    th {{
+      background: color-mix(in srgb, var(--surface-2) 92%, var(--surface));
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 760;
+    }}
+    @media (max-width: 980px) {{
+      .topbar,
+      .app-shell,
+      .hero-panel,
+      .two {{
+        grid-template-columns: 1fr;
+      }}
+      .topbar {{
+        position: static;
+        padding: 14px 16px;
+      }}
+      .toolbar {{
+        justify-content: stretch;
+      }}
+      .toolbar > * {{
+        flex: 1 1 180px;
+        min-width: 0;
+      }}
+      .side-rail {{
+        position: static;
+      }}
+      .tabs,
+      .grid {{
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }}
+    }}
+    @media (max-width: 560px) {{
+      .app-shell {{
+        width: auto;
+        margin: 14px 10px 28px;
+      }}
+      .grid,
+      .settings-grid,
+      .tabs {{
+        grid-template-columns: 1fr;
+      }}
+      .settings-grid .item:nth-child(2) {{
+        grid-column: auto;
+      }}
+      .toolbar > * {{
+        flex-basis: 100%;
+      }}
+    }}
+    /* Phase 84 product UI revamp: hosted admin uses the same sellable visual system. */
+    :root {{
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --bg-band: #e9eef5;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --surface-3: #edf2f7;
+      --ink: #111827;
+      --muted: #667085;
+      --line: #d6dee8;
+      --line-strong: #9aa8ba;
+      --teal: #0f8f83;
+      --teal-strong: #08635d;
+      --green: #1f7a4d;
+      --amber: #b45f06;
+      --red: #ba3f34;
+      --blue: #2563eb;
+      --accent-soft: #e8f6f4;
+      --success-surface: #eaf7ef;
+      --warning-surface: #fff4df;
+      --danger-surface: #fff0ed;
+      --info-surface: #eaf2ff;
+      --shadow: 0 18px 46px rgba(17, 24, 39, 0.10);
+      --shadow-soft: 0 8px 24px rgba(17, 24, 39, 0.07);
+      --shadow-line: 0 1px 0 rgba(154, 168, 186, 0.32);
+    }}
+    body.theme-dark {{
+      color-scheme: dark;
+      --bg: #0f1115;
+      --bg-band: #15181e;
+      --surface: #181b20;
+      --surface-2: #20242b;
+      --surface-3: #2a3038;
+      --ink: #f3f6f8;
+      --muted: #aab4c0;
+      --line: #343b45;
+      --line-strong: #66717f;
+      --teal: #56c8bf;
+      --teal-strong: #a7ebe5;
+      --green: #7bd99a;
+      --amber: #efbd73;
+      --red: #f08b82;
+      --blue: #91b7f2;
+      --accent-soft: #173432;
+      --success-surface: #183424;
+      --warning-surface: #382b18;
+      --danger-surface: #3b2020;
+      --info-surface: #1a2a3d;
+      --shadow: 0 22px 52px rgba(0, 0, 0, 0.32);
+      --shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.24);
+      --shadow-line: 0 1px 0 rgba(102, 113, 127, 0.32);
+    }}
+    html,
+    body {{
+      background: var(--bg);
+    }}
+    body {{
+      background: linear-gradient(180deg, var(--bg-band) 0, var(--bg) 270px, var(--bg) 100%);
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.45;
+    }}
+    .topbar {{
+      grid-template-columns: minmax(360px, 1fr) minmax(0, auto);
+      min-height: 78px;
+      padding: 14px 28px;
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
+      background: color-mix(in srgb, var(--surface) 94%, transparent);
+      box-shadow: var(--shadow-line), 0 14px 32px rgba(17, 24, 39, 0.06);
+      backdrop-filter: blur(16px);
+    }}
+    body.theme-dark .topbar {{
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      box-shadow: var(--shadow-line), 0 16px 36px rgba(0, 0, 0, 0.30);
+    }}
+    .brand-lockup {{
+      gap: 14px;
+    }}
+    .brand-mark {{
+      display: grid;
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      padding: 9px;
+      border: 1px solid color-mix(in srgb, var(--teal) 38%, var(--line));
+      border-radius: 8px;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 82%, var(--accent-soft)), var(--surface));
+      box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 42%, transparent), 0 8px 18px rgba(15, 143, 131, 0.12);
+    }}
+    .brand-mark span {{
+      display: block;
+      border-radius: 3px;
+      background: var(--teal);
+    }}
+    .brand-mark span:nth-child(2) {{
+      background: var(--blue);
+      transform: translateY(4px);
+    }}
+    .brand-mark span:nth-child(3) {{
+      background: var(--green);
+      transform: translateY(8px);
+    }}
+    body.theme-dark .brand-mark {{
+      background: linear-gradient(135deg, var(--surface-2), color-mix(in srgb, var(--accent-soft) 72%, var(--surface)));
+      box-shadow: none;
+    }}
+    h1 {{
+      color: var(--ink);
+      font-size: 23px;
+      font-weight: 820;
+      line-height: 1.1;
+    }}
+    h2 {{
+      color: var(--ink);
+      font-size: 20px;
+      font-weight: 820;
+      line-height: 1.18;
+    }}
+    .topbar p.muted {{
+      max-width: 820px;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13.5px;
+    }}
+    button,
+    select,
+    input {{
+      min-height: 40px;
+      border-color: color-mix(in srgb, var(--line) 88%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface) 95%, var(--surface-2));
+      color: var(--ink);
+      box-shadow: none;
+    }}
+    button:hover,
+    select:hover {{
+      border-color: var(--line-strong);
+      background: var(--surface);
+    }}
+    button:focus-visible,
+    select:focus-visible,
+    input:focus-visible {{
+      outline: 3px solid color-mix(in srgb, var(--teal) 28%, transparent);
+      outline-offset: 2px;
+    }}
+    .toolbar {{
+      gap: 9px;
+    }}
+    .toolbar button,
+    .status {{
+      min-height: 40px;
+      border-radius: 8px;
+      font-weight: 770;
+    }}
+    button.primary,
+    #refresh-button.primary {{
+      border-color: #111827;
+      background: #111827;
+      color: #ffffff;
+      box-shadow: 0 10px 22px rgba(17, 24, 39, 0.16);
+    }}
+    button.primary:hover,
+    #refresh-button.primary:hover {{
+      border-color: #283344;
+      background: #283344;
+    }}
+    body.theme-dark button.primary,
+    body.theme-dark button.primary:hover,
+    body.theme-dark #refresh-button.primary,
+    body.theme-dark #refresh-button.primary:hover {{
+      border-color: color-mix(in srgb, var(--teal) 74%, var(--line));
+      background: color-mix(in srgb, var(--teal) 22%, var(--surface));
+      color: var(--teal-strong);
+      box-shadow: none;
+    }}
+    .status {{
+      padding: 0 12px;
+      border-color: color-mix(in srgb, var(--line-strong) 58%, var(--line));
+      background: var(--surface-2);
+      color: var(--muted);
+      box-shadow: none;
+    }}
+    .status-light {{
+      width: 10px;
+      height: 10px;
+      box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 16%, transparent);
+    }}
+    .status.connected {{
+      border-color: color-mix(in srgb, var(--green) 36%, var(--line));
+      background: var(--success-surface);
+      color: var(--green);
+    }}
+    .status.disconnected {{
+      border-color: color-mix(in srgb, var(--red) 40%, var(--line));
+      background: var(--danger-surface);
+      color: var(--red);
+    }}
+    .app-shell {{
+      width: calc(100% - 36px);
+      max-width: 1500px;
+      grid-template-columns: 292px minmax(0, 1fr);
+      gap: 18px;
+      margin: 22px auto 36px;
+    }}
+    .source-card,
+    .panel,
+    .metric,
+    .hero-panel {{
+      border-color: color-mix(in srgb, var(--line) 86%, transparent);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }}
+    .source-card,
+    .panel,
+    .hero-panel {{
+      padding: 20px;
+    }}
+    .side-rail {{
+      top: 100px;
+      gap: 14px;
+    }}
+    .tabs {{
+      gap: 6px;
+      padding: 6px;
+      border-color: color-mix(in srgb, var(--line) 86%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface) 95%, transparent);
+      box-shadow: var(--shadow-line);
+    }}
+    .tab {{
+      min-height: 42px;
+      border-color: transparent;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 770;
+      box-shadow: none;
+    }}
+    .tab:hover {{
+      border-color: color-mix(in srgb, var(--line-strong) 55%, transparent);
+      background: var(--surface-2);
+      color: var(--ink);
+    }}
+    .tab.is-active,
+    body.theme-dark .tab.is-active {{
+      border-color: color-mix(in srgb, var(--teal) 52%, var(--line));
+      background: color-mix(in srgb, var(--teal) 14%, var(--surface));
+      color: var(--teal-strong);
+      box-shadow: inset 4px 0 0 var(--teal);
+    }}
+    .hero-panel {{
+      grid-template-columns: minmax(0, 1fr) minmax(250px, auto);
+      border-left: 5px solid var(--teal);
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 70%, var(--surface)), var(--surface) 52%);
+      box-shadow: var(--shadow);
+    }}
+    body.theme-dark .hero-panel {{
+      background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 58%, var(--surface)), var(--surface) 52%);
+    }}
+    .grid {{
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }}
+    .two {{
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }}
+    .metric {{
+      min-height: 140px;
+      border-top: 3px solid color-mix(in srgb, var(--teal) 66%, var(--line));
+      background: var(--surface);
+    }}
+    .metric strong {{
+      color: var(--ink);
+      font-weight: 830;
+    }}
+    .metric-label,
+    .section-header p {{
+      color: var(--muted);
+      font-size: 13px;
+    }}
+    .section-header {{
+      gap: 14px;
+      margin-bottom: 16px;
+    }}
+    .section-header h2 {{
+      color: var(--ink);
+      font-size: 18px;
+      font-weight: 810;
+    }}
+    .pill {{
+      min-height: 30px;
+      border-color: color-mix(in srgb, var(--line) 90%, transparent);
+      border-radius: 8px;
+      padding: 5px 10px;
+      background: color-mix(in srgb, var(--surface-2) 88%, var(--surface));
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 760;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }}
+    .strong-pill {{
+      border-color: color-mix(in srgb, var(--teal) 45%, var(--line));
+      background: var(--accent-soft);
+      color: var(--teal-strong);
+    }}
+    .item,
+    .empty {{
+      border-color: color-mix(in srgb, var(--line) 82%, transparent);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface-2) 88%, var(--surface));
+      box-shadow: none;
+    }}
+    .table-wrap {{
+      border-color: color-mix(in srgb, var(--line) 88%, transparent);
+      background: var(--surface);
+      box-shadow: none;
+    }}
+    table {{
+      border-collapse: separate;
+      border-spacing: 0;
+    }}
+    th {{
+      background: color-mix(in srgb, var(--surface-2) 92%, var(--surface));
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 760;
+    }}
+    @media (max-width: 980px) {{
+      .topbar,
+      .app-shell,
+      .hero-panel,
+      .two {{
+        grid-template-columns: 1fr;
+      }}
+      .topbar {{
+        position: static;
+        padding: 14px 16px;
+      }}
+      .toolbar {{
+        justify-content: stretch;
+      }}
+      .toolbar > * {{
+        flex: 1 1 180px;
+        min-width: 0;
+      }}
+      .side-rail {{
+        position: static;
+      }}
+      .tabs,
+      .grid {{
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }}
+    }}
+    @media (max-width: 560px) {{
+      .app-shell {{
+        width: auto;
+        margin: 14px 10px 28px;
+      }}
+      .grid,
+      .settings-grid,
+      .tabs {{
+        grid-template-columns: 1fr;
+      }}
+      .settings-grid .item:nth-child(2) {{
+        grid-column: auto;
+      }}
+      .toolbar > * {{
+        flex-basis: 100%;
+      }}
+    }}
   </style>
 </head>
 <body>
