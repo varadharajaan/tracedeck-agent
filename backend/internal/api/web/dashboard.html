@@ -2531,30 +2531,39 @@
       font-weight: 820;
     }
     .command-nav-grid {
-      grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
       gap: 8px;
     }
     .command-jump {
-      min-height: 50px;
+      min-height: 58px;
       display: grid;
       justify-content: flex-start;
       align-content: center;
-      padding: 9px 11px;
+      gap: 3px;
+      padding: 10px 12px;
       border-color: color-mix(in srgb, var(--line) 88%, transparent);
       background: color-mix(in srgb, var(--surface) 92%, var(--surface-2));
       color: var(--ink);
-      font-size: 13px;
-      font-weight: 790;
       text-align: left;
     }
-    .command-jump span {
+    .command-jump .command-label {
       display: block;
-      margin: 2px 0 0;
+      color: inherit;
+      font-size: 13px;
+      font-weight: 810;
+      line-height: 1.18;
+      text-align: left;
+      overflow-wrap: anywhere;
+    }
+    .command-jump .command-meta {
+      display: block;
       max-width: 100%;
       color: var(--muted);
       font-size: 12.5px;
       font-weight: 720;
+      line-height: 1.18;
       text-align: left;
+      overflow-wrap: anywhere;
     }
     .command-jump:hover {
       border-color: var(--line-strong);
@@ -2606,7 +2615,7 @@
       .shell, .content-grid { grid-template-columns: 1fr; }
       .command-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .command-nav { grid-template-columns: 1fr; position: static; }
-      .command-nav-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .command-nav-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
       .dashboard-page-nav { position: static; }
       .growth-cockpit { grid-template-columns: 1fr; }
       .growth-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -2674,7 +2683,7 @@
       .signal-grid { grid-template-columns: 1fr; }
       .route-grid { grid-template-columns: 1fr; }
       .command-board { grid-template-columns: 1fr; }
-      .command-nav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .command-nav-grid { grid-template-columns: 1fr; }
       .dashboard-page-tab { flex-basis: calc(50% - 8px); max-width: none; }
       .business-dashboard { grid-template-columns: 1fr; }
       .business-kpis { grid-template-columns: 1fr; }
@@ -4293,30 +4302,30 @@
         </div>
       </div>
       <nav class="command-nav-grid" aria-label="dashboard sections">
-        <button class="command-jump" type="button" data-jump-target="premium-operations-section">Premium<span id="nav-premium-operations-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="onboarding-center-section">Onboard<span id="nav-onboarding-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="customer-settings-section">Settings<span id="nav-settings-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="revenue-operations-section">Revenue Ops<span id="nav-revenue-ops-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="deployment-readiness-section">Deploy<span id="nav-deployment-meta">waiting</span></button>
-        <button class="command-jump is-active" type="button" data-jump-target="customer-control-section">Control<span id="nav-customer-control-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="customer-success-section">Success<span id="nav-customer-success-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="push-activation-section">Push<span id="nav-push-activation-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="portfolio-center-section">Portfolio<span id="nav-portfolio-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="account-portfolio-section">Account<span id="nav-account-portfolio-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="executive-console-section">Executive<span id="nav-executive-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="notification-revenue-section">Notification Revenue<span id="nav-notification-revenue-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="provider-simulation-section">Provider<span id="nav-provider-simulation-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="notification-provider-setup-section">Setup<span id="nav-provider-setup-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="package-billing-section">Packages<span id="nav-package-billing-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="paid-ops-section">Paid Ops<span id="nav-paid-ops-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="revenue-section">Revenue<span id="nav-revenue-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="premium-notification-section">Notification Pro<span id="nav-premium-notification-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="delivery-assurance-section">Assurance<span id="nav-delivery-assurance-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="notification-proof-section">Notifications<span id="nav-notification-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="mail-report-section">Reports<span id="nav-report-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="archive-proof-section">Archive<span id="nav-archive-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="trust-proof-section">Trust<span id="nav-trust-meta">waiting</span></button>
-        <button class="command-jump" type="button" data-jump-target="host-detail-section">Hosts<span id="nav-host-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="premium-operations-section"><span class="command-label">Premium Operations</span><span id="nav-premium-operations-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="onboarding-center-section"><span class="command-label">Onboarding Center</span><span id="nav-onboarding-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="customer-settings-section"><span class="command-label">Customer Settings</span><span id="nav-settings-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="revenue-operations-section"><span class="command-label">Revenue Operations</span><span id="nav-revenue-ops-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="deployment-readiness-section"><span class="command-label">Deployment Readiness</span><span id="nav-deployment-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump is-active" type="button" data-jump-target="customer-control-section"><span class="command-label">Customer Control Room</span><span id="nav-customer-control-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="customer-success-section"><span class="command-label">Customer Success Packet</span><span id="nav-customer-success-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="push-activation-section"><span class="command-label">Push Activation</span><span id="nav-push-activation-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="portfolio-center-section"><span class="command-label">Host Portfolio</span><span id="nav-portfolio-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="account-portfolio-section"><span class="command-label">Account Portfolio</span><span id="nav-account-portfolio-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="executive-console-section"><span class="command-label">Executive Console</span><span id="nav-executive-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="notification-revenue-section"><span class="command-label">Notification Revenue</span><span id="nav-notification-revenue-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="provider-simulation-section"><span class="command-label">Provider Simulation</span><span id="nav-provider-simulation-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="notification-provider-setup-section"><span class="command-label">Provider Setup</span><span id="nav-provider-setup-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="package-billing-section"><span class="command-label">Package Billing</span><span id="nav-package-billing-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="paid-ops-section"><span class="command-label">Paid Operations</span><span id="nav-paid-ops-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="revenue-section"><span class="command-label">Growth Dashboard</span><span id="nav-revenue-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="premium-notification-section"><span class="command-label">Notification Command</span><span id="nav-premium-notification-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="delivery-assurance-section"><span class="command-label">Delivery Assurance</span><span id="nav-delivery-assurance-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="notification-proof-section"><span class="command-label">Notification Proof</span><span id="nav-notification-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="mail-report-section"><span class="command-label">Weekly Reports</span><span id="nav-report-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="archive-proof-section"><span class="command-label">Archive Proof</span><span id="nav-archive-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="trust-proof-section"><span class="command-label">Trust &amp; Consent</span><span id="nav-trust-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="host-detail-section"><span class="command-label">Host Details</span><span id="nav-host-meta" class="command-meta">waiting</span></button>
       </nav>
     </section>
 

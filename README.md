@@ -427,3 +427,10 @@ polished light/dark tables without pseudo-letter controls. Use
 `python devctl.py cloud visual` for the local Lambda visual contract and
 `python devctl.py test phase80` to compile, smoke, deploy SAM, run cloud
 Newman, run runtime doctor, and re-check root hygiene.
+
+Phase 81 tightens the embedded TraceDeck Console Workspace Navigator. The
+navigator now uses full product labels such as `Deployment Readiness`,
+`Customer Control Room`, `Provider Setup`, `Paid Operations`, and `Delivery
+Assurance`, with separate live metadata rows, instead of terse shortcut text.
+The visual-quality checker and Phase 81 smoke/Newman gates reject the old
+shortcut markup. Use `python devctl.py test phase81` for the local verifier.

@@ -334,3 +334,8 @@
     light/dark cards/chips/tables, cache metric rendering, localhost source
     switch, screenshot-free Lambda visual-quality checks, SAM deployment, cloud
     Newman, runtime doctor, docs, and `devctl.py test phase80`.
+79. Phase 81: dashboard navigator clarity. Replace terse embedded dashboard
+    Workspace Navigator shortcuts with full product labels, split each command
+    tile into `command-label` and `command-meta` rows, harden the
+    screenshot-free visual-quality contract against stale shortcut labels, add
+    smoke/Newman/verify/publish scripts, docs, and `devctl.py test phase81`.
