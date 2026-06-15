@@ -1191,6 +1191,25 @@ readback but the backend pid and health endpoint are still alive. Newman keeps
 the local UI/API contract reachable and verifies that default dashboard/policy
 responses do not expose seeded VLC/demo evidence.
 
+Phase 92 hardens the Scheduler readback edge case:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-backend-task-status-resilience.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase92.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase92.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase92.ps1
+python ./devctl.py test phase92
+```
+
+The status helper classifies Scheduler readback as `verified`, `denied`,
+`missing`, or `error`. Phase 92 treats `runtime_ok=true` plus
+`task_state=inaccessible` as acceptable runtime proof for non-elevated shells,
+but still fails for a truly missing task or unhealthy pid/health evidence.
+When the current shell cannot create an isolated scheduled task, the Phase 92
+smoke falls back to the default `http://127.0.0.1:18080` task-status proof and
+still runs live provenance plus `devctl.py doctor --skip-cloud` against that
+runtime.
+
 Phase 13 adds:
 
 ```powershell

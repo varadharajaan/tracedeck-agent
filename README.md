@@ -507,3 +507,13 @@ health, so Windows `Access denied` becomes `task_state=inaccessible` while
 `runtime_ok=true` still proves the backend pid and `/health` endpoint are alive.
 Use `python devctl.py test phase91` to run the isolated scheduled-task smoke,
 Phase 91 Newman collection, and root-clean check.
+
+Phase 92 hardens that task status contract for normal, non-elevated Windows
+shells. Use `python devctl.py test phase92` to verify the status classifier,
+isolated scheduled-task smoke, Newman provenance checks, and root-clean. The
+accepted healthy states are `task_present=true` with `runtime_ok=true`, or
+`task_state=inaccessible` with `runtime_ok=true` when Windows denies Scheduler
+metadata but the backend pid and `/health` endpoint are both alive. If the
+current shell cannot create an isolated scheduled task, the Phase 92 smoke falls
+back to the default `18080` task-status proof and still runs live provenance plus
+runtime doctor checks.
