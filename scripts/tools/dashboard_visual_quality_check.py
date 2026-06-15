@@ -30,6 +30,10 @@ VIEWPORTS = (
     {"name": "mobile", "width": 390, "height": 844},
 )
 
+PAGE_READY_STATE = "domcontentloaded"
+NAVIGATION_TIMEOUT_MS = 60000
+READY_TIMEOUT_MS = 60000
+
 FORBIDDEN_TEXT_PATTERNS = (
     r"Browser\s*\{",
     r"Center\s*\{",
@@ -41,6 +45,18 @@ FORBIDDEN_TEXT_PATTERNS = (
     r"\[[BCTR]\]",
     r"\{[BCTR]\}",
 )
+
+
+def wait_for_contract_ready(page, page_def):
+    page.wait_for_selector(f"#{page_def['status_id']}", state="visible", timeout=READY_TIMEOUT_MS)
+    if page_def["name"] != "dashboard":
+        return
+    page.wait_for_selector("#command-navigation", state="visible", timeout=READY_TIMEOUT_MS)
+    page.wait_for_function(
+        "() => document.getElementById('command-nav-title')"
+        " && !document.getElementById('command-nav-title').textContent.includes('No tenant loaded')",
+        timeout=READY_TIMEOUT_MS,
+    )
 
 
 def main() -> int:
@@ -69,8 +85,8 @@ def main() -> int:
                                 f"""window.localStorage.setItem("tracedeck.ui.theme", {json.dumps(theme)});"""
                             )
                             url = urljoin(report["base_url"], page_def["path"].lstrip("/"))
-                            page.goto(url, wait_until="networkidle", timeout=60000)
-                            page.wait_for_selector(f"#{page_def['status_id']}", state="visible", timeout=30000)
+                            page.goto(url, wait_until=PAGE_READY_STATE, timeout=NAVIGATION_TIMEOUT_MS)
+                            wait_for_contract_ready(page, page_def)
                             result = page.evaluate(
                                 """({ theme, expectedH1, statusID }) => {
                                   const parseColor = (value) => {

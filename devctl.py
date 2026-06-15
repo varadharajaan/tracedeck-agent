@@ -621,6 +621,14 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/verify/verify-phase87.ps1"))
     elif target == "verify87":
         run(powershell("./scripts/verify/verify-phase87.ps1"))
+    elif target == "phase88":
+        run(powershell("./scripts/verify/verify-phase88.ps1"))
+    elif target == "smoke88":
+        run(powershell("./scripts/local/smoke-phase88.ps1"))
+    elif target == "newman88":
+        run(powershell("./scripts/local/newman-phase88.ps1"))
+    elif target == "verify88":
+        run(powershell("./scripts/verify/verify-phase88.ps1"))
     elif target == "quality":
         run(powershell("./scripts/local/test-go-quality-gates.ps1"))
     elif target == "theme":
@@ -759,6 +767,7 @@ def main() -> int:
             "phase85",
             "phase86",
             "phase87",
+            "phase88",
             "smoke",
             "newman",
             "verify",
@@ -801,6 +810,9 @@ def main() -> int:
             "newman86",
             "verify86",
             "verify87",
+            "smoke88",
+            "newman88",
+            "verify88",
             "quality",
             "theme",
             "visual",

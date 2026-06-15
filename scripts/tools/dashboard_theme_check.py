@@ -19,6 +19,10 @@ VIEWPORTS = (
     {"name": "mobile", "width": 390, "height": 844},
 )
 
+PAGE_READY_STATE = "domcontentloaded"
+NAVIGATION_TIMEOUT_MS = 60000
+READY_TIMEOUT_MS = 60000
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="TraceDeck screenshot-free light/dark theme contract")
@@ -46,8 +50,8 @@ def main() -> int:
                                 f"""window.localStorage.setItem("tracedeck.ui.theme", {json.dumps(theme)});"""
                             )
                             url = urljoin(report["base_url"], page_def["path"].lstrip("/"))
-                            page.goto(url, wait_until="networkidle", timeout=60000)
-                            page.wait_for_selector(f"#{page_def['status_id']}", state="visible", timeout=30000)
+                            page.goto(url, wait_until=PAGE_READY_STATE, timeout=NAVIGATION_TIMEOUT_MS)
+                            page.wait_for_selector(f"#{page_def['status_id']}", state="visible", timeout=READY_TIMEOUT_MS)
                             result = page.evaluate(
                                 """({ theme, statusID, themeID }) => {
                                   const status = document.getElementById(statusID);

@@ -34,14 +34,20 @@ Package the verified local hardening work: strict Go quality gates, premium UI r
 - hide seeded `demo_seed` risk/delivery evidence from default host APIs
 - keep seeded VLC/media-playback rows available only through `?include_demo=true`
 - prevent generated weekly reports or demo email rows from claiming delivered email proof
+- serve dashboard/API responses with no-store cache headers to avoid stale seeded rows
+- harden Playwright dashboard contracts to wait for DOM and hydrated product controls
 - update smoke, Newman, live provenance, docs, Postman, and devctl hooks
 
 ## Verification
 - scripts/verify/verify-phase87.ps1
 - scripts/verify/verify-phase86.ps1
 - scripts/local/test-go-quality-gates.ps1
+- scripts/tools/dashboard_visual_quality_check.py
+- scripts/tools/dashboard_theme_check.py
+- scripts/tools/dashboard_layout_check.py
 - scripts/local/smoke-phase86.ps1
 - scripts/local/newman-phase86.ps1
+- scripts/lib/http-constants.ps1
 - scripts/local/test-live-server-provenance.ps1
 
 ## Privacy
@@ -82,8 +88,12 @@ Quality, UI, and metadata-only provenance checks. No passwords, screenshots, raw
         "scripts/local/start-dashboard-demo.ps1",
         "scripts/local/test-go-quality-gates.ps1",
         "scripts/local/test-live-server-provenance.ps1",
+        "scripts/lib/http-constants.ps1",
         "scripts/repo/publish-phase85.ps1",
         "scripts/repo/publish-phase87.ps1",
+        "scripts/tools/dashboard_layout_check.py",
+        "scripts/tools/dashboard_theme_check.py",
+        "scripts/tools/dashboard_visual_quality_check.py",
         "scripts/verify/verify-phase85.ps1",
         "scripts/verify/verify-phase86.ps1",
         "scripts/verify/verify-phase87.ps1"
@@ -109,12 +119,18 @@ Closes #$IssueNumber
 - add Phase 86 premium dashboard/Browser Viewer UI coverage
 - make demo risk and delivery rows opt-in with `include_demo=true`
 - prevent seeded VLC/media playback and demo email rows from being shown as live host truth or delivered proof
+- add no-store cache header checks so stale dashboard HTML cannot preserve old seeded demo rows
+- harden screenshot-free Playwright contracts against background API/network-idle timing
 - add Phase 87 verifier/publish script to prove the whole bundle before merge
 
 ## Verification
 - scripts/verify/verify-phase87.ps1
 - scripts/verify/verify-phase86.ps1
 - scripts/local/test-go-quality-gates.ps1
+- scripts/tools/dashboard_visual_quality_check.py
+- scripts/tools/dashboard_theme_check.py
+- scripts/tools/dashboard_layout_check.py
+- scripts/lib/http-constants.ps1
 - scripts/local/test-live-server-provenance.ps1
 
 ## Privacy

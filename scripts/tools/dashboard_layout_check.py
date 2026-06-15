@@ -13,6 +13,10 @@ VIEWPORTS = (
     {"name": "mobile", "width": 390, "height": 844},
 )
 
+PAGE_READY_STATE = "domcontentloaded"
+NAVIGATION_TIMEOUT_MS = 60000
+READY_TIMEOUT_MS = 60000
+
 EXPECTED_COMMAND_JUMPS = 24
 
 REQUIRED_IDS = (
@@ -262,12 +266,12 @@ def main() -> int:
             for viewport in VIEWPORTS:
                 page = browser.new_page(viewport={"width": viewport["width"], "height": viewport["height"]})
                 try:
-                    page.goto(target_url, wait_until="networkidle", timeout=60000)
-                    page.wait_for_selector("#command-navigation", state="visible", timeout=30000)
+                    page.goto(target_url, wait_until=PAGE_READY_STATE, timeout=NAVIGATION_TIMEOUT_MS)
+                    page.wait_for_selector("#command-navigation", state="visible", timeout=READY_TIMEOUT_MS)
                     page.wait_for_function(
                         "() => document.getElementById('command-nav-title')"
                         " && !document.getElementById('command-nav-title').textContent.includes('No tenant loaded')",
-                        timeout=30000,
+                        timeout=READY_TIMEOUT_MS,
                     )
                     result = page.evaluate(
                         """(requiredIDs) => {
