@@ -470,4 +470,14 @@ gate, the strict Go quality gate, a persistent local backend restart, the live
 server provenance guard, and root-clean. Default host APIs suppress
 `demo_seed` rows such as the seeded VLC/media-playback sample unless
 `include_demo=true` is explicit, and weekly report email readiness requires
-non-demo delivered email proof.
+non-demo delivered email proof. Dashboard HTML and JSON API responses are served
+with no-store cache headers so stale UI bundles do not preserve old demo rows.
+The screenshot-free dashboard visual/theme/layout checks wait for hydrated
+product controls instead of browser network-idle to avoid false timeouts from
+background API activity.
+
+Phase 88 packages the cache/header and visual-contract follow-up. Use
+`python devctl.py test phase88` to rerun Phase 87, Phase 88 smoke, Phase 88
+Newman, and root-clean. This phase adds the shared PowerShell HTTP constants
+helper required by live provenance checks and keeps the screenshot-free
+Playwright contracts on DOM/hydrated-control readiness.

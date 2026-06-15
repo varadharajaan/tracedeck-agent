@@ -1089,7 +1089,9 @@ verify default `/policy-violations` and `/alert-deliveries` do not expose
 `demo_seed` rows or the VLC/media-playback sample. They also verify
 `?include_demo=true` is the only path that returns seeded demo evidence with
 its provenance. The live-server provenance script checks the same contract
-against a running local server.
+against a running local server and asserts no-store cache headers on the
+dashboard, browser activity page, and health API so stale UI cannot preserve
+old demo rows.
 
 Phase 87 packages the quality/UI/provenance hardening bundle:
 
@@ -1103,7 +1105,27 @@ The Phase 87 verifier reruns the Phase 86 gate, reruns the strict Go quality
 gate, restarts the persistent local backend on `127.0.0.1:18080`, runs the live
 server provenance guard against that backend, and re-checks root artifact
 hygiene. This is the preferred local proof before publishing the combined
-Phase 85/86/provenance hardening work.
+Phase 85/86/provenance hardening work. The dashboard visual/theme/layout
+contracts wait for DOM readiness and hydrated product controls instead of
+browser network-idle, so screenshot-free UI checks do not fail just because the
+dashboard is still completing background API calls on a busy laptop.
+
+Phase 88 packages the cache/header and screenshot-free visual-contract follow-up:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase88.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase88.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase88.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/repo/publish-phase88.ps1
+python ./devctl.py test phase88
+```
+
+The smoke starts an isolated dashboard backend, runs the live provenance
+no-store guard, and reruns the dashboard visual/theme/layout checks against the
+isolated server. Newman verifies no-store headers on health, dashboard, Browser
+Viewer, and host evidence APIs while proving default policy evidence does not
+leak seeded VLC/demo rows. The Phase 88 verifier reruns Phase 87 first, then
+the Phase 88 smoke/Newman pair, and finally root-clean.
 
 Phase 13 adds:
 

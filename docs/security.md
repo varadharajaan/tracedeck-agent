@@ -73,4 +73,6 @@ delivery, and weekly-report endpoints suppress `source_kind=demo_seed`, so
 seeded examples such as VLC/media playback and demo email/push delivery rows
 cannot appear as live host truth. Demo rows require explicit
 `include_demo=true`, and weekly report `email_ready` requires non-demo delivered
-email proof.
+email proof. Dashboard HTML, browser activity HTML, and JSON API responses also
+send no-store cache headers so browsers do not keep stale dashboard bundles that
+could render old demo rows as current host state.

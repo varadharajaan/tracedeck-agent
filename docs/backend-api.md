@@ -575,7 +575,9 @@ the VLC/media-playback sample and demo email/push proof rows. Demo evidence is
 available only for explicit demos by passing `?include_demo=true`; callers must
 not use that mode for live host reporting or delivery proof. Weekly report
 `email_ready` requires a non-demo delivered email route; generated PDF/report
-packaging alone is not a delivered email claim.
+packaging alone is not a delivered email claim. Dashboard HTML, browser activity
+HTML, and JSON API responses include no-store cache headers so stale clients do
+not preserve old demo evidence in live views.
 
 Phase 78 adds `GET /api/v1/tenants/{tenantId}/notification-provider-setup`.
 It returns a typed notification provider setup contract for dashboard rendering
