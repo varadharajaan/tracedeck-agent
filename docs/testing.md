@@ -1149,6 +1149,24 @@ still expose labelled demo rows for buyer demos. The verifier also reruns the
 Phase 32/41 compatibility smokes because those older activity-feed contracts now
 distinguish default live evidence from explicit demo evidence.
 
+Phase 90 packages the runtime-doctor delivery proof correction:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-devctl-runtime-doctor.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase90.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase90.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase90.ps1
+python ./devctl.py test phase90
+```
+
+The focused script starts an isolated dashboard demo backend, runs
+`python ./devctl.py doctor --skip-cloud`, and validates the generated
+`data/local/output/runtime-doctor.json`. Default `/alert-deliveries` must hide
+`demo_seed` notification rows and report zero isolated default delivery rows,
+while explicit `include_demo=true` must still expose labelled seeded proof for
+demo walkthroughs. The doctor must not mark buyer-ready notification proof when
+provider-confirmed delivery count is zero.
+
 Phase 13 adds:
 
 ```powershell

@@ -1,0 +1,113 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 90",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health No Store Header",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is ok and not cached', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Default Alert Delivery Hides Demo Proof",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/demo-study-laptop/alert-deliveries"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('default delivery endpoint excludes seeded mail and push proof', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  const text = pm.response.text();",
+              "  pm.expect(body.count).to.eql(0);",
+              "  pm.expect(body.items).to.be.an('array').that.is.empty;",
+              "  pm.expect(text).to.not.include('demo_seed');",
+              "  pm.expect(text).to.not.include('VLC media player');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Opt In Demo Alert Delivery Is Labelled",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/demo-study-laptop/alert-deliveries?include_demo=true"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('demo delivery proof is explicit and not provider-confirmed', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.count).to.be.above(0);",
+              "  const demoRows = body.items.filter((item) => item.source_kind === 'demo_seed');",
+              "  pm.expect(demoRows.length).to.be.above(0);",
+              "  demoRows.forEach((item) => {",
+              "    pm.expect(item.evidence_scope).to.eql('delivery_proof');",
+              "    pm.expect(item.evidence_detail).to.include('no SMTP, SES, or web-push provider send');",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delivery Assurance Separates Demo From Buyer Ready",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/delivery-assurance?device_id=demo-study-laptop&limit=8"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('delivery assurance is metadata-only and not buyer-ready on demo proof alone', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(body.summary.routes_total).to.be.above(0);",
+              "  pm.expect(body.summary.demo_only).to.be.above(0);",
+              "  pm.expect(body.summary.provider_confirmed).to.eql(0);",
+              "  pm.expect(body.summary.buyer_ready).to.eql(false);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

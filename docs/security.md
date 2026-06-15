@@ -81,3 +81,9 @@ Tenant activity feed uses the same opt-in proof boundary. Its typed filter
 defaults `include_demo` to false, so host-scoped dashboard feeds do not show
 seeded VLC/media-playback examples unless an explicit demo request includes
 `include_demo=true`.
+
+Phase 90 extends that boundary to local operator assurance. `devctl.py doctor`
+reports default alert-delivery rows separately from explicit
+`include_demo=true` rows, verifies seeded notification proof is hidden by
+default, and must not present demo-only mail or push rows as buyer-ready
+provider delivery.

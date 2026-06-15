@@ -21,6 +21,10 @@ OUTPUT_ROOT = PROJECT_ROOT / "data" / "local" / "output"
 BACKEND_PID = PROJECT_ROOT / "data" / "local" / "backend" / "tracedeck-backend.pid"
 BACKEND_STATE = PROJECT_ROOT / "data" / "local" / "backend" / "backend-state.json"
 DEFAULT_ADDR = "127.0.0.1:18080"
+DEFAULT_TENANT_ID = "family-varadha"
+QUERY_INCLUDE_DEMO_TRUE = "include_demo=true"
+DEMO_SOURCE_KIND = "demo_seed"
+DEMO_MEDIA_APP_NAME = "VLC media player"
 SAM_DIR = PROJECT_ROOT / "sam-app"
 SAM_TEMPLATE = SAM_DIR / "template.yaml"
 SAM_CONFIG = SAM_DIR / "samconfig.toml"
@@ -198,15 +202,52 @@ def runtime_doctor_local(*, base_url: str, tenant_id: str) -> dict[str, object]:
     device_id = str(device_items[0].get("device_id", "")) if device_items and isinstance(device_items[0], dict) else ""
     delivery_ok = False
     delivery_count = 0
-    delivery_source = ""
+    delivery_source_kinds: list[str] = []
+    delivery_demo_hidden = False
+    delivery_demo_opt_in_count = 0
+    delivery_demo_opt_in_sources: list[str] = []
+    delivery_demo_opt_in_available = False
     if device_id:
         deliveries = read_json(f"{base_url}/api/v1/devices/{device_id}/alert-deliveries", timeout=5)
         delivery_payload = dict(deliveries.get("json") or {})
         delivery_items = list(delivery_payload.get("items") or [])
         delivery_count = int(delivery_payload.get("count") or len(delivery_items))
-        if delivery_items and isinstance(delivery_items[0], dict):
-            delivery_source = str(delivery_items[0].get("source_kind", ""))
-        delivery_ok = bool(deliveries["ok"]) and delivery_count > 0 and bool(delivery_source)
+        delivery_source_kinds = sorted(
+            {
+                str(item.get("source_kind", ""))
+                for item in delivery_items
+                if isinstance(item, dict) and item.get("source_kind")
+            }
+        )
+        default_delivery_text = json.dumps(delivery_payload, sort_keys=True)
+        delivery_demo_hidden = (
+            bool(deliveries["ok"])
+            and DEMO_SOURCE_KIND not in delivery_source_kinds
+            and DEMO_SOURCE_KIND not in default_delivery_text
+            and DEMO_MEDIA_APP_NAME not in default_delivery_text
+        )
+
+        demo_deliveries = read_json(
+            f"{base_url}/api/v1/devices/{device_id}/alert-deliveries?{QUERY_INCLUDE_DEMO_TRUE}",
+            timeout=5,
+        )
+        demo_delivery_payload = dict(demo_deliveries.get("json") or {})
+        demo_delivery_items = list(demo_delivery_payload.get("items") or [])
+        delivery_demo_opt_in_count = int(demo_delivery_payload.get("count") or len(demo_delivery_items))
+        delivery_demo_opt_in_sources = sorted(
+            {
+                str(item.get("source_kind", ""))
+                for item in demo_delivery_items
+                if isinstance(item, dict) and item.get("source_kind")
+            }
+        )
+        delivery_demo_opt_in_available = bool(demo_deliveries["ok"]) and any(
+            isinstance(item, dict)
+            and item.get("source_kind") == DEMO_SOURCE_KIND
+            and item.get("evidence_detail")
+            for item in demo_delivery_items
+        )
+        delivery_ok = delivery_demo_hidden and delivery_demo_opt_in_available
 
     assurance = read_json(f"{base_url}/api/v1/tenants/{tenant_id}/delivery-assurance?limit=25", timeout=6)
     assurance_payload = dict(assurance.get("json") or {})
@@ -245,7 +286,15 @@ def runtime_doctor_local(*, base_url: str, tenant_id: str) -> dict[str, object]:
             "privacy_boundary": browser_payload.get("privacy_boundary", ""),
         },
         "devices": {"ok": checks["devices"], "count": int(devices_payload.get("count") or len(device_items)), "first_device_id": device_id},
-        "deliveries": {"ok": delivery_ok, "count": delivery_count, "first_source_kind": delivery_source},
+        "deliveries": {
+            "ok": delivery_ok,
+            "default_count": delivery_count,
+            "default_source_kinds": delivery_source_kinds,
+            "default_demo_hidden": delivery_demo_hidden,
+            "opt_in_demo_count": delivery_demo_opt_in_count,
+            "opt_in_demo_source_kinds": delivery_demo_opt_in_sources,
+            "opt_in_demo_available": delivery_demo_opt_in_available,
+        },
         "delivery_assurance": {
             "ok": assurance_ok,
             "status": assurance_summary.get("status", ""),
@@ -312,6 +361,7 @@ def save_doctor_report(report: dict[str, object]) -> None:
     cloud = dict(report.get("cloud") or {})
     browser_api = dict(local.get("browser_api") or {})
     delivery_assurance = dict(local.get("delivery_assurance") or {})
+    delivery = dict(local.get("deliveries") or {})
     cloud_cache = dict(cloud.get("cache") or {})
     cloud_summary = dict(cloud.get("s3_summary") or {})
     lines = [
@@ -325,7 +375,7 @@ def save_doctor_report(report: dict[str, object]) -> None:
         f"Local:     {local.get('overall', '')} {local.get('base_url', '')}",
         f"Browser:   rows={browser_api.get('rows', 0)} sources={', '.join(browser_api.get('source_kinds', []))}",
         f"Device:    {dict(local.get('devices') or {}).get('first_device_id', '')}",
-        f"Delivery:  count={dict(local.get('deliveries') or {}).get('count', 0)} source={dict(local.get('deliveries') or {}).get('first_source_kind', '')}",
+        f"Delivery:  default_count={delivery.get('default_count', 0)} demo_hidden={delivery.get('default_demo_hidden', False)} opt_in_demo={delivery.get('opt_in_demo_count', 0)}",
         f"Assurance: score={delivery_assurance.get('score', 0)} provider={delivery_assurance.get('provider_confirmed', 0)} demo={delivery_assurance.get('demo_only', 0)} retrying={delivery_assurance.get('retrying', 0)} buyer_ready={delivery_assurance.get('buyer_ready', False)}",
         "",
     ]
@@ -637,6 +687,14 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase89.ps1"))
     elif target == "verify89":
         run(powershell("./scripts/verify/verify-phase89.ps1"))
+    elif target == "phase90":
+        run(powershell("./scripts/verify/verify-phase90.ps1"))
+    elif target == "smoke90":
+        run(powershell("./scripts/local/smoke-phase90.ps1"))
+    elif target == "newman90":
+        run(powershell("./scripts/local/newman-phase90.ps1"))
+    elif target == "verify90":
+        run(powershell("./scripts/verify/verify-phase90.ps1"))
     elif target == "activity-feed":
         run(powershell("./scripts/local/test-activity-feed-provenance.ps1"))
     elif target == "quality":
@@ -744,7 +802,7 @@ def main() -> int:
     status.set_defaults(func=cmd_status)
 
     doctor = sub.add_parser("doctor", help="Write local/cloud runtime assurance reports under data/local/output")
-    doctor.add_argument("--tenant-id", default="family-varadha", help="Tenant used for browser activity readback")
+    doctor.add_argument("--tenant-id", default=DEFAULT_TENANT_ID, help="Tenant used for browser activity readback")
     doctor.add_argument("--frontend-url", default="", help="Override Lambda Function URL")
     doctor.add_argument("--skip-cloud", action="store_true", help="Check only the local backend and browser viewer")
     doctor.add_argument("--no-cloud-refresh", action="store_true", help="Read Lambda S3 summary without a forced refresh")
@@ -779,6 +837,7 @@ def main() -> int:
             "phase87",
             "phase88",
             "phase89",
+            "phase90",
             "smoke",
             "newman",
             "verify",
@@ -827,6 +886,9 @@ def main() -> int:
             "smoke89",
             "newman89",
             "verify89",
+            "smoke90",
+            "newman90",
+            "verify90",
             "activity-feed",
             "quality",
             "theme",

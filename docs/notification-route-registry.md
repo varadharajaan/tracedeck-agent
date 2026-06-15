@@ -116,6 +116,11 @@ only route metadata, source labels, proof labels, timestamps, and recommended
 next actions; it does not expose provider secrets, SMTP passwords, push
 endpoints, alert bodies, tokens, cookies, screenshots, raw URLs, or page titles.
 
+Phase 90 makes the local runtime doctor enforce the same route proof language.
+`python ./devctl.py doctor --skip-cloud` reports default alert-delivery rows
+separately from `include_demo=true` rows and fails if demo-only notification
+proof is treated as buyer-ready provider delivery.
+
 ## Verification
 
 ```powershell
@@ -134,4 +139,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase75.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase75.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase75.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-devctl-runtime-doctor.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase90.ps1
 ```

@@ -24,6 +24,20 @@ try {
         exit 1
     }
 
+    $rootDirs = Get-ChildItem -Path $script:TraceDeckRepoRoot -Directory -Force
+    $forbiddenDirs = $rootDirs | Where-Object {
+        $_.Name -eq "__pycache__" -or
+        $_.Name -eq ".pytest_cache" -or
+        $_.Name -eq "playwright-report" -or
+        $_.Name -eq "test-results"
+    }
+
+    if ($forbiddenDirs) {
+        $names = ($forbiddenDirs | Select-Object -ExpandProperty Name) -join ", "
+        Write-TraceDeckLog -Level "ERROR" -Message "Root contains generated artifact directories: $names"
+        exit 1
+    }
+
     $localOnlyFiles = @(
         "plan.md",
         "checkpoint.md",

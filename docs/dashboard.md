@@ -627,6 +627,11 @@ Feed cannot show the seeded VLC row as live host evidence. The Mail Delivery
 Center marks email as delivered only when a non-demo delivered email proof row
 exists; a generated report/PDF alone shows as not sent.
 
+Phase 90 keeps `devctl.py doctor` aligned with that UI truth: the generated
+runtime report shows default alert delivery rows and explicit demo rows
+separately, verifies demo rows are hidden by default, and refuses buyer-ready
+notification proof when provider-confirmed delivery is missing.
+
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
 paid customer onboarding workflows.
