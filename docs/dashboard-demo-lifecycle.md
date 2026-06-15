@@ -96,3 +96,21 @@ task is truly missing or the backend runtime proof is unhealthy.
 If Windows denies isolated scheduled-task creation in the current shell, the
 Phase 92 smoke uses the default `http://127.0.0.1:18080` task-status output as
 the runtime proof and still runs live provenance plus runtime doctor checks.
+
+Phase 93 adds a typed advisory to the same task-status JSON:
+
+- `advisory.severity` is `ok`, `watch`, or `action_required`.
+- `advisory.code` explains the exact condition, such as
+  `scheduler_verified_runtime_ready` or
+  `runtime_ready_scheduler_readback_denied`.
+- `advisory.can_continue=true` means local dashboard testing can proceed.
+- `advisory.admin_readback_recommended=true` means an elevated PowerShell
+  session is useful for full Task Scheduler metadata, but the script does not
+  bypass UAC or hide the task.
+- `advisory.operator_action` gives the next command or operator step.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase93.ps1
+python ./devctl.py server task-status
+python ./devctl.py test phase93
+```

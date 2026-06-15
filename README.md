@@ -517,3 +517,10 @@ metadata but the backend pid and `/health` endpoint are both alive. If the
 current shell cannot create an isolated scheduled task, the Phase 92 smoke falls
 back to the default `18080` task-status proof and still runs live provenance plus
 runtime doctor checks.
+
+Phase 93 adds an actionable advisory object to backend task status JSON and
+prints it from `python devctl.py server task-status`. The advisory gives a
+typed severity/code, whether local dashboard work can continue, whether elevated
+Scheduler readback is recommended, and the next command to run. Use
+`python devctl.py test phase93` to verify the advisory helper, live status
+output, Newman provenance contract, and root-clean.

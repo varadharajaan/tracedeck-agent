@@ -59,6 +59,53 @@ try {
         }
     }
 
+    $advisoryCases = @(
+        @{
+            Name = "verified task advisory"
+            Status = [pscustomobject]@{ task_present = $true; task_state = "Ready"; runtime_ok = $true }
+            ExpectedCode = $script:TraceDeckTaskAdvisoryCodeReady
+            ExpectedCanContinue = $true
+            ExpectedAdminReadback = $false
+        },
+        @{
+            Name = "scheduler denied advisory"
+            Status = [pscustomobject]@{ task_present = $false; task_state = $script:TraceDeckTaskStateInaccessible; runtime_ok = $true }
+            ExpectedCode = $script:TraceDeckTaskAdvisoryCodeReadbackDenied
+            ExpectedCanContinue = $true
+            ExpectedAdminReadback = $true
+        },
+        @{
+            Name = "missing task advisory"
+            Status = [pscustomobject]@{ task_present = $false; task_state = $script:TraceDeckTaskStateMissing; runtime_ok = $true }
+            ExpectedCode = $script:TraceDeckTaskAdvisoryCodeTaskMissing
+            ExpectedCanContinue = $false
+            ExpectedAdminReadback = $false
+        },
+        @{
+            Name = "runtime unhealthy advisory"
+            Status = [pscustomobject]@{ task_present = $true; task_state = "Ready"; runtime_ok = $false }
+            ExpectedCode = $script:TraceDeckTaskAdvisoryCodeRuntimeUnhealthy
+            ExpectedCanContinue = $false
+            ExpectedAdminReadback = $false
+        }
+    )
+
+    foreach ($case in $advisoryCases) {
+        $actual = Get-TraceDeckBackendTaskStatusAdvisory -Status $case.Status
+        if ($actual.code -ne $case.ExpectedCode) {
+            throw "Backend task advisory code failed for '$($case.Name)': expected=$($case.ExpectedCode) actual=$($actual.code)"
+        }
+        if ($actual.can_continue -ne $case.ExpectedCanContinue) {
+            throw "Backend task advisory can_continue failed for '$($case.Name)': expected=$($case.ExpectedCanContinue) actual=$($actual.can_continue)"
+        }
+        if ($actual.admin_readback_recommended -ne $case.ExpectedAdminReadback) {
+            throw "Backend task advisory admin_readback_recommended failed for '$($case.Name)': expected=$($case.ExpectedAdminReadback) actual=$($actual.admin_readback_recommended)"
+        }
+        if ([string]::IsNullOrWhiteSpace($actual.headline) -or [string]::IsNullOrWhiteSpace($actual.operator_action)) {
+            throw "Backend task advisory text was empty for '$($case.Name)'"
+        }
+    }
+
     Write-TraceDeckLog -Level "INFO" -Message "Backend task status resilience checks passed."
     Complete-TraceDeckScriptLog
 }
