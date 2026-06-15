@@ -621,7 +621,9 @@ The dashboard treats seeded examples as opt-in demo content. Default host risk,
 anomaly, tamper, alert-delivery, daily-summary, and weekly-report calls suppress
 `source_kind=demo_seed`, including the VLC/media-playback sample and seeded
 email/push rows from older local state. Demo rows are available only through
-explicit `include_demo=true` API calls used by demo scripts. The Mail Delivery
+explicit `include_demo=true` API calls used by demo scripts. The host-scoped
+tenant activity feed uses the same typed `include_demo` filter so the Activity
+Feed cannot show the seeded VLC row as live host evidence. The Mail Delivery
 Center marks email as delivered only when a non-demo delivered email proof row
 exists; a generated report/PDF alone shows as not sent.
 

@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "TraceDeck Backend Phase 88",
+    "name": "TraceDeck Backend Phase 89",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -27,60 +27,7 @@
       ]
     },
     {
-      "name": "Dashboard No Store Header",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('dashboard shell is no-store and product-grade', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
-              "  const html = pm.response.text();",
-              "  ['TraceDeck Console', 'Browser Evidence', 'Sync View', 'server-status-light', 'dashboard-page-nav'].forEach(function (marker) {",
-              "    pm.expect(html).to.include(marker);",
-              "  });",
-              "  [/Browser\\s*\\{/, /Center\\s*\\{/, /\\[[BCTR]\\]/, /\\{[BCTR]\\}/, /\\bTD\\b/, /\\bRev Ops\\b/, /\\bNotif Rev\\b/, /\\bNotify Pro\\b/, /\\bNotifs\\b/].forEach(function (pattern) {",
-              "    pm.expect(html).to.not.match(pattern);",
-              "  });",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Browser Viewer No Store Header",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/browser-activity"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('browser viewer is no-store and source-backed', function () {",
-              "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
-              "  const html = pm.response.text();",
-              "  ['TraceDeck Browser Activity', 'Browser Viewer', 'Chrome, Brave, and Edge evidence', '<th>Source</th>', 'metadata-only guard'].forEach(function (marker) {",
-              "    pm.expect(html).to.include(marker);",
-              "  });",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Default Policy Evidence Is Live Only",
+      "name": "Default Host Policy Evidence Is Live Only",
       "request": {
         "method": "GET",
         "url": "{{baseUrl}}/api/v1/devices/demo-study-laptop/policy-violations"
@@ -93,7 +40,6 @@
             "exec": [
               "pm.test('default policy endpoint excludes seeded VLC evidence', function () {",
               "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
               "  const body = pm.response.json();",
               "  const text = pm.response.text();",
               "  pm.expect(body.count).to.eql(0);",
@@ -107,7 +53,7 @@
       ]
     },
     {
-      "name": "Default Activity Feed Evidence Is Live Only",
+      "name": "Default Tenant Activity Feed Evidence Is Live Only",
       "request": {
         "method": "GET",
         "url": "{{baseUrl}}/api/v1/tenants/family-varadha/activity-feed?device_id=demo-study-laptop&limit=10"
@@ -120,11 +66,11 @@
             "exec": [
               "pm.test('default activity feed excludes seeded VLC evidence', function () {",
               "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
               "  const body = pm.response.json();",
               "  const text = pm.response.text();",
               "  pm.expect(body.filters.include_demo).to.eql(false);",
               "  pm.expect(body.summary.risk_items).to.eql(0);",
+              "  pm.expect(body.summary.delivery_items).to.eql(0);",
               "  pm.expect(text).to.not.include('VLC media player');",
               "  pm.expect(text).to.not.include('demo_seed');",
               "});"
@@ -147,7 +93,6 @@
             "exec": [
               "pm.test('demo activity feed evidence remains explicit and labelled', function () {",
               "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
               "  const body = pm.response.json();",
               "  const text = pm.response.text();",
               "  pm.expect(body.filters.include_demo).to.eql(true);",
@@ -161,7 +106,7 @@
       ]
     },
     {
-      "name": "Opt In Demo Evidence Is Labelled",
+      "name": "Opt In Demo Policy Evidence Is Labelled",
       "request": {
         "method": "GET",
         "url": "{{baseUrl}}/api/v1/devices/demo-study-laptop/policy-violations?include_demo=true"
@@ -172,9 +117,8 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('demo evidence remains explicit and labelled', function () {",
+              "pm.test('demo policy evidence remains explicit and labelled', function () {",
               "  pm.response.to.have.status(200);",
-              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
               "  const body = pm.response.json();",
               "  pm.expect(body.count).to.be.above(0);",
               "  pm.expect(body.items[0].source_kind).to.eql('demo_seed');",

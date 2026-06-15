@@ -1165,13 +1165,14 @@ func activityFeedFilterFromQuery(r *http.Request) model.TenantActivityFeedFilter
 		}
 	}
 	return model.TenantActivityFeedFilter{
-		DeviceID: strings.TrimSpace(query.Get("device_id")),
-		Kind:     strings.TrimSpace(query.Get("kind")),
-		Severity: strings.TrimSpace(query.Get("severity")),
-		Channel:  strings.TrimSpace(query.Get("channel")),
-		Status:   strings.TrimSpace(query.Get("status")),
-		Query:    strings.TrimSpace(query.Get("q")),
-		Limit:    limit,
+		DeviceID:    strings.TrimSpace(query.Get("device_id")),
+		Kind:        strings.TrimSpace(query.Get("kind")),
+		Severity:    strings.TrimSpace(query.Get("severity")),
+		Channel:     strings.TrimSpace(query.Get("channel")),
+		Status:      strings.TrimSpace(query.Get("status")),
+		Query:       strings.TrimSpace(query.Get("q")),
+		IncludeDemo: requestIncludesDemoEvidence(r),
+		Limit:       limit,
 	}
 }
 

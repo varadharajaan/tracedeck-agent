@@ -60,16 +60,22 @@ try {
     }
 
     $feed = Invoke-RestMethod -Method "GET" -Uri "$baseUrl/api/v1/tenants/family-varadha/activity-feed?limit=20"
-    if ($feed.summary.risk_items -lt 1 -or $feed.summary.delivery_items -lt 1 -or $feed.items.Count -lt 1) {
-        throw "Expected default activity feed to include risk and delivery items."
+    $feedJson = $feed | ConvertTo-Json -Depth 20
+    if ($feed.filters.include_demo -or $feed.summary.risk_items -ne 0 -or $feed.summary.delivery_items -ne 0 -or $feedJson.Contains("demo_seed")) {
+        throw "Expected default activity feed to hide demo risk and delivery items."
     }
     if ($feed.privacy_boundary -notmatch "metadata-only") {
         throw "Expected metadata-only privacy boundary on activity feed."
     }
 
+    $demoFeed = Invoke-RestMethod -Method "GET" -Uri "$baseUrl/api/v1/tenants/family-varadha/activity-feed?limit=20&include_demo=true"
+    if (-not $demoFeed.filters.include_demo -or $demoFeed.summary.risk_items -lt 1 -or $demoFeed.summary.delivery_items -lt 1 -or $demoFeed.items.Count -lt 1) {
+        throw "Expected opt-in demo activity feed to include labelled risk and delivery items."
+    }
+
     $devices = Invoke-RestMethod -Method "GET" -Uri "$baseUrl/api/v1/devices"
     $selectedDeviceID = $devices.items[0].device_id
-    $emailFeed = Invoke-RestMethod -Method "GET" -Uri "$baseUrl/api/v1/tenants/family-varadha/activity-feed?device_id=$selectedDeviceID&kind=delivery&channel=email&limit=5"
+    $emailFeed = Invoke-RestMethod -Method "GET" -Uri "$baseUrl/api/v1/tenants/family-varadha/activity-feed?device_id=$selectedDeviceID&kind=delivery&channel=email&limit=5&include_demo=true"
     if ($emailFeed.summary.delivery_items -lt 1 -or -not ($emailFeed.items | Where-Object { $_.channel -eq "email" })) {
         throw "Expected selected-host email delivery feed item."
     }

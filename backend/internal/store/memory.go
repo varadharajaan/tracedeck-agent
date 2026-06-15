@@ -1659,6 +1659,9 @@ func (m *Memory) TenantActivityFeed(_ context.Context, tenantID string, filter m
 
 	matched := make([]model.TenantActivityFeedItem, 0, len(items))
 	for _, item := range items {
+		if !filter.IncludeDemo && isDemoActivityFeedItem(item) {
+			continue
+		}
 		if activityFeedItemMatches(item, filter) {
 			matched = append(matched, item)
 		}
@@ -2745,6 +2748,10 @@ func activityFeedItemMatches(item model.TenantActivityFeedItem, filter model.Ten
 		return false
 	}
 	return true
+}
+
+func isDemoActivityFeedItem(item model.TenantActivityFeedItem) bool {
+	return strings.EqualFold(strings.TrimSpace(item.SourceKind), constants.EvidenceSourceDemoSeed)
 }
 
 func activityFeedSearchText(item model.TenantActivityFeedItem) string {

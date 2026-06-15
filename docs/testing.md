@@ -1124,8 +1124,30 @@ The smoke starts an isolated dashboard backend, runs the live provenance
 no-store guard, and reruns the dashboard visual/theme/layout checks against the
 isolated server. Newman verifies no-store headers on health, dashboard, Browser
 Viewer, and host evidence APIs while proving default policy evidence does not
-leak seeded VLC/demo rows. The Phase 88 verifier reruns Phase 87 first, then
-the Phase 88 smoke/Newman pair, and finally root-clean.
+leak seeded VLC/demo rows. The live provenance script and Newman collection also
+check the tenant activity feed: default host-scoped feed responses must not
+contain `VLC media player` or `demo_seed`, while `include_demo=true` must expose
+the labelled demo row. The Phase 88 verifier reruns Phase 87 first, then the
+Phase 88 smoke/Newman pair, and finally root-clean.
+
+Phase 89 packages the activity-feed provenance hotfix:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-activity-feed-provenance.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase89.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase89.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase89.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/repo/publish-phase89.ps1
+python ./devctl.py test phase89
+```
+
+The focused script runs backend API/store regression tests and, unless
+`-SkipLive` is set, checks a running backend. The Phase 89 smoke starts an
+isolated backend and proves default activity feed responses do not contain
+`VLC media player` or `demo_seed`, while explicit `include_demo=true` responses
+still expose labelled demo rows for buyer demos. The verifier also reruns the
+Phase 32/41 compatibility smokes because those older activity-feed contracts now
+distinguish default live evidence from explicit demo evidence.
 
 Phase 13 adds:
 

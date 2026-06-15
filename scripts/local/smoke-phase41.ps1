@@ -87,8 +87,12 @@ try {
     }
 
     $feed = Invoke-RestMethod -Method "GET" -Uri "$baseUrl/api/v1/tenants/$tenantID/activity-feed?kind=delivery&limit=5"
-    if ($feed.summary.delivery_items -lt 1) {
-        throw "Expected activity feed delivery proof to remain available."
+    if ($feed.filters.include_demo -or $feed.summary.delivery_items -ne 0) {
+        throw "Expected default activity feed to hide demo delivery proof."
+    }
+    $demoFeed = Invoke-RestMethod -Method "GET" -Uri "$baseUrl/api/v1/tenants/$tenantID/activity-feed?kind=delivery&limit=5&include_demo=true"
+    if (-not $demoFeed.filters.include_demo -or $demoFeed.summary.delivery_items -lt 1) {
+        throw "Expected opt-in activity feed delivery proof to remain available."
     }
 
     Write-TraceDeckLog -Level "INFO" -Message "Phase 41 alert inbox smoke passed addr=$Addr alerts=$($inbox.summary.total) ready=$($inbox.summary.notification_ready)"
