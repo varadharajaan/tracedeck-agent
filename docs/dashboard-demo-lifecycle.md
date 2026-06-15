@@ -37,3 +37,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 The smoke starts the dashboard twice on the same port, verifies the first
 process is stopped, verifies the second process owns the listener, checks the
 current dashboard HTML, and verifies the seeded tenant operations API.
+
+## Phase 90 Runtime Doctor Guard
+
+Demo launchers seed buyer-demo rows, including notification proof, but those
+rows are not live delivery proof. `devctl.py doctor` now verifies default
+`/alert-deliveries` hides `source_kind=demo_seed` rows and records explicit
+`include_demo=true` proof separately. This keeps local demos useful while
+preventing seeded mail/push rows from being described as received alerts.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-devctl-runtime-doctor.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase90.ps1
+```

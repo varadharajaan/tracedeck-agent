@@ -585,6 +585,15 @@ feed excludes `source_kind=demo_seed`, including the seeded VLC/media-playback
 row. `?include_demo=true` is reserved for explicit demo scripts and labels the
 response filter with `"include_demo": true`.
 
+Phase 90 aligns `python ./devctl.py doctor` with that same truth boundary. The
+doctor no longer requires a default alert-delivery row from seeded demo data.
+Instead, it records `default_count`, `default_source_kinds`,
+`default_demo_hidden`, `opt_in_demo_count`, `opt_in_demo_source_kinds`, and
+`opt_in_demo_available` under `local.deliveries`. Isolated demo backends should
+show `default_count=0`, `default_demo_hidden=true`, and
+`opt_in_demo_available=true`; buyer-ready notification proof still requires
+provider-confirmed delivery assurance, not demo-only rows.
+
 Phase 78 adds `GET /api/v1/tenants/{tenantId}/notification-provider-setup`.
 It returns a typed notification provider setup contract for dashboard rendering
 and buyer readiness. The response includes configured versus provider-confirmed

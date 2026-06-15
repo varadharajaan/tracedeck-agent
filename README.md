@@ -490,3 +490,11 @@ quality checks, isolated live smoke, Newman, compatibility smoke checks, and
 root-clean. Default tenant and host-scoped activity feed responses now suppress
 `source_kind=demo_seed`, so seeded rows such as `VLC media player` cannot appear
 as live host evidence unless `include_demo=true` is explicit.
+
+Phase 90 hardens `devctl.py doctor` so it cannot turn demo notification rows
+into false delivery proof. Use `python devctl.py test phase90` to run the
+runtime-doctor provenance smoke, Phase 90 Newman collection, prior provenance
+regression gate, and root-clean. The doctor report now records default alert
+delivery count/source kinds separately from explicit `include_demo=true` demo
+proof and marks buyer readiness false unless provider-confirmed mail/push proof
+exists.
