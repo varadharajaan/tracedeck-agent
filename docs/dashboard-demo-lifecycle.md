@@ -50,3 +50,32 @@ preventing seeded mail/push rows from being described as received alerts.
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-devctl-runtime-doctor.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase90.ps1
 ```
+
+## Phase 91 Persistent Local Backend
+
+`devctl.py server start` starts a backend process for the command session, which
+can be reaped by the harness after the command exits. Phase 91 adds a hidden
+Windows scheduled-task launcher for local admin testing:
+
+```powershell
+python ./devctl.py server task-start
+python ./devctl.py server task-status
+python ./devctl.py server task-restart
+python ./devctl.py server task-stop
+```
+
+The task runner builds the backend under `data/local/backend/`, writes the pid
+and ready files under `data/local/backend/`, redirects stdout/stderr under
+`logs/local/backend/`, seeds the demo tenant/device, and waits on the backend
+process so it stays alive after the original devctl command returns.
+
+Task status intentionally separates two proofs:
+
+- `runtime_ok=true` means the pid is running and `/health` returned `ok`.
+- `launch_task_verified=true` means the Windows scheduled task was readable.
+- `task_state=inaccessible` means Windows denied Scheduler readback; it is not
+  reported as a missing task.
+
+Use `powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-backend-dev-task.ps1 -LeaveRunning`
+when you want to leave `http://127.0.0.1:18080` available for manual browser
+checks after the smoke passes.

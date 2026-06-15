@@ -1,0 +1,138 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 91",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health No Store Header",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is ok and not cached', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Runtime Controls Render",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('dashboard renders runtime controls without false demo evidence', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const text = pm.response.text();",
+              "  pm.expect(text).to.include('TraceDeck Console');",
+              "  pm.expect(text).to.include('server-status-light');",
+              "  pm.expect(text).to.include('dashboard-page-nav');",
+              "  pm.expect(text).to.not.include('Browser{}');",
+              "  pm.expect(text).to.not.include('Center{}');",
+              "  pm.expect(text).to.not.include('VLC media player');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Browser Activity Viewer Metadata Only",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/browser-activity"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('browser viewer renders metadata-only controls', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const text = pm.response.text();",
+              "  pm.expect(text).to.include('TraceDeck Browser Activity');",
+              "  pm.expect(text).to.include('server-status-light');",
+              "  pm.expect(text).to.include('<th>Source</th>');",
+              "  pm.expect(text).to.include('metadata-only guard');",
+              "  pm.expect(text).to.not.include('Browser{}');",
+              "  pm.expect(text).to.not.include('Center{}');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Default Policy Violations Hide Demo Evidence",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/demo-study-laptop/policy-violations"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('default policy violations do not expose seeded VLC/demo rows', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const text = pm.response.text();",
+              "  pm.expect(text).to.not.include('demo_seed');",
+              "  pm.expect(text).to.not.include('VLC media player');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Browser Activity API Has Provenance",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/browser-activity?limit=25"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('browser rows are typed and metadata-only', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(body.items.length).to.be.above(0);",
+              "  body.items.forEach((item) => {",
+              "    pm.expect(item.source_kind).to.be.a('string').and.not.empty;",
+              "    pm.expect(item.evidence_scope).to.be.a('string').and.not.empty;",
+              "    pm.expect(item.evidence_detail).to.be.a('string').and.not.empty;",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

@@ -430,6 +430,31 @@ def server_status(args: argparse.Namespace) -> int:
     return 1
 
 
+def server_task_start(args: argparse.Namespace) -> int:
+    run(powershell("./scripts/local/start-backend-dev-task.ps1", "-Addr", args.addr), stream=True)
+    ok, body = check_health(args.addr)
+    if not ok:
+        raise RuntimeError(f"scheduled server did not become healthy: {body}")
+    log("INFO", f"Scheduled server ready: {local_url(args.addr)}")
+    return 0
+
+
+def server_task_stop(args: argparse.Namespace) -> int:
+    run(powershell("./scripts/local/stop-backend-dev-task.ps1", "-Addr", args.addr), stream=True)
+    return 0
+
+
+def server_task_status(args: argparse.Namespace) -> int:
+    run(powershell("./scripts/local/get-backend-dev-task-status.ps1", "-Addr", args.addr), stream=True)
+    ok, body = check_health(args.addr)
+    if ok:
+        log("INFO", f"Scheduled server connected: {local_url(args.addr)}")
+        log("INFO", body)
+        return 0
+    log("WARN", f"Scheduled server not connected at {local_url(args.addr)}: {body}")
+    return 1
+
+
 def cmd_server(args: argparse.Namespace) -> int:
     if args.action == "start":
         return server_start(args)
@@ -439,6 +464,16 @@ def cmd_server(args: argparse.Namespace) -> int:
         server_stop(args)
         time.sleep(1)
         return server_start(args)
+    if args.action == "task-start":
+        return server_task_start(args)
+    if args.action == "task-stop":
+        return server_task_stop(args)
+    if args.action == "task-restart":
+        server_task_stop(args)
+        time.sleep(1)
+        return server_task_start(args)
+    if args.action == "task-status":
+        return server_task_status(args)
     return server_status(args)
 
 
@@ -695,6 +730,14 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase90.ps1"))
     elif target == "verify90":
         run(powershell("./scripts/verify/verify-phase90.ps1"))
+    elif target == "phase91":
+        run(powershell("./scripts/verify/verify-phase91.ps1"))
+    elif target == "smoke91":
+        run(powershell("./scripts/local/smoke-phase91.ps1"))
+    elif target == "newman91":
+        run(powershell("./scripts/local/newman-phase91.ps1"))
+    elif target == "verify91":
+        run(powershell("./scripts/verify/verify-phase91.ps1"))
     elif target == "activity-feed":
         run(powershell("./scripts/local/test-activity-feed-provenance.ps1"))
     elif target == "quality":
@@ -809,7 +852,12 @@ def main() -> int:
     doctor.set_defaults(func=cmd_doctor)
 
     server = sub.add_parser("server", help="Start, stop, restart, or check the local server")
-    server.add_argument("action", choices=["start", "stop", "restart", "status"], nargs="?", default="status")
+    server.add_argument(
+        "action",
+        choices=["start", "stop", "restart", "status", "task-start", "task-stop", "task-restart", "task-status"],
+        nargs="?",
+        default="status",
+    )
     server.set_defaults(func=cmd_server)
 
     sam = sub.add_parser("sam", help="Build, deploy, run, tail, or save outputs for the SAM frontend")
@@ -838,6 +886,7 @@ def main() -> int:
             "phase88",
             "phase89",
             "phase90",
+            "phase91",
             "smoke",
             "newman",
             "verify",
@@ -889,6 +938,9 @@ def main() -> int:
             "smoke90",
             "newman90",
             "verify90",
+            "smoke91",
+            "newman91",
+            "verify91",
             "activity-feed",
             "quality",
             "theme",
