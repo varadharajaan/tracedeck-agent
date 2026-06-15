@@ -116,6 +116,7 @@ try {
         ready_file_present = $null -ne $ready
         ready = $ready
     }
+    $status | Add-Member -NotePropertyName advisory -NotePropertyValue (Get-TraceDeckBackendTaskStatusAdvisory -Status $status)
 
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $outputFullPath) | Out-Null
     $json = $status | ConvertTo-Json -Depth 8

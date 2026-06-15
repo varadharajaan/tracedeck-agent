@@ -20,6 +20,7 @@ LOG_ROOT = PROJECT_ROOT / "logs" / "local" / "devctl"
 OUTPUT_ROOT = PROJECT_ROOT / "data" / "local" / "output"
 BACKEND_PID = PROJECT_ROOT / "data" / "local" / "backend" / "tracedeck-backend.pid"
 BACKEND_STATE = PROJECT_ROOT / "data" / "local" / "backend" / "backend-state.json"
+BACKEND_TASK_STATUS = PROJECT_ROOT / "data" / "local" / "backend" / "backend-task-status.json"
 DEFAULT_ADDR = "127.0.0.1:18080"
 DEFAULT_TENANT_ID = "family-varadha"
 QUERY_INCLUDE_DEMO_TRUE = "include_demo=true"
@@ -446,6 +447,13 @@ def server_task_stop(args: argparse.Namespace) -> int:
 
 def server_task_status(args: argparse.Namespace) -> int:
     run(powershell("./scripts/local/get-backend-dev-task-status.ps1", "-Addr", args.addr), stream=True)
+    if BACKEND_TASK_STATUS.exists():
+        status = json.loads(BACKEND_TASK_STATUS.read_text(encoding="utf-8-sig"))
+        advisory = dict(status.get("advisory") or {})
+        if advisory:
+            log("INFO", f"Task advisory: {advisory.get('severity', '')}/{advisory.get('code', '')}")
+            log("INFO", str(advisory.get("headline", "")))
+            log("INFO", str(advisory.get("operator_action", "")))
     ok, body = check_health(args.addr)
     if ok:
         log("INFO", f"Scheduled server connected: {local_url(args.addr)}")
@@ -746,6 +754,14 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase92.ps1"))
     elif target == "verify92":
         run(powershell("./scripts/verify/verify-phase92.ps1"))
+    elif target == "phase93":
+        run(powershell("./scripts/verify/verify-phase93.ps1"))
+    elif target == "smoke93":
+        run(powershell("./scripts/local/smoke-phase93.ps1"))
+    elif target == "newman93":
+        run(powershell("./scripts/local/newman-phase93.ps1"))
+    elif target == "verify93":
+        run(powershell("./scripts/verify/verify-phase93.ps1"))
     elif target == "activity-feed":
         run(powershell("./scripts/local/test-activity-feed-provenance.ps1"))
     elif target == "quality":
@@ -896,6 +912,7 @@ def main() -> int:
             "phase90",
             "phase91",
             "phase92",
+            "phase93",
             "smoke",
             "newman",
             "verify",
@@ -953,6 +970,9 @@ def main() -> int:
             "smoke92",
             "newman92",
             "verify92",
+            "smoke93",
+            "newman93",
+            "verify93",
             "activity-feed",
             "quality",
             "theme",

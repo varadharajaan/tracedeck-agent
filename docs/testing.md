@@ -1210,6 +1210,21 @@ smoke falls back to the default `http://127.0.0.1:18080` task-status proof and
 still runs live provenance plus `devctl.py doctor --skip-cloud` against that
 runtime.
 
+Phase 93 adds the operator advisory contract for backend task status:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase93.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase93.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase93.ps1
+python ./devctl.py server task-status
+python ./devctl.py test phase93
+```
+
+The status JSON must include `advisory.severity`, `advisory.code`,
+`advisory.headline`, `advisory.operator_action`, `advisory.can_continue`, and
+`advisory.admin_readback_recommended`. A denied Scheduler readback with healthy
+runtime proof remains a `watch` advisory rather than a false failure.
+
 Phase 13 adds:
 
 ```powershell
