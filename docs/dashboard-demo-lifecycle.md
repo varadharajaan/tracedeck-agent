@@ -75,7 +75,24 @@ Task status intentionally separates two proofs:
 - `launch_task_verified=true` means the Windows scheduled task was readable.
 - `task_state=inaccessible` means Windows denied Scheduler readback; it is not
   reported as a missing task.
+- `scheduler_readback=denied` with `runtime_evidence=pid_and_health` is a
+  healthy non-elevated runtime proof, not a claim that reboot persistence was
+  fully re-read from Scheduler metadata.
 
 Use `powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-backend-dev-task.ps1 -LeaveRunning`
 when you want to leave `http://127.0.0.1:18080` available for manual browser
 checks after the smoke passes.
+
+Phase 92 adds a focused resilience guard:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-backend-task-status-resilience.ps1
+python ./devctl.py test phase92
+```
+
+That guard prevents the local tooling from turning Windows `Access denied`
+Scheduler readback into a false missing-task failure while still failing if the
+task is truly missing or the backend runtime proof is unhealthy.
+If Windows denies isolated scheduled-task creation in the current shell, the
+Phase 92 smoke uses the default `http://127.0.0.1:18080` task-status output as
+the runtime proof and still runs live provenance plus runtime doctor checks.

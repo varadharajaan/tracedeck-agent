@@ -14,6 +14,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 . (Join-Path $PSScriptRoot "..\lib\logging.ps1")
+. (Join-Path $PSScriptRoot "..\lib\backend-task-status.ps1")
 Initialize-TraceDeckScriptLog -Name "test-backend-dev-task" -LogRoot "logs/local/test" | Out-Null
 
 try {
@@ -44,8 +45,12 @@ try {
         throw "Expected backend task status output: $statusFullPath"
     }
     $status = Get-Content -Path $statusFullPath -Raw | ConvertFrom-Json
-    if (-not $status.task_present -or -not $status.health_ok -or -not $status.pid_running) {
-        throw "Scheduled backend task is not healthy: $($status | ConvertTo-Json -Depth 8)"
+    if (-not (Test-TraceDeckBackendTaskStatusAcceptable -Status $status)) {
+        $reason = Get-TraceDeckBackendTaskStatusFailureReason -Status $status
+        throw "Scheduled backend task is not healthy: $reason`: $($status | ConvertTo-Json -Depth 8)"
+    }
+    if ($status.task_state -eq $script:TraceDeckTaskStateInaccessible) {
+        Write-TraceDeckLog -Level "WARN" -Message "Scheduler readback was denied, but runtime proof is healthy. status=$($status | ConvertTo-Json -Depth 8)"
     }
 
     if ($StabilitySeconds -gt 0) {
@@ -60,11 +65,12 @@ try {
         }
 
         $stableStatus = Get-Content -Path $statusFullPath -Raw | ConvertFrom-Json
-        if (-not $stableStatus.runtime_ok) {
-            throw "Scheduled backend runtime did not survive stability window: $($stableStatus | ConvertTo-Json -Depth 8)"
+        if (-not (Test-TraceDeckBackendTaskStatusAcceptable -Status $stableStatus)) {
+            $reason = Get-TraceDeckBackendTaskStatusFailureReason -Status $stableStatus
+            throw "Scheduled backend runtime did not survive stability window: $reason`: $($stableStatus | ConvertTo-Json -Depth 8)"
         }
-        if ($stableStatus.task_state -eq "missing") {
-            throw "Scheduled backend task status reported missing without a query error: $($stableStatus | ConvertTo-Json -Depth 8)"
+        if ($stableStatus.task_state -eq $script:TraceDeckTaskStateInaccessible) {
+            Write-TraceDeckLog -Level "WARN" -Message "Scheduler readback remained denied after stability window, but runtime proof is healthy."
         }
     }
 

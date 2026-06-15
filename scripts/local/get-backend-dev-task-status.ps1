@@ -10,6 +10,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 . (Join-Path $PSScriptRoot "..\lib\logging.ps1")
+. (Join-Path $PSScriptRoot "..\lib\backend-task-status.ps1")
 Initialize-TraceDeckScriptLog -Name "get-backend-dev-task-status" -LogRoot "logs/local/backend" | Out-Null
 
 function Resolve-TraceDeckPath {
@@ -53,6 +54,8 @@ try {
     catch {
         $taskQueryError = $_.Exception.Message
     }
+    $taskPresent = $null -ne $task
+    $taskState = if ($taskPresent) { [string]$task.State } else { Get-TraceDeckTaskStateFromQueryError -Message $taskQueryError }
     $info = $null
     $taskInfoError = ""
     if ($task) {
@@ -89,10 +92,14 @@ try {
         $ready = Get-Content -Path $readyFullPath -Raw | ConvertFrom-Json
     }
 
+    $runtimeOK = $healthOK -and $pidRunning
+    $schedulerReadback = Get-TraceDeckSchedulerReadbackState -TaskPresent $taskPresent -TaskState $taskState
+    $runtimeEvidence = Get-TraceDeckRuntimeEvidenceState -HealthOK $healthOK -PidRunning $pidRunning
     $status = [pscustomobject]@{
         task_name = $TaskName
-        task_present = $null -ne $task
-        task_state = if ($task) { [string]$task.State } elseif ($taskQueryError) { "inaccessible" } else { "missing" }
+        task_present = $taskPresent
+        task_state = $taskState
+        scheduler_readback = $schedulerReadback
         task_query_error = $taskQueryError
         task_info_error = $taskInfoError
         last_run_time = if ($info) { $info.LastRunTime } else { $null }
@@ -103,8 +110,10 @@ try {
         health_error = $healthError
         pid = $backendPid
         pid_running = $pidRunning
-        runtime_ok = $healthOK -and $pidRunning
-        launch_task_verified = $null -ne $task
+        runtime_ok = $runtimeOK
+        runtime_evidence = $runtimeEvidence
+        launch_task_verified = $taskPresent
+        ready_file_present = $null -ne $ready
         ready = $ready
     }
 
