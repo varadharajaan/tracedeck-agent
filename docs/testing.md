@@ -1167,6 +1167,30 @@ while explicit `include_demo=true` must still expose labelled seeded proof for
 demo walkthroughs. The doctor must not mark buyer-ready notification proof when
 provider-confirmed delivery count is zero.
 
+Phase 91 packages persistent local backend task controls:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-backend-dev-task.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase91.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase91.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase91.ps1
+python ./devctl.py server task-start
+python ./devctl.py server task-status
+python ./devctl.py server task-stop
+python ./devctl.py test phase91
+```
+
+The focused smoke builds the local backend under `data/local/`, starts it
+through a hidden Windows scheduled task, waits for `/health`, verifies the pid
+file, waits through a stability window, runs live provenance and
+`devctl.py doctor --skip-cloud`, and then stops the isolated task unless
+`-LeaveRunning` is supplied. `task-status` distinguishes Scheduler proof from
+runtime proof: `task_present=true` means the task was verified, while
+`task_state=inaccessible` with `runtime_ok=true` means Windows denied task
+readback but the backend pid and health endpoint are still alive. Newman keeps
+the local UI/API contract reachable and verifies that default dashboard/policy
+responses do not expose seeded VLC/demo evidence.
+
 Phase 13 adds:
 
 ```powershell

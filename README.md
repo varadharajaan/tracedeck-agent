@@ -498,3 +498,12 @@ regression gate, and root-clean. The doctor report now records default alert
 delivery count/source kinds separately from explicit `include_demo=true` demo
 proof and marks buyer readiness false unless provider-confirmed mail/push proof
 exists.
+
+Phase 91 adds persistent local backend task controls for the admin console.
+Use `python devctl.py server task-start`, `task-status`, `task-restart`, and
+`task-stop` when you want `http://127.0.0.1:18080` to survive the devctl command
+session. `task-status` reports Scheduler readback separately from runtime
+health, so Windows `Access denied` becomes `task_state=inaccessible` while
+`runtime_ok=true` still proves the backend pid and `/health` endpoint are alive.
+Use `python devctl.py test phase91` to run the isolated scheduled-task smoke,
+Phase 91 Newman collection, and root-clean check.
