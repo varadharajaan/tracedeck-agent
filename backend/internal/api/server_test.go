@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
@@ -294,12 +295,26 @@ func TestTenantActivityFeedEndpoint(t *testing.T) {
 	if feed.Filters.DeviceID != "feed-device-001" || feed.Filters.Channel != constants.DeliveryChannelEmail {
 		t.Fatalf("expected normalized feed filters: %+v", feed.Filters)
 	}
-	if feed.Summary.DeliveryItems == 0 || feed.Items[0].Channel != constants.DeliveryChannelEmail {
-		t.Fatalf("expected filtered email delivery items: %+v", feed)
+	if feed.Filters.IncludeDemo || feed.Summary.DeliveryItems != 0 || strings.Contains(feedResponse.Body.String(), constants.EvidenceSourceDemoSeed) {
+		t.Fatalf("expected default email delivery feed to hide demo evidence: %+v", feed)
+	}
+
+	demoFeedResponse := httptest.NewRecorder()
+	demoRequest := httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentActivityFeed+"?device_id=feed-device-001&kind=delivery&channel=email&limit=5&"+constants.QueryIncludeDemo+"="+constants.QueryValueTrue, nil)
+	handler.ServeHTTP(demoFeedResponse, demoRequest)
+	if demoFeedResponse.Code != http.StatusOK {
+		t.Fatalf("expected demo activity feed 200, got %d: %s", demoFeedResponse.Code, demoFeedResponse.Body.String())
+	}
+	var demoFeed model.TenantActivityFeed
+	if err := json.Unmarshal(demoFeedResponse.Body.Bytes(), &demoFeed); err != nil {
+		t.Fatalf("decode demo activity feed: %v", err)
+	}
+	if !demoFeed.Filters.IncludeDemo || demoFeed.Summary.DeliveryItems == 0 || demoFeed.Items[0].Channel != constants.DeliveryChannelEmail {
+		t.Fatalf("expected opt-in filtered email delivery items: %+v", demoFeed)
 	}
 
 	riskResponse := httptest.NewRecorder()
-	handler.ServeHTTP(riskResponse, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentActivityFeed+"?q=youtube&limit=3", nil))
+	handler.ServeHTTP(riskResponse, httptest.NewRequest(http.MethodGet, constants.RouteTenants+"/family-varadha/"+constants.RouteSegmentActivityFeed+"?q=youtube&limit=3&"+constants.QueryIncludeDemo+"="+constants.QueryValueTrue, nil))
 	if riskResponse.Code != http.StatusOK || !strings.Contains(riskResponse.Body.String(), "youtube") {
 		t.Fatalf("expected query feed to include youtube risk item, got %d: %s", riskResponse.Code, riskResponse.Body.String())
 	}
@@ -681,7 +696,18 @@ func TestTenantActivityViewsEndpoint(t *testing.T) {
 func TestHostDashboardRiskEndpoints(t *testing.T) {
 	t.Parallel()
 
-	handler := NewServer(store.NewMemory(), slog.Default()).Handler()
+	repo := store.NewMemory()
+	_, err := repo.CreateTenant(context.Background(), model.CreateTenantRequest{
+		TenantID:        "family-varadha",
+		Name:            "Family Varadha",
+		PlanID:          constants.PlanFamilyPro,
+		RetentionTierID: constants.RetentionFamilyCloud,
+		PrimaryProfile:  "ai-btech-student",
+	})
+	if err != nil {
+		t.Fatalf("create tenant: %v", err)
+	}
+	handler := NewServer(repo, slog.Default()).Handler()
 	body := []byte(`{
 		"tenant_id": "family-varadha",
 		"device_id": "laptop-cousin-001",
@@ -750,6 +776,23 @@ func TestHostDashboardRiskEndpoints(t *testing.T) {
 		t.Fatalf("default policy endpoint leaked demo evidence: %s", policy.Body.String())
 	}
 
+	activity := httptest.NewRecorder()
+	activityPath := constants.RouteTenants + "/family-varadha/" + constants.RouteSegmentActivityFeed + "?device_id=laptop-cousin-001&limit=10"
+	handler.ServeHTTP(activity, httptest.NewRequest(http.MethodGet, activityPath, nil))
+	if activity.Code != http.StatusOK {
+		t.Fatalf("expected tenant activity feed 200, got %d: %s", activity.Code, activity.Body.String())
+	}
+	var activityFeed model.TenantActivityFeed
+	if err := json.Unmarshal(activity.Body.Bytes(), &activityFeed); err != nil {
+		t.Fatalf("decode tenant activity feed: %v", err)
+	}
+	if activityFeed.Summary.RiskItems != 0 || activityFeed.Summary.DeliveryItems != 0 || activityFeed.Filters.IncludeDemo {
+		t.Fatalf("expected default activity feed to hide demo evidence: %+v", activityFeed)
+	}
+	if strings.Contains(activity.Body.String(), constants.DemoRiskMediaAppName) || strings.Contains(activity.Body.String(), constants.EvidenceSourceDemoSeed) {
+		t.Fatalf("default activity feed leaked demo evidence: %s", activity.Body.String())
+	}
+
 	demoPolicy := httptest.NewRecorder()
 	demoPolicyPath := constants.RouteDevices + "/laptop-cousin-001/" + constants.RouteSegmentPolicyEvents + "?" + constants.QueryIncludeDemo + "=" + constants.QueryValueTrue
 	handler.ServeHTTP(demoPolicy, httptest.NewRequest(http.MethodGet, demoPolicyPath, nil))
@@ -765,6 +808,20 @@ func TestHostDashboardRiskEndpoints(t *testing.T) {
 	}
 	if demoPolicyEvents.Items[0].SourceKind != constants.EvidenceSourceDemoSeed || demoPolicyEvents.Items[0].EvidenceScope != constants.EvidenceScopeDemo || demoPolicyEvents.Items[0].AppName != constants.DemoRiskMediaAppName {
 		t.Fatalf("expected opt-in seeded risk provenance: %+v", demoPolicyEvents.Items[0])
+	}
+
+	demoActivity := httptest.NewRecorder()
+	demoActivityPath := activityPath + "&" + constants.QueryIncludeDemo + "=" + constants.QueryValueTrue
+	handler.ServeHTTP(demoActivity, httptest.NewRequest(http.MethodGet, demoActivityPath, nil))
+	if demoActivity.Code != http.StatusOK {
+		t.Fatalf("expected demo tenant activity feed 200, got %d: %s", demoActivity.Code, demoActivity.Body.String())
+	}
+	var demoActivityFeed model.TenantActivityFeed
+	if err := json.Unmarshal(demoActivity.Body.Bytes(), &demoActivityFeed); err != nil {
+		t.Fatalf("decode demo tenant activity feed: %v", err)
+	}
+	if !demoActivityFeed.Filters.IncludeDemo || !strings.Contains(demoActivity.Body.String(), constants.DemoRiskMediaAppName) {
+		t.Fatalf("expected opt-in activity feed to expose demo evidence: %s", demoActivity.Body.String())
 	}
 
 	deliveries := httptest.NewRecorder()

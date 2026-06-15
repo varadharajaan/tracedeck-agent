@@ -579,6 +579,12 @@ packaging alone is not a delivered email claim. Dashboard HTML, browser activity
 HTML, and JSON API responses include no-store cache headers so stale clients do
 not preserve old demo evidence in live views.
 
+`GET /api/v1/tenants/{tenantId}/activity-feed` follows the same contract through
+the typed `include_demo` filter. The default tenant and host-scoped activity
+feed excludes `source_kind=demo_seed`, including the seeded VLC/media-playback
+row. `?include_demo=true` is reserved for explicit demo scripts and labels the
+response filter with `"include_demo": true`.
+
 Phase 78 adds `GET /api/v1/tenants/{tenantId}/notification-provider-setup`.
 It returns a typed notification provider setup contract for dashboard rendering
 and buyer readiness. The response includes configured versus provider-confirmed

@@ -52,12 +52,26 @@
       ] } }]
     },
     {
-      "name": "Delivery Activity Feed Still Works",
+      "name": "Default Delivery Activity Feed Hides Demo Proof",
       "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/activity-feed?kind=delivery&limit=5" },
       "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-        "pm.test('activity feed still exposes delivery proof', function () {",
+        "pm.test('activity feed hides seeded delivery proof by default', function () {",
         "  pm.response.to.have.status(200);",
         "  const body = pm.response.json();",
+        "  pm.expect(body.filters.include_demo).to.eql(false);",
+        "  pm.expect(body.summary.delivery_items).to.eql(0);",
+        "  pm.expect(pm.response.text()).to.not.include('demo_seed');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Opt In Delivery Activity Feed Still Works",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/activity-feed?kind=delivery&limit=5&include_demo=true" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('activity feed exposes labelled delivery proof only when requested', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  pm.expect(body.filters.include_demo).to.eql(true);",
         "  pm.expect(body.summary.delivery_items).to.be.above(0);",
         "  pm.expect(body.items.filter((item) => item.kind === 'delivery').length).to.be.above(0);",
         "});"

@@ -25,28 +25,47 @@
       ] } }]
     },
     {
-      "name": "Default Tenant Activity Feed",
+      "name": "Default Tenant Activity Feed Hides Demo Evidence",
       "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/activity-feed?limit=20" },
       "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-        "pm.test('feed rolls up risk and delivery items', function () {",
+        "pm.test('feed hides seeded risk and delivery items by default', function () {",
         "  pm.response.to.have.status(200);",
         "  const body = pm.response.json();",
-        "  pm.expect(body.summary.risk_items).to.be.above(0);",
-        "  pm.expect(body.summary.delivery_items).to.be.above(0);",
-        "  pm.expect(body.items.length).to.be.above(0);",
+        "  const text = pm.response.text();",
+        "  pm.expect(body.filters.include_demo).to.eql(false);",
+        "  pm.expect(body.summary.risk_items).to.eql(0);",
+        "  pm.expect(body.summary.delivery_items).to.eql(0);",
+        "  pm.expect(text).to.not.include('demo_seed');",
         "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
         "});"
       ] } }]
     },
     {
+      "name": "Opt In Demo Tenant Activity Feed",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/activity-feed?limit=20&include_demo=true" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('feed rolls up labelled demo risk and delivery items only when requested', function () {",
+        "  pm.response.to.have.status(200);",
+        "  const body = pm.response.json();",
+        "  const text = pm.response.text();",
+        "  pm.expect(body.filters.include_demo).to.eql(true);",
+        "  pm.expect(body.summary.risk_items).to.be.above(0);",
+        "  pm.expect(body.summary.delivery_items).to.be.above(0);",
+        "  pm.expect(body.items.length).to.be.above(0);",
+        "  pm.expect(text).to.include('demo_seed');",
+        "});"
+      ] } }]
+    },
+    {
       "name": "Email Delivery Feed Filter",
-      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/activity-feed?device_id=demo-study-laptop&kind=delivery&channel=email&limit=5" },
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/tenants/family-varadha/activity-feed?device_id=demo-study-laptop&kind=delivery&channel=email&limit=5&include_demo=true" },
       "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
         "pm.test('feed filters to selected-host email delivery', function () {",
         "  pm.response.to.have.status(200);",
         "  const body = pm.response.json();",
         "  pm.expect(body.filters.device_id).to.eql('demo-study-laptop');",
         "  pm.expect(body.filters.channel).to.eql('email');",
+        "  pm.expect(body.filters.include_demo).to.eql(true);",
         "  pm.expect(body.summary.delivery_items).to.be.above(0);",
         "  pm.expect(body.items.every((item) => item.channel === 'email')).to.eql(true);",
         "});"

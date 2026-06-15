@@ -428,18 +428,24 @@ func TestTenantActivityFeedFiltersRiskDeliveryAndTelemetry(t *testing.T) {
 	if err != nil {
 		t.Fatalf("tenant activity feed: %v", err)
 	}
-	if feed.Summary.RiskItems == 0 || feed.Summary.DeliveryItems == 0 || feed.Summary.TelemetryItems != 1 {
-		t.Fatalf("expected risk, delivery, and telemetry feed items: %+v", feed.Summary)
+	if feed.Summary.RiskItems != 0 || feed.Summary.DeliveryItems != 0 || feed.Summary.TelemetryItems != 1 {
+		t.Fatalf("expected default feed to hide demo risk and delivery rows: %+v", feed.Summary)
 	}
 	if feed.Summary.SourceHostCount != 1 || feed.Summary.ReportingHosts != 1 || feed.PrivacyBoundary == "" {
 		t.Fatalf("expected host and privacy proof: %+v", feed)
 	}
+	for _, item := range feed.Items {
+		if item.SourceKind == constants.EvidenceSourceDemoSeed || item.Source == constants.DemoRiskMediaAppName {
+			t.Fatalf("default activity feed leaked demo evidence: %+v", item)
+		}
+	}
 
 	emailFeed, err := repo.TenantActivityFeed(ctx, "family-varadha", model.TenantActivityFeedFilter{
-		DeviceID: "feed-device",
-		Kind:     constants.ActivityFeedKindDelivery,
-		Channel:  constants.DeliveryChannelEmail,
-		Limit:    5,
+		DeviceID:    "feed-device",
+		Kind:        constants.ActivityFeedKindDelivery,
+		Channel:     constants.DeliveryChannelEmail,
+		IncludeDemo: true,
+		Limit:       5,
 	})
 	if err != nil {
 		t.Fatalf("tenant activity feed email filter: %v", err)
@@ -449,9 +455,10 @@ func TestTenantActivityFeedFiltersRiskDeliveryAndTelemetry(t *testing.T) {
 	}
 
 	queryFeed, err := repo.TenantActivityFeed(ctx, "family-varadha", model.TenantActivityFeedFilter{
-		DeviceID: "feed-device",
-		Query:    "youtube",
-		Limit:    5,
+		DeviceID:    "feed-device",
+		Query:       "youtube",
+		IncludeDemo: true,
+		Limit:       5,
 	})
 	if err != nil {
 		t.Fatalf("tenant activity feed query filter: %v", err)

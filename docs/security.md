@@ -76,3 +76,8 @@ cannot appear as live host truth. Demo rows require explicit
 email proof. Dashboard HTML, browser activity HTML, and JSON API responses also
 send no-store cache headers so browsers do not keep stale dashboard bundles that
 could render old demo rows as current host state.
+
+Tenant activity feed uses the same opt-in proof boundary. Its typed filter
+defaults `include_demo` to false, so host-scoped dashboard feeds do not show
+seeded VLC/media-playback examples unless an explicit demo request includes
+`include_demo=true`.

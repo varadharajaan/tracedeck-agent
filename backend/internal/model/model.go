@@ -393,13 +393,14 @@ type TelemetryIngestStatus struct {
 }
 
 type TenantActivityFeedFilter struct {
-	DeviceID string `json:"device_id"`
-	Kind     string `json:"kind"`
-	Severity string `json:"severity"`
-	Channel  string `json:"channel"`
-	Status   string `json:"status"`
-	Query    string `json:"query"`
-	Limit    int    `json:"limit"`
+	DeviceID    string `json:"device_id"`
+	Kind        string `json:"kind"`
+	Severity    string `json:"severity"`
+	Channel     string `json:"channel"`
+	Status      string `json:"status"`
+	Query       string `json:"query"`
+	IncludeDemo bool   `json:"include_demo"`
+	Limit       int    `json:"limit"`
 }
 
 type TenantActivityFeedSummary struct {

@@ -470,8 +470,10 @@ gate, the strict Go quality gate, a persistent local backend restart, the live
 server provenance guard, and root-clean. Default host APIs suppress
 `demo_seed` rows such as the seeded VLC/media-playback sample unless
 `include_demo=true` is explicit, and weekly report email readiness requires
-non-demo delivered email proof. Dashboard HTML and JSON API responses are served
-with no-store cache headers so stale UI bundles do not preserve old demo rows.
+non-demo delivered email proof. The tenant activity feed uses the same typed
+`include_demo` boundary, so host-scoped dashboard feeds cannot show the seeded
+VLC row as live evidence. Dashboard HTML and JSON API responses are served with
+no-store cache headers so stale UI bundles do not preserve old demo rows.
 The screenshot-free dashboard visual/theme/layout checks wait for hydrated
 product controls instead of browser network-idle to avoid false timeouts from
 background API activity.
@@ -481,3 +483,10 @@ Phase 88 packages the cache/header and visual-contract follow-up. Use
 Newman, and root-clean. This phase adds the shared PowerShell HTTP constants
 helper required by live provenance checks and keeps the screenshot-free
 Playwright contracts on DOM/hydrated-control readiness.
+
+Phase 89 hardens tenant activity feed provenance. Use
+`python devctl.py test phase89` to run the focused activity-feed guard, Go
+quality checks, isolated live smoke, Newman, compatibility smoke checks, and
+root-clean. Default tenant and host-scoped activity feed responses now suppress
+`source_kind=demo_seed`, so seeded rows such as `VLC media player` cannot appear
+as live host evidence unless `include_demo=true` is explicit.

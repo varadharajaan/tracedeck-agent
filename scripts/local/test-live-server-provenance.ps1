@@ -77,6 +77,12 @@ try {
         throw "Default alert delivery endpoint leaked demo delivery evidence for $deviceID."
     }
 
+    $activity = Invoke-RestMethod -Method "GET" -Uri "$cleanBaseUrl/api/v1/tenants/$TenantID/activity-feed?device_id=$deviceID&limit=10"
+    $activityJson = $activity | ConvertTo-Json -Depth 20
+    if ($activity.filters.include_demo -or $activityJson.Contains($demoMediaApp) -or $activityJson.Contains($demoSourceKind)) {
+        throw "Default tenant activity feed leaked demo evidence for $deviceID."
+    }
+
     $demoPolicy = Invoke-RestMethod -Method "GET" -Uri "$cleanBaseUrl/api/v1/devices/$deviceID/policy-violations?$includeDemoQuery"
     if ($demoPolicy.count -lt 1 -or $demoPolicy.items[0].source_kind -ne $demoSourceKind) {
         throw "Expected opt-in demo policy provenance for $deviceID."
@@ -84,6 +90,11 @@ try {
     $demoDeliveries = Invoke-RestMethod -Method "GET" -Uri "$cleanBaseUrl/api/v1/devices/$deviceID/alert-deliveries?$includeDemoQuery"
     if ($demoDeliveries.count -lt 1 -or $demoDeliveries.items[0].source_kind -ne $demoSourceKind) {
         throw "Expected opt-in demo delivery provenance for $deviceID."
+    }
+    $demoActivity = Invoke-RestMethod -Method "GET" -Uri "$cleanBaseUrl/api/v1/tenants/$TenantID/activity-feed?device_id=$deviceID&limit=10&$includeDemoQuery"
+    $demoActivityJson = $demoActivity | ConvertTo-Json -Depth 20
+    if (-not $demoActivity.filters.include_demo -or -not $demoActivityJson.Contains($demoMediaApp) -or -not $demoActivityJson.Contains($demoSourceKind)) {
+        throw "Expected opt-in demo activity feed provenance for $deviceID."
     }
 
     Write-TraceDeckLog -Level "INFO" -Message "Live server provenance passed base_url=$cleanBaseUrl tenant=$TenantID browser_rows=$($viewer.summary.total) device=$deviceID"
