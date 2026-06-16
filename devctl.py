@@ -792,6 +792,14 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase98.ps1"))
     elif target == "verify98":
         run(powershell("./scripts/verify/verify-phase98.ps1"))
+    elif target == "phase99":
+        run(powershell("./scripts/verify/verify-phase99.ps1"), stream=True)
+    elif target == "smoke99":
+        run(powershell("./scripts/local/smoke-phase99.ps1"))
+    elif target == "newman99":
+        run(powershell("./scripts/local/newman-phase99.ps1"))
+    elif target == "verify99":
+        run(powershell("./scripts/verify/verify-phase99.ps1"))
     elif target == "activity-feed":
         run(powershell("./scripts/local/test-activity-feed-provenance.ps1"))
     elif target == "quality":
@@ -889,6 +897,11 @@ def cmd_summary(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_evidence(args: argparse.Namespace) -> int:
+    run(powershell("./scripts/local/get-verification-evidence.ps1", "-Phase", args.phase, "-BaseUrl", local_url(args.addr)), stream=True)
+    return 0
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     report = runtime_doctor_report(args)
     save_doctor_report(report)
@@ -909,6 +922,10 @@ def main() -> int:
     summary = sub.add_parser("summary", help="Write backend, Scheduler, doctor, git, and frontend status summary")
     summary.add_argument("--skip-doctor", action="store_true", help="Skip runtime doctor and summarize task/git/frontend status only")
     summary.set_defaults(func=cmd_summary)
+
+    evidence = sub.add_parser("evidence", help="Write metadata-only verification evidence summary")
+    evidence.add_argument("--phase", default="phase99", help="Phase label to summarize")
+    evidence.set_defaults(func=cmd_evidence)
 
     doctor = sub.add_parser("doctor", help="Write local/cloud runtime assurance reports under data/local/output")
     doctor.add_argument("--tenant-id", default=DEFAULT_TENANT_ID, help="Tenant used for browser activity readback")
@@ -960,6 +977,7 @@ def main() -> int:
             "phase96",
             "phase97",
             "phase98",
+            "phase99",
             "smoke",
             "newman",
             "verify",
@@ -1030,6 +1048,9 @@ def main() -> int:
             "smoke98",
             "newman98",
             "verify98",
+            "smoke99",
+            "newman99",
+            "verify99",
             "activity-feed",
             "quality",
             "theme",

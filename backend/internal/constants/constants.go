@@ -13,9 +13,12 @@ const (
 )
 
 const (
-	DefaultRuntimeSummaryPath = "data/local/output/runtime-summary.json"
-	RuntimeSummaryCommand     = "python ./devctl.py summary"
-	RuntimeTaskRestartCommand = "python ./devctl.py server task-restart"
+	DefaultRuntimeSummaryPath         = "data/local/output/runtime-summary.json"
+	DefaultVerificationEvidencePath   = "data/local/output/verification-evidence.json"
+	RuntimeSummaryCommand             = "python ./devctl.py summary"
+	RuntimeTaskRestartCommand         = "python ./devctl.py server task-restart"
+	VerificationEvidenceCommand       = "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-verification-evidence.ps1"
+	VerificationEvidenceVerifyCommand = "python ./devctl.py test verify99"
 )
 
 const (
@@ -35,6 +38,7 @@ const (
 	RouteAlertRuleTemplates = APIPrefix + "/alert-rule-templates"
 	RouteAccountPortfolio   = APIPrefix + "/account-portfolio-index"
 	RouteRuntimeStatus      = APIPrefix + "/runtime-status-center"
+	RouteVerificationCenter = APIPrefix + "/verification-evidence-center"
 	RouteArchiveStatus      = APIPrefix + "/archive/status"
 )
 
@@ -386,6 +390,7 @@ const (
 	RevenueOperationsPrivacyNote      = "metadata-only revenue operations center: tenant labels, host counts, anomaly categories, notification delivery proof, mail/push/dashboard route state, weekly report readiness, archive backlog, setup readiness, package labels, commercial levers, owner actions, and trust guardrails only; no passwords, no screenshots, raw URLs, page titles, alert bodies, provider secrets, push endpoints, tokens, cookies, private content, endpoint payloads, invoices, payment card data, or raw provider payloads are collected or stored"
 	DeploymentReadinessPrivacyNote    = "metadata-only deployment readiness center: tenant labels, host counts, platform names, service manager labels, manifest paths, dry-run command labels, autostart status, live boot proof labels, offline replay/backlog counts, owner actions, and setup evidence only; no passwords, no screenshots, raw URLs, page titles, alert bodies, provider secrets, push endpoints, tokens, cookies, private content, endpoint payloads, invoices, payment card data, raw provider payloads, or hidden collection bypasses are collected or stored"
 	RuntimeStatusPrivacyNote          = "metadata-only runtime status center: backend health, Scheduler readback, runtime doctor status, frontend URL presence, git diff hygiene, log file paths, operator actions, and local summary timestamps only; no passwords, no screenshots, raw URLs, page titles, alert bodies, provider secrets, push endpoints, tokens, cookies, private content, endpoint payloads, payment data, raw provider payloads, keylogging, or hidden collection bypasses are collected or stored"
+	VerificationEvidencePrivacyNote   = "metadata-only verification evidence center: scripted gate labels, statuses, commands, log paths, report paths, git branch/head labels, timestamps, and operator actions only; no passwords, no screenshots, raw URLs, page titles, alert bodies, provider secrets, push endpoints, tokens, cookies, private content, endpoint payloads, payment data, raw provider payloads, keylogging, or hidden collection bypasses are collected or stored"
 	PremiumOperationsPrivacyNote      = "metadata-only premium operations hub: product scores, host counts, anomaly categories, mail/push/dashboard delivery proof, weekly report readiness, archive backlog, deployment readiness, package labels, owner actions, and buyer-facing trust proof only; no passwords, no screenshots, raw URLs, page titles, alert bodies, provider secrets, push endpoints, tokens, cookies, private content, endpoint payloads, invoices, payment card data, raw provider payloads, keylogging, or hidden collection bypasses are collected or stored"
 	BusinessDashboardPrivacyNote      = "metadata-only business dashboard: customer health, notification route proof, anomaly categories, paid-plan packaging, archive/report readiness, and owner actions only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"
 	DeliveryTimelinePrivacyNote       = "metadata-only delivery timeline: channel, provider label, recipient label, status, retry timing, host label, event id, and safe summary only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"
@@ -412,6 +417,16 @@ const (
 	RuntimeStatusActionSummaryID      = "generate-runtime-summary"
 	RuntimeStatusActionRestartID      = "restart-backend-task"
 	RuntimeStatusActionReviewID       = "review-runtime-summary"
+)
+
+const (
+	VerificationEvidenceSourcePhase99    = "phase99_verification_evidence"
+	VerificationEvidenceProofScriptedID  = "scripted-gates"
+	VerificationEvidenceProofReportsID   = "reports-and-logs"
+	VerificationEvidenceProofGitID       = "git-hygiene"
+	VerificationEvidenceProofPrivacyID   = "privacy-boundary"
+	VerificationEvidenceActionGenerateID = "generate-verification-evidence"
+	VerificationEvidenceActionRunGatesID = "run-phase-verifier"
 )
 
 const (

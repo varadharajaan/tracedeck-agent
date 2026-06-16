@@ -1,0 +1,104 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 99",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health No Store Header",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is ok and not cached', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Has Verification Evidence Center",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('dashboard contains verification evidence center markers', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('Verification Evidence Center');",
+              "  pm.expect(html).to.include('Scripted Gate Evidence');",
+              "  pm.expect(html).to.include('Artifact Evidence');",
+              "  pm.expect(html).to.include('Verification Proof');",
+              "  pm.expect(html).to.include('Verification Actions');",
+              "  pm.expect(html).to.include('verification-evidence-status');",
+              "  pm.expect(html).to.include('verification-gate-list');",
+              "  pm.expect(html).to.include('Verification Evidence');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Verification Evidence Center API",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/verification-evidence-center"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('verification evidence center is typed and metadata-only', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.evidence_available).to.eql(true);",
+              "  pm.expect(body.source).to.eql('phase99_verification_evidence');",
+              "  pm.expect(body.summary.phase).to.eql('phase99');",
+              "  pm.expect(body.summary.gates_total).to.be.above(5);",
+              "  pm.expect(body.gates.length).to.be.above(5);",
+              "  pm.expect(body.proof.length).to.be.above(3);",
+              "  pm.expect(body.actions.length).to.be.above(0);",
+              "  body.gates.forEach((item) => {",
+              "    pm.expect(item.id).to.be.a('string').and.not.empty;",
+              "    pm.expect(item.label).to.be.a('string').and.not.empty;",
+              "    pm.expect(item.status).to.be.a('string').and.not.empty;",
+              "    pm.expect(item.evidence_scope).to.eql('metadata_only');",
+              "  });",
+              "  body.proof.forEach((item) => {",
+              "    pm.expect(item.evidence_scope).to.eql('metadata_only');",
+              "  });",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  const serialized = JSON.stringify(body).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'push_endpoint', 'screenshot_bytes', 'raw_url', 'page_title', 'alert_body', 'card_number', 'cvv', 'payment_token', 'keylogger'].forEach((marker) => {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}
