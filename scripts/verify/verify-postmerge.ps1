@@ -14,9 +14,12 @@ $ErrorActionPreference = "Stop"
 Initialize-TraceDeckScriptLog -Name "verify-postmerge" -LogRoot "logs/local/verify" | Out-Null
 
 try {
-    Invoke-TraceDeckLoggedCommand -Label "Current phase verification target=$PhaseTarget" -Command {
-        python ./devctl.py test $PhaseTarget
+    Write-TraceDeckLog -Level "INFO" -Message "Starting: Current phase verification target=$PhaseTarget"
+    python ./devctl.py test $PhaseTarget
+    if ($LASTEXITCODE -ne 0) {
+        throw "Current phase verification target=$PhaseTarget failed with exit code $LASTEXITCODE"
     }
+    Write-TraceDeckLog -Level "INFO" -Message "Completed: Current phase verification target=$PhaseTarget"
 
     Invoke-TraceDeckLoggedCommand -Label "Backend task status" -Command {
         python ./devctl.py server task-status
