@@ -904,6 +904,8 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/test-dashboard-theme.ps1", "-BaseUrl", local_url(args.addr)))
     elif target == "delivery-ui":
         run(powershell("./scripts/local/test-dashboard-delivery-ui.ps1", "-BaseUrl", local_url(args.addr)))
+    elif target == "browser-labels":
+        run(powershell("./scripts/local/test-browser-activity-badges.ps1", "-BaseUrl", local_url(args.addr)))
     elif target == "visual":
         run(powershell("./scripts/local/test-dashboard-visual-quality.ps1", "-BaseUrl", local_url(args.addr)))
     else:
@@ -1229,6 +1231,7 @@ def main() -> int:
             "quality",
             "theme",
             "delivery-ui",
+            "browser-labels",
             "visual",
             "live",
         ],

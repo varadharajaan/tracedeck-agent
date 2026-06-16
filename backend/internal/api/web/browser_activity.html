@@ -2558,6 +2558,35 @@
         font-size: 30px;
       }
     }
+    /* Browser Activity badge integrity: status chips must not fold letter-by-letter. */
+    .badge,
+    .section-head > .badge,
+    .section-head .badge,
+    #browser-status,
+    #activity-table .badge {
+      flex: 0 0 auto;
+      width: max-content;
+      min-width: max-content;
+      max-width: none;
+      white-space: nowrap;
+      overflow: visible;
+      overflow-wrap: normal;
+      word-break: keep-all;
+    }
+    .section-head > .badge {
+      align-self: flex-start;
+    }
+    .signal-cell {
+      min-width: 178px;
+    }
+    .signal-cell .badge {
+      margin-bottom: 6px;
+    }
+    .signal-cell .muted {
+      display: block;
+      max-width: 34ch;
+      overflow-wrap: anywhere;
+    }
   </style>
 </head>
 <body>
@@ -2934,7 +2963,7 @@
           <td>${escapeHTML(item.browser)}</td>
           <td><strong>${escapeHTML(item.domain)}</strong></td>
           <td>${escapeHTML(item.category)}<br><span class="muted">${item.study_safe ? "study-safe" : "needs review"}</span></td>
-          <td>${badge(item.status)}<br><span class="muted">${escapeHTML(item.signal || item.recommendation)}</span></td>
+          <td class="signal-cell">${badge(item.status)}<span class="muted">${escapeHTML(item.signal || item.recommendation)}</span></td>
           <td>${escapeHTML(item.visit_count || 0)}</td>
           <td>${(item.notification_channels || []).length ? (item.notification_channels || []).map((channel) => `<span class="pill">${escapeHTML(channel)}</span>`).join(" ") : '<span class="muted">No route proof</span>'}</td>
           <td>${sourceBadge(item)}<br><span class="muted">${escapeHTML(item.evidence_detail || "")}</span></td>
