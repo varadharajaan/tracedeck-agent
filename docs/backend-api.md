@@ -649,3 +649,11 @@ git hygiene, output paths, and privacy proof only. It does not collect or
 return passwords, screenshots, raw browser URLs, page titles, cookies, tokens,
 private content, endpoint payloads, provider secrets, alert bodies, keylogs,
 payment data, or raw provider payloads.
+
+Phase 102 extends the runtime summary artifact and
+`GET /api/v1/runtime-status-center` with ready-file PID reconciliation fields:
+`ready_pid`, `ready_pid_matches_live`, and `ready_pid_status`. Valid statuses
+are `match`, `stale`, `absent`, and `unknown`. A stale ready-file PID adds the
+`pid-reconciliation` proof row and `refresh-ready-pid-proof` operator action
+with `watch` status, but does not override healthy live `pid_and_health`
+runtime proof.

@@ -65,6 +65,9 @@ func TestRuntimeStatusCenterEndpoint(t *testing.T) {
 			"pid": 146776,
 			"pid_running": true,
 			"ready_file_present": true,
+			"ready_pid": 146776,
+			"ready_pid_matches_live": true,
+			"ready_pid_status": "match",
 			"ready_at": "2026-06-15T23:24:54.8276547+05:30",
 			"advisory": {
 				"severity": "ok",
@@ -138,10 +141,14 @@ func TestRuntimeStatusCenterEndpoint(t *testing.T) {
 	if center.Summary.SchedulerReadback != "verified" || center.Summary.DoctorOverall != constants.StatusOK || center.Summary.TrackedContentDiff {
 		t.Fatalf("expected verified Scheduler, ok doctor, and clean diff: %+v", center.Summary)
 	}
-	if len(center.Proof) < 6 || len(center.Actions) == 0 {
+	if center.Summary.ReadyPIDStatus != "match" || !center.Summary.ReadyPIDMatches {
+		t.Fatalf("expected matching ready PID status: %+v", center.Summary)
+	}
+	if len(center.Proof) < 7 || len(center.Actions) == 0 {
 		t.Fatalf("expected proof and action rows: %+v", center)
 	}
 	hasScheduler := false
+	hasPID := false
 	hasPrivacy := false
 	for _, proof := range center.Proof {
 		if proof.EvidenceScope != constants.EvidenceScopeMetadataOnly {
@@ -150,12 +157,15 @@ func TestRuntimeStatusCenterEndpoint(t *testing.T) {
 		if proof.ID == constants.RuntimeStatusProofSchedulerID && proof.Value == "verified" {
 			hasScheduler = true
 		}
+		if proof.ID == constants.RuntimeStatusProofPIDID && proof.Value == constants.ReadyPIDStatusMatch && proof.Status == constants.StatusOK {
+			hasPID = true
+		}
 		if proof.ID == constants.RuntimeStatusProofPrivacyID && proof.Status == constants.StatusOK {
 			hasPrivacy = true
 		}
 	}
-	if !hasScheduler || !hasPrivacy {
-		t.Fatalf("expected Scheduler and privacy proof rows: %+v", center.Proof)
+	if !hasScheduler || !hasPID || !hasPrivacy {
+		t.Fatalf("expected Scheduler, PID, and privacy proof rows: %+v", center.Proof)
 	}
 	if !strings.Contains(center.PrivacyBoundary, "metadata-only") || !strings.Contains(center.PrivacyBoundary, "no passwords") || !strings.Contains(center.PrivacyBoundary, "no screenshots") || !strings.Contains(center.PrivacyBoundary, "keylogging") {
 		t.Fatalf("expected strict runtime privacy boundary, got %q", center.PrivacyBoundary)
@@ -165,6 +175,110 @@ func TestRuntimeStatusCenterEndpoint(t *testing.T) {
 		if strings.Contains(serialized, forbidden) {
 			t.Fatalf("runtime status center leaked forbidden marker %q: %s", forbidden, response.Body.String())
 		}
+	}
+}
+
+func TestRuntimeStatusCenterStaleReadyPIDIsWatch(t *testing.T) {
+	t.Parallel()
+
+	summaryPath := filepath.Join(t.TempDir(), "runtime-summary.json")
+	summaryJSON := []byte(`{
+		"generated_at": "2026-06-16T13:30:00+05:30",
+		"base_url": "http://127.0.0.1:18080",
+		"output_json": "data/local/output/runtime-summary.json",
+		"output_text": "data/local/output/runtime-summary.txt",
+		"backend": {
+			"task_name": "\\TraceDeck\\TraceDeck Backend Dev",
+			"task_present": true,
+			"task_state": "Ready",
+			"scheduler_readback": "verified",
+			"launch_task_verified": true,
+			"runtime_ok": true,
+			"runtime_evidence": "pid_and_health",
+			"health_ok": true,
+			"pid": 200,
+			"pid_running": true,
+			"ready_file_present": true,
+			"ready_pid": 100,
+			"ready_pid_matches_live": false,
+			"ready_pid_status": "stale",
+			"ready_at": "2026-06-15T23:24:54.8276547+05:30",
+			"advisory": {
+				"severity": "ok",
+				"code": "scheduler_verified_runtime_ready",
+				"headline": "Backend runtime and Scheduler readback are verified.",
+				"operator_action": "No action needed.",
+				"can_continue": true
+			}
+		},
+		"doctor": {
+			"skipped": false,
+			"overall": "ok",
+			"local": "ok",
+			"report_json": "data/local/output/runtime-doctor.json"
+		},
+		"frontend": {
+			"url_present": true,
+			"url": "https://example.lambda-url.ap-south-1.on.aws"
+		},
+		"git": {
+			"branch": "main",
+			"head": "ccee257",
+			"tracked_content_diff": false,
+			"tracked_content_diff_count": 0,
+			"tracked_content_diff_rows": [],
+			"status_rows": []
+		},
+		"logs": {
+			"summary_log": "logs/local/ops/get-runtime-summary.log",
+			"backend_stdout": "logs/local/backend/backend-task.out.log",
+			"backend_stderr": "logs/local/backend/backend-task.err.log"
+		},
+		"verdict": {
+			"can_continue": true,
+			"severity": "ok",
+			"headline": "Runtime proof is healthy.",
+			"next_actions": []
+		},
+		"privacy": {
+			"metadata_only": true,
+			"sensitive_collection": "denied"
+		}
+	}`)
+	if err := os.WriteFile(summaryPath, summaryJSON, 0o600); err != nil {
+		t.Fatalf("write runtime summary fixture: %v", err)
+	}
+
+	server := NewServer(store.NewMemory(), slog.Default())
+	server.runtimeSummaryPath = summaryPath
+	handler := server.Handler()
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteRuntimeStatus, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected runtime status center 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var center model.RuntimeStatusCenter
+	if err := json.Unmarshal(response.Body.Bytes(), &center); err != nil {
+		t.Fatalf("decode runtime status center: %v", err)
+	}
+	if center.Summary.Status != constants.StatusWatch || center.Summary.ReadyPIDStatus != constants.ReadyPIDStatusStale || center.Summary.ReadyPIDMatches {
+		t.Fatalf("expected stale ready PID to be a watch summary: %+v", center.Summary)
+	}
+	hasPIDWatch := false
+	hasRefreshAction := false
+	for _, proof := range center.Proof {
+		if proof.ID == constants.RuntimeStatusProofPIDID && proof.Value == constants.ReadyPIDStatusStale && proof.Status == constants.StatusWatch && strings.Contains(proof.Detail, "live_pid=200") {
+			hasPIDWatch = true
+		}
+	}
+	for _, action := range center.Actions {
+		if action.ID == constants.RuntimeStatusActionReadyPIDID && action.Status == constants.StatusWatch {
+			hasRefreshAction = true
+		}
+	}
+	if !hasPIDWatch || !hasRefreshAction {
+		t.Fatalf("expected stale PID proof and refresh action: proof=%+v actions=%+v", center.Proof, center.Actions)
 	}
 }
 
@@ -371,6 +485,9 @@ func TestOperatorAssuranceCenterEndpointSchedulerDeniedRuntimeHealthy(t *testing
 			"pid": 146776,
 			"pid_running": true,
 			"ready_file_present": true,
+			"ready_pid": 146776,
+			"ready_pid_matches_live": true,
+			"ready_pid_status": "match",
 			"ready_at": "2026-06-15T23:24:54.8276547+05:30",
 			"advisory": {
 				"severity": "watch",

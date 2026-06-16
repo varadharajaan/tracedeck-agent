@@ -2457,6 +2457,9 @@ type RuntimeSummaryArtifactBackend struct {
 	PID                int                            `json:"pid"`
 	PIDRunning         bool                           `json:"pid_running"`
 	ReadyFilePresent   bool                           `json:"ready_file_present"`
+	ReadyPID           int                            `json:"ready_pid"`
+	ReadyPIDMatches    bool                           `json:"ready_pid_matches_live"`
+	ReadyPIDStatus     string                         `json:"ready_pid_status"`
 	ReadyAt            string                         `json:"ready_at"`
 	Advisory           RuntimeSummaryArtifactAdvisory `json:"advisory"`
 }
@@ -2523,6 +2526,8 @@ type RuntimeStatusSummary struct {
 	HealthOK           bool   `json:"health_ok"`
 	SchedulerReadback  string `json:"scheduler_readback"`
 	LaunchTaskVerified bool   `json:"launch_task_verified"`
+	ReadyPIDStatus     string `json:"ready_pid_status"`
+	ReadyPIDMatches    bool   `json:"ready_pid_matches_live"`
 	DoctorOverall      string `json:"doctor_overall"`
 	DoctorLocal        string `json:"doctor_local"`
 	TrackedContentDiff bool   `json:"tracked_content_diff"`

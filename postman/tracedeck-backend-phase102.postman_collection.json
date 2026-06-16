@@ -1,0 +1,126 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 102",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health No Store Header",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is ok and not cached', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Has Runtime And Assurance Centers",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('dashboard contains runtime and operator assurance markers', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('Runtime Status Center');",
+              "  pm.expect(html).to.include('Runtime Proof');",
+              "  pm.expect(html).to.include('Operator Assurance Center');",
+              "  pm.expect(html).to.include('Assurance Actions');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Runtime Status Stale Ready PID",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/runtime-status-center"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('runtime status reconciles stale ready PID without failing live runtime', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.summary_available).to.eql(true);",
+              "  pm.expect(body.summary.runtime_ok).to.eql(true);",
+              "  pm.expect(body.summary.health_ok).to.eql(true);",
+              "  pm.expect(body.summary.ready_pid_status).to.eql('stale');",
+              "  pm.expect(body.summary.ready_pid_matches_live).to.eql(false);",
+              "  pm.expect(body.summary.status).to.eql('watch');",
+              "  const pidProof = body.proof.find((item) => item.id === 'pid-reconciliation');",
+              "  pm.expect(pidProof).to.be.an('object');",
+              "  pm.expect(pidProof.value).to.eql('stale');",
+              "  pm.expect(pidProof.status).to.eql('watch');",
+              "  pm.expect(pidProof.evidence_scope).to.eql('metadata_only');",
+              "  const refreshAction = body.actions.find((item) => item.id === 'refresh-ready-pid-proof');",
+              "  pm.expect(refreshAction).to.be.an('object');",
+              "  pm.expect(refreshAction.status).to.eql('watch');",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  const serialized = JSON.stringify(body).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'push_endpoint', 'screenshot_bytes', 'raw_url', 'page_title', 'alert_body', 'card_number', 'cvv', 'payment_token', 'keylogger'].forEach((marker) => {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Operator Assurance Stale Ready PID Action",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/operator-assurance-center"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('operator assurance surfaces stale ready PID as watch action', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  const runtimeCard = body.cards.find((item) => item.id === 'runtime-health');",
+              "  pm.expect(runtimeCard).to.be.an('object');",
+              "  pm.expect(runtimeCard.detail).to.include('ready_pid=stale');",
+              "  const refreshAction = body.actions.find((item) => item.id === 'refresh-ready-pid-proof');",
+              "  pm.expect(refreshAction).to.be.an('object');",
+              "  pm.expect(refreshAction.status).to.eql('watch');",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

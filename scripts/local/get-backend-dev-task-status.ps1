@@ -91,6 +91,20 @@ try {
     if (Test-Path -LiteralPath $readyFullPath) {
         $ready = Get-Content -Path $readyFullPath -Raw | ConvertFrom-Json
     }
+    $readyPid = $null
+    if ($null -ne $ready) {
+        $readyPidProperty = $ready.PSObject.Properties["pid"]
+        if ($null -ne $readyPidProperty -and $null -ne $readyPidProperty.Value -and -not [string]::IsNullOrWhiteSpace([string]$readyPidProperty.Value)) {
+            $parsedReadyPid = 0
+            if ([int]::TryParse([string]$readyPidProperty.Value, [ref]$parsedReadyPid)) {
+                $readyPid = $parsedReadyPid
+            }
+        }
+    }
+    $readyPidStatus = Get-TraceDeckReadyPidStatus `
+        -ReadyFilePresent ($null -ne $ready) `
+        -ReadyPID $readyPid `
+        -LivePID $backendPid
 
     $runtimeOK = $healthOK -and $pidRunning
     $schedulerReadback = Get-TraceDeckSchedulerReadbackState -TaskPresent $taskPresent -TaskState $taskState
@@ -114,6 +128,9 @@ try {
         runtime_evidence = $runtimeEvidence
         launch_task_verified = $taskPresent
         ready_file_present = $null -ne $ready
+        ready_pid = $readyPid
+        ready_pid_matches_live = $readyPidStatus -eq $script:TraceDeckReadyPidStatusMatch
+        ready_pid_status = $readyPidStatus
         ready = $ready
     }
     $status | Add-Member -NotePropertyName advisory -NotePropertyValue (Get-TraceDeckBackendTaskStatusAdvisory -Status $status)

@@ -661,3 +661,9 @@ evidence, frontend cache state, git hygiene, export path, and next actions. A
 non-elevated Scheduler `denied` readback is shown as a watch item when backend
 PID and `/health` proof are healthy, so the UI no longer implies the local
 server is down just because service metadata needs elevated readback.
+
+Phase 102 adds PID reconciliation evidence to those same runtime handoff
+surfaces. Runtime Status Center now includes a `PID Reconciliation` proof row,
+and Operator Assurance includes a refresh action when the ready-file PID is
+stale. The UI should present this as a watch item tied to scheduled boot proof,
+not as a live backend outage when PID and `/health` are healthy.

@@ -332,6 +332,8 @@ func runtimeStatusCenterFromArtifact(summaryPath string, artifact model.RuntimeS
 			HealthOK:           artifact.Backend.HealthOK,
 			SchedulerReadback:  artifact.Backend.SchedulerReadback,
 			LaunchTaskVerified: artifact.Backend.LaunchTaskVerified,
+			ReadyPIDStatus:     runtimeReadyPIDStatus(artifact),
+			ReadyPIDMatches:    artifact.Backend.ReadyPIDMatches,
 			DoctorOverall:      artifact.Doctor.Overall,
 			DoctorLocal:        artifact.Doctor.Local,
 			TrackedContentDiff: artifact.Git.TrackedContentDiff,
@@ -353,7 +355,7 @@ func runtimeStatusValue(artifact model.RuntimeSummaryArtifact) string {
 	if artifact.Doctor.Overall != "" && artifact.Doctor.Overall != constants.StatusOK && artifact.Doctor.Overall != "skipped" {
 		return constants.StatusAttention
 	}
-	if artifact.Git.TrackedContentDiff || artifact.Backend.Advisory.Severity == constants.StatusWatch || artifact.Backend.SchedulerReadback == "denied" {
+	if artifact.Git.TrackedContentDiff || artifact.Backend.Advisory.Severity == constants.StatusWatch || artifact.Backend.SchedulerReadback == "denied" || runtimeReadyPIDStatus(artifact) == constants.ReadyPIDStatusStale {
 		return constants.StatusWatch
 	}
 	return constants.StatusOK
@@ -364,10 +366,11 @@ func runtimeStatusDetail(artifact model.RuntimeSummaryArtifact) string {
 	if advisory == "" {
 		advisory = "No task advisory was recorded."
 	}
-	return fmt.Sprintf("Backend runtime=%t health=%t, Scheduler=%s, doctor=%s, git tracked diff=%t. %s",
+	return fmt.Sprintf("Backend runtime=%t health=%t, Scheduler=%s, ready PID=%s, doctor=%s, git tracked diff=%t. %s",
 		artifact.Backend.RuntimeOK,
 		artifact.Backend.HealthOK,
 		emptyFallback(artifact.Backend.SchedulerReadback, "unknown"),
+		runtimeReadyPIDStatus(artifact),
 		emptyFallback(artifact.Doctor.Overall, "unknown"),
 		artifact.Git.TrackedContentDiff,
 		advisory,
@@ -401,6 +404,11 @@ func runtimeStatusProof(artifact model.RuntimeSummaryArtifact) []model.RuntimeSt
 	if artifact.Privacy.MetadataOnly && artifact.Privacy.SensitiveCollection == "denied" {
 		privacyStatus = constants.StatusOK
 	}
+	pidStatus := constants.StatusOK
+	readyPIDStatus := runtimeReadyPIDStatus(artifact)
+	if readyPIDStatus == constants.ReadyPIDStatusStale || readyPIDStatus == constants.ReadyPIDStatusUnknown || readyPIDStatus == constants.ReadyPIDStatusAbsent {
+		pidStatus = constants.StatusWatch
+	}
 
 	return []model.RuntimeStatusProof{
 		{
@@ -409,6 +417,14 @@ func runtimeStatusProof(artifact model.RuntimeSummaryArtifact) []model.RuntimeSt
 			Value:         boolRuntimeLabel(artifact.Backend.RuntimeOK && artifact.Backend.HealthOK),
 			Detail:        fmt.Sprintf("pid=%d running=%t evidence=%s ready_file=%t", artifact.Backend.PID, artifact.Backend.PIDRunning, emptyFallback(artifact.Backend.RuntimeEvidence, "unknown"), artifact.Backend.ReadyFilePresent),
 			Status:        backendStatus,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.RuntimeStatusProofPIDID,
+			Label:         "PID Reconciliation",
+			Value:         readyPIDStatus,
+			Detail:        fmt.Sprintf("live_pid=%d ready_file_pid=%d matches_live=%t ready_file=%t", artifact.Backend.PID, artifact.Backend.ReadyPID, artifact.Backend.ReadyPIDMatches, artifact.Backend.ReadyFilePresent),
+			Status:        pidStatus,
 			EvidenceScope: constants.EvidenceScopeMetadataOnly,
 		},
 		{
@@ -476,6 +492,9 @@ func runtimeStatusActions(artifact model.RuntimeSummaryArtifact) []model.Runtime
 	if !artifact.Backend.RuntimeOK || !artifact.Backend.HealthOK {
 		addAction(constants.RuntimeStatusActionRestartID, "Restart backend task", "Restart the hidden local backend task and rerun the summary.", constants.RuntimeTaskRestartCommand, constants.SeverityHigh, constants.StatusPending)
 	}
+	if runtimeReadyPIDStatus(artifact) == constants.ReadyPIDStatusStale {
+		addAction(constants.RuntimeStatusActionReadyPIDID, "Refresh ready PID proof", "Ready-file PID differs from the live backend PID. Live runtime proof is usable; refresh scheduled boot proof when reboot persistence evidence is required.", constants.RuntimeSummaryCommand, constants.SeverityInfo, constants.StatusWatch)
+	}
 	for index, action := range artifact.Verdict.NextActions {
 		trimmed := strings.TrimSpace(action)
 		if trimmed == "" {
@@ -490,6 +509,23 @@ func runtimeStatusActions(artifact model.RuntimeSummaryArtifact) []model.Runtime
 		addAction(constants.RuntimeStatusActionSummaryID, "Keep runtime proof fresh", "Refresh the local runtime summary before demos, deploys, or post-merge checks.", constants.RuntimeSummaryCommand, constants.SeverityInfo, constants.StatusOK)
 	}
 	return actions
+}
+
+func runtimeReadyPIDStatus(artifact model.RuntimeSummaryArtifact) string {
+	status := strings.TrimSpace(artifact.Backend.ReadyPIDStatus)
+	if status != "" {
+		return status
+	}
+	if !artifact.Backend.ReadyFilePresent {
+		return constants.ReadyPIDStatusAbsent
+	}
+	if artifact.Backend.ReadyPID == 0 || artifact.Backend.PID == 0 {
+		return constants.ReadyPIDStatusUnknown
+	}
+	if artifact.Backend.ReadyPID == artifact.Backend.PID {
+		return constants.ReadyPIDStatusMatch
+	}
+	return constants.ReadyPIDStatusStale
 }
 
 func emptyFallback(value string, fallback string) string {
@@ -871,7 +907,7 @@ func operatorAssuranceCards(runtimeCenter model.RuntimeStatusCenter, evidenceCen
 			ID:            constants.OperatorAssuranceCardRuntimeID,
 			Label:         "Runtime Health",
 			Value:         boolRuntimeLabel(runtimeReady),
-			Detail:        fmt.Sprintf("backend=%t health=%t can_continue=%t", runtimeCenter.Summary.RuntimeOK, runtimeCenter.Summary.HealthOK, runtimeCenter.Summary.CanContinue),
+			Detail:        fmt.Sprintf("backend=%t health=%t can_continue=%t ready_pid=%s", runtimeCenter.Summary.RuntimeOK, runtimeCenter.Summary.HealthOK, runtimeCenter.Summary.CanContinue, emptyFallback(runtimeCenter.Summary.ReadyPIDStatus, "unknown")),
 			Status:        runtimeStatus,
 			Source:        constants.RuntimeStatusSourcePhase97Summary,
 			EvidenceScope: constants.EvidenceScopeMetadataOnly,
@@ -951,6 +987,16 @@ func operatorAssuranceActions(runtimeCenter model.RuntimeStatusCenter, evidenceC
 			Title:    "Run elevated Scheduler readback",
 			Detail:   "Use an elevated PowerShell session only if you need service-manager readback proof; runtime proof is already healthy.",
 			Command:  constants.RuntimeTaskStatusCommand,
+			Severity: constants.SeverityInfo,
+			Status:   constants.StatusWatch,
+		})
+	}
+	if runtimeCenter.Summary.ReadyPIDStatus == constants.ReadyPIDStatusStale && runtimeReady {
+		actions = append(actions, model.OperatorAssuranceAction{
+			ID:       constants.RuntimeStatusActionReadyPIDID,
+			Title:    "Refresh ready PID proof",
+			Detail:   "Ready-file PID differs from the live backend PID; live runtime proof is usable, but scheduled boot proof should be refreshed before reboot-persistence handoff.",
+			Command:  constants.RuntimeSummaryCommand,
 			Severity: constants.SeverityInfo,
 			Status:   constants.StatusWatch,
 		})

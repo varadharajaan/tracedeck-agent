@@ -32,6 +32,9 @@ try {
     if ([string]::IsNullOrWhiteSpace($summary.backend.advisory.code)) {
         throw "Expected backend advisory code in runtime summary."
     }
+    if ([string]::IsNullOrWhiteSpace($summary.backend.ready_pid_status)) {
+        throw "Expected ready_pid_status in runtime summary."
+    }
     if ($summary.doctor.overall -ne "ok") {
         throw "Expected runtime summary doctor overall ok."
     }
@@ -46,7 +49,7 @@ try {
     }
 
     $text = Get-Content -Path $textPath -Raw
-    foreach ($marker in @("TraceDeck runtime summary", "Backend:", "Doctor:", "Verdict:")) {
+    foreach ($marker in @("TraceDeck runtime summary", "Backend:", "PID:", "Doctor:", "Verdict:")) {
         if ($text -notlike "*$marker*") {
             throw "Expected runtime summary text marker '$marker'."
         }

@@ -13,6 +13,7 @@ try {
         @{ Name = "access denied means inaccessible"; Message = "Access denied "; Expected = $script:TraceDeckTaskStateInaccessible },
         @{ Name = "access is denied means inaccessible"; Message = "Access is denied."; Expected = $script:TraceDeckTaskStateInaccessible },
         @{ Name = "missing task means missing"; Message = "No MSFT_ScheduledTask objects found"; Expected = $script:TraceDeckTaskStateMissing },
+        @{ Name = "no matching task means missing"; Message = "No matching MSFT_ScheduledTask objects found by CIM query"; Expected = $script:TraceDeckTaskStateMissing },
         @{ Name = "missing path means missing"; Message = "ERROR: The system cannot find the path specified."; Expected = $script:TraceDeckTaskStateMissing },
         @{ Name = "rpc outage means query error"; Message = "The RPC server is unavailable."; Expected = $script:TraceDeckTaskStateQueryError }
     )
@@ -56,6 +57,20 @@ try {
         $actual = Test-TraceDeckBackendTaskStatusAcceptable -Status $case.Status
         if ($actual -ne $case.Expected) {
             throw "Backend task status acceptance failed for '$($case.Name)': expected=$($case.Expected) actual=$actual"
+        }
+    }
+
+    $readyPidCases = @(
+        @{ Name = "missing ready file"; ReadyFilePresent = $false; ReadyPID = $null; LivePID = 101; Expected = $script:TraceDeckReadyPidStatusAbsent },
+        @{ Name = "ready pid matches live pid"; ReadyFilePresent = $true; ReadyPID = 101; LivePID = 101; Expected = $script:TraceDeckReadyPidStatusMatch },
+        @{ Name = "ready pid stale"; ReadyFilePresent = $true; ReadyPID = 100; LivePID = 101; Expected = $script:TraceDeckReadyPidStatusStale },
+        @{ Name = "ready pid unknown"; ReadyFilePresent = $true; ReadyPID = $null; LivePID = 101; Expected = $script:TraceDeckReadyPidStatusUnknown }
+    )
+
+    foreach ($case in $readyPidCases) {
+        $actual = Get-TraceDeckReadyPidStatus -ReadyFilePresent $case.ReadyFilePresent -ReadyPID $case.ReadyPID -LivePID $case.LivePID
+        if ($actual -ne $case.Expected) {
+            throw "Ready PID status failed for '$($case.Name)': expected=$($case.Expected) actual=$actual"
         }
     }
 

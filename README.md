@@ -581,3 +581,10 @@ Phase 101 hardens `scripts/verify/verify-postmerge.ps1` so the current phase
 verification runs outside the output-capturing logger. This keeps strict
 post-merge checks from hanging when a phase intentionally refreshes the
 persistent local backend.
+
+Phase 102 reconciles live backend PID proof with the scheduled ready-file PID.
+`python devctl.py summary` now writes `ready_pid`, `ready_pid_matches_live`,
+and `ready_pid_status` under `backend`; `stale` is shown as a watch item while
+healthy live `pid_and_health` proof remains usable. Use
+`python devctl.py test phase102`, `smoke102`, or `newman102` to verify the
+stale-ready-PID Runtime Status and Operator Assurance contracts.

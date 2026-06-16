@@ -11,6 +11,10 @@ $script:TraceDeckRuntimeEvidencePidAndHealth = "pid_and_health"
 $script:TraceDeckRuntimeEvidenceHealthOnly = "health_only"
 $script:TraceDeckRuntimeEvidencePidOnly = "pid_only"
 $script:TraceDeckRuntimeEvidenceNone = "none"
+$script:TraceDeckReadyPidStatusMatch = "match"
+$script:TraceDeckReadyPidStatusStale = "stale"
+$script:TraceDeckReadyPidStatusAbsent = "absent"
+$script:TraceDeckReadyPidStatusUnknown = "unknown"
 $script:TraceDeckTaskAdvisorySeverityOK = "ok"
 $script:TraceDeckTaskAdvisorySeverityWatch = "watch"
 $script:TraceDeckTaskAdvisorySeverityActionRequired = "action_required"
@@ -31,7 +35,7 @@ function Get-TraceDeckTaskStateFromQueryError {
     if ($normalized -match "access\s+denied" -or $normalized -match "access\s+is\s+denied" -or $normalized -match "unauthorized") {
         return $script:TraceDeckTaskStateInaccessible
     }
-    if ($normalized -match "cannot\s+find" -or $normalized -match "not\s+found" -or $normalized -match "does\s+not\s+exist" -or $normalized -match "no\s+msft_scheduledtask" -or $normalized -match "path\s+specified") {
+    if ($normalized -match "cannot\s+find" -or $normalized -match "not\s+found" -or $normalized -match "does\s+not\s+exist" -or $normalized -match "no\s+msft_scheduledtask" -or $normalized -match "no\s+matching\s+msft_scheduledtask\s+objects\s+found" -or $normalized -match "path\s+specified") {
         return $script:TraceDeckTaskStateMissing
     }
     return $script:TraceDeckTaskStateQueryError
@@ -71,6 +75,25 @@ function Get-TraceDeckRuntimeEvidenceState {
         return $script:TraceDeckRuntimeEvidencePidOnly
     }
     return $script:TraceDeckRuntimeEvidenceNone
+}
+
+function Get-TraceDeckReadyPidStatus {
+    param(
+        [bool]$ReadyFilePresent,
+        [object]$ReadyPID,
+        [object]$LivePID
+    )
+
+    if (-not $ReadyFilePresent) {
+        return $script:TraceDeckReadyPidStatusAbsent
+    }
+    if ($null -eq $ReadyPID -or $null -eq $LivePID) {
+        return $script:TraceDeckReadyPidStatusUnknown
+    }
+    if ([int]$ReadyPID -eq [int]$LivePID) {
+        return $script:TraceDeckReadyPidStatusMatch
+    }
+    return $script:TraceDeckReadyPidStatusStale
 }
 
 function Test-TraceDeckBackendTaskStatusAcceptable {
