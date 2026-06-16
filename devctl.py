@@ -848,6 +848,10 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase105.ps1"))
     elif target == "verify105":
         run(powershell("./scripts/verify/verify-phase105.ps1"))
+    elif target == "phase106":
+        run(powershell("./scripts/verify/verify-phase106.ps1"), stream=True)
+    elif target == "verify106":
+        run(powershell("./scripts/verify/verify-phase106.ps1"))
     elif target == "activity-feed":
         run(powershell("./scripts/local/test-activity-feed-provenance.ps1"))
     elif target == "quality":
@@ -960,6 +964,11 @@ def cmd_promote(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_ledger(args: argparse.Namespace) -> int:
+    run(powershell("./scripts/local/get-phase-ledger.ps1"), stream=True)
+    return 0
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     report = runtime_doctor_report(args)
     save_doctor_report(report)
@@ -990,6 +999,9 @@ def main() -> int:
 
     promote = sub.add_parser("promote", help="Write metadata-only promotion readiness bundle")
     promote.set_defaults(func=cmd_promote)
+
+    ledger = sub.add_parser("ledger", help="Write metadata-only phase ledger and remaining phase count")
+    ledger.set_defaults(func=cmd_ledger)
 
     doctor = sub.add_parser("doctor", help="Write local/cloud runtime assurance reports under data/local/output")
     doctor.add_argument("--tenant-id", default=DEFAULT_TENANT_ID, help="Tenant used for browser activity readback")
@@ -1048,6 +1060,7 @@ def main() -> int:
             "phase103",
             "phase104",
             "phase105",
+            "phase106",
             "smoke",
             "newman",
             "verify",
@@ -1135,6 +1148,7 @@ def main() -> int:
             "smoke105",
             "newman105",
             "verify105",
+            "verify106",
             "activity-feed",
             "quality",
             "theme",

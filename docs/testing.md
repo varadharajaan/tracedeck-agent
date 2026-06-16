@@ -1419,6 +1419,23 @@ The promotion readiness script writes JSON and text exports under
 booleans, metadata-only proof/action scopes, no-store headers, and forbidden
 sensitive marker absence.
 
+Phase 106 packages phase tracking proof:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-phase-ledger.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-phase-ledger.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase106.ps1
+python ./devctl.py ledger
+python ./devctl.py test phase106
+python ./devctl.py test verify106
+```
+
+The ledger script reads repository metadata only: phase verifier filenames and
+local git merge subjects. It writes JSON/text exports under `data/local/output`
+and proves the direct answer that `0` currently defined numbered phases remain.
+The verifier checks Python syntax, the ledger contract, output refresh, root
+cleanup, and root artifact hygiene.
+
 Phase 13 adds:
 
 ```powershell

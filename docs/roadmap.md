@@ -367,3 +367,49 @@
     quality gates, Phase 86 UI checks, demo-provenance API fix, weekly report
     email-proof correction, persistent live-server restart/provenance check,
     docs, Postman, publish script, and `devctl.py test phase87`.
+85. Phase 88: cache and visual contract hardening. Package no-store cache
+    headers, live provenance guards, screenshot-free layout/theme/visual
+    checks, Phase 88 smoke/Newman, docs, and `devctl.py test phase88`.
+86. Phase 89: activity-feed provenance. Hide seeded demo activity rows from
+    default tenant feeds, keep explicit demo opt-in, and verify live
+    provenance, Newman, docs, and root hygiene.
+87. Phase 90: runtime doctor delivery truth. Separate default delivery proof
+    from explicit demo delivery evidence in `python devctl.py doctor` and
+    verify the runtime doctor cannot claim demo mail/push as real delivery.
+88. Phase 91: persistent local backend task controls. Add hidden Windows
+    scheduled-task backed backend start/stop/status controls and verify the
+    local dashboard can survive managed shell lifetime boundaries.
+89. Phase 92: backend task status resilience. Treat non-elevated Scheduler
+    readback denial as a watch advisory when PID plus `/health` prove runtime
+    health.
+90. Phase 93: backend task status advisory. Add typed operator action metadata
+    for verified, denied, missing, error, and unhealthy runtime task states.
+91. Phase 94: deployment service advisory center. Surface deployment service
+    advisories in the Deployment Readiness Center and dashboard.
+92. Phase 95: repo-local Go cache. Route scripted `GOCACHE` and `GOTMPDIR`
+    under `data/local` to avoid Windows/OneDrive cache ACL failures.
+93. Phase 96: reusable post-merge verifier. Add a repeatable strict
+    post-merge checklist for current phase gate, runtime, root hygiene, diff
+    hygiene, and optional GitHub issue/PR checks.
+94. Phase 97: runtime summary command. Add `python devctl.py summary` and
+    JSON/text operator summary exports under `data/local/output`.
+95. Phase 98: runtime status center. Expose the runtime summary through typed
+    backend and dashboard surfaces.
+96. Phase 99: verification evidence center. Expose scripted verification
+    evidence as metadata-only API/dashboard proof.
+97. Phase 100: operator assurance center. Compose runtime and verification
+    evidence into a single operator assurance bundle.
+98. Phase 101: post-merge verifier hardening. Avoid persistent backend output
+    capture hangs in the reusable post-merge wrapper.
+99. Phase 102: runtime PID reconciliation. Compare live backend PID proof with
+    ready-file PID proof and report match, stale, absent, or unknown status.
+100. Phase 103: ready PID proof refresh. Add a direct no-restart remediation
+     command for stale ready proof.
+101. Phase 104: action schema seal. Commit typed metadata-only action evidence
+     scope fields after the Phase 103 schema gap.
+102. Phase 105: promotion readiness center. Compose runtime status,
+     verification evidence, operator assurance, git hygiene, ready PID proof,
+     exports, and next actions into `python devctl.py promote`.
+103. Phase 106: phase ledger. Add `docs/phase-ledger.md`,
+     `python devctl.py ledger`, JSON/text ledger exports, and a direct
+     remaining-phase count. Current planned numbered phases remaining: `0`.
