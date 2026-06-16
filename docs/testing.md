@@ -1351,6 +1351,25 @@ The Phase 101 verifier reruns the Phase 100 post-merge checklist with
 output-capturing logger, which avoids hangs when a phase refreshes a
 persistent local backend.
 
+Phase 102 packages runtime PID reconciliation:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-backend-task-status-resilience.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-runtime-summary.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/clean-root-generated.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase102.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase102.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase102.ps1
+python ./devctl.py test phase102
+```
+
+The smoke and Newman scripts live-boot an isolated backend, write a deliberately
+stale ready file, generate runtime summary/evidence/operator assurance exports,
+and assert that `/api/v1/runtime-status-center` keeps live `pid_and_health`
+proof healthy while reporting `ready_pid_status=stale` as `watch`. The
+operator assurance contract must include the `refresh-ready-pid-proof` action
+and remains metadata-only.
+
 Phase 13 adds:
 
 ```powershell

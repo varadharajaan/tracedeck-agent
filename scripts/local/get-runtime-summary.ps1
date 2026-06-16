@@ -94,6 +94,10 @@ try {
     if ($schedulerReadback -eq "denied") {
         $nextActions.Add("Use an elevated PowerShell session for full Scheduler readback if launch-task proof is required.")
     }
+    $readyPidStatus = [string](Get-TraceDeckProp -Object $taskStatus -Name "ready_pid_status" -Default "unknown")
+    if ($readyPidStatus -eq "stale") {
+        $nextActions.Add("Ready-file PID differs from the live backend PID; rely on live pid_and_health for dashboard checks, and refresh scheduled boot proof when reboot persistence evidence is required.")
+    }
     if ($doctorOverall -notin @("ok", "skipped")) {
         $nextActions.Add("Inspect data/local/output/runtime-doctor.json and logs/local/devctl before promoting.")
     }
@@ -121,6 +125,9 @@ try {
             pid = Get-TraceDeckProp -Object $taskStatus -Name "pid" -Default $null
             pid_running = [bool](Get-TraceDeckProp -Object $taskStatus -Name "pid_running" -Default $false)
             ready_file_present = [bool](Get-TraceDeckProp -Object $taskStatus -Name "ready_file_present" -Default $false)
+            ready_pid = Get-TraceDeckProp -Object $taskStatus -Name "ready_pid" -Default $null
+            ready_pid_matches_live = [bool](Get-TraceDeckProp -Object $taskStatus -Name "ready_pid_matches_live" -Default $false)
+            ready_pid_status = $readyPidStatus
             ready_at = [string](Get-TraceDeckProp -Object $ready -Name "ready_at" -Default "")
             advisory = [ordered]@{
                 severity = [string](Get-TraceDeckProp -Object $advisory -Name "severity" -Default "unknown")
@@ -173,6 +180,7 @@ try {
         "Generated: $($summary.generated_at)",
         "Base URL: $($summary.base_url)",
         "Backend: runtime_ok=$($summary.backend.runtime_ok) health_ok=$($summary.backend.health_ok) scheduler=$($summary.backend.scheduler_readback) task_state=$($summary.backend.task_state)",
+        "PID: live=$($summary.backend.pid) ready_file=$($summary.backend.ready_pid) status=$($summary.backend.ready_pid_status) matches_live=$($summary.backend.ready_pid_matches_live)",
         "Advisory: $($summary.backend.advisory.severity)/$($summary.backend.advisory.code) - $($summary.backend.advisory.headline)",
         "Doctor: overall=$($summary.doctor.overall) local=$($summary.doctor.local)",
         "Git: branch=$($summary.git.branch) head=$($summary.git.head) tracked_diff_count=$($summary.git.tracked_content_diff_count)",
