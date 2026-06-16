@@ -15,10 +15,10 @@ data/local/output/phase-ledger.txt
 
 ## Current Count
 
-- Current ledger package: Phase 111
-- Latest completed published baseline before this ledger package: Phase 110
-- Latest completed issue/PR before this ledger package: issue #227 / PR #228
-- Highest tracked phase verifier after this ledger package: Phase 111
+- Current ledger package: Phase 112
+- Latest completed published baseline before this ledger package: Phase 111
+- Latest completed issue/PR before this ledger package: issue #229 / PR #230
+- Highest tracked phase verifier after this ledger package: Phase 112
 - Remaining planned numbered phases: 0
 - Next planned numbered phase: none
 
@@ -49,12 +49,13 @@ backlog before it becomes counted remaining phase work.
 
 | Phase | Status | Issue | PR | Verification | Summary |
 | --- | --- | --- | --- | --- | --- |
-| 111 | In this package | TBD | TBD | `scripts/verify/verify-phase111.ps1` | Adds metadata-only software install/uninstall collector behind platform adapters. |
+| 112 | In this package | TBD | TBD | `scripts/verify/verify-phase112.ps1` | Adds visible local monitoring indicator API, dashboard proof, and generated JSON/text/HTML status artifacts. |
 
 ## Latest Completed Phases
 
 | Phase | Status | Issue | PR | Verification | Summary |
 | --- | --- | --- | --- | --- | --- |
+| 111 | Merged | #229 | #230 | `scripts/verify/verify-phase111.ps1` | Metadata-only software install/uninstall collector behind platform adapters. |
 | 110 | Merged | #227 | #228 | `scripts/verify/verify-phase110.ps1` | Metadata-only foreground app/window collector behind platform adapters. |
 | 109 | Merged | #225 | #226 | `scripts/verify/verify-phase109.ps1` | Metadata-only OpenTelemetry OTLP exporter plus local Collector stack. |
 | 108 | Merged | #223 | #224 | `scripts/verify/verify-phase108.ps1` | Chrome, Edge, and Brave browser extension skeleton plus smoke/Newman coverage. |

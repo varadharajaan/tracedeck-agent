@@ -437,3 +437,7 @@
      and `software.uninstalled` events, unknown/risky software alert routing,
      smoke/Newman coverage, schema/docs/audit updates, and
      `devctl.py test phase111`.
+109. Phase 112: visible local monitoring indicator. Add
+     `/api/v1/local-monitoring-indicator`, dashboard proof, generated local
+     JSON/text/HTML status artifacts, smoke/Newman/verifier coverage, and
+     audit closure for endpoint-user visibility.

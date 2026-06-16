@@ -888,12 +888,22 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase111.ps1"))
     elif target == "verify111":
         run(powershell("./scripts/verify/verify-phase111.ps1"))
+    elif target == "phase112":
+        run(powershell("./scripts/verify/verify-phase112.ps1"), stream=True)
+    elif target == "smoke112":
+        run(powershell("./scripts/local/smoke-phase112.ps1"))
+    elif target == "newman112":
+        run(powershell("./scripts/local/newman-phase112.ps1"))
+    elif target == "verify112":
+        run(powershell("./scripts/verify/verify-phase112.ps1"))
     elif target == "activity-feed":
         run(powershell("./scripts/local/test-activity-feed-provenance.ps1"))
     elif target == "quality":
         run(powershell("./scripts/local/test-go-quality-gates.ps1"))
     elif target == "theme":
         run(powershell("./scripts/local/test-dashboard-theme.ps1", "-BaseUrl", local_url(args.addr)))
+    elif target == "delivery-ui":
+        run(powershell("./scripts/local/test-dashboard-delivery-ui.ps1", "-BaseUrl", local_url(args.addr)))
     elif target == "visual":
         run(powershell("./scripts/local/test-dashboard-visual-quality.ps1", "-BaseUrl", local_url(args.addr)))
     else:
@@ -1110,6 +1120,7 @@ def main() -> int:
             "phase109",
             "phase110",
             "phase111",
+            "phase112",
             "smoke",
             "newman",
             "verify",
@@ -1211,9 +1222,13 @@ def main() -> int:
             "smoke111",
             "newman111",
             "verify111",
+            "smoke112",
+            "newman112",
+            "verify112",
             "activity-feed",
             "quality",
             "theme",
+            "delivery-ui",
             "visual",
             "live",
         ],

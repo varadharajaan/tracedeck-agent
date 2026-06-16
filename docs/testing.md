@@ -1540,6 +1540,27 @@ snapshot, reruns the agent, and checks the `software_events` metric. Newman
 ingests a `software.installed` event and verifies metadata-only telemetry
 status counts and forbidden privacy marker absence.
 
+Phase 112 packages the visible local monitoring indicator:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-local-monitoring-indicator.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-delivery-ui.ps1 -BaseUrl http://127.0.0.1:18080
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase112.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase112.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase112.ps1
+python ./devctl.py test phase112
+python ./devctl.py test delivery-ui
+python ./devctl.py test smoke112
+python ./devctl.py test newman112
+python ./devctl.py test verify112
+```
+
+The verifier runs backend API tests, dashboard DOM and JavaScript checks,
+the delivery card UI contract, live smoke, Newman, contract audit refresh,
+generated root cleanup, and root-clean. The delivery UI contract boots an
+explicit `include_demo=true` dashboard view and confirms demo push evidence is
+labelled as no provider send and no screen notification.
+
 Phase 13 adds:
 
 ```powershell

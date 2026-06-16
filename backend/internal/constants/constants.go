@@ -17,6 +17,9 @@ const (
 	DefaultVerificationEvidencePath   = "data/local/output/verification-evidence.json"
 	DefaultOperatorAssurancePath      = "data/local/output/operator-assurance.json"
 	DefaultPromotionReadinessPath     = "data/local/output/promotion-readiness.json"
+	DefaultLocalIndicatorPath         = "data/local/output/local-monitoring-indicator.json"
+	DefaultLocalIndicatorTextPath     = "data/local/output/local-monitoring-indicator.txt"
+	DefaultLocalIndicatorHTMLPath     = "data/local/output/local-monitoring-indicator.html"
 	RuntimeSummaryCommand             = "python ./devctl.py summary"
 	RuntimeTaskRestartCommand         = "python ./devctl.py server task-restart"
 	RuntimeTaskStatusCommand          = "python ./devctl.py server task-status"
@@ -27,6 +30,9 @@ const (
 	OperatorAssuranceVerifyCommand    = "python ./devctl.py test verify100"
 	PromotionReadinessCommand         = "python ./devctl.py promote"
 	PromotionReadinessVerifyCommand   = "python ./devctl.py test verify105"
+	LocalIndicatorCommand             = "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-local-monitoring-indicator.ps1"
+	LocalIndicatorOpenCommand         = "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-local-monitoring-indicator.ps1 -Open"
+	LocalIndicatorVerifyCommand       = "python ./devctl.py test verify112"
 )
 
 const (
@@ -49,6 +55,7 @@ const (
 	RouteVerificationCenter = APIPrefix + "/verification-evidence-center"
 	RouteOperatorAssurance  = APIPrefix + "/operator-assurance-center"
 	RoutePromotionReadiness = APIPrefix + "/promotion-readiness-center"
+	RouteLocalIndicator     = APIPrefix + "/local-monitoring-indicator"
 	RouteArchiveStatus      = APIPrefix + "/archive/status"
 )
 
@@ -407,6 +414,7 @@ const (
 	DeliveryTimelinePrivacyNote       = "metadata-only delivery timeline: channel, provider label, recipient label, status, retry timing, host label, event id, and safe summary only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"
 	DeliveryAssurancePrivacyNote      = "metadata-only delivery assurance: channel, provider label, recipient label, source kind, evidence scope, route status, retry state, and operator truth labels only; no provider secrets, push endpoints, SMTP passwords, alert bodies, screenshots, raw URLs, page titles, tokens, cookies, private content, endpoint payloads, or raw provider payloads are collected or stored"
 	PromotionReadinessPrivacyNote     = "metadata-only promotion readiness: runtime status, Scheduler readback label, ready PID status, verification gate counts, local report paths, git hygiene, operator assurance status, export paths, and next actions only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, push endpoints, tokens, cookies, private content, endpoint payloads, payment data, raw provider payloads, keylogging, or hidden collection bypasses are collected or stored"
+	LocalIndicatorPrivacyNote         = "metadata-only local monitoring indicator: local status page path, dashboard route, runtime health label, consent visibility label, transparency mode, denied sensitive capability labels, command labels, and proof timestamps only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, push endpoints, tokens, cookies, private content, endpoint payloads, payment data, raw provider payloads, keylogging, hidden collection bypasses, camera, or microphone data are collected or stored"
 	RoleExperiencePrivacyNote         = "metadata-only role experience center: role labels, dashboard scope, onboarding status, notification proof, archive/report readiness, consent controls, and paid-tier packaging only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, or endpoint payloads are collected or stored"
 	CustomerControlPrivacyNote        = "metadata-only customer control room: host labels, anomaly categories, notification route status, mail and push proof, report readiness, archive posture, package fit, provider simulation state, and owner actions only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, endpoint payloads, or payment card data are collected or stored"
 	CustomerSuccessPacketPrivacyNote  = "metadata-only customer success packet: customer-ready scores, anomaly categories, host labels, mail and push delivery proof, report/archive readiness, package fit, provider simulation state, privacy assurances, objections, and next actions only; no passwords, screenshots, raw URLs, page titles, alert bodies, provider secrets, tokens, cookies, private content, endpoint payloads, invoices, or payment card data are collected or stored"
@@ -472,6 +480,23 @@ const (
 	PromotionReadinessActionEvidenceID    = "refresh-verification-evidence"
 	PromotionReadinessActionAssuranceID   = "refresh-operator-assurance"
 	PromotionReadinessActionVerifierID    = "run-phase105-verifier"
+)
+
+const (
+	LocalIndicatorSourcePhase112       = "phase112_local_monitoring_indicator"
+	LocalIndicatorProofVisibleID       = "visible-indicator"
+	LocalIndicatorProofStatusPageID    = "local-status-page"
+	LocalIndicatorProofRuntimeID       = "runtime-proof"
+	LocalIndicatorProofConsentID       = "consent-visibility"
+	LocalIndicatorProofCollectionID    = "collection-boundary"
+	LocalIndicatorProofPrivacyID       = "privacy-boundary"
+	LocalIndicatorActionRefreshID      = "refresh-local-indicator"
+	LocalIndicatorActionOpenID         = "open-local-indicator"
+	LocalIndicatorActionRuntimeID      = "refresh-runtime-summary"
+	LocalIndicatorActionConsentID      = "review-consent-center"
+	LocalIndicatorActionRunVerifierID  = "run-phase112-verifier"
+	LocalIndicatorVisibilityLocalPage  = "local_status_page"
+	LocalIndicatorTransparencyRequired = "visible_indicator_required"
 )
 
 const (

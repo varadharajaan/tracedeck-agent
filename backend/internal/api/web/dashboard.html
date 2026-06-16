@@ -1788,6 +1788,120 @@
       gap: 6px;
       align-items: center;
     }
+    .delivery-rail {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+    .delivery-card {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-2);
+      min-width: 0;
+    }
+    .delivery-card.provider-ready {
+      border-color: color-mix(in srgb, var(--green) 38%, var(--line));
+      background: color-mix(in srgb, var(--success-surface) 44%, var(--surface-2));
+    }
+    .delivery-card.provider-attention {
+      border-color: color-mix(in srgb, var(--amber) 42%, var(--line));
+      background: color-mix(in srgb, var(--warning-surface) 38%, var(--surface-2));
+    }
+    .delivery-card.provider-failed {
+      border-color: color-mix(in srgb, var(--red) 38%, var(--line));
+      background: color-mix(in srgb, var(--danger-surface) 34%, var(--surface-2));
+    }
+    .delivery-card.demo-only {
+      border-color: color-mix(in srgb, var(--blue) 34%, var(--line));
+      background: color-mix(in srgb, var(--info-surface) 34%, var(--surface-2));
+    }
+    .delivery-card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      min-width: 0;
+    }
+    .delivery-route-title {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+    .delivery-route-title strong {
+      font-size: 16px;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+    .delivery-route-title span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 750;
+      overflow-wrap: anywhere;
+    }
+    .delivery-card-body {
+      display: grid;
+      grid-template-columns: minmax(170px, 0.8fr) minmax(0, 1.2fr);
+      gap: 12px;
+      min-width: 0;
+    }
+    .delivery-field {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+    .delivery-field small {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+    .delivery-field strong,
+    .delivery-field span,
+    .delivery-truth {
+      overflow-wrap: anywhere;
+    }
+    .delivery-field strong {
+      line-height: 1.3;
+    }
+    .delivery-truth {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .delivery-card-foot {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+    }
+    .badge.demo-only,
+    .badge.provider-check {
+      color: var(--blue);
+      background: var(--info-surface);
+      border-color: color-mix(in srgb, var(--blue) 35%, var(--line));
+    }
+    .badge.screen-not-sent {
+      color: var(--amber);
+      background: var(--warning-surface);
+      border-color: color-mix(in srgb, var(--amber) 35%, var(--line));
+    }
+    @media (max-width: 760px) {
+      .delivery-card-head {
+        flex-direction: column;
+      }
+      .delivery-card-body {
+        grid-template-columns: 1fr;
+      }
+    }
     .summary-list {
       display: grid;
       gap: 8px;
@@ -6269,6 +6383,61 @@
       </div>
     </section>
 
+    <section id="local-indicator-section" class="executive-console" aria-label="local monitoring indicator">
+      <div class="executive-focus">
+        <div class="section-head">
+          <div>
+            <h2>Local Monitoring Indicator</h2>
+            <p>Endpoint-user visibility proof for local status page generation, consent visibility, runtime health, denied sensitive collection, and the metadata-only privacy boundary.</p>
+          </div>
+          <span id="local-indicator-status" class="badge pending">pending</span>
+        </div>
+        <div>
+          <span class="muted">Endpoint visibility</span>
+          <strong id="local-indicator-headline">Local indicator pending</strong>
+          <p id="local-indicator-detail">Generate the local monitoring indicator to show status on this host.</p>
+        </div>
+        <div class="action-meta">
+          <span id="local-indicator-source" class="pill">indicator pending</span>
+          <span id="local-indicator-generated" class="pill">generated pending</span>
+          <span id="local-indicator-surface" class="pill">surface pending</span>
+          <span id="local-indicator-privacy" class="pill">metadata-only</span>
+        </div>
+      </div>
+      <div>
+        <div class="executive-kpis">
+          <div class="executive-kpi"><small>Visible</small><strong id="indicator-kpi-visible">-</strong><span id="indicator-kpi-visible-sub" class="muted">No indicator proof</span></div>
+          <div class="executive-kpi"><small>Runtime</small><strong id="indicator-kpi-runtime">-</strong><span id="indicator-kpi-runtime-sub" class="muted">No runtime proof</span></div>
+          <div class="executive-kpi"><small>Consent</small><strong id="indicator-kpi-consent">-</strong><span id="indicator-kpi-consent-sub" class="muted">No consent proof</span></div>
+          <div class="executive-kpi"><small>Sensitive Data</small><strong id="indicator-kpi-sensitive">-</strong><span id="indicator-kpi-sensitive-sub" class="muted">No deny proof</span></div>
+          <div class="executive-kpi"><small>Surface</small><strong id="indicator-kpi-surface">-</strong><span id="indicator-kpi-surface-sub" class="muted">No status page</span></div>
+          <div class="executive-kpi"><small>HTML</small><strong id="indicator-kpi-html">-</strong><span id="indicator-kpi-html-sub" class="muted">No local HTML path</span></div>
+        </div>
+        <div class="executive-board">
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Indicator Proof</h2>
+                <p class="muted">Visible monitoring, local page, runtime, consent, collection boundary, and privacy rows.</p>
+              </div>
+              <span id="indicator-proof-count" class="pill">0 proofs</span>
+            </div>
+            <div id="indicator-proof-list" class="executive-list"><div class="empty">No indicator proof yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Indicator Actions</h2>
+                <p class="muted">Commands to refresh or open the local status page and rerun the Phase 112 verifier.</p>
+              </div>
+              <span id="indicator-action-count" class="pill">0 actions</span>
+            </div>
+            <div id="indicator-action-list" class="executive-list"><div class="empty">No indicator actions yet.</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="operator-assurance-section" class="executive-console" aria-label="operator assurance center">
       <div class="executive-focus">
         <div class="section-head">
@@ -7594,6 +7763,7 @@
         <button class="command-jump" type="button" data-jump-target="customer-settings-section"><span class="command-label">Customer Settings</span><span id="nav-settings-meta" class="command-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="revenue-operations-section"><span class="command-label">Revenue Operations</span><span id="nav-revenue-ops-meta" class="command-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="runtime-status-section"><span class="command-label">Runtime Status</span><span id="nav-runtime-meta" class="command-meta">waiting</span></button>
+        <button class="command-jump" type="button" data-jump-target="local-indicator-section"><span class="command-label">Local Indicator</span><span id="nav-local-indicator-meta" class="command-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="operator-assurance-section"><span class="command-label">Operator Assurance</span><span id="nav-assurance-meta" class="command-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="promotion-readiness-section"><span class="command-label">Promotion Readiness</span><span id="nav-promotion-meta" class="command-meta">waiting</span></button>
         <button class="command-jump" type="button" data-jump-target="verification-evidence-section"><span class="command-label">Verification Evidence</span><span id="nav-verification-meta" class="command-meta">waiting</span></button>
@@ -8938,16 +9108,11 @@
             <div class="section-head">
               <div>
                 <h2>Alert Delivery</h2>
-                <p class="muted">Email, push, and dashboard status</p>
+                <p class="muted">Provider proof, demo evidence, and dashboard fallback</p>
               </div>
               <span id="delivery-count" class="pill">0 routes</span>
             </div>
-            <div class="table-wrap">
-              <table>
-                <thead><tr><th>Channel</th><th>Status</th><th>Recipient</th><th>Attempts</th></tr></thead>
-                <tbody id="delivery-table"><tr><td colspan="4" class="muted">No alert deliveries yet.</td></tr></tbody>
-              </table>
-            </div>
+            <div id="delivery-list" class="delivery-rail"><div class="empty">No provider delivery proof yet.</div></div>
           </div>
         </section>
 
@@ -9236,6 +9401,7 @@
       alertRuleTemplates: "/api/v1/alert-rule-templates",
       accountPortfolio: "/api/v1/account-portfolio-index",
       runtimeStatus: "/api/v1/runtime-status-center",
+      localIndicator: "/api/v1/local-monitoring-indicator",
       verificationEvidence: "/api/v1/verification-evidence-center",
       operatorAssurance: "/api/v1/operator-assurance-center",
       promotionReadiness: "/api/v1/promotion-readiness-center",
@@ -9251,6 +9417,11 @@
       retrying: "retrying",
       failed: "failed",
       pending: "pending"
+    });
+    const EVIDENCE_SOURCE = Object.freeze({
+      demoSeed: "demo_seed",
+      dryRun: "dry_run",
+      liveIngest: "live_ingest"
     });
     const RISK_CATEGORY = Object.freeze({
       riskySoftware: "risky_software"
@@ -9291,7 +9462,9 @@
       admin: "admin",
       all: "all"
     });
-    const DASHBOARD_LAYOUT_ALL = new URLSearchParams(window.location.search).get("layout") === "all";
+    const DASHBOARD_QUERY = new URLSearchParams(window.location.search);
+    const DASHBOARD_LAYOUT_ALL = DASHBOARD_QUERY.get("layout") === "all";
+    const DASHBOARD_INCLUDE_DEMO = DASHBOARD_QUERY.get("include_demo") === "true";
     const DASHBOARD_SECTION_PAGE = Object.freeze({
       "premium-operations-section": DASHBOARD_PAGE.overview,
       "monetisation-overview-section": DASHBOARD_PAGE.overview,
@@ -9318,6 +9491,7 @@
       "delivery-remediation-section": DASHBOARD_PAGE.notifications,
       "buyer-ops-section": DASHBOARD_PAGE.notifications,
       "runtime-status-section": DASHBOARD_PAGE.deployment,
+      "local-indicator-section": DASHBOARD_PAGE.deployment,
       "operator-assurance-section": DASHBOARD_PAGE.deployment,
       "promotion-readiness-section": DASHBOARD_PAGE.deployment,
       "verification-evidence-section": DASHBOARD_PAGE.deployment,
@@ -9541,6 +9715,12 @@
       return value || "-";
     }
 
+    function displayText(value, fallback = "-") {
+      if (value === 0) return "0";
+      const clean = String(value || "").trim();
+      return clean || fallback;
+    }
+
     function escapeHTML(value) {
       return String(text(value)).replace(/[&<>"']/g, (char) => ({
         "&": "&amp;",
@@ -9583,9 +9763,17 @@
       return ({ open: 3, retrying: 3, failed: 3, pending: 2, acknowledged: 1, delivered: 0, resolved: 0 }[String(value || "").toLowerCase()] ?? 0);
     }
 
+    function cssToken(value) {
+      return String(value || "info").toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "") || "info";
+    }
+
     function badge(value) {
-      const clean = String(value || "info").toLowerCase();
+      const clean = cssToken(value);
       return `<span class="badge ${escapeHTML(clean)}">${escapeHTML(value)}</span>`;
+    }
+
+    function toneBadge(label, tone) {
+      return `<span class="badge ${escapeHTML(cssToken(tone || label))}">${escapeHTML(label)}</span>`;
     }
 
     function setText(id, value) {
@@ -9625,6 +9813,90 @@
       const source = String(item.source_kind || "source_pending").replace(/_/g, " ");
       const scope = String(item.evidence_scope || "scope pending").replace(/_/g, " ");
       return `<span class="pill">${escapeHTML(source)}</span> <span class="pill">${escapeHTML(scope)}</span>`;
+    }
+
+    function isDemoEvidence(item) {
+      return String(item && item.source_kind || "").toLowerCase() === EVIDENCE_SOURCE.demoSeed;
+    }
+
+    function channelLabel(channel) {
+      switch (String(channel || "").toLowerCase()) {
+      case CHANNEL.email:
+        return "Email route";
+      case CHANNEL.push:
+        return "Push route";
+      case CHANNEL.dashboard:
+        return "Dashboard route";
+      default:
+        return `${capitalize(channel)} route`;
+      }
+    }
+
+    function deliveryPresentation(item) {
+      const channel = String(item.channel || "").toLowerCase();
+      const status = String(item.status || "").toLowerCase();
+      if (isDemoEvidence(item)) {
+        const truth = channel === CHANNEL.push
+          ? "Seeded dashboard evidence only. No web-push provider send was attempted, so no screen notification should be expected."
+          : channel === CHANNEL.email
+            ? "Seeded dashboard evidence only. No SMTP or SES send was attempted, so no recipient email should be expected."
+            : "Seeded dashboard evidence only. This proves the local dashboard row can render, not an external delivery.";
+        return {
+          cardClass: "demo-only",
+          primaryLabel: "Demo only",
+          primaryTone: "demo-only",
+          secondaryLabel: channel === CHANNEL.push ? "Screen notification was not sent" : "Provider send was not attempted",
+          secondaryTone: channel === CHANNEL.push ? "screen-not-sent" : "provider-check",
+          truth,
+          statusLine: `Seed status: ${displayText(status)}`
+        };
+      }
+      if (status === DELIVERY_STATUS.delivered) {
+        return {
+          cardClass: "provider-ready",
+          primaryLabel: channel === CHANNEL.dashboard ? "Dashboard visible" : "Delivered",
+          primaryTone: "delivered",
+          secondaryLabel: channel === CHANNEL.dashboard ? "Local fallback" : "Provider proof",
+          secondaryTone: "provider-check",
+          truth: channel === CHANNEL.dashboard
+            ? "The dashboard fallback is visible locally. This is separate from external email or push delivery."
+            : "Provider-confirmed delivery metadata is present for this route.",
+          statusLine: "Provider status: delivered"
+        };
+      }
+      if (status === DELIVERY_STATUS.retrying) {
+        return {
+          cardClass: "provider-attention",
+          primaryLabel: "Provider retrying",
+          primaryTone: "retrying",
+          secondaryLabel: channel === CHANNEL.push ? "No screen notification yet" : "Needs confirmation",
+          secondaryTone: "screen-not-sent",
+          truth: channel === CHANNEL.push
+            ? "Web-push delivery is retrying. Do not assume the recipient received a screen notification until provider confirmation exists."
+            : "Provider delivery is retrying and needs confirmation before this route can be trusted.",
+          statusLine: "Provider status: retrying"
+        };
+      }
+      if (status === DELIVERY_STATUS.failed) {
+        return {
+          cardClass: "provider-failed",
+          primaryLabel: "Failed",
+          primaryTone: "failed",
+          secondaryLabel: "Action required",
+          secondaryTone: "failed",
+          truth: "Provider delivery failed or was marked failed. Fix the route before relying on this alert channel.",
+          statusLine: "Provider status: failed"
+        };
+      }
+      return {
+        cardClass: "provider-attention",
+        primaryLabel: displayText(status, "Pending"),
+        primaryTone: "pending",
+        secondaryLabel: "Needs proof",
+        secondaryTone: "pending",
+        truth: "Provider confirmation is pending for this route.",
+        statusLine: `Provider status: ${displayText(status, "pending")}`
+      };
     }
 
     function renderHostOptions() {
@@ -9689,6 +9961,7 @@
       renderTenantCustomerSettingsCenter(context.customerSettingsCenter);
       renderRevenueOperationsCenter(context.revenueOperationsCenter);
       renderRuntimeStatusCenter(context.runtimeStatusCenter);
+      renderLocalMonitoringIndicator(context.localMonitoringIndicator);
       renderOperatorAssuranceCenter(context.operatorAssuranceCenter);
       renderPromotionReadinessCenter(context.promotionReadinessCenter);
       renderVerificationEvidenceCenter(context.verificationEvidenceCenter);
@@ -9774,6 +10047,7 @@
       setText("nav-settings-meta", "waiting");
       setText("nav-revenue-ops-meta", "waiting");
       setText("nav-runtime-meta", "waiting");
+      setText("nav-local-indicator-meta", "waiting");
       setText("nav-assurance-meta", "waiting");
       setText("nav-promotion-meta", "waiting");
       setText("nav-verification-meta", "waiting");
@@ -9862,6 +10136,8 @@
       const revenueOpsSummary = revenueOps.summary || {};
       const runtimeStatus = context.runtimeStatusCenter || {};
       const runtimeSummary = runtimeStatus.summary || {};
+      const localIndicator = context.localMonitoringIndicator || {};
+      const localIndicatorSummary = localIndicator.summary || {};
       const operatorAssurance = context.operatorAssuranceCenter || {};
       const operatorAssuranceSummary = operatorAssurance.summary || {};
       const promotionReadiness = context.promotionReadinessCenter || {};
@@ -9896,6 +10172,7 @@
       setText("nav-settings-meta", settingsSummary.settings_score ? `${settingsSummary.settings_score}% set` : `${settingsSummary.configured_settings || 0}/${settingsSummary.settings_total || 0} set`);
       setText("nav-revenue-ops-meta", revenueOpsSummary.revenue_score ? `${revenueOpsSummary.revenue_score}% rev` : `${openAlerts} alerts`);
       setText("nav-runtime-meta", runtimeSummary.status ? `${runtimeSummary.status} runtime` : "summary pending");
+      setText("nav-local-indicator-meta", localIndicatorSummary.status ? `${localIndicatorSummary.status} visible` : "indicator pending");
       setText("nav-assurance-meta", operatorAssuranceSummary.status ? `${operatorAssuranceSummary.status} assurance` : "assurance pending");
       setText("nav-promotion-meta", promotionSummary.status ? `${promotionSummary.status} promote` : "promotion pending");
       setText("nav-verification-meta", verificationSummary.gates_total ? `${verificationSummary.gates_ok || 0}/${verificationSummary.gates_total} gates` : "evidence pending");
@@ -10761,6 +11038,82 @@
             ${badge(item.severity || "info")}
             ${badge(item.status || "pending")}
             <span class="pill">${escapeHTML(item.command || "script pending")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderLocalMonitoringIndicator(center) {
+      const model = center || {};
+      const summary = model.summary || {};
+      const proof = model.proof || [];
+      const actions = model.actions || [];
+
+      document.getElementById("local-indicator-status").outerHTML =
+        badge(summary.status || "pending").replace("<span", '<span id="local-indicator-status"');
+      setText("local-indicator-headline", summary.headline || "Local indicator pending");
+      setText("local-indicator-detail", summary.detail || "Generate the local monitoring indicator to show status on this host.");
+      setText("local-indicator-source", model.source || "indicator pending");
+      setText("local-indicator-generated", model.generated_at ? formatDate(model.generated_at) : "generated pending");
+      setText("local-indicator-surface", summary.indicator_surface || "surface pending");
+      setText("local-indicator-privacy", model.privacy_boundary ? "metadata-only guard" : "metadata-only");
+
+      setText("indicator-kpi-visible", readyLabel(Boolean(summary.visible_indicator_ready)));
+      setText("indicator-kpi-visible-sub", summary.visible_indicator_ready ? "local status page is visible" : "visible indicator proof pending");
+      setText("indicator-kpi-runtime", readyLabel(Boolean(summary.runtime_ready)));
+      setText("indicator-kpi-runtime-sub", summary.runtime_ready ? "backend runtime proof healthy" : "runtime proof watch");
+      setText("indicator-kpi-consent", readyLabel(Boolean(summary.consent_visible)));
+      setText("indicator-kpi-consent-sub", summary.consent_visible ? "consent center says visible" : "consent visibility pending");
+      setText("indicator-kpi-sensitive", summary.sensitive_collection_denied ? "denied" : "review");
+      setText("indicator-kpi-sensitive-sub", summary.sensitive_collection_denied ? "passwords and screenshots denied" : "sensitive deny proof pending");
+      setText("indicator-kpi-surface", summary.indicator_surface || "pending");
+      setText("indicator-kpi-surface-sub", summary.transparency_mode || "transparency mode pending");
+      setText("indicator-kpi-html", summary.html_path ? "ready" : "pending");
+      setText("indicator-kpi-html-sub", summary.html_path || model.html_path || "local HTML path pending");
+
+      renderLocalIndicatorProof(proof);
+      renderLocalIndicatorActions(actions);
+    }
+
+    function renderLocalIndicatorProof(proofs) {
+      const items = (proofs || []).slice(0, 8);
+      setText("indicator-proof-count", `${items.length} proof${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("indicator-proof-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No indicator proof yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.label || "indicator proof")}: ${escapeHTML(item.value || "-")}</strong>
+          <span class="muted">${escapeHTML(item.detail || "Indicator proof detail pending.")}</span>
+          <div class="action-meta">
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.id || "proof")}</span>
+            <span class="pill">${escapeHTML(item.source || "local indicator")}</span>
+            <span class="pill">${escapeHTML(item.evidence_scope || "metadata_only")}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderLocalIndicatorActions(actions) {
+      const items = (actions || []).slice(0, 8);
+      setText("indicator-action-count", `${items.length} action${items.length === 1 ? "" : "s"}`);
+      const target = document.getElementById("indicator-action-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No indicator actions yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.title || "indicator action")}</strong>
+          <span class="muted">${escapeHTML(item.detail || "Action detail pending.")}</span>
+          <div class="action-meta">
+            ${badge(item.severity || "info")}
+            ${badge(item.status || "pending")}
+            <span class="pill">${escapeHTML(item.command || "script pending")}</span>
+            <span class="pill">${escapeHTML(item.evidence_scope || "metadata_only")}</span>
           </div>
         </div>
       `).join("");
@@ -15371,19 +15724,59 @@
     }
 
     function renderDeliveries(items) {
-      const target = document.getElementById("delivery-table");
+      const target = document.getElementById("delivery-list");
       if (items.length === 0) {
-        target.innerHTML = '<tr><td colspan="4" class="muted">No alert deliveries yet.</td></tr>';
+        target.innerHTML = '<div class="empty">No provider delivery proof yet.</div>';
         return;
       }
-      target.innerHTML = items.map((item) => `
-        <tr>
-          <td><strong>${escapeHTML(item.channel)}</strong><br><span class="muted">${escapeHTML(item.provider)}</span><br>${sourceBadge(item)}</td>
-          <td>${badge(item.status)}<br><span class="muted">${escapeHTML(formatDate(item.last_attempt_at))}</span></td>
-          <td>${escapeHTML(item.recipient)}<br><span class="muted">${escapeHTML(item.summary)}</span><br><span class="muted">${escapeHTML(item.evidence_detail || "")}</span></td>
-          <td>${escapeHTML(item.attempts)}</td>
-        </tr>
-      `).join("");
+      target.innerHTML = items.map((item) => {
+        const model = deliveryPresentation(item);
+        const lastAttempt = formatDate(item.last_attempt_at);
+        const retryAt = item.next_retry_at ? formatDate(item.next_retry_at) : "";
+        const summary = displayText(item.summary, "No delivery summary recorded.");
+        const technicalNote = isDemoEvidence(item)
+          ? model.statusLine
+          : displayText(item.last_error || model.statusLine, model.statusLine);
+        return `
+          <article class="delivery-card ${escapeHTML(model.cardClass)}">
+            <div class="delivery-card-head">
+              <div class="delivery-route-title">
+                <strong>${escapeHTML(channelLabel(item.channel))}</strong>
+                <span>${escapeHTML(displayText(item.provider, "provider pending"))}</span>
+              </div>
+              <div class="route-meta">
+                ${toneBadge(model.primaryLabel, model.primaryTone)}
+                ${toneBadge(model.secondaryLabel, model.secondaryTone)}
+              </div>
+            </div>
+            <div class="delivery-card-body">
+              <div class="delivery-field">
+                <small>Recipient</small>
+                <strong>${escapeHTML(displayText(item.recipient, "recipient pending"))}</strong>
+                <span class="muted">${escapeHTML(summary)}</span>
+              </div>
+              <div class="delivery-field">
+                <small>Delivery truth</small>
+                <div class="delivery-truth">${escapeHTML(model.truth)}</div>
+              </div>
+              <div class="delivery-field">
+                <small>Last attempt</small>
+                <strong>${escapeHTML(lastAttempt)}</strong>
+                <span class="muted">${escapeHTML(technicalNote)}</span>
+              </div>
+              <div class="delivery-field">
+                <small>Attempts</small>
+                <strong>${escapeHTML(item.attempts)}</strong>
+                <span class="muted">${escapeHTML(retryAt ? `Next retry: ${retryAt}` : "No retry scheduled")}</span>
+              </div>
+            </div>
+            <div class="delivery-card-foot">
+              ${sourceBadge(item)}
+              <span class="pill">${escapeHTML(displayText(item.evidence_detail, "provider evidence pending"))}</span>
+            </div>
+          </article>
+        `;
+      }).join("");
     }
 
     function renderEmptyDashboard() {
@@ -15400,6 +15793,7 @@
       renderTenantCustomerSettingsCenter(null);
       renderRevenueOperationsCenter(null);
       renderRuntimeStatusCenter(null);
+      renderLocalMonitoringIndicator(null);
       renderOperatorAssuranceCenter(null);
       renderPromotionReadinessCenter(null);
       renderVerificationEvidenceCenter(null);
@@ -15436,13 +15830,13 @@
       }
 
       const base = `/api/v1/devices/${encodeURIComponent(state.selectedDeviceId)}`;
-      const [overview, deviceHealth, policy, anomalies, tamper, deliveries, plans, roles, retentionTiers, templates, alertRuleTemplates, auditEvents, weeklyReport, accountPortfolio, runtimeStatusCenter, verificationEvidenceCenter, operatorAssuranceCenter, promotionReadinessCenter] = await Promise.all([
+      const [overview, deviceHealth, policy, anomalies, tamper, deliveries, plans, roles, retentionTiers, templates, alertRuleTemplates, auditEvents, weeklyReport, accountPortfolio, runtimeStatusCenter, localMonitoringIndicator, verificationEvidenceCenter, operatorAssuranceCenter, promotionReadinessCenter] = await Promise.all([
         loadJSON(`${base}/overview`),
         loadJSON(`${base}/health`),
         loadJSON(`${base}/policy-violations`),
         loadJSON(`${base}/anomalies`),
         loadJSON(`${base}/tamper-events`),
-        loadJSON(`${base}/alert-deliveries`),
+        loadJSON(`${base}/alert-deliveries${DASHBOARD_INCLUDE_DEMO ? "?include_demo=true" : ""}`),
         loadJSON(API.plans),
         loadJSON(API.roles),
         loadJSON(API.retentionTiers),
@@ -15452,6 +15846,7 @@
         loadJSON(`${base}/reports/weekly`),
         loadOptionalJSON(API.accountPortfolio),
         loadOptionalJSON(API.runtimeStatus),
+        loadOptionalJSON(API.localIndicator),
         loadOptionalJSON(API.verificationEvidence),
         loadOptionalJSON(API.operatorAssurance),
         loadOptionalJSON(API.promotionReadiness)
@@ -15528,6 +15923,7 @@
         customerSettingsCenter,
         revenueOperationsCenter,
         runtimeStatusCenter,
+        localMonitoringIndicator,
         verificationEvidenceCenter,
         operatorAssuranceCenter,
         promotionReadinessCenter,

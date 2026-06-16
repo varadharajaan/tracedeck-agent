@@ -237,10 +237,10 @@ try {
         -ID "visible-local-indicator" `
         -Area "transparency" `
         -Title "Visible local monitoring indicator" `
-        -Status ($(if (Test-TraceDeckText "agent/internal/platform/support.go" "PlatformCapabilityLocalIndicator") { "attention" } else { "missing" })) `
-        -Evidence @("agent/internal/platform/support.go", "docs/collection-policy.md") `
-        -Gaps @("Capability is planned/documented, but no platform UI indicator implementation is present") `
-        -NextAction "Implement a visible local indicator before expanding interactive monitoring."
+        -Status ($(if ((Test-TraceDeckPath "scripts/local/get-local-monitoring-indicator.ps1") -and (Test-TraceDeckText "backend/internal/constants/constants.go" "RouteLocalIndicator") -and (Test-TraceDeckText "backend/internal/api/web/dashboard.html" "Local Monitoring Indicator") -and (Test-TraceDeckText "agent/internal/platform/support.go" "local status page and dashboard indicator are supported")) { "ok" } else { "attention" })) `
+        -Evidence @("scripts/local/get-local-monitoring-indicator.ps1", "backend/internal/api/server.go", "backend/internal/api/web/dashboard.html", "agent/internal/platform/support.go", "docs/local-monitoring-indicator.md") `
+        -Gaps ($(if ((Test-TraceDeckPath "scripts/local/get-local-monitoring-indicator.ps1") -and (Test-TraceDeckText "backend/internal/constants/constants.go" "RouteLocalIndicator") -and (Test-TraceDeckText "backend/internal/api/web/dashboard.html" "Local Monitoring Indicator")) { @() } else { @("Local indicator API, generator, or dashboard proof is incomplete") })) `
+        -NextAction "Keep the local indicator visible before adding any interactive monitoring expansion; native tray/menu-bar polish can remain a later packaging slice."
 
     Add-TraceDeckAuditRequirement -Requirements $requirements `
         -ID "docker-compose-otel-stack" `

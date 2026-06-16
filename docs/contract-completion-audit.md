@@ -62,10 +62,12 @@ Implemented or strongly evidenced:
 - Software install/uninstall collector under `agent/internal/collector/software`
   with platform adapters, local hashed snapshot diffing, metadata-only tests,
   and unknown/risky software alert routing.
+- Visible local monitoring indicator via
+  `/api/v1/local-monitoring-indicator`, dashboard proof, and generated
+  JSON/text/HTML status artifacts.
 
 Remaining or partial:
 
-- Visible local monitoring indicator remains planned, not implemented.
 - GoReleaser/Syft release packaging and SBOM flow are not present.
 
 ## Privacy

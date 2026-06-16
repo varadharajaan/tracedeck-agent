@@ -31,6 +31,11 @@ diffs local software inventory snapshots and emits `software.installed` and
 `software.uninstalled` without install paths or file contents. Verification is
 scripted through `python ./devctl.py test phase111`.
 
+Phase 112 adds the visible local monitoring indicator. Use
+`powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-local-monitoring-indicator.ps1`
+or `python ./devctl.py test phase112` to generate and verify the local JSON,
+text, and HTML indicator artifacts under `data/local/output`.
+
 ## Local Commands
 
 ```powershell
@@ -74,7 +79,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-contract.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-layout.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-theme.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-delivery-ui.ps1
 python ./devctl.py test theme
+python ./devctl.py test delivery-ui
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-lambda-frontend-visual.ps1
 python ./devctl.py cloud visual
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-autostart-assurance.ps1

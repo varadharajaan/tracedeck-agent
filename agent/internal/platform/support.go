@@ -16,7 +16,7 @@ func WindowsCapabilities() Capabilities {
 			supported(constants.PlatformCapabilitySoftwareInventory, "Windows software inventory uses uninstall registry display metadata without install paths"),
 			planned(constants.PlatformCapabilityMediaMetadata, "media metadata remains policy-gated and collector-specific"),
 			planned(constants.PlatformCapabilityBrowserHistory, "browser history collector is Chromium-domain-only and policy bounded"),
-			planned(constants.PlatformCapabilityLocalIndicator, "visible local indicator is required before interactive monitoring expansion"),
+			supported(constants.PlatformCapabilityLocalIndicator, "local status page and dashboard indicator are supported; native tray indicator remains optional polish"),
 		},
 	}
 }
@@ -35,7 +35,7 @@ func DarwinCapabilities() Capabilities {
 			partial(constants.PlatformCapabilitySoftwareInventory, "macOS software inventory reads application bundle names without bundle contents"),
 			planned(constants.PlatformCapabilityMediaMetadata, "media metadata remains policy-gated and requires native process inspection"),
 			planned(constants.PlatformCapabilityBrowserHistory, "browser history support remains domain-only and profile-bounded"),
-			planned(constants.PlatformCapabilityLocalIndicator, "menu bar or notification indicator remains a later UI slice"),
+			supported(constants.PlatformCapabilityLocalIndicator, "local status page and dashboard indicator are supported; native menu bar indicator remains optional polish"),
 		},
 	}
 }
@@ -54,7 +54,7 @@ func LinuxCapabilities() Capabilities {
 			partial(constants.PlatformCapabilitySoftwareInventory, "Linux software inventory reads dpkg package metadata when available"),
 			planned(constants.PlatformCapabilityMediaMetadata, "media metadata remains policy-gated and desktop-environment dependent"),
 			planned(constants.PlatformCapabilityBrowserHistory, "browser history support remains domain-only and profile-bounded"),
-			planned(constants.PlatformCapabilityLocalIndicator, "tray or desktop notification indicator remains a later UI slice"),
+			supported(constants.PlatformCapabilityLocalIndicator, "local status page and dashboard indicator are supported; native tray indicator remains optional polish"),
 		},
 	}
 }
@@ -73,7 +73,7 @@ func OtherCapabilities() Capabilities {
 			unsupported(constants.PlatformCapabilitySoftwareInventory, "software inventory requires a platform adapter"),
 			unsupported(constants.PlatformCapabilityMediaMetadata, "media metadata requires a platform adapter and explicit policy"),
 			unsupported(constants.PlatformCapabilityBrowserHistory, "browser history collection requires a supported platform profile adapter"),
-			unsupported(constants.PlatformCapabilityLocalIndicator, "local indicator requires platform UI integration"),
+			partial(constants.PlatformCapabilityLocalIndicator, "local status page works when the backend is available; native shell integration is not declared"),
 		},
 	}
 }
