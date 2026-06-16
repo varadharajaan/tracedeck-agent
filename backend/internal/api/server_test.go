@@ -348,6 +348,173 @@ func TestVerificationEvidenceCenterMissingArtifact(t *testing.T) {
 	}
 }
 
+func TestOperatorAssuranceCenterEndpointSchedulerDeniedRuntimeHealthy(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	summaryPath := filepath.Join(root, "runtime-summary.json")
+	evidencePath := filepath.Join(root, "verification-evidence.json")
+	summaryJSON := []byte(`{
+		"generated_at": "2026-06-16T12:01:00+05:30",
+		"base_url": "http://127.0.0.1:18080",
+		"output_json": "data/local/output/runtime-summary.json",
+		"output_text": "data/local/output/runtime-summary.txt",
+		"backend": {
+			"task_name": "\\TraceDeck\\TraceDeck Backend Dev",
+			"task_present": false,
+			"task_state": "inaccessible",
+			"scheduler_readback": "denied",
+			"launch_task_verified": false,
+			"runtime_ok": true,
+			"runtime_evidence": "pid_and_health",
+			"health_ok": true,
+			"pid": 146776,
+			"pid_running": true,
+			"ready_file_present": true,
+			"ready_at": "2026-06-15T23:24:54.8276547+05:30",
+			"advisory": {
+				"severity": "watch",
+				"code": "runtime_ready_scheduler_readback_denied",
+				"headline": "Backend is running, but this shell cannot read Scheduler metadata.",
+				"operator_action": "Use an elevated PowerShell session for full Scheduler readback; runtime proof is enough for local dashboard checks.",
+				"can_continue": true,
+				"admin_readback_recommended": true
+			}
+		},
+		"doctor": {
+			"skipped": false,
+			"overall": "ok",
+			"local": "ok",
+			"report_json": "data/local/output/runtime-doctor.json"
+		},
+		"frontend": {
+			"url_present": true,
+			"url": "https://example.lambda-url.ap-south-1.on.aws"
+		},
+		"git": {
+			"branch": "main",
+			"head": "f433bf8",
+			"tracked_content_diff": false,
+			"tracked_content_diff_count": 0,
+			"tracked_content_diff_rows": [],
+			"status_rows": []
+		},
+		"logs": {
+			"summary_log": "logs/local/ops/get-runtime-summary.log",
+			"backend_stdout": "logs/local/backend/backend-task.out.log",
+			"backend_stderr": "logs/local/backend/backend-task.err.log"
+		},
+		"verdict": {
+			"can_continue": true,
+			"severity": "ok",
+			"headline": "Runtime proof is healthy.",
+			"next_actions": []
+		},
+		"privacy": {
+			"metadata_only": true,
+			"sensitive_collection": "denied"
+		}
+	}`)
+	evidenceJSON := []byte(`{
+		"generated_at": "2026-06-16T12:02:00+05:30",
+		"phase": "phase99",
+		"base_url": "http://127.0.0.1:18080",
+		"branch": "main",
+		"head": "f433bf8",
+		"overall_status": "ok",
+		"can_promote": true,
+		"gates": [
+			{
+				"id": "gofmt",
+				"label": "Go format check",
+				"command": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/check-gofmt.ps1",
+				"status": "ok",
+				"severity": "info",
+				"log_path": "logs/local/verify/check-gofmt.log",
+				"report_path": "",
+				"detail": "gofmt check passed",
+				"completed_at": "2026-06-16T12:01:30+05:30",
+				"evidence_scope": "metadata_only"
+			}
+		],
+		"artifacts": [
+			{
+				"id": "runtime-summary",
+				"label": "Runtime summary JSON",
+				"path": "data/local/output/runtime-summary.json",
+				"status": "ok",
+				"evidence_scope": "metadata_only"
+			}
+		],
+		"actions": [],
+		"privacy": {
+			"metadata_only": true,
+			"sensitive_collection": "denied",
+			"forbidden_categories": ["credentials", "provider secrets", "screenshots"]
+		},
+		"privacy_boundary": "metadata-only verification evidence; no passwords; no screenshots"
+	}`)
+	if err := os.WriteFile(summaryPath, append([]byte{0xEF, 0xBB, 0xBF}, summaryJSON...), 0o600); err != nil {
+		t.Fatalf("write runtime summary fixture: %v", err)
+	}
+	if err := os.WriteFile(evidencePath, append([]byte{0xEF, 0xBB, 0xBF}, evidenceJSON...), 0o600); err != nil {
+		t.Fatalf("write verification evidence fixture: %v", err)
+	}
+
+	server := NewServer(store.NewMemory(), slog.Default())
+	server.runtimeSummaryPath = summaryPath
+	server.verificationEvidencePath = evidencePath
+	server.operatorAssurancePath = filepath.Join(root, "operator-assurance.json")
+	handler := server.Handler()
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteOperatorAssurance, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected operator assurance center 200, got %d: %s", response.Code, response.Body.String())
+	}
+	if response.Header().Get(constants.HeaderCache) != constants.CacheNoStore {
+		t.Fatalf("expected no-store operator assurance cache header, got %s", response.Header().Get(constants.HeaderCache))
+	}
+	var center model.OperatorAssuranceCenter
+	if err := json.Unmarshal(response.Body.Bytes(), &center); err != nil {
+		t.Fatalf("decode operator assurance center: %v", err)
+	}
+	if center.Source != constants.OperatorAssuranceSourcePhase100 || center.Summary.Status != constants.StatusWatch || !center.Summary.CanContinue {
+		t.Fatalf("expected watch operator assurance that can continue: %+v", center.Summary)
+	}
+	if center.Summary.SchedulerReadback != "denied" || !strings.Contains(center.Summary.SchedulerExplanation, "runtime is healthy") {
+		t.Fatalf("expected explicit Scheduler denied explanation: %+v", center.Summary)
+	}
+	if center.Summary.FrontendCacheStatus != "artifact_cache_hit" || center.Summary.FrontendCacheHitPct != 100 {
+		t.Fatalf("expected frontend artifact cache hit: %+v", center.Summary)
+	}
+	if len(center.Cards) != 6 || len(center.Actions) < 2 {
+		t.Fatalf("expected assurance cards and actions: %+v", center)
+	}
+	hasScheduler := false
+	hasPrivacy := false
+	for _, card := range center.Cards {
+		if card.EvidenceScope != constants.EvidenceScopeMetadataOnly {
+			t.Fatalf("expected metadata-only assurance card: %+v", card)
+		}
+		if card.ID == constants.OperatorAssuranceCardSchedulerID && card.Status == constants.StatusWatch {
+			hasScheduler = true
+		}
+		if card.ID == constants.OperatorAssuranceCardPrivacyID && card.Status == constants.StatusOK {
+			hasPrivacy = true
+		}
+	}
+	if !hasScheduler || !hasPrivacy {
+		t.Fatalf("expected Scheduler watch and privacy ok cards: %+v", center.Cards)
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password_value", "provider_secret_value", "push_endpoint_value", "screenshot_bytes_value", "raw_url_value", "page_title_value", "alert_body_value", "card_number", "cvv", "payment_token", "keylogger"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("operator assurance center leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+}
+
 func TestDashboardLocalAuthPanel(t *testing.T) {
 	t.Parallel()
 
