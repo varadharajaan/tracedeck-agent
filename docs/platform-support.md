@@ -35,8 +35,10 @@ deployments/service/darwin/io.tracedeck.agent.plist.tmpl
 ```
 
 Foreground app collection is marked `requires_permission` because macOS
-requires Accessibility permission for active app/window observation. This phase
-does not request permissions automatically.
+requires Accessibility permission for active app/window observation. Phase 110
+does not request permissions automatically; unsupported or permission-required
+states are surfaced through typed capability errors and the collector skips
+without failing the agent run.
 
 ## Linux
 
@@ -51,6 +53,28 @@ deployments/service/linux/tracedeck-agent.service.tmpl
 Foreground app collection is marked `partial` because X11 and Wayland expose
 active-window information differently. Wayland support depends on compositor and
 desktop portal behavior.
+
+## Foreground App Collection
+
+Phase 110 implements the collector package and Windows adapter path. The
+Windows adapter uses desktop foreground-window APIs only to resolve the active
+process id, process name, and executable path hash. It does not call window
+title APIs and does not capture screenshots.
+
+The emitted event type is:
+
+```text
+foreground_app.observed
+```
+
+The source is:
+
+```text
+collector.foreground_app
+```
+
+macOS and Linux remain explicit adapter states until native permission and
+desktop-environment handling are hardened.
 
 ## Manifest Rendering
 

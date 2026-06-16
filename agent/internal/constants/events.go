@@ -1,18 +1,20 @@
 package constants
 
 const (
-	EventTypeProcessObserved = "process.observed"
-	EventTypeBrowserObserved = "browser.domain.observed"
-	EventTypeAlertRaised     = "alert.raised"
-	EventTypeDeviceHealth    = "device.health.observed"
-	EventTypeAgentHeartbeat  = "agent.health.heartbeat"
+	EventTypeProcessObserved       = "process.observed"
+	EventTypeForegroundAppObserved = "foreground_app.observed"
+	EventTypeBrowserObserved       = "browser.domain.observed"
+	EventTypeAlertRaised           = "alert.raised"
+	EventTypeDeviceHealth          = "device.health.observed"
+	EventTypeAgentHeartbeat        = "agent.health.heartbeat"
 )
 
 const (
-	EventSourceProcessCollector = "collector.process"
-	EventSourceBrowserCollector = "collector.browser.history"
-	EventSourceHealthCollector  = "collector.device.health"
-	EventSourceHeartbeat        = "collector.agent.heartbeat"
+	EventSourceProcessCollector       = "collector.process"
+	EventSourceForegroundAppCollector = "collector.foreground_app"
+	EventSourceBrowserCollector       = "collector.browser.history"
+	EventSourceHealthCollector        = "collector.device.health"
+	EventSourceHeartbeat              = "collector.agent.heartbeat"
 )
 
 const (
@@ -83,11 +85,18 @@ const (
 	EventMetadataArchiveDue      = "archive_due"
 	EventMetadataBackendSync     = "backend_sync_enabled"
 	EventMetadataAlertsEnabled   = "alerts_enabled"
+	EventMetadataForegroundState = "foreground_state"
+	EventMetadataWindowTitleMode = "window_title_mode"
+	EventMetadataPathMode        = "path_mode"
 )
 
 const (
 	HeartbeatCollectionModeOnce       = "once"
 	HeartbeatCollectionModeContinuous = "continuous"
+)
+
+const (
+	ForegroundStateActive = "active"
 )
 
 const (

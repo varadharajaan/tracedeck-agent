@@ -21,6 +21,7 @@ tracedeck.alert.email.sent.count
 
 | Event type | Source | Metadata | Privacy boundary |
 | --- | --- | --- | --- |
+| `foreground_app.observed` | `collector.foreground_app` | `profile`, `operating_system`, `foreground_state`, `window_title_mode`, `path_mode`, optional software risk metadata | Active app metadata only. The executable path is stored as a hash, `window_title_mode` is `none`, and no screenshots, window titles, raw URLs, page titles, cookies, tokens, private content, endpoint payloads, provider secrets, alert bodies, keylogs, or hidden collection bypass data are collected. |
 | `agent.health.heartbeat` | `collector.agent.heartbeat` | `profile`, `operating_system`, `agent_healthy`, `agent_version`, `collection_mode`, `collection_interval`, `archive_enabled`, `archive_due`, `backend_sync_enabled`, `alerts_enabled` | Metadata-only agent readiness proof. No passwords, screenshots, raw URLs, page titles, cookies, tokens, private content, endpoint payloads, provider secrets, alert bodies, keylogs, or hidden collection bypass data. |
 
 ## OpenTelemetry Export

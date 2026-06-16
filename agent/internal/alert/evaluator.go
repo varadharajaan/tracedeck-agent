@@ -51,7 +51,7 @@ func (e *Evaluator) evaluateBlockedApps(policy *config.Policy, events []event.Ev
 	seenApps := make(map[string]struct{})
 	alerts := make([]Alert, 0)
 	for _, evt := range events {
-		if evt.Type != constants.EventTypeProcessObserved {
+		if !isAppUsageEvent(evt) {
 			continue
 		}
 		normalizedApp := normalize(evt.AppName)
@@ -93,7 +93,7 @@ func (e *Evaluator) evaluateRiskySoftware(policy *config.Policy, events []event.
 	seenApps := make(map[string]struct{})
 	alerts := make([]Alert, 0)
 	for _, evt := range events {
-		if evt.Type != constants.EventTypeProcessObserved {
+		if !isAppUsageEvent(evt) {
 			continue
 		}
 		category := normalize(evt.Metadata[constants.EventMetadataSoftwareRiskCategory])
@@ -197,6 +197,10 @@ func normalizedSet(values []string) map[string]struct{} {
 		}
 	}
 	return out
+}
+
+func isAppUsageEvent(evt event.Event) bool {
+	return evt.Type == constants.EventTypeProcessObserved || evt.Type == constants.EventTypeForegroundAppObserved
 }
 
 func normalize(value string) string {

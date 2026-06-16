@@ -594,8 +594,10 @@ const (
 const (
 	TelemetryTypeBrowserDomainObserved = "browser.domain.observed"
 	TelemetryTypeAgentHeartbeat        = "agent.health.heartbeat"
+	TelemetryTypeForegroundAppObserved = "foreground_app.observed"
 	TelemetrySourceBrowserHistory      = "collector.browser.history"
 	TelemetrySourceAgentHeartbeat      = "collector.agent.heartbeat"
+	TelemetrySourceForegroundApp       = "collector.foreground_app"
 )
 
 const (

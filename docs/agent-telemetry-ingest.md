@@ -101,3 +101,17 @@ the tenant sync-health endpoint treats it as backend-visible agent health proof
 for the host. The heartbeat does not include passwords, screenshots, raw URLs,
 page titles, cookies, tokens, private content, endpoint payloads, provider
 secrets, alert bodies, keylogs, or hidden collection bypass data.
+
+Phase 110 adds foreground app events to the same ingest stream:
+
+```text
+type:   foreground_app.observed
+source: collector.foreground_app
+```
+
+The event includes app name, process id, hashed executable path, active state,
+profile, operating system, and `window_title_mode=none`. The backend stores it
+as ordinary metadata telemetry and counts it by type/source. It does not
+include screenshots, window titles, raw URLs, page titles, cookies, tokens,
+passwords, private content, provider secrets, alert bodies, keylogs, hidden
+collection bypass data, payment data, or raw provider payloads.

@@ -25,3 +25,7 @@ func (darwinAdapter) Hostname(ctx context.Context) (string, error) {
 func (darwinAdapter) Capabilities() Capabilities {
 	return DarwinCapabilities()
 }
+
+func (darwinAdapter) ForegroundApp(context.Context) (ForegroundApp, error) {
+	return unsupportedForegroundApp(DarwinCapabilities())
+}

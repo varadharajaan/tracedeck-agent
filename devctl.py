@@ -872,6 +872,14 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase109.ps1"))
     elif target == "verify109":
         run(powershell("./scripts/verify/verify-phase109.ps1"))
+    elif target == "phase110":
+        run(powershell("./scripts/verify/verify-phase110.ps1"), stream=True)
+    elif target == "smoke110":
+        run(powershell("./scripts/local/smoke-phase110.ps1"))
+    elif target == "newman110":
+        run(powershell("./scripts/local/newman-phase110.ps1"))
+    elif target == "verify110":
+        run(powershell("./scripts/verify/verify-phase110.ps1"))
     elif target == "activity-feed":
         run(powershell("./scripts/local/test-activity-feed-provenance.ps1"))
     elif target == "quality":
@@ -1092,6 +1100,7 @@ def main() -> int:
             "phase107",
             "phase108",
             "phase109",
+            "phase110",
             "smoke",
             "newman",
             "verify",
@@ -1187,6 +1196,9 @@ def main() -> int:
             "smoke109",
             "newman109",
             "verify109",
+            "smoke110",
+            "newman110",
+            "verify110",
             "activity-feed",
             "quality",
             "theme",

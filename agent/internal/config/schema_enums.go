@@ -17,6 +17,7 @@ func ApplySchemaEnums(schema *jsonschema.Schema) {
 	applyPropertyEnum(schema, constants.SchemaDefCollectionPolicy, constants.SchemaPropTransparencyMode, enumValues(transparencyModes))
 	applyPropertyEnum(schema, constants.SchemaDefEmailPolicy, constants.SchemaPropProvider, enumValues(emailProviders))
 	applyPropertyEnum(schema, constants.SchemaDefEmailPolicy, constants.SchemaPropMinSeverity, enumValues(severities))
+	applyPropertyEnum(schema, constants.SchemaDefForegroundCollection, constants.SchemaPropWindowTitleMode, enumValues(windowTitleModes))
 	applyPropertyEnum(schema, constants.SchemaDefMediaCollection, constants.SchemaPropPathMode, enumValues(pathModes))
 	applyPropertyEnum(schema, constants.SchemaDefOpenTelemetryPolicy, constants.SchemaPropProtocol, enumValues(openTelemetryProtocols))
 	applyPropertyEnum(schema, constants.SchemaDefRuleSpec, constants.SchemaPropSeverity, enumValues(severities))
