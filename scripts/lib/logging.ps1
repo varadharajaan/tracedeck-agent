@@ -28,6 +28,15 @@ function Update-TraceDeckProcessPath {
     $paths = @($machinePath, $userPath, "C:\Program Files\Go\bin", $goUserBin) |
         Where-Object { $_ -and $_.Trim().Length -gt 0 }
     $env:Path = ($paths -join ";")
+
+    if ($script:TraceDeckRepoRoot) {
+        $goCacheRoot = Join-Path $script:TraceDeckRepoRoot "data/local/go-build-cache"
+        $goTmpRoot = Join-Path $script:TraceDeckRepoRoot "data/local/go-tmp"
+        New-Item -ItemType Directory -Force -Path $goCacheRoot | Out-Null
+        New-Item -ItemType Directory -Force -Path $goTmpRoot | Out-Null
+        $env:GOCACHE = $goCacheRoot
+        $env:GOTMPDIR = $goTmpRoot
+    }
 }
 
 function Write-TraceDeckLog {

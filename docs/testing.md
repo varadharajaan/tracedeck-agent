@@ -1075,6 +1075,10 @@ logs under `logs/local/test/`. It requires `go`, `golangci-lint`,
 `govulncheck ./...`, and `gosec ./...`. The verifier also runs Newman against
 an isolated live backend to prove the runtime still boots and keeps browser
 activity and delivery assurance metadata-only.
+The shared PowerShell logging bootstrap also sets `GOCACHE` and `GOTMPDIR` to
+`data/local/go-build-cache/` and `data/local/go-tmp/` for scripted runs. This
+keeps generated Go build artifacts out of the root folder and avoids Windows
+profile cache ACL failures during nested `devctl.py` verification.
 
 Phase 86 now includes a live demo-provenance guard:
 
@@ -1238,6 +1242,18 @@ The Deployment Readiness Center response must include `advisories[]` with typed
 `id`, `severity`, `code`, `headline`, `operator_action`, `evidence_scope`,
 `can_continue`, and `admin_approval_recommended` fields. These are rollout
 metadata only; they do not add new collectors or live payload capture.
+
+Phase 95 hardens scripted Go cache paths:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase95.ps1
+python ./devctl.py test phase95
+```
+
+The shared PowerShell script bootstrap sets `GOCACHE` to
+`data/local/go-build-cache/` and `GOTMPDIR` to `data/local/go-tmp/` for scripted
+verification. The Phase 95 verifier reruns Phase 94 and then confirms those
+repo-local generated artifact directories exist before root-clean.
 
 Phase 13 adds:
 
