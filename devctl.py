@@ -774,6 +774,12 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/verify/verify-phase95.ps1"), stream=True)
     elif target == "verify95":
         run(powershell("./scripts/verify/verify-phase95.ps1"))
+    elif target == "phase96":
+        run(powershell("./scripts/verify/verify-phase96.ps1"), stream=True)
+    elif target == "verify96":
+        run(powershell("./scripts/verify/verify-phase96.ps1"))
+    elif target == "postmerge":
+        run(powershell("./scripts/verify/verify-postmerge.ps1", "-PhaseTarget", "phase95", "-SkipGitHub"), stream=True)
     elif target == "activity-feed":
         run(powershell("./scripts/local/test-activity-feed-provenance.ps1"))
     elif target == "quality":
@@ -927,6 +933,7 @@ def main() -> int:
             "phase93",
             "phase94",
             "phase95",
+            "phase96",
             "smoke",
             "newman",
             "verify",
@@ -991,6 +998,8 @@ def main() -> int:
             "newman94",
             "verify94",
             "verify95",
+            "verify96",
+            "postmerge",
             "activity-feed",
             "quality",
             "theme",
