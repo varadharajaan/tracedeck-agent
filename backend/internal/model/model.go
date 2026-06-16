@@ -2545,12 +2545,13 @@ type RuntimeStatusProof struct {
 }
 
 type RuntimeStatusAction struct {
-	ID       string `json:"id"`
-	Title    string `json:"title"`
-	Detail   string `json:"detail"`
-	Command  string `json:"command"`
-	Severity string `json:"severity"`
-	Status   string `json:"status"`
+	ID            string `json:"id"`
+	Title         string `json:"title"`
+	Detail        string `json:"detail"`
+	Command       string `json:"command"`
+	Severity      string `json:"severity"`
+	Status        string `json:"status"`
+	EvidenceScope string `json:"evidence_scope"`
 }
 
 type RuntimeStatusCenter struct {
@@ -2693,12 +2694,13 @@ type OperatorAssuranceCard struct {
 }
 
 type OperatorAssuranceAction struct {
-	ID       string `json:"id"`
-	Title    string `json:"title"`
-	Detail   string `json:"detail"`
-	Command  string `json:"command"`
-	Severity string `json:"severity"`
-	Status   string `json:"status"`
+	ID            string `json:"id"`
+	Title         string `json:"title"`
+	Detail        string `json:"detail"`
+	Command       string `json:"command"`
+	Severity      string `json:"severity"`
+	Status        string `json:"status"`
+	EvidenceScope string `json:"evidence_scope"`
 }
 
 type OperatorAssuranceCenter struct {

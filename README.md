@@ -596,3 +596,8 @@ Phase 103 adds a direct remediation for that stale proof. Use
 Operator Assurance now point `refresh-ready-pid-proof` actions at that command.
 Use `python devctl.py test phase103`, `smoke103`, or `newman103` to verify the
 refresh command and metadata-only API actions.
+
+Phase 104 seals that metadata-only action contract in the typed Go response
+models. Use `python devctl.py test phase104` or `verify104` to rerun the API,
+Newman, gofmt, and root-clean checks that prove action rows expose
+`evidence_scope=metadata_only`.
