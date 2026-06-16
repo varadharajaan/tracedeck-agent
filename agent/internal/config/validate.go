@@ -24,6 +24,9 @@ func (p Policy) Validate() error {
 	requireEnum(&errs, constants.ConfigFieldBrowserURLMode, p.Collection.Browser.URLMode, urlModes)
 	requireEnum(&errs, constants.ConfigFieldYouTubeClassification, p.Collection.Browser.YouTubeClassification, featureModes)
 	requireEnum(&errs, constants.ConfigFieldYouTubeVideoIDMode, p.Collection.Browser.YouTubeVideoIDMode, videoIDModes)
+	if p.Collection.ForegroundApp.Enabled || p.Collection.ForegroundApp.WindowTitleMode != "" {
+		requireEnum(&errs, constants.ConfigFieldForegroundWindowTitle, p.Collection.ForegroundApp.WindowTitleMode, windowTitleModes)
+	}
 	requireEnum(&errs, constants.ConfigFieldMediaPathMode, p.Collection.Media.PathMode, pathModes)
 
 	requireDenyOnly(&errs, constants.SensitiveCapabilityCredentials, p.Collection.SensitiveCapabilities.Credentials)

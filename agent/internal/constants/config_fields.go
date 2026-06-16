@@ -8,6 +8,7 @@ const (
 	ConfigFieldBrowserURLMode         = "collection.browser.url_mode"
 	ConfigFieldYouTubeClassification  = "collection.browser.youtube_classification"
 	ConfigFieldYouTubeVideoIDMode     = "collection.browser.youtube_video_id_mode"
+	ConfigFieldForegroundWindowTitle  = "collection.foreground_app.window_title_mode"
 	ConfigFieldMediaPathMode          = "collection.media.path_mode"
 	ConfigFieldLocalTTLDays           = "retention.local_ttl_days"
 	ConfigFieldMaxLocalStorageMB      = "retention.max_local_storage_mb"

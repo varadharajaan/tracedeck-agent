@@ -57,11 +57,11 @@ Implemented or strongly evidenced:
 - OpenTelemetry OTLP/HTTP JSON exporter with bounded attempts/drop metrics.
 - Docker Compose and OpenTelemetry Collector local stack under
   `deployments/otel/`.
+- Active foreground app collector under `agent/internal/collector/activewindow`
+  with Windows adapter support and metadata-only tests.
 
 Remaining or partial:
 
-- Active foreground app collection is represented as a platform capability but
-  not as a full collector implementation.
 - Software install/uninstall detection has classifier and product surfaces, but
   not a complete OS install-event collector.
 - Visible local monitoring indicator remains planned, not implemented.

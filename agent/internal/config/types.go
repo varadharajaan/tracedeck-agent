@@ -24,10 +24,11 @@ type Policy struct {
 }
 
 type CollectionPolicy struct {
-	TransparencyMode      TransparencyMode      `json:"transparency_mode" yaml:"transparency_mode"`
-	Browser               BrowserCollection     `json:"browser" yaml:"browser"`
-	Media                 MediaCollection       `json:"media" yaml:"media"`
-	SensitiveCapabilities SensitiveCapabilities `json:"sensitive_capabilities" yaml:"sensitive_capabilities"`
+	TransparencyMode      TransparencyMode        `json:"transparency_mode" yaml:"transparency_mode"`
+	Browser               BrowserCollection       `json:"browser" yaml:"browser"`
+	ForegroundApp         ForegroundAppCollection `json:"foreground_app" yaml:"foreground_app"`
+	Media                 MediaCollection         `json:"media" yaml:"media"`
+	SensitiveCapabilities SensitiveCapabilities   `json:"sensitive_capabilities" yaml:"sensitive_capabilities"`
 }
 
 type BrowserCollection struct {
@@ -35,6 +36,11 @@ type BrowserCollection struct {
 	CollectPageTitle      bool        `json:"collect_page_title" yaml:"collect_page_title"`
 	YouTubeClassification FeatureMode `json:"youtube_classification" yaml:"youtube_classification"`
 	YouTubeVideoIDMode    VideoIDMode `json:"youtube_video_id_mode" yaml:"youtube_video_id_mode"`
+}
+
+type ForegroundAppCollection struct {
+	Enabled         bool            `json:"enabled" yaml:"enabled"`
+	WindowTitleMode WindowTitleMode `json:"window_title_mode" yaml:"window_title_mode"`
 }
 
 type MediaCollection struct {

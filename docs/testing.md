@@ -1499,6 +1499,26 @@ payload markers. `scripts/local/test-otel-exporter.ps1` also checks
 `deployments/otel/otel-collector.yaml`, using `docker compose config` when the
 Docker CLI is available.
 
+Phase 110 packages the foreground app collector:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-active-window-collector.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase110.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase110.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase110.ps1
+python ./devctl.py test phase110
+python ./devctl.py test smoke110
+python ./devctl.py test newman110
+python ./devctl.py test verify110
+```
+
+The focused test proves metadata-only active app events and unsupported adapter
+behavior. The smoke runs the agent once with `collection.foreground_app`
+enabled and checks the bounded `foreground_events` metric. The Newman
+collection ingests a `foreground_app.observed` event and verifies telemetry
+status counts, `window_title_mode=none`, `path_mode=hash_only`, no-store
+headers, and forbidden privacy marker absence.
+
 Phase 13 adds:
 
 ```powershell

@@ -11,6 +11,7 @@ type URLMode string
 type FeatureMode string
 type VideoIDMode string
 type PathMode string
+type WindowTitleMode string
 type SensitiveCapabilityMode string
 type ArchiveProvider string
 type EmailProvider string
@@ -40,6 +41,10 @@ var pathModes = enumSet[PathMode](
 	constants.PathModeNone,
 	constants.PathModeHashOnly,
 	constants.PathModeFullPath,
+)
+
+var windowTitleModes = enumSet[WindowTitleMode](
+	constants.WindowTitleModeNone,
 )
 
 var sensitiveCapabilityModes = enumSet[SensitiveCapabilityMode](

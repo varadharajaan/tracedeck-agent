@@ -25,3 +25,7 @@ func (otherAdapter) Hostname(ctx context.Context) (string, error) {
 func (otherAdapter) Capabilities() Capabilities {
 	return OtherCapabilities()
 }
+
+func (otherAdapter) ForegroundApp(context.Context) (ForegroundApp, error) {
+	return unsupportedForegroundApp(OtherCapabilities())
+}

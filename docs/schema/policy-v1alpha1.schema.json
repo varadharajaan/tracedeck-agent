@@ -132,6 +132,9 @@
         "browser": {
           "$ref": "#/$defs/BrowserCollection"
         },
+        "foreground_app": {
+          "$ref": "#/$defs/ForegroundAppCollection"
+        },
         "media": {
           "$ref": "#/$defs/MediaCollection"
         },
@@ -144,6 +147,7 @@
       "required": [
         "transparency_mode",
         "browser",
+        "foreground_app",
         "media",
         "sensitive_capabilities"
       ]
@@ -190,6 +194,25 @@
         "to",
         "min_severity",
         "cooldown_minutes"
+      ]
+    },
+    "ForegroundAppCollection": {
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "window_title_mode": {
+          "type": "string",
+          "enum": [
+            "none"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "enabled",
+        "window_title_mode"
       ]
     },
     "MediaCollection": {

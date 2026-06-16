@@ -426,3 +426,8 @@
      export with bounded attempt/drop metrics, fake receiver smoke coverage,
      Docker Compose/OpenTelemetry Collector config, Newman coverage, docs, and
      `devctl.py test phase109`.
+107. Phase 110: foreground app collector. Add typed
+     `collection.foreground_app` policy config, Windows foreground app adapter
+     support, metadata-only `foreground_app.observed` events, blocked-app and
+     risky-software rule reuse, smoke/Newman coverage, schema/docs/audit
+     updates, and `devctl.py test phase110`.

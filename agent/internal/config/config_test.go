@@ -27,6 +27,10 @@ func TestLoadValidSamplePolicy(t *testing.T) {
 	if policy.Collection.SensitiveCapabilities.Screenshots != SensitiveCapabilityMode(constants.SensitiveCapabilityDeny) {
 		t.Fatalf("screenshots must remain deny-only")
 	}
+	if !policy.Collection.ForegroundApp.Enabled ||
+		policy.Collection.ForegroundApp.WindowTitleMode != WindowTitleMode(constants.WindowTitleModeNone) {
+		t.Fatalf("foreground app collection should be enabled without window titles: %+v", policy.Collection.ForegroundApp)
+	}
 }
 
 func TestLoadRejectsUnknownFields(t *testing.T) {
@@ -69,6 +73,19 @@ func TestLoadRejectsBadEnum(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "collection.browser.url_mode") {
 		t.Fatalf("expected url_mode in error, got: %v", err)
+	}
+}
+
+func TestLoadRejectsForegroundWindowTitleCollection(t *testing.T) {
+	t.Parallel()
+
+	data := strings.Replace(validMinimalPolicy(), "window_title_mode: none", "window_title_mode: raw_title", 1)
+	_, err := Load([]byte(data))
+	if err == nil {
+		t.Fatal("expected foreground window title mode to be rejected")
+	}
+	if !strings.Contains(err.Error(), constants.ConfigFieldForegroundWindowTitle) {
+		t.Fatalf("expected foreground window title field in error, got: %v", err)
 	}
 }
 
@@ -129,6 +146,9 @@ collection:
     collect_page_title: false
     youtube_classification: enabled
     youtube_video_id_mode: hashed
+  foreground_app:
+    enabled: true
+    window_title_mode: none
   media:
     collect_file_name: true
     collect_file_path: true

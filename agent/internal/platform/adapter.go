@@ -10,11 +10,19 @@ import (
 )
 
 var ErrUnsupportedCapability = errors.New("unsupported platform capability")
+var ErrNoForegroundApp = errors.New("foreground app unavailable")
 
 type Adapter interface {
 	Name() string
 	Hostname(ctx context.Context) (string, error)
 	Capabilities() Capabilities
+	ForegroundApp(ctx context.Context) (ForegroundApp, error)
+}
+
+type ForegroundApp struct {
+	AppName        string
+	ProcessID      int32
+	ExecutablePath string
 }
 
 type Capabilities struct {
@@ -75,4 +83,8 @@ func (c Capabilities) Require(capabilityID string) error {
 		Status:          feature.Status,
 		Reason:          feature.Notes,
 	}
+}
+
+func unsupportedForegroundApp(capabilities Capabilities) (ForegroundApp, error) {
+	return ForegroundApp{}, capabilities.Require(constants.PlatformCapabilityForegroundApp)
 }

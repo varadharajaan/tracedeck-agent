@@ -9,6 +9,9 @@ collection:
     collect_page_title: false
     youtube_classification: enabled
     youtube_video_id_mode: hashed
+  foreground_app:
+    enabled: true
+    window_title_mode: none
   media:
     collect_file_name: true
     collect_file_path: true

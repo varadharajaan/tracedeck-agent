@@ -31,7 +31,7 @@ try {
         $agentOutputPath = Join-Path $outputRoot $agentFileName
 
         Invoke-TraceDeckLoggedCommand -Label "Cross-build agent $($target.GOOS)/$($target.GOARCH)" -Command {
-            go build -trimpath -o $agentOutputPath ./agent/cmd/tracedeck-agent
+            go build -trimpath -buildvcs=false -o $agentOutputPath ./agent/cmd/tracedeck-agent
         }
 
         if (-not (Test-Path $agentOutputPath)) {
@@ -44,7 +44,7 @@ try {
         $backendOutputPath = Join-Path $outputRoot $backendFileName
 
         Invoke-TraceDeckLoggedCommand -Label "Cross-build backend $($target.GOOS)/$($target.GOARCH)" -Command {
-            go build -trimpath -o $backendOutputPath ./backend/cmd/tracedeck-backend
+            go build -trimpath -buildvcs=false -o $backendOutputPath ./backend/cmd/tracedeck-backend
         }
 
         if (-not (Test-Path $backendOutputPath)) {

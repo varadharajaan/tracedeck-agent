@@ -32,6 +32,10 @@ func (fakeAdapter) Capabilities() platform.Capabilities {
 	}
 }
 
+func (fakeAdapter) ForegroundApp(context.Context) (platform.ForegroundApp, error) {
+	return platform.ForegroundApp{}, platform.ErrNoForegroundApp
+}
+
 func TestCollectPersistsDomainOnlyBrowserEvents(t *testing.T) {
 	t.Parallel()
 

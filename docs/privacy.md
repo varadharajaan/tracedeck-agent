@@ -211,3 +211,10 @@ push rows as not screen-visible until provider proof exists. It does not store
 provider secrets, SMTP passwords, push endpoints, raw provider payloads, alert
 bodies, raw URLs, page titles, screenshots, private content, cookies, tokens,
 passwords, keylogging, or hidden collection bypasses.
+
+Phase 110 foreground app collection is metadata-only. It stores active app
+name, process id, hashed executable path, foreground state, operating system,
+profile, and `window_title_mode=none`. It does not collect screenshots, window
+titles, raw URLs, page titles, cookies, tokens, passwords, keylogging, private
+content, provider secrets, alert bodies, payment data, hidden collection
+bypasses, or raw provider payloads.

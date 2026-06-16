@@ -32,6 +32,10 @@ const (
 )
 
 const (
+	WindowTitleModeNone = "none"
+)
+
+const (
 	SensitiveCapabilityCredentials     = "credentials"
 	SensitiveCapabilityKeystrokes      = "keystrokes"
 	SensitiveCapabilityCookies         = "cookies"

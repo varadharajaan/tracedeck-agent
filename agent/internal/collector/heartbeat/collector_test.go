@@ -19,6 +19,10 @@ func (stubPlatform) Capabilities() platform.Capabilities {
 	return platform.Capabilities{OperatingSystem: constants.OperatingSystemWindows}
 }
 
+func (stubPlatform) ForegroundApp(context.Context) (platform.ForegroundApp, error) {
+	return platform.ForegroundApp{}, platform.ErrNoForegroundApp
+}
+
 func TestCollectorEmitsMetadataOnlyAgentHeartbeat(t *testing.T) {
 	t.Parallel()
 

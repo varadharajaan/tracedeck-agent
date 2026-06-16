@@ -25,3 +25,7 @@ func (linuxAdapter) Hostname(ctx context.Context) (string, error) {
 func (linuxAdapter) Capabilities() Capabilities {
 	return LinuxCapabilities()
 }
+
+func (linuxAdapter) ForegroundApp(context.Context) (ForegroundApp, error) {
+	return unsupportedForegroundApp(LinuxCapabilities())
+}

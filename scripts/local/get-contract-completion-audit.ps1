@@ -198,14 +198,18 @@ try {
         -Gaps @("browser-extension/ directory is not present") `
         -NextAction "Add TypeScript browser extension skeletons that send domain/category metadata to localhost only."
 
+    $foregroundCollectorPresent = (Test-TraceDeckPath "agent/internal/collector/activewindow/collector.go") -and
+        (Test-TraceDeckPath "agent/internal/collector/activewindow/collector_test.go") -and
+        (Test-TraceDeckPath "scripts/local/test-active-window-collector.ps1")
+
     Add-TraceDeckAuditRequirement -Requirements $requirements `
         -ID "foreground-app-collector" `
         -Area "collector" `
         -Title "Active foreground app/window collection" `
-        -Status ($(if (Test-TraceDeckPath "agent/internal/collector/activewindow") { "ok" } else { "attention" })) `
-        -Evidence @("agent/internal/platform/support.go declares foreground app capability", "docs/platform-support.md documents permission differences") `
-        -Gaps @("No full active-window collector package is present") `
-        -NextAction "Implement foreground app collector behind platform adapters before claiming active-window MVP completion."
+        -Status ($(if ($foregroundCollectorPresent) { "ok" } else { "attention" })) `
+        -Evidence @("agent/internal/collector/activewindow/collector.go", "agent/internal/collector/activewindow/collector_test.go", "scripts/local/test-active-window-collector.ps1", "agent/internal/platform/support.go declares foreground app capability", "docs/platform-support.md documents permission differences") `
+        -Gaps ($(if ($foregroundCollectorPresent) { @() } else { @("No full active-window collector package is present") })) `
+        -NextAction ($(if ($foregroundCollectorPresent) { "Keep foreground app collection metadata-only and expand macOS/Linux native adapters behind the same contract." } else { "Implement foreground app collector behind platform adapters before claiming active-window MVP completion." }))
 
     Add-TraceDeckAuditRequirement -Requirements $requirements `
         -ID "software-install-collector" `

@@ -19,6 +19,13 @@ OTLP/HTTP JSON logs to a local OpenTelemetry Collector at
 `deployments/otel/`, and verification is scripted through
 `python ./devctl.py test phase109`.
 
+Phase 110 adds foreground app observation behind the platform adapter contract.
+The collector emits `foreground_app.observed` with app name, process id,
+hashed executable path, active state, and `window_title_mode=none`; it does not
+collect screenshots, window titles, raw URLs, page titles, cookies, tokens, or
+private content. Verification is scripted through
+`python ./devctl.py test phase110`.
+
 ## Local Commands
 
 ```powershell
@@ -58,6 +65,7 @@ go run ./agent/cmd/tracedeck-agent schema --version v1alpha1 --out ./docs/schema
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-policy-schema.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-otel-exporter.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase109.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase110.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-contract.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-layout.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-theme.ps1

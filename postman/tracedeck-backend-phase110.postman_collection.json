@@ -1,0 +1,158 @@
+{
+  "info": {
+    "name": "TraceDeck Phase 110 Foreground App Collector",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is ok and no-store', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Foreground Tenant",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/tenants",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenant_id\": \"family-varadha\",\n  \"name\": \"Family Varadha\",\n  \"plan_id\": \"family_pro\",\n  \"retention_tier_id\": \"family_cloud_90_365_archive\",\n  \"primary_profile\": \"ai-btech-student\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('tenant exists', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().tenant_id).to.eql('family-varadha');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Enroll Foreground Device",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/devices/enroll",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenant_id\": \"family-varadha\",\n  \"device_id\": \"phase110-active-window-device\",\n  \"host_name\": \"phase110-active-window-host\",\n  \"profile\": \"ai_btech_student\",\n  \"os_name\": \"windows\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('device enrolled', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().device_id).to.eql('phase110-active-window-device');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ingest Foreground App Event",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/devices/phase110-active-window-device/telemetry-events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenant_id\": \"family-varadha\",\n  \"device_id\": \"phase110-active-window-device\",\n  \"host_name\": \"phase110-active-window-host\",\n  \"profile\": \"ai_btech_student\",\n  \"os_name\": \"windows\",\n  \"events\": [\n    {\n      \"id\": \"phase110-foreground-event-1\",\n      \"type\": \"foreground_app.observed\",\n      \"source\": \"collector.foreground_app\",\n      \"observed_at\": \"{{$isoTimestamp}}\",\n      \"tenant_id\": \"family-varadha\",\n      \"device_id\": \"phase110-active-window-device\",\n      \"host_name\": \"phase110-active-window-host\",\n      \"app_name\": \"Code.exe\",\n      \"process_id\": 4242,\n      \"path_hash\": \"sha256:metadata-only-fixture\",\n      \"metadata\": {\n        \"profile\": \"ai-btech-student\",\n        \"operating_system\": \"windows\",\n        \"foreground_state\": \"active\",\n        \"window_title_mode\": \"none\",\n        \"path_mode\": \"hash_only\"\n      }\n    }\n  ]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('foreground app event accepted', function () {",
+              "  pm.response.to.have.status(202);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.accepted_events).to.eql(1);",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Telemetry Status Foreground Metadata",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/phase110-active-window-device/telemetry-status"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('foreground telemetry is metadata-only', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.stored_events).to.be.at.least(1);",
+              "  pm.expect(body.counts_by_type['foreground_app.observed']).to.eql(1);",
+              "  pm.expect(body.counts_by_source['collector.foreground_app']).to.eql(1);",
+              "  const event = (body.recent_events || []).find((item) => item.type === 'foreground_app.observed');",
+              "  pm.expect(event).to.be.an('object');",
+              "  pm.expect(event.metadata.window_title_mode).to.eql('none');",
+              "  pm.expect(event.metadata.path_mode).to.eql('hash_only');",
+              "  const serialized = JSON.stringify(body.recent_events || []).toLowerCase();",
+              "  ['password', 'screenshot', 'raw_url', 'page_title', 'window_title\\\"', 'cookie', 'token', 'provider_secret', 'alert_body'].forEach((marker) => {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
