@@ -47,6 +47,7 @@ func TestRunResultMerge(t *testing.T) {
 		CollectedEvents:  5,
 		StoredEvents:     5,
 		ForegroundEvents: 1,
+		SoftwareEvents:   1,
 		HealthEvents:     1,
 		HeartbeatEvents:  1,
 	}
@@ -58,6 +59,7 @@ func TestRunResultMerge(t *testing.T) {
 		AlertsRaised:     2,
 		AlertOutboxPath:  "alert.json",
 		ForegroundEvents: 1,
+		SoftwareEvents:   2,
 		HealthEvents:     1,
 		HeartbeatEvents:  1,
 		TelemetrySynced:  true,
@@ -91,6 +93,9 @@ func TestRunResultMerge(t *testing.T) {
 	if result.ForegroundEvents != 2 {
 		t.Fatalf("expected 2 foreground events, got %d", result.ForegroundEvents)
 	}
+	if result.SoftwareEvents != 3 {
+		t.Fatalf("expected 3 software events, got %d", result.SoftwareEvents)
+	}
 	if result.HeartbeatEvents != 2 {
 		t.Fatalf("expected 2 heartbeat events, got %d", result.HeartbeatEvents)
 	}
@@ -104,7 +109,7 @@ func TestRunResultMerge(t *testing.T) {
 		t.Fatalf("expected opentelemetry export merge, got %+v", result)
 	}
 	formatted := FormatRunResult(result)
-	for _, expected := range []string{"foreground_events=2", "otel_exported=true", "otel_events=4", "otel_dropped=1", "otel_attempts=2", "otel_backlog=0"} {
+	for _, expected := range []string{"foreground_events=2", "software_events=3", "otel_exported=true", "otel_events=4", "otel_dropped=1", "otel_attempts=2", "otel_backlog=0"} {
 		if !strings.Contains(formatted, expected) {
 			t.Fatalf("expected %q in formatted result: %s", expected, formatted)
 		}

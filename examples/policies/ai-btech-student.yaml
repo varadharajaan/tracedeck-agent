@@ -12,6 +12,9 @@ collection:
   foreground_app:
     enabled: true
     window_title_mode: none
+  software:
+    enabled: true
+    inventory_mode: metadata_only
   media:
     collect_file_name: true
     collect_file_path: true

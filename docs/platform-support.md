@@ -76,6 +76,30 @@ collector.foreground_app
 macOS and Linux remain explicit adapter states until native permission and
 desktop-environment handling are hardened.
 
+## Software Inventory Collection
+
+Phase 111 implements metadata-only software inventory behind the same platform
+adapter contract. Windows reads uninstall registry display metadata without
+install locations. macOS reads application bundle display names without bundle
+contents. Linux reads dpkg package metadata when available and otherwise
+reports the capability as unavailable for that host.
+
+The emitted event types are:
+
+```text
+software.installed
+software.uninstalled
+```
+
+The source is:
+
+```text
+collector.software.inventory
+```
+
+The collector compares local hashed snapshots and emits changes only after a
+baseline exists.
+
 ## Manifest Rendering
 
 Render local review copies with:

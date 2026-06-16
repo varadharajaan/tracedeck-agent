@@ -10,6 +10,7 @@ const (
 	SchemaDefOpenTelemetryPolicy   = "OpenTelemetryPolicy"
 	SchemaDefRuleSpec              = "RuleSpec"
 	SchemaDefSensitiveCapabilities = "SensitiveCapabilities"
+	SchemaDefSoftwareCollection    = "SoftwareCollection"
 )
 
 const (
@@ -18,6 +19,7 @@ const (
 	SchemaPropYouTubeClassification = "youtube_classification"
 	SchemaPropYouTubeVideoIDMode    = "youtube_video_id_mode"
 	SchemaPropWindowTitleMode       = "window_title_mode"
+	SchemaPropInventoryMode         = "inventory_mode"
 	SchemaPropPathMode              = "path_mode"
 	SchemaPropCredentials           = "credentials"
 	SchemaPropKeystrokes            = "keystrokes"

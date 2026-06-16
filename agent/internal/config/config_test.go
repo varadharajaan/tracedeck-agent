@@ -31,6 +31,10 @@ func TestLoadValidSamplePolicy(t *testing.T) {
 		policy.Collection.ForegroundApp.WindowTitleMode != WindowTitleMode(constants.WindowTitleModeNone) {
 		t.Fatalf("foreground app collection should be enabled without window titles: %+v", policy.Collection.ForegroundApp)
 	}
+	if !policy.Collection.Software.Enabled ||
+		policy.Collection.Software.InventoryMode != SoftwareInventoryMode(constants.SoftwareInventoryModeMetadataOnly) {
+		t.Fatalf("software inventory should be enabled in metadata-only mode: %+v", policy.Collection.Software)
+	}
 }
 
 func TestLoadRejectsUnknownFields(t *testing.T) {
@@ -86,6 +90,19 @@ func TestLoadRejectsForegroundWindowTitleCollection(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), constants.ConfigFieldForegroundWindowTitle) {
 		t.Fatalf("expected foreground window title field in error, got: %v", err)
+	}
+}
+
+func TestLoadRejectsRawSoftwareInventoryMode(t *testing.T) {
+	t.Parallel()
+
+	data := strings.Replace(validMinimalPolicy(), "inventory_mode: metadata_only", "inventory_mode: raw_paths", 1)
+	_, err := Load([]byte(data))
+	if err == nil {
+		t.Fatal("expected raw software inventory mode to be rejected")
+	}
+	if !strings.Contains(err.Error(), constants.ConfigFieldSoftwareInventoryMode) {
+		t.Fatalf("expected software inventory field in error, got: %v", err)
 	}
 }
 
@@ -149,6 +166,9 @@ collection:
   foreground_app:
     enabled: true
     window_title_mode: none
+  software:
+    enabled: true
+    inventory_mode: metadata_only
   media:
     collect_file_name: true
     collect_file_path: true

@@ -68,6 +68,13 @@ func TestPlatformCapabilityCatalogs(t *testing.T) {
 			if err := tt.caps.Require(constants.PlatformCapabilityLocalStorage); err != nil {
 				t.Fatalf("local storage should be supported: %v", err)
 			}
+			software, ok := tt.caps.SupportFor(constants.PlatformCapabilitySoftwareInventory)
+			if !ok {
+				t.Fatal("software inventory should be declared")
+			}
+			if software.Status == constants.PlatformSupportPlanned || software.Status == constants.PlatformSupportUnsupported {
+				t.Fatalf("software inventory should no longer be only planned/unsupported, got %s", software.Status)
+			}
 		})
 	}
 }

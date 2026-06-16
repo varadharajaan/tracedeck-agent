@@ -1519,6 +1519,27 @@ collection ingests a `foreground_app.observed` event and verifies telemetry
 status counts, `window_title_mode=none`, `path_mode=hash_only`, no-store
 headers, and forbidden privacy marker absence.
 
+Phase 111 packages the software install/uninstall collector:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-software-inventory-collector.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase111.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase111.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase111.ps1
+python ./devctl.py test phase111
+python ./devctl.py test smoke111
+python ./devctl.py test newman111
+python ./devctl.py test verify111
+```
+
+The focused test proves baseline snapshot behavior, install/uninstall event
+diffing, metadata-only hashing, unsupported adapter handling, and alert
+evaluation for unknown and risky software installs. The smoke baselines live
+software inventory, injects one removed-software fixture into the local
+snapshot, reruns the agent, and checks the `software_events` metric. Newman
+ingests a `software.installed` event and verifies metadata-only telemetry
+status counts and forbidden privacy marker absence.
+
 Phase 13 adds:
 
 ```powershell

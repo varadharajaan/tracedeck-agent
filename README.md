@@ -26,6 +26,11 @@ collect screenshots, window titles, raw URLs, page titles, cookies, tokens, or
 private content. Verification is scripted through
 `python ./devctl.py test phase110`.
 
+Phase 111 adds metadata-only software install/uninstall detection. The agent
+diffs local software inventory snapshots and emits `software.installed` and
+`software.uninstalled` without install paths or file contents. Verification is
+scripted through `python ./devctl.py test phase111`.
+
 ## Local Commands
 
 ```powershell

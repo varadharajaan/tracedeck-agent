@@ -35,6 +35,10 @@ func (f fakePlatform) ForegroundApp(context.Context) (platform.ForegroundApp, er
 	return f.foreground, f.err
 }
 
+func (fakePlatform) SoftwareInventory(context.Context) ([]platform.InstalledSoftware, error) {
+	return nil, platform.ErrUnsupportedCapability
+}
+
 func TestCollectorEmitsMetadataOnlyForegroundAppEvent(t *testing.T) {
 	t.Parallel()
 

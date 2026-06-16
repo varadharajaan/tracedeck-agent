@@ -115,3 +115,19 @@ as ordinary metadata telemetry and counts it by type/source. It does not
 include screenshots, window titles, raw URLs, page titles, cookies, tokens,
 passwords, private content, provider secrets, alert bodies, keylogs, hidden
 collection bypass data, payment data, or raw provider payloads.
+
+Phase 111 adds software inventory change events:
+
+```text
+type:   software.installed
+type:   software.uninstalled
+source: collector.software.inventory
+```
+
+The event includes display metadata, software change type, source label,
+`software_inventory_mode=metadata_only`, and hashed snapshot identity. The
+backend stores it as ordinary metadata telemetry and counts it by type/source.
+It does not include install paths, file contents, installer payloads,
+screenshots, raw URLs, page titles, passwords, cookies, tokens, private
+content, provider secrets, alert bodies, keylogs, hidden collection bypass
+data, payment data, or raw provider payloads.

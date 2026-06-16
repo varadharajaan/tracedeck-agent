@@ -1,6 +1,8 @@
 # Risky Software Detection
 
 Phase 13 adds privacy-safe risky software classification to process telemetry.
+Phase 111 reuses the same risk metadata for software install/uninstall change
+events emitted by `collector.software.inventory`.
 
 The agent uses the process name and transient executable path to classify:
 
@@ -45,6 +47,10 @@ alert_rules:
 
 The alert evaluator emits one alert per risky app per cycle and includes the
 software risk category and reason in metadata.
+
+Phase 111 also supports `unknown_software_installed` for
+`software.installed` events and can route risky install events through
+`risky_software_detected`.
 
 ## Privacy Boundary
 

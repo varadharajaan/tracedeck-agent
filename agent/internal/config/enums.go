@@ -12,6 +12,7 @@ type FeatureMode string
 type VideoIDMode string
 type PathMode string
 type WindowTitleMode string
+type SoftwareInventoryMode string
 type SensitiveCapabilityMode string
 type ArchiveProvider string
 type EmailProvider string
@@ -45,6 +46,10 @@ var pathModes = enumSet[PathMode](
 
 var windowTitleModes = enumSet[WindowTitleMode](
 	constants.WindowTitleModeNone,
+)
+
+var softwareInventoryModes = enumSet[SoftwareInventoryMode](
+	constants.SoftwareInventoryModeMetadataOnly,
 )
 
 var sensitiveCapabilityModes = enumSet[SensitiveCapabilityMode](

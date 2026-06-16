@@ -17,12 +17,21 @@ type Adapter interface {
 	Hostname(ctx context.Context) (string, error)
 	Capabilities() Capabilities
 	ForegroundApp(ctx context.Context) (ForegroundApp, error)
+	SoftwareInventory(ctx context.Context) ([]InstalledSoftware, error)
 }
 
 type ForegroundApp struct {
 	AppName        string
 	ProcessID      int32
 	ExecutablePath string
+}
+
+type InstalledSoftware struct {
+	ID        string
+	Name      string
+	Version   string
+	Publisher string
+	Source    string
 }
 
 type Capabilities struct {
@@ -87,4 +96,8 @@ func (c Capabilities) Require(capabilityID string) error {
 
 func unsupportedForegroundApp(capabilities Capabilities) (ForegroundApp, error) {
 	return ForegroundApp{}, capabilities.Require(constants.PlatformCapabilityForegroundApp)
+}
+
+func unsupportedSoftwareInventory(capabilities Capabilities) ([]InstalledSoftware, error) {
+	return nil, capabilities.Require(constants.PlatformCapabilitySoftwareInventory)
 }

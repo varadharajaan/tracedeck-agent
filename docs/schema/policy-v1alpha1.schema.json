@@ -135,6 +135,9 @@
         "foreground_app": {
           "$ref": "#/$defs/ForegroundAppCollection"
         },
+        "software": {
+          "$ref": "#/$defs/SoftwareCollection"
+        },
         "media": {
           "$ref": "#/$defs/MediaCollection"
         },
@@ -148,6 +151,7 @@
         "transparency_mode",
         "browser",
         "foreground_app",
+        "software",
         "media",
         "sensitive_capabilities"
       ]
@@ -517,6 +521,25 @@
         "tokens",
         "private_messages",
         "screenshots"
+      ]
+    },
+    "SoftwareCollection": {
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "inventory_mode": {
+          "type": "string",
+          "enum": [
+            "metadata_only"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "enabled",
+        "inventory_mode"
       ]
     },
     "StorageClassDays": {

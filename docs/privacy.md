@@ -218,3 +218,10 @@ profile, and `window_title_mode=none`. It does not collect screenshots, window
 titles, raw URLs, page titles, cookies, tokens, passwords, keylogging, private
 content, provider secrets, alert bodies, payment data, hidden collection
 bypasses, or raw provider payloads.
+
+Phase 111 software inventory collection is metadata-only. It stores software
+display name, optional version/publisher display metadata, source label, and
+hashed snapshot identity. It does not store install paths, file contents,
+installer payloads, screenshots, passwords, raw URLs, page titles, cookies,
+tokens, private content, provider secrets, alert bodies, keylogging data,
+hidden collection bypasses, payment data, or raw provider payloads.

@@ -3,6 +3,8 @@ package constants
 const (
 	EventTypeProcessObserved       = "process.observed"
 	EventTypeForegroundAppObserved = "foreground_app.observed"
+	EventTypeSoftwareInstalled     = "software.installed"
+	EventTypeSoftwareUninstalled   = "software.uninstalled"
 	EventTypeBrowserObserved       = "browser.domain.observed"
 	EventTypeAlertRaised           = "alert.raised"
 	EventTypeDeviceHealth          = "device.health.observed"
@@ -12,6 +14,7 @@ const (
 const (
 	EventSourceProcessCollector       = "collector.process"
 	EventSourceForegroundAppCollector = "collector.foreground_app"
+	EventSourceSoftwareCollector      = "collector.software.inventory"
 	EventSourceBrowserCollector       = "collector.browser.history"
 	EventSourceHealthCollector        = "collector.device.health"
 	EventSourceHeartbeat              = "collector.agent.heartbeat"

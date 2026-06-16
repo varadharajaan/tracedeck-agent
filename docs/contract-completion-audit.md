@@ -59,11 +59,12 @@ Implemented or strongly evidenced:
   `deployments/otel/`.
 - Active foreground app collector under `agent/internal/collector/activewindow`
   with Windows adapter support and metadata-only tests.
+- Software install/uninstall collector under `agent/internal/collector/software`
+  with platform adapters, local hashed snapshot diffing, metadata-only tests,
+  and unknown/risky software alert routing.
 
 Remaining or partial:
 
-- Software install/uninstall detection has classifier and product surfaces, but
-  not a complete OS install-event collector.
 - Visible local monitoring indicator remains planned, not implemented.
 - GoReleaser/Syft release packaging and SBOM flow are not present.
 

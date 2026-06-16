@@ -14,6 +14,7 @@ import (
 	healthcollector "github.com/varadharajaan/tracedeck-agent/agent/internal/collector/health"
 	heartbeatcollector "github.com/varadharajaan/tracedeck-agent/agent/internal/collector/heartbeat"
 	processcollector "github.com/varadharajaan/tracedeck-agent/agent/internal/collector/process"
+	softwarecollector "github.com/varadharajaan/tracedeck-agent/agent/internal/collector/software"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/config"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/constants"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/domain/event"
@@ -41,6 +42,7 @@ type RunOptions struct {
 	BrowserHistoryPath    []string
 	BrowserHistoryLimit   int
 	BrowserCacheDir       string
+	SoftwareCacheDir      string
 	DisableBrowserHistory bool
 }
 
@@ -54,6 +56,7 @@ type RunResult struct {
 	AlertOutboxPath  string
 	AlertDelivered   bool
 	ForegroundEvents int
+	SoftwareEvents   int
 	BrowserEvents    int
 	HealthEvents     int
 	HeartbeatEvents  int
@@ -191,6 +194,20 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 	}
 	events = append(events, foregroundEvents...)
 
+	softwareCacheDir := r.opts.SoftwareCacheDir
+	if softwareCacheDir == "" {
+		dataDir := r.opts.DataDir
+		if dataDir == "" {
+			dataDir = constants.DefaultDataDir
+		}
+		softwareCacheDir = filepath.Join(dataDir, constants.SoftwareCacheDirName)
+	}
+	softwareEvents, err := softwarecollector.New(platformAdapter, softwareCacheDir).Collect(ctx, r.policy)
+	if err != nil {
+		return RunResult{}, err
+	}
+	events = append(events, softwareEvents...)
+
 	healthEvents, err := healthcollector.New(platformAdapter).Collect(ctx, r.policy)
 	if err != nil {
 		return RunResult{}, err
@@ -248,6 +265,7 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 		CollectedEvents:  len(events),
 		StoredEvents:     total,
 		ForegroundEvents: len(foregroundEvents),
+		SoftwareEvents:   len(softwareEvents),
 		BrowserEvents:    len(browserEvents),
 		HealthEvents:     len(healthEvents),
 		HeartbeatEvents:  len(heartbeatEvents),
@@ -342,6 +360,7 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 		"collected_events", len(events),
 		"process_events", len(processEvents),
 		"foreground_events", len(foregroundEvents),
+		"software_events", len(softwareEvents),
 		"health_events", len(healthEvents),
 		"browser_events", len(browserEvents),
 		"heartbeat_events", len(heartbeatEvents),
@@ -535,6 +554,7 @@ func (r *RunResult) merge(next RunResult) {
 	r.ArchiveUploaded = r.ArchiveUploaded || next.ArchiveUploaded
 	r.AlertsRaised += next.AlertsRaised
 	r.ForegroundEvents += next.ForegroundEvents
+	r.SoftwareEvents += next.SoftwareEvents
 	r.BrowserEvents += next.BrowserEvents
 	r.HealthEvents += next.HealthEvents
 	r.HeartbeatEvents += next.HeartbeatEvents
@@ -565,11 +585,12 @@ func parseDurationOrDefault(value string, fallback string) (time.Duration, error
 
 func FormatRunResult(result RunResult) string {
 	return fmt.Sprintf(
-		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d foreground_events=%d browser_events=%d health_events=%d heartbeat_events=%d telemetry_synced=%t telemetry_events=%d telemetry_backlog=%d otel_exported=%t otel_events=%d otel_dropped=%d otel_attempts=%d otel_backlog=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_delivery=%s alert_delivered=%t",
+		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d foreground_events=%d software_events=%d browser_events=%d health_events=%d heartbeat_events=%d telemetry_synced=%t telemetry_events=%d telemetry_backlog=%d otel_exported=%t otel_events=%d otel_dropped=%d otel_attempts=%d otel_backlog=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_delivery=%s alert_delivered=%t",
 		result.Cycles,
 		result.CollectedEvents,
 		result.StoredEvents,
 		result.ForegroundEvents,
+		result.SoftwareEvents,
 		result.BrowserEvents,
 		result.HealthEvents,
 		result.HeartbeatEvents,

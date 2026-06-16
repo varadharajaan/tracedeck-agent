@@ -23,6 +23,10 @@ func (stubPlatform) ForegroundApp(context.Context) (platform.ForegroundApp, erro
 	return platform.ForegroundApp{}, platform.ErrNoForegroundApp
 }
 
+func (stubPlatform) SoftwareInventory(context.Context) ([]platform.InstalledSoftware, error) {
+	return nil, platform.ErrUnsupportedCapability
+}
+
 func TestCollectorEmitsMetadataOnlyAgentHeartbeat(t *testing.T) {
 	t.Parallel()
 

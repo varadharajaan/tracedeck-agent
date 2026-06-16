@@ -1,8 +1,25 @@
 package constants
 
 const (
-	EventMetadataSoftwareRiskCategory = "software_risk_category"
-	EventMetadataSoftwareRiskReason   = "software_risk_reason"
+	EventMetadataSoftwareRiskCategory  = "software_risk_category"
+	EventMetadataSoftwareRiskReason    = "software_risk_reason"
+	EventMetadataSoftwareChange        = "software_change"
+	EventMetadataSoftwareInventoryMode = "software_inventory_mode"
+	EventMetadataSoftwareNameHash      = "software_name_hash"
+	EventMetadataSoftwareVersion       = "software_version"
+	EventMetadataSoftwarePublisher     = "software_publisher"
+	EventMetadataSoftwareSource        = "software_source"
+	EventMetadataSoftwareSnapshotID    = "software_snapshot_id"
+)
+
+const (
+	SoftwareInventoryModeMetadataOnly = "metadata_only"
+	SoftwareChangeInstalled           = "installed"
+	SoftwareChangeUninstalled         = "uninstalled"
+	SoftwareSourceWindowsRegistry     = "windows_registry_uninstall"
+	SoftwareSourceMacOSApplications   = "macos_applications"
+	SoftwareSourceLinuxDPKG           = "linux_dpkg_status"
+	SoftwareSnapshotFileName          = "software-inventory-snapshot.json"
 )
 
 const (
@@ -23,7 +40,9 @@ const (
 
 const (
 	AlertRuleRiskySoftwareDetected    = "risky_software_detected"
+	AlertRuleUnknownSoftwareInstalled = "unknown_software_installed"
 	AlertReasonRiskySoftwareProcess   = "risky software process observed"
+	AlertReasonSoftwareInstalled      = "new software install observed"
 	AlertMetadataSoftwareRiskCategory = "software_risk_category"
 	AlertMetadataSoftwareRiskReason   = "software_risk_reason"
 )

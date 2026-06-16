@@ -29,3 +29,7 @@ func (otherAdapter) Capabilities() Capabilities {
 func (otherAdapter) ForegroundApp(context.Context) (ForegroundApp, error) {
 	return unsupportedForegroundApp(OtherCapabilities())
 }
+
+func (otherAdapter) SoftwareInventory(context.Context) ([]InstalledSoftware, error) {
+	return unsupportedSoftwareInventory(OtherCapabilities())
+}
