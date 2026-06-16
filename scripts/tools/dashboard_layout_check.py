@@ -17,7 +17,7 @@ PAGE_READY_STATE = "domcontentloaded"
 NAVIGATION_TIMEOUT_MS = 60000
 READY_TIMEOUT_MS = 60000
 
-EXPECTED_COMMAND_JUMPS = 24
+EXPECTED_COMMAND_JUMPS = 25
 
 REQUIRED_IDS = (
     "premium-operations-section",
@@ -102,6 +102,17 @@ REQUIRED_IDS = (
     "revenue-delivery-list",
     "revenue-lever-list",
     "revenue-action-list",
+    "runtime-status-section",
+    "runtime-status-badge",
+    "runtime-status-headline",
+    "runtime-kpi-backend",
+    "runtime-kpi-scheduler",
+    "runtime-kpi-doctor",
+    "runtime-kpi-git",
+    "runtime-kpi-frontend",
+    "runtime-kpi-verdict",
+    "runtime-proof-list",
+    "runtime-action-list",
     "deployment-readiness-section",
     "deployment-readiness-status",
     "deployment-readiness-headline",

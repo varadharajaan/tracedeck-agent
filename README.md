@@ -548,3 +548,9 @@ write `data/local/output/runtime-summary.json` and
 `data/local/output/runtime-summary.txt` with backend health, Scheduler
 readback, task advisory, runtime doctor, frontend URL, git diff hygiene, and
 operator next actions.
+
+Phase 98 surfaces that summary through `GET /api/v1/runtime-status-center` and
+the dashboard Rollout page as Runtime Status Center. Use
+`python devctl.py test phase98` to live-boot an isolated backend, generate the
+runtime summary, verify the typed API, run Newman, and run screenshot-free
+layout/theme/visual checks.

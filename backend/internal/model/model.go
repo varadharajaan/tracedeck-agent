@@ -2437,6 +2437,130 @@ type TenantDeploymentReadinessCenter struct {
 	GeneratedAt     time.Time                        `json:"generated_at"`
 }
 
+type RuntimeSummaryArtifactAdvisory struct {
+	Severity       string `json:"severity"`
+	Code           string `json:"code"`
+	Headline       string `json:"headline"`
+	OperatorAction string `json:"operator_action"`
+	CanContinue    bool   `json:"can_continue"`
+}
+
+type RuntimeSummaryArtifactBackend struct {
+	TaskName           string                         `json:"task_name"`
+	TaskPresent        bool                           `json:"task_present"`
+	TaskState          string                         `json:"task_state"`
+	SchedulerReadback  string                         `json:"scheduler_readback"`
+	LaunchTaskVerified bool                           `json:"launch_task_verified"`
+	RuntimeOK          bool                           `json:"runtime_ok"`
+	RuntimeEvidence    string                         `json:"runtime_evidence"`
+	HealthOK           bool                           `json:"health_ok"`
+	PID                int                            `json:"pid"`
+	PIDRunning         bool                           `json:"pid_running"`
+	ReadyFilePresent   bool                           `json:"ready_file_present"`
+	ReadyAt            string                         `json:"ready_at"`
+	Advisory           RuntimeSummaryArtifactAdvisory `json:"advisory"`
+}
+
+type RuntimeSummaryArtifactDoctor struct {
+	Skipped    bool   `json:"skipped"`
+	Overall    string `json:"overall"`
+	Local      string `json:"local"`
+	ReportJSON string `json:"report_json"`
+}
+
+type RuntimeSummaryArtifactFrontend struct {
+	URLPresent bool   `json:"url_present"`
+	URL        string `json:"url"`
+}
+
+type RuntimeSummaryArtifactGit struct {
+	Branch                  string   `json:"branch"`
+	Head                    string   `json:"head"`
+	TrackedContentDiff      bool     `json:"tracked_content_diff"`
+	TrackedContentDiffCount int      `json:"tracked_content_diff_count"`
+	TrackedContentDiffRows  []string `json:"tracked_content_diff_rows"`
+	StatusRows              []string `json:"status_rows"`
+}
+
+type RuntimeSummaryArtifactLogs struct {
+	SummaryLog    string `json:"summary_log"`
+	BackendStdout string `json:"backend_stdout"`
+	BackendStderr string `json:"backend_stderr"`
+}
+
+type RuntimeSummaryArtifactVerdict struct {
+	CanContinue bool     `json:"can_continue"`
+	Severity    string   `json:"severity"`
+	Headline    string   `json:"headline"`
+	NextActions []string `json:"next_actions"`
+}
+
+type RuntimeSummaryArtifactPrivacy struct {
+	MetadataOnly        bool   `json:"metadata_only"`
+	SensitiveCollection string `json:"sensitive_collection"`
+}
+
+type RuntimeSummaryArtifact struct {
+	GeneratedAt string                         `json:"generated_at"`
+	BaseURL     string                         `json:"base_url"`
+	OutputJSON  string                         `json:"output_json"`
+	OutputText  string                         `json:"output_text"`
+	Backend     RuntimeSummaryArtifactBackend  `json:"backend"`
+	Doctor      RuntimeSummaryArtifactDoctor   `json:"doctor"`
+	Frontend    RuntimeSummaryArtifactFrontend `json:"frontend"`
+	Git         RuntimeSummaryArtifactGit      `json:"git"`
+	Logs        RuntimeSummaryArtifactLogs     `json:"logs"`
+	Verdict     RuntimeSummaryArtifactVerdict  `json:"verdict"`
+	Privacy     RuntimeSummaryArtifactPrivacy  `json:"privacy"`
+}
+
+type RuntimeStatusSummary struct {
+	Status             string `json:"status"`
+	Headline           string `json:"headline"`
+	Detail             string `json:"detail"`
+	CanContinue        bool   `json:"can_continue"`
+	RuntimeOK          bool   `json:"runtime_ok"`
+	HealthOK           bool   `json:"health_ok"`
+	SchedulerReadback  string `json:"scheduler_readback"`
+	LaunchTaskVerified bool   `json:"launch_task_verified"`
+	DoctorOverall      string `json:"doctor_overall"`
+	DoctorLocal        string `json:"doctor_local"`
+	TrackedContentDiff bool   `json:"tracked_content_diff"`
+	FrontendURLPresent bool   `json:"frontend_url_present"`
+	SummaryGeneratedAt string `json:"summary_generated_at"`
+}
+
+type RuntimeStatusProof struct {
+	ID            string `json:"id"`
+	Label         string `json:"label"`
+	Value         string `json:"value"`
+	Detail        string `json:"detail"`
+	Status        string `json:"status"`
+	EvidenceScope string `json:"evidence_scope"`
+}
+
+type RuntimeStatusAction struct {
+	ID       string `json:"id"`
+	Title    string `json:"title"`
+	Detail   string `json:"detail"`
+	Command  string `json:"command"`
+	Severity string `json:"severity"`
+	Status   string `json:"status"`
+}
+
+type RuntimeStatusCenter struct {
+	SummaryAvailable bool                   `json:"summary_available"`
+	SummaryPath      string                 `json:"summary_path"`
+	Source           string                 `json:"source"`
+	BaseURL          string                 `json:"base_url"`
+	Summary          RuntimeStatusSummary   `json:"summary"`
+	Proof            []RuntimeStatusProof   `json:"proof"`
+	Actions          []RuntimeStatusAction  `json:"actions"`
+	Artifact         RuntimeSummaryArtifact `json:"artifact"`
+	PrivacyBoundary  string                 `json:"privacy_boundary"`
+	GeneratedAt      time.Time              `json:"generated_at"`
+}
+
 type TenantPremiumOperationsSummary struct {
 	Status                 string `json:"status"`
 	Headline               string `json:"headline"`

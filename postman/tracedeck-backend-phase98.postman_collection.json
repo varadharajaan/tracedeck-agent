@@ -1,0 +1,101 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 98",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health No Store Header",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is ok and not cached', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Has Runtime Status Center",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('dashboard contains runtime status center markers', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('Runtime Status Center');",
+              "  pm.expect(html).to.include('Runtime Proof');",
+              "  pm.expect(html).to.include('Operator Actions');",
+              "  pm.expect(html).to.include('runtime-status-badge');",
+              "  pm.expect(html).to.include('runtime-proof-list');",
+              "  pm.expect(html).to.include('runtime-action-list');",
+              "  pm.expect(html).to.include('Runtime Status');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Runtime Status Center API",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/runtime-status-center"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('runtime status center is typed and metadata-only', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.summary_available).to.eql(true);",
+              "  pm.expect(body.source).to.eql('phase97_runtime_summary');",
+              "  pm.expect(body.summary.runtime_ok).to.eql(true);",
+              "  pm.expect(body.summary.health_ok).to.eql(true);",
+              "  pm.expect(body.summary.scheduler_readback).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.summary.doctor_overall).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.proof.length).to.be.above(5);",
+              "  pm.expect(body.actions.length).to.be.above(0);",
+              "  body.proof.forEach((item) => {",
+              "    pm.expect(item.id).to.be.a('string').and.not.empty;",
+              "    pm.expect(item.label).to.be.a('string').and.not.empty;",
+              "    pm.expect(item.status).to.be.a('string').and.not.empty;",
+              "    pm.expect(item.evidence_scope).to.eql('metadata_only');",
+              "  });",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  const serialized = JSON.stringify(body).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'push_endpoint', 'screenshot_bytes', 'raw_url', 'page_title', 'alert_body', 'card_number', 'cvv', 'payment_token', 'keylogger'].forEach((marker) => {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}
