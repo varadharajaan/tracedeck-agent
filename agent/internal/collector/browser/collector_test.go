@@ -36,6 +36,10 @@ func (fakeAdapter) ForegroundApp(context.Context) (platform.ForegroundApp, error
 	return platform.ForegroundApp{}, platform.ErrNoForegroundApp
 }
 
+func (fakeAdapter) SoftwareInventory(context.Context) ([]platform.InstalledSoftware, error) {
+	return nil, platform.ErrUnsupportedCapability
+}
+
 func TestCollectPersistsDomainOnlyBrowserEvents(t *testing.T) {
 	t.Parallel()
 

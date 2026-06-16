@@ -15,15 +15,16 @@ const (
 )
 
 const (
-	DefaultLogDir       = "logs/local/agent"
-	DefaultLogFileName  = "tracedeck-agent.log"
-	DefaultLogLevel     = LogLevelInfo
-	DefaultDataDir      = "data/local"
-	DefaultSQLiteFile   = "tracedeck-agent.sqlite"
-	DefaultOutboxDir    = "data/local/outbox"
-	DefaultProcessLimit = 256
-	DefaultBrowserLimit = DefaultBrowserHistoryLimit
-	DefaultMaxCycles    = 0
+	DefaultLogDir        = "logs/local/agent"
+	DefaultLogFileName   = "tracedeck-agent.log"
+	DefaultLogLevel      = LogLevelInfo
+	DefaultDataDir       = "data/local"
+	DefaultSQLiteFile    = "tracedeck-agent.sqlite"
+	DefaultOutboxDir     = "data/local/outbox"
+	DefaultProcessLimit  = 256
+	DefaultBrowserLimit  = DefaultBrowserHistoryLimit
+	SoftwareCacheDirName = "software-inventory"
+	DefaultMaxCycles     = 0
 )
 
 const (

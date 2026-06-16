@@ -27,6 +27,9 @@ func (p Policy) Validate() error {
 	if p.Collection.ForegroundApp.Enabled || p.Collection.ForegroundApp.WindowTitleMode != "" {
 		requireEnum(&errs, constants.ConfigFieldForegroundWindowTitle, p.Collection.ForegroundApp.WindowTitleMode, windowTitleModes)
 	}
+	if p.Collection.Software.Enabled || p.Collection.Software.InventoryMode != "" {
+		requireEnum(&errs, constants.ConfigFieldSoftwareInventoryMode, p.Collection.Software.InventoryMode, softwareInventoryModes)
+	}
 	requireEnum(&errs, constants.ConfigFieldMediaPathMode, p.Collection.Media.PathMode, pathModes)
 
 	requireDenyOnly(&errs, constants.SensitiveCapabilityCredentials, p.Collection.SensitiveCapabilities.Credentials)

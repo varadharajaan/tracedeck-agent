@@ -32,6 +32,7 @@ func (e *Evaluator) Evaluate(_ context.Context, policy *config.Policy, events []
 	alerts := make([]Alert, 0)
 	alerts = append(alerts, e.evaluateBlockedApps(policy, events)...)
 	alerts = append(alerts, e.evaluateRiskySoftware(policy, events)...)
+	alerts = append(alerts, e.evaluateUnknownSoftwareInstalled(policy, events)...)
 	alerts = append(alerts, e.evaluateBlockedDomains(policy, events)...)
 	alerts = append(alerts, e.evaluateNonStudyYouTube(policy, events)...)
 	return filterBySeverity(alerts, policy.Alerts.Email.MinSeverity)
@@ -51,7 +52,7 @@ func (e *Evaluator) evaluateBlockedApps(policy *config.Policy, events []event.Ev
 	seenApps := make(map[string]struct{})
 	alerts := make([]Alert, 0)
 	for _, evt := range events {
-		if !isAppUsageEvent(evt) {
+		if !isAppUsageEvent(evt) && !isSoftwareInventoryEvent(evt) {
 			continue
 		}
 		normalizedApp := normalize(evt.AppName)
@@ -93,7 +94,7 @@ func (e *Evaluator) evaluateRiskySoftware(policy *config.Policy, events []event.
 	seenApps := make(map[string]struct{})
 	alerts := make([]Alert, 0)
 	for _, evt := range events {
-		if !isAppUsageEvent(evt) {
+		if !isAppUsageEvent(evt) && !isSoftwareInventoryEvent(evt) {
 			continue
 		}
 		category := normalize(evt.Metadata[constants.EventMetadataSoftwareRiskCategory])
@@ -126,6 +127,48 @@ func (e *Evaluator) evaluateRiskySoftware(policy *config.Policy, events []event.
 				constants.AlertMetadataAppName:              evt.AppName,
 				constants.AlertMetadataSoftwareRiskCategory: category,
 				constants.AlertMetadataSoftwareRiskReason:   reason,
+			},
+		})
+	}
+
+	return alerts
+}
+
+func (e *Evaluator) evaluateUnknownSoftwareInstalled(policy *config.Policy, events []event.Event) []Alert {
+	rule, ok := policy.AlertRules[constants.AlertRuleUnknownSoftwareInstalled]
+	if !ok || !rule.Enabled {
+		return nil
+	}
+
+	seenApps := make(map[string]struct{})
+	alerts := make([]Alert, 0)
+	for _, evt := range events {
+		if evt.Type != constants.EventTypeSoftwareInstalled {
+			continue
+		}
+		normalizedApp := normalize(evt.AppName)
+		if normalizedApp == "" {
+			continue
+		}
+		if _, seen := seenApps[normalizedApp]; seen {
+			continue
+		}
+		seenApps[normalizedApp] = struct{}{}
+
+		alerts = append(alerts, Alert{
+			RuleName:   constants.AlertRuleUnknownSoftwareInstalled,
+			Severity:   string(rule.Severity),
+			Reason:     constants.AlertReasonSoftwareInstalled,
+			TenantID:   evt.TenantID,
+			DeviceID:   evt.DeviceID,
+			HostName:   evt.HostName,
+			AppName:    evt.AppName,
+			ObservedAt: evt.Timestamp,
+			Metadata: map[string]string{
+				constants.AlertMetadataRuleName: constants.AlertRuleUnknownSoftwareInstalled,
+				constants.AlertMetadataReason:   constants.AlertReasonSoftwareInstalled,
+				constants.AlertMetadataSeverity: string(rule.Severity),
+				constants.AlertMetadataAppName:  evt.AppName,
 			},
 		})
 	}
@@ -201,6 +244,10 @@ func normalizedSet(values []string) map[string]struct{} {
 
 func isAppUsageEvent(evt event.Event) bool {
 	return evt.Type == constants.EventTypeProcessObserved || evt.Type == constants.EventTypeForegroundAppObserved
+}
+
+func isSoftwareInventoryEvent(evt event.Event) bool {
+	return evt.Type == constants.EventTypeSoftwareInstalled || evt.Type == constants.EventTypeSoftwareUninstalled
 }
 
 func normalize(value string) string {

@@ -94,6 +94,7 @@ func newRunCommand() *cobra.Command {
 	var browserHistoryPath []string
 	var browserHistoryLimit int
 	var browserCacheDir string
+	var softwareCacheDir string
 	var disableBrowserHistory bool
 
 	cmd := &cobra.Command{
@@ -117,6 +118,7 @@ func newRunCommand() *cobra.Command {
 				BrowserHistoryPath:    browserHistoryPath,
 				BrowserHistoryLimit:   browserHistoryLimit,
 				BrowserCacheDir:       browserCacheDir,
+				SoftwareCacheDir:      softwareCacheDir,
 				DisableBrowserHistory: disableBrowserHistory,
 			})
 			if err != nil {
@@ -142,6 +144,7 @@ func newRunCommand() *cobra.Command {
 	cmd.Flags().StringArrayVar(&browserHistoryPath, "browser-history-path", nil, "browser history SQLite path; repeat for multiple paths")
 	cmd.Flags().IntVar(&browserHistoryLimit, "browser-history-limit", constants.DefaultBrowserLimit, "maximum browser history rows to inspect per history file")
 	cmd.Flags().StringVar(&browserCacheDir, "browser-cache-dir", "", "local browser history cache directory")
+	cmd.Flags().StringVar(&softwareCacheDir, "software-cache-dir", "", "local software inventory snapshot cache directory")
 	cmd.Flags().BoolVar(&disableBrowserHistory, "disable-browser-history", false, "disable browser history collection for controlled smokes")
 	return cmd
 }

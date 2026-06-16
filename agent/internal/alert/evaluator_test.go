@@ -236,3 +236,76 @@ func TestEvaluatorDetectsRiskySoftware(t *testing.T) {
 		t.Fatalf("expected software risk category metadata: %+v", alerts[0].Metadata)
 	}
 }
+
+func TestEvaluatorDetectsRiskySoftwareInstall(t *testing.T) {
+	t.Parallel()
+
+	policy := &config.Policy{
+		TenantID: constants.DefaultTenantID,
+		DeviceID: constants.DefaultDeviceID,
+		Alerts: config.AlertPolicy{Email: config.EmailPolicy{
+			MinSeverity: config.Severity(constants.SeverityHigh),
+		}},
+		AlertRules: map[string]config.RuleSpec{
+			constants.AlertRuleRiskySoftwareDetected: {
+				Enabled:  true,
+				Severity: config.Severity(constants.SeverityHigh),
+			},
+		},
+	}
+
+	alerts := NewEvaluator().Evaluate(context.Background(), policy, []event.Event{{
+		Type:      constants.EventTypeSoftwareInstalled,
+		Timestamp: time.Now().UTC(),
+		TenantID:  policy.TenantID,
+		DeviceID:  policy.DeviceID,
+		HostName:  constants.UnknownHost,
+		AppName:   "qbittorrent.exe",
+		Metadata: map[string]string{
+			constants.EventMetadataSoftwareRiskCategory: constants.SoftwareRiskCategoryTorrentClient,
+			constants.EventMetadataSoftwareRiskReason:   constants.SoftwareRiskReasonTorrentClient,
+		},
+	}})
+
+	if len(alerts) != 1 {
+		t.Fatalf("expected 1 risky software install alert, got %d", len(alerts))
+	}
+	if alerts[0].RuleName != constants.AlertRuleRiskySoftwareDetected {
+		t.Fatalf("unexpected rule: %s", alerts[0].RuleName)
+	}
+}
+
+func TestEvaluatorDetectsUnknownSoftwareInstall(t *testing.T) {
+	t.Parallel()
+
+	policy := &config.Policy{
+		TenantID: constants.DefaultTenantID,
+		DeviceID: constants.DefaultDeviceID,
+		Alerts: config.AlertPolicy{Email: config.EmailPolicy{
+			MinSeverity: config.Severity(constants.SeverityHigh),
+		}},
+		AlertRules: map[string]config.RuleSpec{
+			constants.AlertRuleUnknownSoftwareInstalled: {
+				Enabled:  true,
+				Severity: config.Severity(constants.SeverityHigh),
+			},
+		},
+	}
+
+	alerts := NewEvaluator().Evaluate(context.Background(), policy, []event.Event{{
+		Type:      constants.EventTypeSoftwareInstalled,
+		Timestamp: time.Now().UTC(),
+		TenantID:  policy.TenantID,
+		DeviceID:  policy.DeviceID,
+		HostName:  constants.UnknownHost,
+		AppName:   "new-tool.exe",
+	}})
+
+	if len(alerts) != 1 {
+		t.Fatalf("expected 1 software install alert, got %d", len(alerts))
+	}
+	if alerts[0].RuleName != constants.AlertRuleUnknownSoftwareInstalled ||
+		alerts[0].Reason != constants.AlertReasonSoftwareInstalled {
+		t.Fatalf("unexpected software install alert: %+v", alerts[0])
+	}
+}

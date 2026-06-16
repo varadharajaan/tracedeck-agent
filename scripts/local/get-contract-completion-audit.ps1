@@ -211,14 +211,18 @@ try {
         -Gaps ($(if ($foregroundCollectorPresent) { @() } else { @("No full active-window collector package is present") })) `
         -NextAction ($(if ($foregroundCollectorPresent) { "Keep foreground app collection metadata-only and expand macOS/Linux native adapters behind the same contract." } else { "Implement foreground app collector behind platform adapters before claiming active-window MVP completion." }))
 
+    $softwareCollectorPresent = (Test-TraceDeckPath "agent/internal/collector/software/collector.go") -and
+        (Test-TraceDeckPath "agent/internal/collector/software/collector_test.go") -and
+        (Test-TraceDeckPath "scripts/local/test-software-inventory-collector.ps1")
+
     Add-TraceDeckAuditRequirement -Requirements $requirements `
         -ID "software-install-collector" `
         -Area "collector" `
         -Title "Software install/uninstall event collection" `
-        -Status ($(if (Test-TraceDeckPath "agent/internal/collector/software") { "ok" } else { "attention" })) `
-        -Evidence @("agent/internal/software/classifier.go", "docs/risky-software-detection.md") `
-        -Gaps @("Classifier exists, but no full OS install-event collector package is present") `
-        -NextAction "Add OS-specific install/uninstall collectors behind platform adapters."
+        -Status ($(if ($softwareCollectorPresent) { "ok" } else { "attention" })) `
+        -Evidence @("agent/internal/collector/software/collector.go", "agent/internal/collector/software/collector_test.go", "scripts/local/test-software-inventory-collector.ps1", "agent/internal/platform/support.go declares software inventory capability", "docs/risky-software-detection.md") `
+        -Gaps ($(if ($softwareCollectorPresent) { @() } else { @("Classifier exists, but no full OS install-event collector package is present") })) `
+        -NextAction ($(if ($softwareCollectorPresent) { "Keep software install/uninstall collection metadata-only and expand native package-manager coverage behind the same contract." } else { "Add OS-specific install/uninstall collectors behind platform adapters." }))
 
     Add-TraceDeckAuditRequirement -Requirements $requirements `
         -ID "opentelemetry-exporter" `

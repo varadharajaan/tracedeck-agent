@@ -431,3 +431,9 @@
      support, metadata-only `foreground_app.observed` events, blocked-app and
      risky-software rule reuse, smoke/Newman coverage, schema/docs/audit
      updates, and `devctl.py test phase110`.
+108. Phase 111: software install collector. Add typed
+     `collection.software.inventory_mode=metadata_only`, platform software
+     inventory adapters, local hashed snapshot diffing, `software.installed`
+     and `software.uninstalled` events, unknown/risky software alert routing,
+     smoke/Newman coverage, schema/docs/audit updates, and
+     `devctl.py test phase111`.

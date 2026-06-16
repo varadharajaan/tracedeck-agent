@@ -27,6 +27,7 @@ type CollectionPolicy struct {
 	TransparencyMode      TransparencyMode        `json:"transparency_mode" yaml:"transparency_mode"`
 	Browser               BrowserCollection       `json:"browser" yaml:"browser"`
 	ForegroundApp         ForegroundAppCollection `json:"foreground_app" yaml:"foreground_app"`
+	Software              SoftwareCollection      `json:"software" yaml:"software"`
 	Media                 MediaCollection         `json:"media" yaml:"media"`
 	SensitiveCapabilities SensitiveCapabilities   `json:"sensitive_capabilities" yaml:"sensitive_capabilities"`
 }
@@ -41,6 +42,11 @@ type BrowserCollection struct {
 type ForegroundAppCollection struct {
 	Enabled         bool            `json:"enabled" yaml:"enabled"`
 	WindowTitleMode WindowTitleMode `json:"window_title_mode" yaml:"window_title_mode"`
+}
+
+type SoftwareCollection struct {
+	Enabled       bool                  `json:"enabled" yaml:"enabled"`
+	InventoryMode SoftwareInventoryMode `json:"inventory_mode" yaml:"inventory_mode"`
 }
 
 type MediaCollection struct {
