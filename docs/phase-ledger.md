@@ -15,10 +15,10 @@ data/local/output/phase-ledger.txt
 
 ## Current Count
 
-- Current ledger package: Phase 107
-- Latest completed published baseline before this ledger package: Phase 106
-- Latest completed issue/PR before this ledger package: issue #219 / PR #220
-- Highest tracked phase verifier after this ledger package: Phase 107
+- Current ledger package: Phase 108
+- Latest completed published baseline before this ledger package: Phase 107
+- Latest completed issue/PR before this ledger package: issue #221 / PR #222
+- Highest tracked phase verifier after this ledger package: Phase 108
 - Remaining planned numbered phases: 0
 - Next planned numbered phase: none
 
@@ -29,8 +29,8 @@ The answer to "how many phases are remaining?" is therefore:
 ```
 
 That does not mean TraceDeck is end-to-end complete. It means there is no
-approved numbered phase list beyond the current ledger package. The Phase 107
-contract completion audit separately lists implemented, partial, and missing
+approved numbered phase list beyond the current ledger package. The contract
+completion audit separately lists implemented, partial, and missing
 deliverables, and future work must be added to this ledger or to a tracked
 backlog before it becomes counted remaining phase work.
 
@@ -49,12 +49,13 @@ backlog before it becomes counted remaining phase work.
 
 | Phase | Status | Issue | PR | Verification | Summary |
 | --- | --- | --- | --- | --- | --- |
-| 107 | In this package | TBD | TBD | `scripts/verify/verify-phase107.ps1` | Adds metadata-only contract completion audit output and `python ./devctl.py audit`. |
+| 108 | In this package | TBD | TBD | `scripts/verify/verify-phase108.ps1` | Adds Chrome, Edge, and Brave browser extension skeleton plus smoke/Newman coverage. |
 
 ## Latest Completed Phases
 
 | Phase | Status | Issue | PR | Verification | Summary |
 | --- | --- | --- | --- | --- | --- |
+| 107 | Merged | #221 | #222 | `scripts/verify/verify-phase107.ps1` | Contract completion audit and `python ./devctl.py audit`. |
 | 106 | Merged | #219 | #220 | `scripts/verify/verify-phase106.ps1` | Phase ledger and `python ./devctl.py ledger`. |
 | 105 | Merged | #217 | #218 | `scripts/verify/verify-phase105.ps1` | Promotion Readiness Center and `python ./devctl.py promote`. |
 | 104 | Merged | #215 | #216 | `scripts/verify/verify-phase104.ps1` | Typed action schema seal for metadata-only evidence scope. |

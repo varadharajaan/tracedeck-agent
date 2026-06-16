@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TraceDeck Browser Metadata Bridge</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f8fafc;
+      color: #111827;
+    }
+
+    body {
+      margin: 0;
+      padding: 32px;
+      max-width: 760px;
+    }
+
+    main {
+      display: grid;
+      gap: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    p {
+      margin: 0;
+      color: #4b5563;
+      line-height: 1.5;
+    }
+
+    form {
+      display: grid;
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    input {
+      box-sizing: border-box;
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font: inherit;
+      background: #ffffff;
+      color: #111827;
+    }
+
+    button {
+      width: fit-content;
+      border: 0;
+      border-radius: 6px;
+      padding: 10px 16px;
+      font: inherit;
+      font-weight: 700;
+      background: #0f766e;
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    #status {
+      min-height: 20px;
+      font-weight: 700;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        background: #0f172a;
+        color: #f8fafc;
+      }
+
+      p,
+      label {
+        color: #d1d5db;
+      }
+
+      input {
+        border-color: #475569;
+        background: #111827;
+        color: #f8fafc;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>TraceDeck Browser Metadata Bridge</h1>
+    <p>Local-only settings for Chrome, Edge, and Brave domain/category telemetry.</p>
+    <form id="settings-form">
+      <label>
+        Backend Origin
+        <input id="backend_origin" name="backend_origin" autocomplete="off" spellcheck="false">
+      </label>
+      <label>
+        Tenant ID
+        <input id="tenant_id" name="tenant_id" autocomplete="off" spellcheck="false">
+      </label>
+      <label>
+        Device ID
+        <input id="device_id" name="device_id" autocomplete="off" spellcheck="false">
+      </label>
+      <label>
+        Host Name
+        <input id="host_name" name="host_name" autocomplete="off" spellcheck="false">
+      </label>
+      <label>
+        Profile
+        <input id="profile" name="profile" autocomplete="off" spellcheck="false">
+      </label>
+      <label>
+        OS Label
+        <input id="os_name" name="os_name" autocomplete="off" spellcheck="false">
+      </label>
+      <button type="submit">Save Settings</button>
+      <p id="status" role="status" aria-live="polite"></p>
+    </form>
+  </main>
+  <script src="privacy-core.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
