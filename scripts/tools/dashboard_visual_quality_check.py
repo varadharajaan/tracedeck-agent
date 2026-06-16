@@ -140,6 +140,7 @@ def main() -> int:
                                     "Revenue Operations",
                                     "Runtime Status",
                                     "Operator Assurance",
+                                    "Promotion Readiness",
                                     "Verification Evidence",
                                     "Deployment Readiness",
                                     "Customer Control Room",

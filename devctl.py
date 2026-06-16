@@ -840,6 +840,14 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/verify/verify-phase104.ps1"), stream=True)
     elif target == "verify104":
         run(powershell("./scripts/verify/verify-phase104.ps1"))
+    elif target == "phase105":
+        run(powershell("./scripts/verify/verify-phase105.ps1"), stream=True)
+    elif target == "smoke105":
+        run(powershell("./scripts/local/smoke-phase105.ps1"))
+    elif target == "newman105":
+        run(powershell("./scripts/local/newman-phase105.ps1"))
+    elif target == "verify105":
+        run(powershell("./scripts/verify/verify-phase105.ps1"))
     elif target == "activity-feed":
         run(powershell("./scripts/local/test-activity-feed-provenance.ps1"))
     elif target == "quality":
@@ -947,6 +955,11 @@ def cmd_assurance(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_promote(args: argparse.Namespace) -> int:
+    run(powershell("./scripts/local/get-promotion-readiness.ps1", "-BaseUrl", local_url(args.addr)), stream=True)
+    return 0
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     report = runtime_doctor_report(args)
     save_doctor_report(report)
@@ -974,6 +987,9 @@ def main() -> int:
 
     assurance = sub.add_parser("assurance", help="Write metadata-only operator assurance pack")
     assurance.set_defaults(func=cmd_assurance)
+
+    promote = sub.add_parser("promote", help="Write metadata-only promotion readiness bundle")
+    promote.set_defaults(func=cmd_promote)
 
     doctor = sub.add_parser("doctor", help="Write local/cloud runtime assurance reports under data/local/output")
     doctor.add_argument("--tenant-id", default=DEFAULT_TENANT_ID, help="Tenant used for browser activity readback")
@@ -1031,6 +1047,7 @@ def main() -> int:
             "phase102",
             "phase103",
             "phase104",
+            "phase105",
             "smoke",
             "newman",
             "verify",
@@ -1115,6 +1132,9 @@ def main() -> int:
             "newman103",
             "verify103",
             "verify104",
+            "smoke105",
+            "newman105",
+            "verify105",
             "activity-feed",
             "quality",
             "theme",

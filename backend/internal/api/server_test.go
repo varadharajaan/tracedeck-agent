@@ -637,6 +637,178 @@ func TestOperatorAssuranceCenterEndpointSchedulerDeniedRuntimeHealthy(t *testing
 	}
 }
 
+func TestPromotionReadinessCenterEndpointSchedulerDeniedRuntimeHealthy(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	summaryPath := filepath.Join(root, "runtime-summary.json")
+	evidencePath := filepath.Join(root, "verification-evidence.json")
+	promotionPath := filepath.Join(root, "promotion-readiness.json")
+	summaryJSON := []byte(`{
+		"generated_at": "2026-06-16T14:20:00+05:30",
+		"base_url": "http://127.0.0.1:18080",
+		"output_json": "data/local/output/runtime-summary.json",
+		"output_text": "data/local/output/runtime-summary.txt",
+		"backend": {
+			"task_name": "\\TraceDeck\\TraceDeck Backend Dev",
+			"task_present": false,
+			"task_state": "inaccessible",
+			"scheduler_readback": "denied",
+			"launch_task_verified": false,
+			"runtime_ok": true,
+			"runtime_evidence": "pid_and_health",
+			"health_ok": true,
+			"pid": 193828,
+			"pid_running": true,
+			"ready_file_present": true,
+			"ready_pid": 193828,
+			"ready_pid_matches_live": true,
+			"ready_pid_status": "match",
+			"ready_at": "2026-06-16T14:09:43+05:30",
+			"advisory": {
+				"severity": "watch",
+				"code": "runtime_ready_scheduler_readback_denied",
+				"headline": "Backend is running, but this shell cannot read Scheduler metadata.",
+				"operator_action": "Use elevated PowerShell only when Scheduler metadata proof is required.",
+				"can_continue": true,
+				"admin_readback_recommended": true
+			}
+		},
+		"doctor": {
+			"skipped": false,
+			"overall": "ok",
+			"local": "ok",
+			"report_json": "data/local/output/runtime-doctor.json"
+		},
+		"frontend": {
+			"url_present": true,
+			"url": "https://example.lambda-url.ap-south-1.on.aws"
+		},
+		"git": {
+			"branch": "main",
+			"head": "b54239d",
+			"tracked_content_diff": false,
+			"tracked_content_diff_count": 0,
+			"tracked_content_diff_rows": [],
+			"status_rows": []
+		},
+		"logs": {
+			"summary_log": "logs/local/ops/get-runtime-summary.log",
+			"backend_stdout": "logs/local/backend/backend-task.out.log",
+			"backend_stderr": "logs/local/backend/backend-task.err.log"
+		},
+		"verdict": {
+			"can_continue": true,
+			"severity": "ok",
+			"headline": "Runtime proof is healthy.",
+			"next_actions": []
+		},
+		"privacy": {
+			"metadata_only": true,
+			"sensitive_collection": "denied"
+		}
+	}`)
+	evidenceJSON := []byte(`{
+		"generated_at": "2026-06-16T14:21:00+05:30",
+		"phase": "phase105",
+		"base_url": "http://127.0.0.1:18080",
+		"branch": "main",
+		"head": "b54239d",
+		"overall_status": "ok",
+		"can_promote": true,
+		"gates": [
+			{
+				"id": "phase-verify",
+				"label": "phase105 verifier",
+				"command": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase105.ps1",
+				"status": "ok",
+				"severity": "info",
+				"log_path": "logs/local/verify/verify-phase105.log",
+				"report_path": "",
+				"detail": "Phase 105 verifier passed",
+				"completed_at": "2026-06-16T14:20:30+05:30",
+				"evidence_scope": "metadata_only"
+			}
+		],
+		"artifacts": [
+			{
+				"id": "promotion-readiness",
+				"label": "Promotion readiness JSON",
+				"path": "data/local/output/promotion-readiness.json",
+				"status": "ok",
+				"evidence_scope": "metadata_only"
+			}
+		],
+		"actions": [],
+		"privacy": {
+			"metadata_only": true,
+			"sensitive_collection": "denied",
+			"forbidden_categories": ["credentials", "provider secrets", "screenshots"]
+		},
+		"privacy_boundary": "metadata-only verification evidence; no passwords; no screenshots"
+	}`)
+	if err := os.WriteFile(summaryPath, append([]byte{0xEF, 0xBB, 0xBF}, summaryJSON...), 0o600); err != nil {
+		t.Fatalf("write runtime summary fixture: %v", err)
+	}
+	if err := os.WriteFile(evidencePath, append([]byte{0xEF, 0xBB, 0xBF}, evidenceJSON...), 0o600); err != nil {
+		t.Fatalf("write verification evidence fixture: %v", err)
+	}
+
+	server := NewServer(store.NewMemory(), slog.Default())
+	server.runtimeSummaryPath = summaryPath
+	server.verificationEvidencePath = evidencePath
+	server.operatorAssurancePath = filepath.Join(root, "operator-assurance.json")
+	server.promotionReadinessPath = promotionPath
+	handler := server.Handler()
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RoutePromotionReadiness, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected promotion readiness center 200, got %d: %s", response.Code, response.Body.String())
+	}
+	if response.Header().Get(constants.HeaderCache) != constants.CacheNoStore {
+		t.Fatalf("expected no-store promotion readiness cache header, got %s", response.Header().Get(constants.HeaderCache))
+	}
+	var center model.PromotionReadinessCenter
+	if err := json.Unmarshal(response.Body.Bytes(), &center); err != nil {
+		t.Fatalf("decode promotion readiness center: %v", err)
+	}
+	if center.Source != constants.PromotionReadinessSourcePhase105 || center.Summary.Status != constants.StatusWatch || !center.Summary.CanPromote {
+		t.Fatalf("expected watch promotion readiness that can promote: %+v", center.Summary)
+	}
+	if !center.Summary.RuntimeReady || !center.Summary.VerificationReady || !center.Summary.AssuranceReady || !center.Summary.GitClean {
+		t.Fatalf("expected all readiness booleans true: %+v", center.Summary)
+	}
+	if center.Summary.SchedulerReadback != "denied" || center.Summary.ReadyPIDStatus != constants.ReadyPIDStatusMatch {
+		t.Fatalf("expected Scheduler denied watch with ready PID match: %+v", center.Summary)
+	}
+	if center.PromotionExportPath != promotionPath || center.Summary.PromotionExportPath != promotionPath {
+		t.Fatalf("expected promotion export path %q: %+v", promotionPath, center)
+	}
+	if len(center.Proof) < 6 || len(center.Actions) < 2 {
+		t.Fatalf("expected promotion proof and actions: %+v", center)
+	}
+	for _, proof := range center.Proof {
+		if proof.EvidenceScope != constants.EvidenceScopeMetadataOnly {
+			t.Fatalf("expected metadata-only promotion proof: %+v", proof)
+		}
+	}
+	for _, action := range center.Actions {
+		if action.EvidenceScope != constants.EvidenceScopeMetadataOnly {
+			t.Fatalf("expected metadata-only promotion action: %+v", action)
+		}
+	}
+	if !strings.Contains(center.PrivacyBoundary, "metadata-only") {
+		t.Fatalf("expected metadata-only privacy boundary: %s", center.PrivacyBoundary)
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password_value", "provider_secret_value", "push_endpoint_value", "screenshot_bytes_value", "raw_url_value", "page_title_value", "alert_body_value", "card_number", "cvv", "payment_token", "keylogger"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("promotion readiness center leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+}
+
 func TestDashboardLocalAuthPanel(t *testing.T) {
 	t.Parallel()
 

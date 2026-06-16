@@ -601,3 +601,13 @@ Phase 104 seals that metadata-only action contract in the typed Go response
 models. Use `python devctl.py test phase104` or `verify104` to rerun the API,
 Newman, gofmt, and root-clean checks that prove action rows expose
 `evidence_scope=metadata_only`.
+
+Phase 105 adds a Promotion Readiness Center. Use `python devctl.py promote` to
+write `data/local/output/promotion-readiness.json` and
+`data/local/output/promotion-readiness.txt`, then
+`python devctl.py test phase105` to verify
+`GET /api/v1/promotion-readiness-center`, the dashboard promotion panel,
+Newman, runtime summary, operator assurance, and root-clean. The promotion
+bundle composes runtime status, verification evidence, operator assurance, git
+hygiene, ready PID reconciliation, local export paths, and next actions as
+metadata only.

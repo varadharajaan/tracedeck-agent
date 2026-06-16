@@ -57,6 +57,8 @@ GET  /api/v1/audit-events
 GET  /api/v1/account-portfolio-index
 GET  /api/v1/runtime-status-center
 GET  /api/v1/verification-evidence-center
+GET  /api/v1/operator-assurance-center
+GET  /api/v1/promotion-readiness-center
 POST /api/v1/tenants
 GET  /api/v1/tenants
 GET  /api/v1/tenants/{tenantId}
@@ -665,3 +667,12 @@ backend and does not collect browser content, screenshots, credentials, alert
 bodies, provider payloads, or private content. Runtime Status and Operator
 Assurance action rows expose typed `evidence_scope=metadata_only` so clients can
 separate metadata-only remediation from sensitive collection.
+
+Phase 105 adds `GET /api/v1/promotion-readiness-center`. It composes Runtime
+Status, Verification Evidence, and Operator Assurance into one publish/handoff
+surface with status, readiness booleans, gate counts, Scheduler readback, ready
+PID status, git hygiene, local export paths, proof rows, and actions. It reads
+only existing local metadata proof artifacts and does not collect or return
+passwords, screenshots, raw URLs, page titles, cookies, tokens, private
+content, endpoint payloads, provider secrets, alert bodies, payment data,
+keylogs, hidden collection bypasses, or raw provider payloads.

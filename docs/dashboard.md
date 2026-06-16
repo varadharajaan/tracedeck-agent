@@ -674,3 +674,10 @@ ready PID proof, so operators can refresh scheduled boot evidence while leaving
 a healthy backend process running. The action rows also include
 `evidence_scope=metadata_only`, matching the proof/card privacy labels shown in
 the UI.
+
+Phase 105 adds Promotion Readiness Center to the Deployment page. It summarizes
+whether runtime proof, verification gates, operator assurance, git hygiene, and
+ready PID proof are sufficient for publish or handoff. A non-elevated Scheduler
+`denied` readback remains a watch item when PID and `/health` are healthy; the
+panel shows the exact next action and export path without embedding logs,
+payloads, secrets, browser content, screenshots, or alert bodies.

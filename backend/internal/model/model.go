@@ -2718,6 +2718,62 @@ type OperatorAssuranceCenter struct {
 	GeneratedAt        time.Time                 `json:"generated_at"`
 }
 
+type PromotionReadinessSummary struct {
+	Status              string `json:"status"`
+	Headline            string `json:"headline"`
+	Detail              string `json:"detail"`
+	CanPromote          bool   `json:"can_promote"`
+	RuntimeReady        bool   `json:"runtime_ready"`
+	VerificationReady   bool   `json:"verification_ready"`
+	AssuranceReady      bool   `json:"assurance_ready"`
+	GitClean            bool   `json:"git_clean"`
+	ReadyPIDStatus      string `json:"ready_pid_status"`
+	SchedulerReadback   string `json:"scheduler_readback"`
+	GatesOK             int    `json:"gates_ok"`
+	GatesTotal          int    `json:"gates_total"`
+	WatchCount          int    `json:"watch_count"`
+	AttentionCount      int    `json:"attention_count"`
+	PromotionExportPath string `json:"promotion_export_path"`
+	OperatorNextStep    string `json:"operator_next_step"`
+	UpdatedAt           string `json:"updated_at"`
+}
+
+type PromotionReadinessProof struct {
+	ID            string `json:"id"`
+	Label         string `json:"label"`
+	Value         string `json:"value"`
+	Detail        string `json:"detail"`
+	Status        string `json:"status"`
+	Source        string `json:"source"`
+	EvidenceScope string `json:"evidence_scope"`
+}
+
+type PromotionReadinessAction struct {
+	ID            string `json:"id"`
+	Title         string `json:"title"`
+	Detail        string `json:"detail"`
+	Command       string `json:"command"`
+	Severity      string `json:"severity"`
+	Status        string `json:"status"`
+	EvidenceScope string `json:"evidence_scope"`
+}
+
+type PromotionReadinessCenter struct {
+	Source                string                     `json:"source"`
+	BaseURL               string                     `json:"base_url"`
+	RuntimeAvailable      bool                       `json:"runtime_available"`
+	EvidenceAvailable     bool                       `json:"evidence_available"`
+	RuntimeSummaryPath    string                     `json:"runtime_summary_path"`
+	EvidencePath          string                     `json:"evidence_path"`
+	OperatorAssurancePath string                     `json:"operator_assurance_path"`
+	PromotionExportPath   string                     `json:"promotion_export_path"`
+	Summary               PromotionReadinessSummary  `json:"summary"`
+	Proof                 []PromotionReadinessProof  `json:"proof"`
+	Actions               []PromotionReadinessAction `json:"actions"`
+	PrivacyBoundary       string                     `json:"privacy_boundary"`
+	GeneratedAt           time.Time                  `json:"generated_at"`
+}
+
 type TenantPremiumOperationsSummary struct {
 	Status                 string `json:"status"`
 	Headline               string `json:"headline"`

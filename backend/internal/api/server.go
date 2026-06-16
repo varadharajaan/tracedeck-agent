@@ -32,6 +32,7 @@ type Server struct {
 	runtimeSummaryPath       string
 	verificationEvidencePath string
 	operatorAssurancePath    string
+	promotionReadinessPath   string
 }
 
 func NewServer(repo store.Repository, logger *slog.Logger) *Server {
@@ -48,6 +49,7 @@ func NewServer(repo store.Repository, logger *slog.Logger) *Server {
 		runtimeSummaryPath:       constants.DefaultRuntimeSummaryPath,
 		verificationEvidencePath: constants.DefaultVerificationEvidencePath,
 		operatorAssurancePath:    constants.DefaultOperatorAssurancePath,
+		promotionReadinessPath:   constants.DefaultPromotionReadinessPath,
 	}
 }
 
@@ -78,6 +80,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc(constants.RouteRuntimeStatus, s.handleRuntimeStatusCenter)
 	mux.HandleFunc(constants.RouteVerificationCenter, s.handleVerificationEvidenceCenter)
 	mux.HandleFunc(constants.RouteOperatorAssurance, s.handleOperatorAssuranceCenter)
+	mux.HandleFunc(constants.RoutePromotionReadiness, s.handlePromotionReadinessCenter)
 	mux.HandleFunc(constants.RouteArchiveStatus, s.handleArchiveStatus)
 	return requestLogger(s.logger, s.authMiddleware(mux))
 }
@@ -241,6 +244,24 @@ func (s *Server) handleOperatorAssuranceCenter(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		s.logger.Error("operator assurance center lookup failed", "error", err)
 		writeError(w, http.StatusInternalServerError, "operator assurance center lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, center)
+}
+
+func (s *Server) handlePromotionReadinessCenter(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != constants.RoutePromotionReadiness {
+		http.NotFound(w, r)
+		return
+	}
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+	center, err := s.promotionReadinessCenter()
+	if err != nil {
+		s.logger.Error("promotion readiness center lookup failed", "error", err)
+		writeError(w, http.StatusInternalServerError, "promotion readiness center lookup failed")
 		return
 	}
 	writeJSON(w, http.StatusOK, center)
@@ -1041,6 +1062,324 @@ func operatorAssuranceActions(runtimeCenter model.RuntimeStatusCenter, evidenceC
 		})
 	}
 	if canContinue && len(actions) == 1 {
+		actions[0].Status = constants.StatusOK
+	}
+	return actions
+}
+
+func (s *Server) promotionReadinessCenter() (model.PromotionReadinessCenter, error) {
+	runtimeCenter, err := s.runtimeStatusCenter()
+	if err != nil {
+		return model.PromotionReadinessCenter{}, fmt.Errorf("runtime status for promotion readiness: %w", err)
+	}
+	evidenceCenter, err := s.verificationEvidenceCenter()
+	if err != nil {
+		return model.PromotionReadinessCenter{}, fmt.Errorf("verification evidence for promotion readiness: %w", err)
+	}
+	assuranceExportPath := strings.TrimSpace(s.operatorAssurancePath)
+	if assuranceExportPath == "" {
+		assuranceExportPath = constants.DefaultOperatorAssurancePath
+	}
+	assuranceCenter := operatorAssuranceCenterFromSources(assuranceExportPath, runtimeCenter, evidenceCenter)
+	promotionExportPath := strings.TrimSpace(s.promotionReadinessPath)
+	if promotionExportPath == "" {
+		promotionExportPath = constants.DefaultPromotionReadinessPath
+	}
+	return promotionReadinessCenterFromSources(promotionExportPath, runtimeCenter, evidenceCenter, assuranceCenter), nil
+}
+
+func promotionReadinessCenterFromSources(exportPath string, runtimeCenter model.RuntimeStatusCenter, evidenceCenter model.VerificationEvidenceCenter, assuranceCenter model.OperatorAssuranceCenter) model.PromotionReadinessCenter {
+	runtimeReady := runtimeCenter.SummaryAvailable && runtimeCenter.Summary.CanContinue && runtimeCenter.Summary.RuntimeOK && runtimeCenter.Summary.HealthOK
+	verificationReady := evidenceCenter.EvidenceAvailable && evidenceCenter.Summary.CanPromote && evidenceCenter.Summary.Status == constants.StatusOK
+	assuranceReady := assuranceCenter.Summary.CanContinue && assuranceCenter.Summary.Status != constants.StatusAttention
+	gitClean := assuranceCenter.Summary.GitClean
+	canPromote := runtimeReady && verificationReady && assuranceReady && gitClean
+	status := promotionReadinessStatus(canPromote, runtimeCenter, evidenceCenter, assuranceCenter)
+	watchCount := promotionWatchCount(runtimeCenter, evidenceCenter, assuranceCenter)
+	attentionCount := promotionAttentionCount(runtimeReady, verificationReady, assuranceReady, gitClean, runtimeCenter, evidenceCenter, assuranceCenter)
+	nextStep := promotionReadinessNextStep(canPromote, runtimeReady, verificationReady, assuranceReady, gitClean, assuranceCenter)
+	headline := "Promotion readiness is sealed for local handoff."
+	if status == constants.StatusWatch {
+		headline = "Promotion readiness can continue with watch items."
+	} else if status == constants.StatusAttention {
+		headline = "Promotion readiness needs attention before handoff."
+	}
+	detail := fmt.Sprintf("Runtime=%s, verification=%s, assurance=%s, git=%s, ready_pid=%s, Scheduler=%s.",
+		boolRuntimeLabel(runtimeReady),
+		boolRuntimeLabel(verificationReady),
+		emptyFallback(assuranceCenter.Summary.Status, "unknown"),
+		boolCleanLabel(gitClean),
+		emptyFallback(runtimeCenter.Summary.ReadyPIDStatus, "unknown"),
+		emptyFallback(runtimeCenter.Summary.SchedulerReadback, "unknown"),
+	)
+	updatedAt := assuranceCenter.Summary.UpdatedAt
+	if strings.TrimSpace(updatedAt) == "" {
+		updatedAt = emptyFallback(evidenceCenter.Summary.EvidenceGenerated, runtimeCenter.Summary.SummaryGeneratedAt)
+	}
+
+	return model.PromotionReadinessCenter{
+		Source:                constants.PromotionReadinessSourcePhase105,
+		BaseURL:               emptyFallback(runtimeCenter.BaseURL, evidenceCenter.BaseURL),
+		RuntimeAvailable:      runtimeCenter.SummaryAvailable,
+		EvidenceAvailable:     evidenceCenter.EvidenceAvailable,
+		RuntimeSummaryPath:    runtimeCenter.SummaryPath,
+		EvidencePath:          evidenceCenter.EvidencePath,
+		OperatorAssurancePath: assuranceCenter.ExportPath,
+		PromotionExportPath:   exportPath,
+		Summary: model.PromotionReadinessSummary{
+			Status:              status,
+			Headline:            headline,
+			Detail:              detail,
+			CanPromote:          canPromote,
+			RuntimeReady:        runtimeReady,
+			VerificationReady:   verificationReady,
+			AssuranceReady:      assuranceReady,
+			GitClean:            gitClean,
+			ReadyPIDStatus:      emptyFallback(runtimeCenter.Summary.ReadyPIDStatus, "unknown"),
+			SchedulerReadback:   emptyFallback(runtimeCenter.Summary.SchedulerReadback, "unknown"),
+			GatesOK:             evidenceCenter.Summary.GatesOK,
+			GatesTotal:          evidenceCenter.Summary.GatesTotal,
+			WatchCount:          watchCount,
+			AttentionCount:      attentionCount,
+			PromotionExportPath: exportPath,
+			OperatorNextStep:    nextStep,
+			UpdatedAt:           updatedAt,
+		},
+		Proof:           promotionReadinessProof(runtimeCenter, evidenceCenter, assuranceCenter, runtimeReady, verificationReady, assuranceReady, gitClean),
+		Actions:         promotionReadinessActions(runtimeCenter, evidenceCenter, assuranceCenter, runtimeReady, verificationReady, assuranceReady, gitClean, canPromote),
+		PrivacyBoundary: constants.PromotionReadinessPrivacyNote,
+		GeneratedAt:     time.Now().UTC(),
+	}
+}
+
+func promotionReadinessStatus(canPromote bool, runtimeCenter model.RuntimeStatusCenter, evidenceCenter model.VerificationEvidenceCenter, assuranceCenter model.OperatorAssuranceCenter) string {
+	if !canPromote {
+		return constants.StatusAttention
+	}
+	if runtimeCenter.Summary.Status == constants.StatusWatch || evidenceCenter.Summary.Status == constants.StatusWatch || assuranceCenter.Summary.Status == constants.StatusWatch {
+		return constants.StatusWatch
+	}
+	return constants.StatusOK
+}
+
+func promotionWatchCount(runtimeCenter model.RuntimeStatusCenter, evidenceCenter model.VerificationEvidenceCenter, assuranceCenter model.OperatorAssuranceCenter) int {
+	count := 0
+	for _, status := range []string{runtimeCenter.Summary.Status, evidenceCenter.Summary.Status, assuranceCenter.Summary.Status} {
+		if status == constants.StatusWatch {
+			count++
+		}
+	}
+	if runtimeCenter.Summary.SchedulerReadback == "denied" && runtimeCenter.Summary.RuntimeOK && runtimeCenter.Summary.HealthOK {
+		count++
+	}
+	if runtimeCenter.Summary.ReadyPIDStatus == constants.ReadyPIDStatusStale {
+		count++
+	}
+	return count
+}
+
+func promotionAttentionCount(runtimeReady bool, verificationReady bool, assuranceReady bool, gitClean bool, runtimeCenter model.RuntimeStatusCenter, evidenceCenter model.VerificationEvidenceCenter, assuranceCenter model.OperatorAssuranceCenter) int {
+	count := 0
+	for _, ready := range []bool{runtimeReady, verificationReady, assuranceReady, gitClean} {
+		if !ready {
+			count++
+		}
+	}
+	for _, status := range []string{runtimeCenter.Summary.Status, evidenceCenter.Summary.Status, assuranceCenter.Summary.Status} {
+		if status == constants.StatusAttention {
+			count++
+		}
+	}
+	return count
+}
+
+func promotionReadinessNextStep(canPromote bool, runtimeReady bool, verificationReady bool, assuranceReady bool, gitClean bool, assuranceCenter model.OperatorAssuranceCenter) string {
+	if canPromote {
+		if assuranceCenter.Summary.Status == constants.StatusWatch {
+			return "Promotion can continue; document watch items such as non-elevated Scheduler readback before handoff."
+		}
+		return "Promotion proof is current. Refresh the bundle before the next publish or demo."
+	}
+	if !runtimeReady {
+		return "Refresh runtime summary or restart the backend task before promotion."
+	}
+	if !verificationReady {
+		return "Run the Phase 105 verifier and regenerate verification evidence."
+	}
+	if !assuranceReady {
+		return "Refresh operator assurance after runtime and verification evidence are current."
+	}
+	if !gitClean {
+		return "Resolve tracked content diff before strict post-merge promotion proof."
+	}
+	return "Inspect promotion readiness actions and refresh local proof."
+}
+
+func promotionReadinessProof(runtimeCenter model.RuntimeStatusCenter, evidenceCenter model.VerificationEvidenceCenter, assuranceCenter model.OperatorAssuranceCenter, runtimeReady bool, verificationReady bool, assuranceReady bool, gitClean bool) []model.PromotionReadinessProof {
+	runtimeStatus := constants.StatusAttention
+	if runtimeReady {
+		runtimeStatus = runtimeCenter.Summary.Status
+		if runtimeStatus == "" {
+			runtimeStatus = constants.StatusOK
+		}
+	}
+	verificationStatus := constants.StatusAttention
+	if verificationReady {
+		verificationStatus = constants.StatusOK
+	}
+	assuranceStatus := constants.StatusAttention
+	if assuranceReady {
+		assuranceStatus = assuranceCenter.Summary.Status
+		if assuranceStatus == "" {
+			assuranceStatus = constants.StatusOK
+		}
+	}
+	gitStatus := constants.StatusOK
+	if !gitClean {
+		gitStatus = constants.StatusAttention
+	}
+	pidStatus := constants.StatusOK
+	if runtimeCenter.Summary.ReadyPIDStatus == constants.ReadyPIDStatusStale || runtimeCenter.Summary.ReadyPIDStatus == constants.ReadyPIDStatusAbsent || runtimeCenter.Summary.ReadyPIDStatus == constants.ReadyPIDStatusUnknown {
+		pidStatus = constants.StatusWatch
+	}
+
+	return []model.PromotionReadinessProof{
+		{
+			ID:            constants.PromotionReadinessProofRuntimeID,
+			Label:         "Runtime Proof",
+			Value:         boolRuntimeLabel(runtimeReady),
+			Detail:        fmt.Sprintf("backend=%t health=%t doctor=%s can_continue=%t", runtimeCenter.Summary.RuntimeOK, runtimeCenter.Summary.HealthOK, emptyFallback(runtimeCenter.Summary.DoctorOverall, "unknown"), runtimeCenter.Summary.CanContinue),
+			Status:        runtimeStatus,
+			Source:        constants.RuntimeStatusSourcePhase97Summary,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.PromotionReadinessProofVerificationID,
+			Label:         "Verification Proof",
+			Value:         fmt.Sprintf("%d/%d ok", evidenceCenter.Summary.GatesOK, evidenceCenter.Summary.GatesTotal),
+			Detail:        fmt.Sprintf("watch=%d attention=%d can_promote=%t phase=%s", evidenceCenter.Summary.GatesWatch, evidenceCenter.Summary.GatesAttention, evidenceCenter.Summary.CanPromote, emptyFallback(evidenceCenter.Summary.Phase, "unknown")),
+			Status:        verificationStatus,
+			Source:        constants.VerificationEvidenceSourcePhase99,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.PromotionReadinessProofAssuranceID,
+			Label:         "Operator Assurance",
+			Value:         emptyFallback(assuranceCenter.Summary.Status, "unknown"),
+			Detail:        assuranceCenter.Summary.Detail,
+			Status:        assuranceStatus,
+			Source:        constants.OperatorAssuranceSourcePhase100,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.PromotionReadinessProofGitID,
+			Label:         "Git Hygiene",
+			Value:         boolCleanLabel(gitClean),
+			Detail:        fmt.Sprintf("tracked_content_diff=%t", runtimeCenter.Summary.TrackedContentDiff),
+			Status:        gitStatus,
+			Source:        constants.RuntimeStatusSourcePhase97Summary,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.PromotionReadinessProofPIDID,
+			Label:         "Ready PID",
+			Value:         emptyFallback(runtimeCenter.Summary.ReadyPIDStatus, "unknown"),
+			Detail:        fmt.Sprintf("matches_live=%t scheduler=%s", runtimeCenter.Summary.ReadyPIDMatches, emptyFallback(runtimeCenter.Summary.SchedulerReadback, "unknown")),
+			Status:        pidStatus,
+			Source:        constants.RuntimeStatusSourcePhase97Summary,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.PromotionReadinessProofPrivacyID,
+			Label:         "Privacy Boundary",
+			Value:         "metadata-only",
+			Detail:        "Promotion readiness exposes only proof metadata, paths, status labels, and commands.",
+			Status:        constants.StatusOK,
+			Source:        constants.PromotionReadinessSourcePhase105,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+	}
+}
+
+func promotionReadinessActions(runtimeCenter model.RuntimeStatusCenter, evidenceCenter model.VerificationEvidenceCenter, assuranceCenter model.OperatorAssuranceCenter, runtimeReady bool, verificationReady bool, assuranceReady bool, gitClean bool, canPromote bool) []model.PromotionReadinessAction {
+	actions := []model.PromotionReadinessAction{
+		{
+			ID:            constants.PromotionReadinessActionRefreshID,
+			Title:         "Refresh promotion readiness",
+			Detail:        "Regenerate the metadata-only promotion readiness JSON and text bundle.",
+			Command:       constants.PromotionReadinessCommand,
+			Severity:      constants.SeverityInfo,
+			Status:        constants.StatusOK,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+	}
+	if !runtimeReady {
+		actions = append(actions, model.PromotionReadinessAction{
+			ID:            constants.PromotionReadinessActionRuntimeID,
+			Title:         "Refresh runtime summary",
+			Detail:        "Refresh backend health, Scheduler readback, runtime doctor, ready PID, and git proof.",
+			Command:       constants.RuntimeSummaryCommand,
+			Severity:      constants.SeverityHigh,
+			Status:        constants.StatusPending,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		})
+	}
+	if runtimeCenter.Summary.ReadyPIDStatus == constants.ReadyPIDStatusStale && runtimeReady {
+		actions = append(actions, model.PromotionReadinessAction{
+			ID:            constants.RuntimeStatusActionReadyPIDID,
+			Title:         "Refresh ready PID proof",
+			Detail:        "Ready-file PID differs from live PID; refresh proof before reboot-persistence handoff.",
+			Command:       constants.RuntimeReadyPIDRefreshCommand,
+			Severity:      constants.SeverityInfo,
+			Status:        constants.StatusWatch,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		})
+	}
+	if !verificationReady {
+		actions = append(actions, model.PromotionReadinessAction{
+			ID:            constants.PromotionReadinessActionVerifierID,
+			Title:         "Run Phase 105 verifier",
+			Detail:        "Run the Phase 105 verifier, then refresh verification and promotion evidence.",
+			Command:       constants.PromotionReadinessVerifyCommand,
+			Severity:      constants.SeverityHigh,
+			Status:        constants.StatusPending,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		})
+	}
+	if !evidenceCenter.EvidenceAvailable || evidenceCenter.Summary.Status != constants.StatusOK {
+		actions = append(actions, model.PromotionReadinessAction{
+			ID:            constants.PromotionReadinessActionEvidenceID,
+			Title:         "Refresh verification evidence",
+			Detail:        "Regenerate metadata-only gate evidence after verification runs.",
+			Command:       constants.VerificationEvidenceCommand,
+			Severity:      constants.SeverityInfo,
+			Status:        constants.StatusWatch,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		})
+	}
+	if !assuranceReady || assuranceCenter.Summary.Status != constants.StatusOK {
+		actions = append(actions, model.PromotionReadinessAction{
+			ID:            constants.PromotionReadinessActionAssuranceID,
+			Title:         "Refresh operator assurance",
+			Detail:        "Refresh the operator assurance pack after runtime and evidence proof are current.",
+			Command:       constants.OperatorAssuranceCommand,
+			Severity:      constants.SeverityInfo,
+			Status:        constants.StatusWatch,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		})
+	}
+	if !gitClean {
+		actions = append(actions, model.PromotionReadinessAction{
+			ID:            constants.PromotionReadinessProofGitID,
+			Title:         "Resolve tracked content diff",
+			Detail:        "Commit, merge, or intentionally inspect tracked content diff before strict post-merge promotion proof.",
+			Command:       constants.RuntimeSummaryCommand,
+			Severity:      constants.SeverityHigh,
+			Status:        constants.StatusPending,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		})
+	}
+	if canPromote && len(actions) == 1 {
 		actions[0].Status = constants.StatusOK
 	}
 	return actions
