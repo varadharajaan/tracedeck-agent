@@ -413,3 +413,7 @@
 103. Phase 106: phase ledger. Add `docs/phase-ledger.md`,
      `python devctl.py ledger`, JSON/text ledger exports, and a direct
      remaining-phase count. Current planned numbered phases remaining: `0`.
+104. Phase 107: contract completion audit. Add
+     `docs/contract-completion-audit.md`, `python devctl.py audit`, JSON/text
+     audit exports, and a focused verifier that separates planned phase count
+     from actual end-to-end completion gaps.
