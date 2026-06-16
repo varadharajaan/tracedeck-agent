@@ -809,6 +809,155 @@ func TestPromotionReadinessCenterEndpointSchedulerDeniedRuntimeHealthy(t *testin
 	}
 }
 
+func TestLocalMonitoringIndicatorEndpoint(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	summaryPath := filepath.Join(root, "runtime-summary.json")
+	summaryJSON := []byte(`{
+		"generated_at": "2026-06-16T17:05:00+05:30",
+		"base_url": "http://127.0.0.1:18080",
+		"output_json": "data/local/output/runtime-summary.json",
+		"output_text": "data/local/output/runtime-summary.txt",
+		"backend": {
+			"task_name": "\\TraceDeck\\TraceDeck Backend Dev",
+			"task_present": true,
+			"task_state": "Running",
+			"scheduler_readback": "verified",
+			"launch_task_verified": true,
+			"runtime_ok": true,
+			"runtime_evidence": "pid_and_health",
+			"health_ok": true,
+			"pid": 149832,
+			"pid_running": true,
+			"ready_file_present": true,
+			"ready_pid": 149832,
+			"ready_pid_matches_live": true,
+			"ready_pid_status": "match",
+			"ready_at": "2026-06-16T17:04:00+05:30",
+			"advisory": {
+				"severity": "ok",
+				"code": "scheduler_verified_runtime_ready",
+				"headline": "Backend runtime and Scheduler readback are verified.",
+				"operator_action": "No action needed.",
+				"can_continue": true
+			}
+		},
+		"doctor": {
+			"skipped": false,
+			"overall": "ok",
+			"local": "ok",
+			"report_json": "data/local/output/runtime-doctor.json"
+		},
+		"frontend": {
+			"url_present": true,
+			"url": "https://example.lambda-url.ap-south-1.on.aws"
+		},
+		"git": {
+			"branch": "main",
+			"head": "6ccc1ce",
+			"tracked_content_diff": false,
+			"tracked_content_diff_count": 0,
+			"tracked_content_diff_rows": [],
+			"status_rows": []
+		},
+		"logs": {
+			"summary_log": "logs/local/ops/get-runtime-summary.log",
+			"backend_stdout": "logs/local/backend/backend-task.out.log",
+			"backend_stderr": "logs/local/backend/backend-task.err.log"
+		},
+		"verdict": {
+			"can_continue": true,
+			"severity": "ok",
+			"headline": "Runtime proof is healthy.",
+			"next_actions": []
+		},
+		"privacy": {
+			"metadata_only": true,
+			"sensitive_collection": "denied"
+		}
+	}`)
+	if err := os.WriteFile(summaryPath, append([]byte{0xEF, 0xBB, 0xBF}, summaryJSON...), 0o600); err != nil {
+		t.Fatalf("write runtime summary fixture: %v", err)
+	}
+
+	repo := store.NewMemory()
+	if _, err := repo.CreateTenant(context.Background(), model.CreateTenantRequest{
+		TenantID:        "family-varadha",
+		Name:            "Family Varadha",
+		PlanID:          constants.PlanFamilyPro,
+		RetentionTierID: constants.RetentionFamilyCloud,
+		PrimaryProfile:  "ai-btech-student",
+	}); err != nil {
+		t.Fatalf("create tenant fixture: %v", err)
+	}
+	server := NewServer(repo, slog.Default())
+	server.runtimeSummaryPath = summaryPath
+	handler := server.Handler()
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteLocalIndicator, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected local monitoring indicator 200, got %d: %s", response.Code, response.Body.String())
+	}
+	if response.Header().Get(constants.HeaderCache) != constants.CacheNoStore {
+		t.Fatalf("expected no-store local indicator cache header, got %s", response.Header().Get(constants.HeaderCache))
+	}
+	var center model.LocalMonitoringIndicatorCenter
+	if err := json.Unmarshal(response.Body.Bytes(), &center); err != nil {
+		t.Fatalf("decode local monitoring indicator: %v", err)
+	}
+	if center.Source != constants.LocalIndicatorSourcePhase112 || center.Summary.Status != constants.StatusOK {
+		t.Fatalf("expected healthy Phase 112 local indicator: %+v", center.Summary)
+	}
+	if !center.Summary.VisibleIndicatorReady || !center.Summary.LocalStatusPageReady || !center.Summary.RuntimeReady || !center.Summary.ConsentVisible || !center.Summary.SensitiveCollectionDenied {
+		t.Fatalf("expected visible, runtime, consent, and deny proof to be ready: %+v", center.Summary)
+	}
+	if center.Summary.TransparencyMode != constants.LocalIndicatorTransparencyRequired || center.Summary.IndicatorSurface != constants.LocalIndicatorVisibilityLocalPage {
+		t.Fatalf("expected typed transparency and local page surface: %+v", center.Summary)
+	}
+	if center.HTMLPath != constants.DefaultLocalIndicatorHTMLPath || center.IndicatorPath != constants.DefaultLocalIndicatorPath {
+		t.Fatalf("expected default local indicator paths: %+v", center)
+	}
+	if len(center.Proof) < 6 || len(center.Actions) < 3 {
+		t.Fatalf("expected local indicator proof and actions: %+v", center)
+	}
+	hasVisible := false
+	hasConsent := false
+	hasPrivacy := false
+	for _, proof := range center.Proof {
+		if proof.EvidenceScope != constants.EvidenceScopeMetadataOnly {
+			t.Fatalf("expected metadata-only local indicator proof: %+v", proof)
+		}
+		if proof.ID == constants.LocalIndicatorProofVisibleID && proof.Status == constants.StatusOK {
+			hasVisible = true
+		}
+		if proof.ID == constants.LocalIndicatorProofConsentID && proof.Status == constants.StatusOK {
+			hasConsent = true
+		}
+		if proof.ID == constants.LocalIndicatorProofPrivacyID && proof.EvidenceScope == constants.EvidenceScopeMetadataOnly && strings.Contains(proof.Value, "metadata") {
+			hasPrivacy = true
+		}
+	}
+	if !hasVisible || !hasConsent || !hasPrivacy {
+		t.Fatalf("expected visible, consent, and privacy proof rows: %+v", center.Proof)
+	}
+	for _, action := range center.Actions {
+		if action.EvidenceScope != constants.EvidenceScopeMetadataOnly {
+			t.Fatalf("expected metadata-only local indicator action: %+v", action)
+		}
+	}
+	if !strings.Contains(center.PrivacyBoundary, "metadata-only") || !strings.Contains(center.PrivacyBoundary, "no passwords") || !strings.Contains(center.PrivacyBoundary, "screenshots") || !strings.Contains(center.PrivacyBoundary, "hidden collection bypasses") {
+		t.Fatalf("expected strict local indicator privacy boundary, got %q", center.PrivacyBoundary)
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password_value", "provider_secret_value", "push_endpoint_value", "screenshot_bytes_value", "raw_url_value", "page_title_value", "alert_body_value", "card_number", "cvv", "payment_token", "keylogger"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("local monitoring indicator leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+}
+
 func TestDashboardLocalAuthPanel(t *testing.T) {
 	t.Parallel()
 

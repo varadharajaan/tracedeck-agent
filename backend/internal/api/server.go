@@ -81,6 +81,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc(constants.RouteVerificationCenter, s.handleVerificationEvidenceCenter)
 	mux.HandleFunc(constants.RouteOperatorAssurance, s.handleOperatorAssuranceCenter)
 	mux.HandleFunc(constants.RoutePromotionReadiness, s.handlePromotionReadinessCenter)
+	mux.HandleFunc(constants.RouteLocalIndicator, s.handleLocalMonitoringIndicator)
 	mux.HandleFunc(constants.RouteArchiveStatus, s.handleArchiveStatus)
 	return requestLogger(s.logger, s.authMiddleware(mux))
 }
@@ -262,6 +263,24 @@ func (s *Server) handlePromotionReadinessCenter(w http.ResponseWriter, r *http.R
 	if err != nil {
 		s.logger.Error("promotion readiness center lookup failed", "error", err)
 		writeError(w, http.StatusInternalServerError, "promotion readiness center lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, center)
+}
+
+func (s *Server) handleLocalMonitoringIndicator(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != constants.RouteLocalIndicator {
+		http.NotFound(w, r)
+		return
+	}
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+	center, err := s.localMonitoringIndicatorCenter(r.Context())
+	if err != nil {
+		s.logger.Error("local monitoring indicator lookup failed", "error", err)
+		writeError(w, http.StatusInternalServerError, "local monitoring indicator lookup failed")
 		return
 	}
 	writeJSON(w, http.StatusOK, center)
@@ -1382,6 +1401,244 @@ func promotionReadinessActions(runtimeCenter model.RuntimeStatusCenter, evidence
 	if canPromote && len(actions) == 1 {
 		actions[0].Status = constants.StatusOK
 	}
+	return actions
+}
+
+func (s *Server) localMonitoringIndicatorCenter(ctx context.Context) (model.LocalMonitoringIndicatorCenter, error) {
+	runtimeCenter, err := s.runtimeStatusCenter()
+	if err != nil {
+		return model.LocalMonitoringIndicatorCenter{}, fmt.Errorf("runtime status for local monitoring indicator: %w", err)
+	}
+	consent := localIndicatorConsentCenter(ctx, s.store)
+	return localMonitoringIndicatorCenterFromSources(runtimeCenter, consent), nil
+}
+
+func localIndicatorConsentCenter(ctx context.Context, repo store.Repository) model.ConsentCenter {
+	tenants := repo.ListTenants(ctx)
+	if len(tenants) == 0 {
+		return model.ConsentCenter{}
+	}
+	tenant := tenants[0]
+	return buildConsentCenter(tenant, repo.ListAuditEvents(ctx, tenant.TenantID), repo.ListAlertRules(ctx, tenant.TenantID))
+}
+
+func localMonitoringIndicatorCenterFromSources(runtimeCenter model.RuntimeStatusCenter, consent model.ConsentCenter) model.LocalMonitoringIndicatorCenter {
+	runtimeReady := runtimeCenter.SummaryAvailable && runtimeCenter.Summary.RuntimeOK && runtimeCenter.Summary.HealthOK && runtimeCenter.Summary.CanContinue
+	consentVisible := consent.MonitoringVisible
+	sensitiveDenied := localIndicatorSensitiveCollectionDenied(consent)
+	localPageReady := true
+	visibleReady := localPageReady && consentVisible && sensitiveDenied
+	status := localIndicatorStatus(visibleReady, runtimeReady, consentVisible, sensitiveDenied)
+	headline := "Local monitoring indicator is visible."
+	if status == constants.StatusWatch {
+		headline = "Local monitoring indicator is visible with watch items."
+	} else if status == constants.StatusAttention {
+		headline = "Local monitoring indicator needs attention."
+	}
+	detail := fmt.Sprintf("Indicator=%s, local page=%t, runtime=%s, consent visible=%t, sensitive collection denied=%t.",
+		constants.LocalIndicatorVisibilityLocalPage,
+		localPageReady,
+		boolRuntimeLabel(runtimeReady),
+		consentVisible,
+		sensitiveDenied,
+	)
+	baseURL := emptyFallback(runtimeCenter.BaseURL, "http://"+constants.DefaultBackendAddr)
+	updatedAt := runtimeCenter.Summary.SummaryGeneratedAt
+	if !consent.UpdatedAt.IsZero() {
+		updatedAt = consent.UpdatedAt.Format(time.RFC3339)
+	}
+
+	return model.LocalMonitoringIndicatorCenter{
+		Source:        constants.LocalIndicatorSourcePhase112,
+		BaseURL:       baseURL,
+		IndicatorPath: constants.DefaultLocalIndicatorPath,
+		TextPath:      constants.DefaultLocalIndicatorTextPath,
+		HTMLPath:      constants.DefaultLocalIndicatorHTMLPath,
+		Summary: model.LocalMonitoringIndicatorSummary{
+			Status:                    status,
+			Headline:                  headline,
+			Detail:                    detail,
+			VisibleIndicatorReady:     visibleReady,
+			LocalStatusPageReady:      localPageReady,
+			RuntimeReady:              runtimeReady,
+			ConsentVisible:            consentVisible,
+			SensitiveCollectionDenied: sensitiveDenied,
+			TransparencyMode:          constants.LocalIndicatorTransparencyRequired,
+			IndicatorSurface:          constants.LocalIndicatorVisibilityLocalPage,
+			IndicatorPath:             constants.DefaultLocalIndicatorPath,
+			HTMLPath:                  constants.DefaultLocalIndicatorHTMLPath,
+			DashboardRoute:            constants.RouteDashboard,
+			UpdatedAt:                 updatedAt,
+		},
+		Proof:           localIndicatorProof(runtimeCenter, consent, runtimeReady, consentVisible, sensitiveDenied, localPageReady),
+		Actions:         localIndicatorActions(runtimeReady, consentVisible, sensitiveDenied),
+		PrivacyBoundary: constants.LocalIndicatorPrivacyNote,
+		GeneratedAt:     time.Now().UTC(),
+	}
+}
+
+func localIndicatorStatus(visibleReady bool, runtimeReady bool, consentVisible bool, sensitiveDenied bool) string {
+	if !visibleReady || !consentVisible || !sensitiveDenied {
+		return constants.StatusAttention
+	}
+	if !runtimeReady {
+		return constants.StatusWatch
+	}
+	return constants.StatusOK
+}
+
+func localIndicatorSensitiveCollectionDenied(consent model.ConsentCenter) bool {
+	if len(consent.Collection) == 0 {
+		return false
+	}
+	required := map[string]bool{
+		constants.ConsentCollectionPasswords:      false,
+		constants.ConsentCollectionScreenshots:    false,
+		constants.ConsentCollectionPrivateContent: false,
+	}
+	for _, item := range consent.Collection {
+		if _, ok := required[item.Name]; ok && item.Status == constants.ConsentStatusDenied {
+			required[item.Name] = true
+		}
+	}
+	for _, ok := range required {
+		if !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func localIndicatorProof(runtimeCenter model.RuntimeStatusCenter, consent model.ConsentCenter, runtimeReady bool, consentVisible bool, sensitiveDenied bool, localPageReady bool) []model.LocalMonitoringIndicatorProof {
+	runtimeStatus := constants.StatusWatch
+	if runtimeReady {
+		runtimeStatus = constants.StatusOK
+	} else if !runtimeCenter.SummaryAvailable {
+		runtimeStatus = constants.StatusAttention
+	}
+	consentStatus := constants.StatusAttention
+	if consentVisible {
+		consentStatus = constants.StatusOK
+	}
+	collectionStatus := constants.StatusAttention
+	if sensitiveDenied {
+		collectionStatus = constants.StatusOK
+	}
+	pageStatus := constants.StatusAttention
+	if localPageReady {
+		pageStatus = constants.StatusOK
+	}
+
+	return []model.LocalMonitoringIndicatorProof{
+		{
+			ID:            constants.LocalIndicatorProofVisibleID,
+			Label:         "Visible Indicator",
+			Value:         constants.LocalIndicatorVisibilityLocalPage,
+			Detail:        "TraceDeck publishes a local status page and dashboard section that show monitoring status to the endpoint user.",
+			Status:        pageStatus,
+			Source:        constants.LocalIndicatorSourcePhase112,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.LocalIndicatorProofStatusPageID,
+			Label:         "Local Status Page",
+			Value:         constants.DefaultLocalIndicatorHTMLPath,
+			Detail:        "The scripted indicator generator writes a local HTML page plus JSON and text proof under data/local/output.",
+			Status:        pageStatus,
+			Source:        constants.LocalIndicatorSourcePhase112,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.LocalIndicatorProofRuntimeID,
+			Label:         "Runtime Proof",
+			Value:         boolRuntimeLabel(runtimeReady),
+			Detail:        fmt.Sprintf("runtime=%t health=%t can_continue=%t scheduler=%s", runtimeCenter.Summary.RuntimeOK, runtimeCenter.Summary.HealthOK, runtimeCenter.Summary.CanContinue, emptyFallback(runtimeCenter.Summary.SchedulerReadback, "unknown")),
+			Status:        runtimeStatus,
+			Source:        constants.RuntimeStatusSourcePhase97Summary,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.LocalIndicatorProofConsentID,
+			Label:         "Consent Visibility",
+			Value:         boolRuntimeLabel(consentVisible),
+			Detail:        fmt.Sprintf("tenant=%s pause=%s export_ready=%t delete_ready=%t", emptyFallback(consent.TenantID, "tenant pending"), emptyFallback(consent.PauseControls, "pause control pending"), consent.DataExportReady, consent.DeleteRequestReady),
+			Status:        consentStatus,
+			Source:        constants.RouteSegmentConsentCenter,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.LocalIndicatorProofCollectionID,
+			Label:         "Collection Boundary",
+			Value:         boolRuntimeLabel(sensitiveDenied),
+			Detail:        "Passwords, screenshots, private content, cookies, tokens, camera, microphone, and keystrokes remain denied.",
+			Status:        collectionStatus,
+			Source:        constants.RouteSegmentConsentCenter,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.LocalIndicatorProofPrivacyID,
+			Label:         "Privacy Boundary",
+			Value:         "metadata-only",
+			Detail:        "The indicator exposes status labels, paths, commands, and denied capability labels only.",
+			Status:        constants.StatusOK,
+			Source:        constants.LocalIndicatorSourcePhase112,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+	}
+}
+
+func localIndicatorActions(runtimeReady bool, consentVisible bool, sensitiveDenied bool) []model.LocalMonitoringIndicatorAction {
+	actions := []model.LocalMonitoringIndicatorAction{
+		{
+			ID:            constants.LocalIndicatorActionRefreshID,
+			Title:         "Refresh local indicator",
+			Detail:        "Regenerate the local monitoring indicator JSON, text, and HTML files.",
+			Command:       constants.LocalIndicatorCommand,
+			Severity:      constants.SeverityInfo,
+			Status:        constants.StatusOK,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.LocalIndicatorActionOpenID,
+			Title:         "Open local indicator",
+			Detail:        "Open the generated local status page for the endpoint user.",
+			Command:       constants.LocalIndicatorOpenCommand,
+			Severity:      constants.SeverityInfo,
+			Status:        constants.StatusOK,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+	}
+	if !runtimeReady {
+		actions = append(actions, model.LocalMonitoringIndicatorAction{
+			ID:            constants.LocalIndicatorActionRuntimeID,
+			Title:         "Refresh runtime summary",
+			Detail:        "Refresh backend health and Scheduler proof used by the visible indicator.",
+			Command:       constants.RuntimeSummaryCommand,
+			Severity:      constants.SeverityInfo,
+			Status:        constants.StatusWatch,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		})
+	}
+	if !consentVisible || !sensitiveDenied {
+		actions = append(actions, model.LocalMonitoringIndicatorAction{
+			ID:            constants.LocalIndicatorActionConsentID,
+			Title:         "Review consent center",
+			Detail:        "Review local consent visibility and denied sensitive collection labels.",
+			Command:       "open dashboard Trust & Consent section",
+			Severity:      constants.SeverityHigh,
+			Status:        constants.StatusPending,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		})
+	}
+	actions = append(actions, model.LocalMonitoringIndicatorAction{
+		ID:            constants.LocalIndicatorActionRunVerifierID,
+		Title:         "Run Phase 112 verifier",
+		Detail:        "Rerun the local indicator smoke, Newman, dashboard, and API checks.",
+		Command:       constants.LocalIndicatorVerifyCommand,
+		Severity:      constants.SeverityInfo,
+		Status:        constants.StatusOK,
+		EvidenceScope: constants.EvidenceScopeMetadataOnly,
+	})
 	return actions
 }
 

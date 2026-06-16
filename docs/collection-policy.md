@@ -7,6 +7,11 @@ capabilities.
 The default TraceDeck profile requires a visible monitoring indicator and
 stores browser domain/category instead of full URLs.
 
+Phase 112 implements the visible local indicator as a local status API,
+dashboard panel, and generated JSON/text/HTML proof files. The indicator uses
+`visible_indicator_required` as the typed transparency mode and exposes only
+status labels, local paths, command labels, and denied capability labels.
+
 Phase 110 foreground app collection is controlled by:
 
 ```yaml

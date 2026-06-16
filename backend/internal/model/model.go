@@ -2774,6 +2774,56 @@ type PromotionReadinessCenter struct {
 	GeneratedAt           time.Time                  `json:"generated_at"`
 }
 
+type LocalMonitoringIndicatorSummary struct {
+	Status                    string `json:"status"`
+	Headline                  string `json:"headline"`
+	Detail                    string `json:"detail"`
+	VisibleIndicatorReady     bool   `json:"visible_indicator_ready"`
+	LocalStatusPageReady      bool   `json:"local_status_page_ready"`
+	RuntimeReady              bool   `json:"runtime_ready"`
+	ConsentVisible            bool   `json:"consent_visible"`
+	SensitiveCollectionDenied bool   `json:"sensitive_collection_denied"`
+	TransparencyMode          string `json:"transparency_mode"`
+	IndicatorSurface          string `json:"indicator_surface"`
+	IndicatorPath             string `json:"indicator_path"`
+	HTMLPath                  string `json:"html_path"`
+	DashboardRoute            string `json:"dashboard_route"`
+	UpdatedAt                 string `json:"updated_at"`
+}
+
+type LocalMonitoringIndicatorProof struct {
+	ID            string `json:"id"`
+	Label         string `json:"label"`
+	Value         string `json:"value"`
+	Detail        string `json:"detail"`
+	Status        string `json:"status"`
+	Source        string `json:"source"`
+	EvidenceScope string `json:"evidence_scope"`
+}
+
+type LocalMonitoringIndicatorAction struct {
+	ID            string `json:"id"`
+	Title         string `json:"title"`
+	Detail        string `json:"detail"`
+	Command       string `json:"command"`
+	Severity      string `json:"severity"`
+	Status        string `json:"status"`
+	EvidenceScope string `json:"evidence_scope"`
+}
+
+type LocalMonitoringIndicatorCenter struct {
+	Source          string                           `json:"source"`
+	BaseURL         string                           `json:"base_url"`
+	IndicatorPath   string                           `json:"indicator_path"`
+	TextPath        string                           `json:"text_path"`
+	HTMLPath        string                           `json:"html_path"`
+	Summary         LocalMonitoringIndicatorSummary  `json:"summary"`
+	Proof           []LocalMonitoringIndicatorProof  `json:"proof"`
+	Actions         []LocalMonitoringIndicatorAction `json:"actions"`
+	PrivacyBoundary string                           `json:"privacy_boundary"`
+	GeneratedAt     time.Time                        `json:"generated_at"`
+}
+
 type TenantPremiumOperationsSummary struct {
 	Status                 string `json:"status"`
 	Headline               string `json:"headline"`

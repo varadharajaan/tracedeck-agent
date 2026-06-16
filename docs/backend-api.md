@@ -56,6 +56,7 @@ GET  /api/v1/retention-tiers
 GET  /api/v1/audit-events
 GET  /api/v1/account-portfolio-index
 GET  /api/v1/runtime-status-center
+GET  /api/v1/local-monitoring-indicator
 GET  /api/v1/verification-evidence-center
 GET  /api/v1/operator-assurance-center
 GET  /api/v1/promotion-readiness-center
@@ -676,3 +677,8 @@ only existing local metadata proof artifacts and does not collect or return
 passwords, screenshots, raw URLs, page titles, cookies, tokens, private
 content, endpoint payloads, provider secrets, alert bodies, payment data,
 keylogs, hidden collection bypasses, or raw provider payloads.
+
+Phase 112 adds `GET /api/v1/local-monitoring-indicator`. It composes local
+runtime proof and consent visibility into a visible endpoint-user status model:
+local status page path, dashboard route, transparency mode, denied sensitive
+collection labels, proof rows, action rows, and metadata-only privacy posture.

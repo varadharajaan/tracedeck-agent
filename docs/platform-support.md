@@ -100,6 +100,13 @@ collector.software.inventory
 The collector compares local hashed snapshots and emits changes only after a
 baseline exists.
 
+## Local Monitoring Indicator
+
+Phase 112 implements the local monitoring indicator as a cross-platform local
+status page and dashboard proof surface. Native tray, menu-bar, or desktop
+notification polish can be layered later, but the supported trust surface is
+available anywhere the local backend and scripts can run.
+
 ## Manifest Rendering
 
 Render local review copies with:

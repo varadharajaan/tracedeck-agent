@@ -161,6 +161,12 @@ Newman proof, report/log paths, artifact references, git labels, privacy proof,
 and next commands. The Workspace Navigator uses the full `Verification
 Evidence` product label.
 
+Phase 112 adds Local Monitoring Indicator to the Deployment page. It renders
+`GET /api/v1/local-monitoring-indicator` with visible endpoint status, local
+status page path, runtime proof, consent visibility, denied sensitive
+collection proof, and metadata-only actions. The Workspace Navigator uses the
+full `Local Indicator` product label.
+
 To check the currently running local dashboard:
 
 ```powershell
@@ -202,6 +208,18 @@ To verify the product visual-quality contract:
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-visual-quality.ps1 -BaseUrl http://127.0.0.1:18080
 python ./devctl.py test visual
 ```
+
+To verify the Alert Delivery card contract, including explicit
+`include_demo=true` demo-proof labeling:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-delivery-ui.ps1 -BaseUrl http://127.0.0.1:18080
+python ./devctl.py test delivery-ui
+```
+
+The delivery UI guard confirms the old cramped delivery table is absent,
+delivery proof renders as cards, and demo push proof says that no screen
+notification or web-push provider send was attempted.
 
 To rerun the full Phase 84 UI revamp gate:
 

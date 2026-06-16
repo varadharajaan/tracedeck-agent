@@ -1,0 +1,97 @@
+{
+  "info": {
+    "name": "TraceDeck Phase 112 Local Monitoring Indicator",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is ok and no-store', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Local Monitoring Indicator",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/local-monitoring-indicator"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('local indicator is visible and metadata-only', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.source).to.eql('phase112_local_monitoring_indicator');",
+              "  pm.expect(['ok', 'watch']).to.include(body.summary.status);",
+              "  pm.expect(body.summary.visible_indicator_ready).to.eql(true);",
+              "  pm.expect(body.summary.local_status_page_ready).to.eql(true);",
+              "  pm.expect(body.summary.consent_visible).to.eql(true);",
+              "  pm.expect(body.summary.sensitive_collection_denied).to.eql(true);",
+              "  pm.expect(body.summary.transparency_mode).to.eql('visible_indicator_required');",
+              "  pm.expect(body.summary.indicator_surface).to.eql('local_status_page');",
+              "  pm.expect(body.html_path).to.include('local-monitoring-indicator.html');",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(body.privacy_boundary).to.include('no passwords');",
+              "  pm.expect(body.privacy_boundary).to.include('screenshots');",
+              "  pm.expect(body.proof.length).to.be.at.least(6);",
+              "  pm.expect(body.actions.length).to.be.at.least(3);",
+              "  body.proof.forEach((item) => pm.expect(item.evidence_scope).to.eql('metadata_only'));",
+              "  body.actions.forEach((item) => pm.expect(item.evidence_scope).to.eql('metadata_only'));",
+              "  const serialized = JSON.stringify(body).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'push_endpoint', 'screenshot_bytes', 'raw_url', 'page_title', 'alert_body', 'card_number', 'cvv', 'payment_token', 'keylogger'].forEach((marker) => {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Local Indicator Markers",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('dashboard exposes local indicator section', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
+              "  const html = pm.response.text();",
+              "  ['Local Monitoring Indicator', 'Indicator Proof', 'Indicator Actions', 'local-indicator-status', 'indicator-proof-list', 'indicator-action-list', 'data-jump-target=\"local-indicator-section\"', 'Local Indicator'].forEach((marker) => {",
+              "    pm.expect(html).to.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

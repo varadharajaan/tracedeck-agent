@@ -225,3 +225,11 @@ hashed snapshot identity. It does not store install paths, file contents,
 installer payloads, screenshots, passwords, raw URLs, page titles, cookies,
 tokens, private content, provider secrets, alert bodies, keylogging data,
 hidden collection bypasses, payment data, or raw provider payloads.
+
+Phase 112 local monitoring indicator proof is metadata-only. It shows the
+local status page path, dashboard route, runtime status label, consent
+visibility label, transparency mode, denied sensitive capability labels, and
+commands to refresh/open the indicator. It does not collect passwords,
+screenshots, raw URLs, page titles, cookies, tokens, private content, provider
+secrets, alert bodies, keylogging, hidden collection bypasses, payment data,
+raw provider payloads, camera, or microphone data.
