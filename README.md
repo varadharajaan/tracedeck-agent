@@ -524,3 +524,8 @@ typed severity/code, whether local dashboard work can continue, whether elevated
 Scheduler readback is recommended, and the next command to run. Use
 `python devctl.py test phase93` to verify the advisory helper, live status
 output, Newman provenance contract, and root-clean.
+
+Phase 94 surfaces deployment service advisories in the Deployment Readiness
+Center API and dashboard. Use `python devctl.py test phase94` to verify typed
+metadata-only advisories for live boot, native autostart, background start,
+offline replay, archive backlog, and ready states.

@@ -1,0 +1,96 @@
+{
+  "info": {
+    "name": "TraceDeck Backend Phase 94",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health No Store Header",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is ok and not cached', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Has Service Advisory",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('dashboard contains deployment service advisory markers', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const html = pm.response.text();",
+              "  pm.expect(html).to.include('Deployment Readiness Center');",
+              "  pm.expect(html).to.include('Service Advisory');",
+              "  pm.expect(html).to.include('deployment-advisory-strip');",
+              "  pm.expect(html).to.include('deployment-advisory-count');",
+              "  pm.expect(html).to.include('deployment-advisory-list');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Deployment Advisories API",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/deployment-readiness-center"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('deployment advisories are typed and metadata-only', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.advisories.length).to.be.above(0);",
+              "  body.advisories.forEach((item) => {",
+              "    pm.expect(item.id).to.be.a('string').and.not.empty;",
+              "    pm.expect(item.severity).to.be.a('string').and.not.empty;",
+              "    pm.expect(item.code).to.be.a('string').and.not.empty;",
+              "    pm.expect(item.headline).to.be.a('string').and.not.empty;",
+              "    pm.expect(item.operator_action).to.be.a('string').and.not.empty;",
+              "    pm.expect(item.evidence_scope).to.eql('metadata_only');",
+              "    pm.expect(item.can_continue).to.be.a('boolean');",
+              "    pm.expect(item.admin_approval_recommended).to.be.a('boolean');",
+              "  });",
+              "  pm.expect(body.advisories.some((item) => item.service_manager && item.service_manager.length > 0)).to.eql(true);",
+              "  const serialized = JSON.stringify(body).toLowerCase();",
+              "  ['smtp_password', 'provider_secret', 'push_endpoint', 'screenshot_bytes', 'raw_url', 'page_title', 'alert_body', 'card_number', 'cvv', 'payment_token', 'keylogger'].forEach((marker) => {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:18080" }
+  ]
+}

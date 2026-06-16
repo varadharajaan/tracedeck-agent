@@ -6238,6 +6238,9 @@
           <span id="deployment-readiness-next" class="pill">action pending</span>
           <span id="deployment-readiness-privacy" class="pill">metadata-only</span>
         </div>
+        <div id="deployment-advisory-strip" class="action-meta">
+          <span class="pill">service advisory pending</span>
+        </div>
       </div>
       <div>
         <div class="executive-kpis">
@@ -6288,6 +6291,16 @@
               <span id="deployment-action-count" class="pill">0 actions</span>
             </div>
             <div id="deployment-action-list" class="executive-list"><div class="empty">No deployment actions yet.</div></div>
+          </div>
+          <div class="panel">
+            <div class="section-head">
+              <div>
+                <h2>Service Advisory</h2>
+                <p class="muted">Typed operator guidance for live boot, autostart, background service, replay, and archive readiness.</p>
+              </div>
+              <span id="deployment-advisory-count" class="pill">0 advisories</span>
+            </div>
+            <div id="deployment-advisory-list" class="executive-list"><div class="empty">No service advisories yet.</div></div>
           </div>
         </div>
       </div>
@@ -10416,7 +10429,9 @@
       const manifests = model.manifests || [];
       const proof = model.proof || [];
       const actions = model.actions || [];
+      const advisories = model.advisories || [];
       const score = Number(summary.readiness_score || 0);
+      const leadAdvisory = advisories[0] || {};
 
       document.getElementById("deployment-readiness-status").outerHTML =
         badge(summary.status || "pending").replace("<span", '<span id="deployment-readiness-status"');
@@ -10427,6 +10442,12 @@
       setText("deployment-readiness-package", summary.recommended_package || model.plan_name || "package pending");
       setText("deployment-readiness-next", summary.owner_next_step || "action pending");
       setText("deployment-readiness-privacy", model.privacy_boundary ? "metadata-only guard" : "metadata-only");
+      document.getElementById("deployment-advisory-strip").innerHTML = leadAdvisory.code ? `
+        ${badge(leadAdvisory.status || leadAdvisory.severity || "watch")}
+        <span class="pill">${escapeHTML(leadAdvisory.code)}</span>
+        <span class="pill">${leadAdvisory.can_continue ? "can continue" : "action needed"}</span>
+        <span class="pill">${leadAdvisory.admin_approval_recommended ? "admin approval useful" : "no admin proof needed"}</span>
+      ` : '<span class="pill">service advisory pending</span>';
 
       setText("deployment-kpi-platforms", `${summary.platforms_ready || 0}/${summary.platforms_total || 0}`);
       setText("deployment-kpi-platforms-sub", `${platforms.map((item) => item.service_manager).filter(Boolean).join(", ") || "No service managers"}`);
@@ -10445,6 +10466,7 @@
       renderDeploymentManifests(manifests);
       renderDeploymentProof(proof);
       renderDeploymentActions(actions);
+      renderDeploymentAdvisories(advisories);
     }
 
     function renderDeploymentPlatforms(platforms) {
@@ -10530,6 +10552,30 @@
             <span class="pill">${escapeHTML(item.sla || "SLA pending")}</span>
             <span class="pill">${escapeHTML(item.source || "deployment")}</span>
           </div>
+        </div>
+      `).join("");
+    }
+
+    function renderDeploymentAdvisories(advisories) {
+      const items = (advisories || []).slice(0, 8);
+      setText("deployment-advisory-count", `${items.length} advisor${items.length === 1 ? "y" : "ies"}`);
+      const target = document.getElementById("deployment-advisory-list");
+      if (items.length === 0) {
+        target.innerHTML = '<div class="empty">No service advisories yet.</div>';
+        return;
+      }
+      target.innerHTML = items.map((item) => `
+        <div class="executive-item">
+          <strong>${escapeHTML(item.headline || "service advisory")}</strong>
+          <span class="muted">${escapeHTML(item.detail || "Advisory detail pending.")}</span>
+          <div class="action-meta">
+            ${badge(item.status || item.severity || "watch")}
+            <span class="pill">${escapeHTML(item.code || "advisory")}</span>
+            <span class="pill">${escapeHTML(item.service_manager || "service manager")}</span>
+            <span class="pill">${item.can_continue ? "can continue" : "action needed"}</span>
+            <span class="pill">${item.admin_approval_recommended ? "admin approval useful" : "metadata proof"}</span>
+          </div>
+          <span class="muted">${escapeHTML(item.operator_action || "Keep service proof current.")}</span>
         </div>
       `).join("");
     }

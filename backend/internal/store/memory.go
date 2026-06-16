@@ -1230,23 +1230,23 @@ func (m *Memory) TenantDeploymentReadinessCenter(ctx context.Context, tenantID s
 
 	onboarding, err := m.TenantOnboardingCenter(ctx, tenantID)
 	if err != nil {
-		return model.TenantDeploymentReadinessCenter{}, err
+		return model.TenantDeploymentReadinessCenter{}, fmt.Errorf("deployment readiness onboarding center: %w", err)
 	}
 	settings, err := m.TenantCustomerSettingsCenter(ctx, tenantID)
 	if err != nil {
-		return model.TenantDeploymentReadinessCenter{}, err
+		return model.TenantDeploymentReadinessCenter{}, fmt.Errorf("deployment readiness customer settings center: %w", err)
 	}
 	syncHealth, err := m.TenantSyncHealth(ctx, tenantID)
 	if err != nil {
-		return model.TenantDeploymentReadinessCenter{}, err
+		return model.TenantDeploymentReadinessCenter{}, fmt.Errorf("deployment readiness sync health: %w", err)
 	}
 	portfolio, err := m.TenantPortfolioCenter(ctx, tenantID)
 	if err != nil {
-		return model.TenantDeploymentReadinessCenter{}, err
+		return model.TenantDeploymentReadinessCenter{}, fmt.Errorf("deployment readiness portfolio center: %w", err)
 	}
 	revenueOps, err := m.TenantRevenueOperationsCenter(ctx, tenantID)
 	if err != nil {
-		return model.TenantDeploymentReadinessCenter{}, err
+		return model.TenantDeploymentReadinessCenter{}, fmt.Errorf("deployment readiness revenue operations center: %w", err)
 	}
 
 	return buildTenantDeploymentReadinessCenter(onboarding, settings, syncHealth, portfolio, revenueOps, generatedAt), nil
@@ -7443,6 +7443,7 @@ func buildTenantDeploymentReadinessCenter(
 		Manifests:       manifests,
 		Proof:           deploymentProof(summary, syncHealth, onboarding, revenueOps),
 		Actions:         deploymentActions(summary),
+		Advisories:      deploymentAdvisories(summary),
 		PrivacyBoundary: constants.DeploymentReadinessPrivacyNote,
 		GeneratedAt:     generatedAt,
 	}
@@ -7855,6 +7856,102 @@ func deploymentActions(summary model.TenantDeploymentReadinessSummary) []model.T
 			Source:   "deployment readiness center",
 		},
 	}
+}
+
+func deploymentAdvisories(summary model.TenantDeploymentReadinessSummary) []model.TenantDeploymentAdvisory {
+	advisories := make([]model.TenantDeploymentAdvisory, 0, 5)
+	if !summary.LiveBootReady {
+		advisories = append(advisories, model.TenantDeploymentAdvisory{
+			ID:             constants.DeploymentAdvisoryLiveBootID,
+			Severity:       constants.SeverityHigh,
+			Code:           constants.DeploymentAdvisoryLiveBootCode,
+			Headline:       "Live boot proof is missing",
+			Detail:         "No host has proven it reports after backend boot in the current readiness model.",
+			OperatorAction: "Run the live boot smoke and confirm the host reports after restart.",
+			ServiceManager: "local backend",
+			EvidenceScope:  "metadata_only",
+			Status:         constants.StatusAttention,
+			CanContinue:    false,
+			PaidTier:       constants.PlanFamilyPro,
+		})
+	}
+	if !summary.AutostartReady {
+		advisories = append(advisories, model.TenantDeploymentAdvisory{
+			ID:                       constants.DeploymentAdvisoryAutostartID,
+			Severity:                 constants.SeverityHigh,
+			Code:                     constants.DeploymentAdvisoryAutostartCode,
+			Headline:                 "Native service autostart still needs proof",
+			Detail:                   "Windows Task Scheduler, macOS launchd, or Linux systemd registration has not been proven ready.",
+			OperatorAction:           "Run the service manager install/status scripts with required administrator approval before claiming reboot persistence.",
+			ServiceManager:           "task_scheduler_launchd_systemd",
+			EvidenceScope:            "metadata_only",
+			Status:                   constants.StatusAttention,
+			CanContinue:              false,
+			AdminApprovalRecommended: true,
+			PaidTier:                 constants.PlanFamilyPro,
+		})
+	}
+	if summary.AutostartReady && !summary.SilentStartReady {
+		advisories = append(advisories, model.TenantDeploymentAdvisory{
+			ID:             constants.DeploymentAdvisorySilentStartID,
+			Severity:       constants.SeverityMedium,
+			Code:           constants.DeploymentAdvisorySilentStartCode,
+			Headline:       "Background start proof is partial",
+			Detail:         "Autostart is ready, but every platform service manager has not yet reached ready status.",
+			OperatorAction: "Dry-run macOS launchd and Linux systemd status checks, then rerun deployment readiness verification.",
+			ServiceManager: "launchd_systemd",
+			EvidenceScope:  "metadata_only",
+			Status:         constants.StatusWatch,
+			CanContinue:    true,
+			PaidTier:       constants.PlanSchool,
+		})
+	}
+	if !summary.OfflineReplayReady {
+		advisories = append(advisories, model.TenantDeploymentAdvisory{
+			ID:             constants.DeploymentAdvisoryOfflineReplayID,
+			Severity:       constants.SeverityMedium,
+			Code:           constants.DeploymentAdvisoryOfflineReplayCode,
+			Headline:       "Offline replay proof is pending",
+			Detail:         "Laptop-off recovery has not been proven ready for local backlog replay.",
+			OperatorAction: "Run offline replay verification before paid rollout.",
+			ServiceManager: "agent_outbox",
+			EvidenceScope:  "metadata_only",
+			Status:         constants.StatusWatch,
+			CanContinue:    true,
+			PaidTier:       constants.PlanSchool,
+		})
+	}
+	if summary.ArchiveBacklog > 0 {
+		advisories = append(advisories, model.TenantDeploymentAdvisory{
+			ID:             constants.DeploymentAdvisoryArchiveBacklogID,
+			Severity:       constants.SeverityMedium,
+			Code:           constants.DeploymentAdvisoryArchiveBacklogCode,
+			Headline:       "Archive backlog is waiting for replay",
+			Detail:         fmt.Sprintf("%d archive batch%s need the next online upload window.", summary.ArchiveBacklog, pluralSuffix(summary.ArchiveBacklog)),
+			OperatorAction: "Let the agent replay local backlog and confirm archive status returns to current.",
+			ServiceManager: "archive_sync",
+			EvidenceScope:  "metadata_only",
+			Status:         constants.StatusWatch,
+			CanContinue:    true,
+			PaidTier:       constants.PlanBusiness,
+		})
+	}
+	if len(advisories) == 0 {
+		advisories = append(advisories, model.TenantDeploymentAdvisory{
+			ID:             constants.DeploymentAdvisoryReadyID,
+			Severity:       constants.SeverityInfo,
+			Code:           constants.DeploymentAdvisoryReadyCode,
+			Headline:       "Deployment readiness proof is current",
+			Detail:         "Live boot, native autostart, background start, offline replay, and archive backlog proof are ready.",
+			OperatorAction: "Keep service manifests, status scripts, and live boot proof current before paid rollout.",
+			ServiceManager: "task_scheduler_launchd_systemd",
+			EvidenceScope:  "metadata_only",
+			Status:         constants.StatusHealthy,
+			CanContinue:    true,
+			PaidTier:       constants.PlanBusiness,
+		})
+	}
+	return advisories
 }
 
 func countDeploymentPlatformReady(items []model.TenantDeploymentPlatform) int {

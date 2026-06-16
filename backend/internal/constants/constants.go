@@ -394,6 +394,22 @@ const (
 )
 
 const (
+	DeploymentAdvisoryLiveBootID       = "live-boot-proof"
+	DeploymentAdvisoryAutostartID      = "native-autostart"
+	DeploymentAdvisorySilentStartID    = "background-start"
+	DeploymentAdvisoryOfflineReplayID  = "offline-replay"
+	DeploymentAdvisoryArchiveBacklogID = "archive-backlog"
+	DeploymentAdvisoryReadyID          = "deployment-ready"
+
+	DeploymentAdvisoryLiveBootCode       = "live_boot_proof_missing"
+	DeploymentAdvisoryAutostartCode      = "native_service_autostart_pending"
+	DeploymentAdvisorySilentStartCode    = "background_start_not_fully_verified"
+	DeploymentAdvisoryOfflineReplayCode  = "offline_replay_not_verified"
+	DeploymentAdvisoryArchiveBacklogCode = "archive_backlog_waiting"
+	DeploymentAdvisoryReadyCode          = "deployment_ready"
+)
+
+const (
 	NotificationPreferenceModeImmediate = "immediate"
 	NotificationPreferenceModeDigest    = "digest"
 	NotificationPreferenceModeSilent    = "silent"

@@ -2701,8 +2701,20 @@ func TestTenantDeploymentReadinessCenterEndpoint(t *testing.T) {
 	if center.Summary.HostsTotal < 2 || !center.Summary.LiveBootReady || !center.Summary.OfflineReplayReady || center.Summary.RecommendedPackage == "" {
 		t.Fatalf("expected live boot, offline replay, host, and package proof: %+v", center.Summary)
 	}
-	if len(center.Platforms) != 3 || len(center.Manifests) != 3 || len(center.Proof) < 5 || len(center.Actions) < 4 {
-		t.Fatalf("expected platforms, manifests, proof, and actions: %+v", center)
+	if len(center.Platforms) != 3 || len(center.Manifests) != 3 || len(center.Proof) < 5 || len(center.Actions) < 4 || len(center.Advisories) == 0 {
+		t.Fatalf("expected platforms, manifests, proof, actions, and advisories: %+v", center)
+	}
+	hasServiceAdvisory := false
+	for _, advisory := range center.Advisories {
+		if advisory.Code == "" || advisory.Headline == "" || advisory.OperatorAction == "" || advisory.EvidenceScope != "metadata_only" {
+			t.Fatalf("expected typed metadata-only deployment advisory: %+v", advisory)
+		}
+		if advisory.ServiceManager != "" {
+			hasServiceAdvisory = true
+		}
+	}
+	if !hasServiceAdvisory {
+		t.Fatalf("expected service manager advisory proof: %+v", center.Advisories)
 	}
 	hasWindows := false
 	hasDarwin := false
