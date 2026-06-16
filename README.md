@@ -611,3 +611,10 @@ Newman, runtime summary, operator assurance, and root-clean. The promotion
 bundle composes runtime status, verification evidence, operator assurance, git
 hygiene, ready PID reconciliation, local export paths, and next actions as
 metadata only.
+
+Phase 106 adds a first-class phase ledger. Use `python devctl.py ledger` to
+write `data/local/output/phase-ledger.json` and
+`data/local/output/phase-ledger.txt`; the tracked human-readable ledger lives
+at `docs/phase-ledger.md`. The current ledger answer is that `0` currently
+defined numbered phases remain. Future work must be promoted into the planned
+phase table before it becomes counted remaining phase work.
