@@ -1401,6 +1401,24 @@ The verifier reruns Python syntax, gofmt, backend API tests, the Phase 103
 Newman action-contract collection, evidence refresh, runtime summary,
 operator assurance, and root-clean checks.
 
+Phase 105 packages promotion readiness proof:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-promotion-readiness.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase105.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase105.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase105.ps1
+python ./devctl.py promote
+python ./devctl.py test phase105
+python ./devctl.py test verify105
+```
+
+The promotion readiness script writes JSON and text exports under
+`data/local/output`. The smoke and Newman gates verify
+`GET /api/v1/promotion-readiness-center`, dashboard markers, typed readiness
+booleans, metadata-only proof/action scopes, no-store headers, and forbidden
+sensitive marker absence.
+
 Phase 13 adds:
 
 ```powershell
