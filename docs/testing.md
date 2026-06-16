@@ -1436,6 +1436,24 @@ and proves the direct answer that `0` currently defined numbered phases remain.
 The verifier checks Python syntax, the ledger contract, output refresh, root
 cleanup, and root artifact hygiene.
 
+Phase 107 packages the contract completion audit:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-contract-completion-audit.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-contract-completion-audit.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase107.ps1
+python ./devctl.py audit
+python ./devctl.py test phase107
+python ./devctl.py test verify107
+```
+
+The audit reads repository metadata only and writes
+`data/local/output/contract-completion-audit.json` plus
+`data/local/output/contract-completion-audit.txt`. It intentionally reports
+`attention` while browser extension, OpenTelemetry exporter, foreground app
+collector, install-event collector, visible local indicator, Docker Compose
+OTel stack, and release SBOM packaging remain missing or partial.
+
 Phase 13 adds:
 
 ```powershell

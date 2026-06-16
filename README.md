@@ -618,3 +618,12 @@ write `data/local/output/phase-ledger.json` and
 at `docs/phase-ledger.md`. The current ledger answer is that `0` currently
 defined numbered phases remain. Future work must be promoted into the planned
 phase table before it becomes counted remaining phase work.
+
+Phase 107 adds a metadata-only contract completion audit. Use
+`python devctl.py audit` to write
+`data/local/output/contract-completion-audit.json` and
+`data/local/output/contract-completion-audit.txt`; the human-readable audit
+contract lives at `docs/contract-completion-audit.md`. This audit intentionally
+does not claim TraceDeck is end-to-end complete: it lists implemented,
+partial, and missing deliverables so the phase ledger answer and the product
+completion state stay separate and inspectable.
