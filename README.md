@@ -463,6 +463,9 @@ Use `python devctl.py test quality` to run gofmt, `go test ./...`,
 `data/local/go-quality/` and logs under `logs/local/test/`. Use
 `python devctl.py test phase85` to run the quality gate, Phase 85 Newman
 runtime guard, runtime doctor, and root-clean check.
+All PowerShell verification scripts set `GOCACHE` and `GOTMPDIR` under
+`data/local/` so Go build/test artifacts stay inside the repo-local generated
+artifact area instead of Windows user profile cache directories.
 
 Phase 87 packages the current trust hardening bundle. Use
 `python devctl.py test phase87` to rerun the Phase 86 premium UI/provenance
@@ -529,3 +532,8 @@ Phase 94 surfaces deployment service advisories in the Deployment Readiness
 Center API and dashboard. Use `python devctl.py test phase94` to verify typed
 metadata-only advisories for live boot, native autostart, background start,
 offline replay, archive backlog, and ready states.
+
+Phase 95 hardens scripted Go verification on Windows by routing `GOCACHE` and
+`GOTMPDIR` to `data/local/go-build-cache/` and `data/local/go-tmp/` from the
+shared PowerShell script bootstrap. Use `python devctl.py test phase95` to
+rerun the Phase 94 gate and prove Go build/test artifacts stay repo-local.
