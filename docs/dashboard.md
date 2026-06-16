@@ -667,3 +667,10 @@ surfaces. Runtime Status Center now includes a `PID Reconciliation` proof row,
 and Operator Assurance includes a refresh action when the ready-file PID is
 stale. The UI should present this as a watch item tied to scheduled boot proof,
 not as a live backend outage when PID and `/health` are healthy.
+
+Phase 103 makes that watch action executable. Both Runtime Status Center and
+Operator Assurance use `python ./devctl.py server task-refresh-ready` for stale
+ready PID proof, so operators can refresh scheduled boot evidence while leaving
+a healthy backend process running. The action rows also include
+`evidence_scope=metadata_only`, matching the proof/card privacy labels shown in
+the UI.

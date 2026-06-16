@@ -657,3 +657,11 @@ are `match`, `stale`, `absent`, and `unknown`. A stale ready-file PID adds the
 `pid-reconciliation` proof row and `refresh-ready-pid-proof` operator action
 with `watch` status, but does not override healthy live `pid_and_health`
 runtime proof.
+
+Phase 103 points that `refresh-ready-pid-proof` action at the runnable command
+`python ./devctl.py server task-refresh-ready`. The command refreshes local
+ready proof from live PID and `/health` metadata only; it does not restart the
+backend and does not collect browser content, screenshots, credentials, alert
+bodies, provider payloads, or private content. Runtime Status and Operator
+Assurance action rows expose typed `evidence_scope=metadata_only` so clients can
+separate metadata-only remediation from sensitive collection.

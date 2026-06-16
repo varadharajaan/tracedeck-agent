@@ -273,7 +273,7 @@ func TestRuntimeStatusCenterStaleReadyPIDIsWatch(t *testing.T) {
 		}
 	}
 	for _, action := range center.Actions {
-		if action.ID == constants.RuntimeStatusActionReadyPIDID && action.Status == constants.StatusWatch {
+		if action.ID == constants.RuntimeStatusActionReadyPIDID && action.Status == constants.StatusWatch && action.Command == constants.RuntimeReadyPIDRefreshCommand && action.EvidenceScope == constants.EvidenceScopeMetadataOnly {
 			hasRefreshAction = true
 		}
 	}
@@ -301,7 +301,7 @@ func TestRuntimeStatusCenterMissingSummary(t *testing.T) {
 	if center.SummaryAvailable || center.Summary.Status != constants.StatusAttention || center.Summary.CanContinue {
 		t.Fatalf("expected missing runtime summary action state: %+v", center.Summary)
 	}
-	if len(center.Actions) != 1 || center.Actions[0].Command != constants.RuntimeSummaryCommand {
+	if len(center.Actions) != 1 || center.Actions[0].Command != constants.RuntimeSummaryCommand || center.Actions[0].EvidenceScope != constants.EvidenceScopeMetadataOnly {
 		t.Fatalf("expected runtime summary generation action: %+v", center.Actions)
 	}
 	if len(center.Proof) != 1 || center.Proof[0].EvidenceScope != constants.EvidenceScopeMetadataOnly {
@@ -623,6 +623,11 @@ func TestOperatorAssuranceCenterEndpointSchedulerDeniedRuntimeHealthy(t *testing
 	}
 	if !hasScheduler || !hasPrivacy {
 		t.Fatalf("expected Scheduler watch and privacy ok cards: %+v", center.Cards)
+	}
+	for _, action := range center.Actions {
+		if action.EvidenceScope != constants.EvidenceScopeMetadataOnly {
+			t.Fatalf("expected metadata-only assurance action: %+v", action)
+		}
 	}
 	serialized := strings.ToLower(response.Body.String())
 	for _, forbidden := range []string{"smtp_password_value", "provider_secret_value", "push_endpoint_value", "screenshot_bytes_value", "raw_url_value", "page_title_value", "alert_body_value", "card_number", "cvv", "payment_token", "keylogger"} {

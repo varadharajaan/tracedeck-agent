@@ -588,3 +588,11 @@ and `ready_pid_status` under `backend`; `stale` is shown as a watch item while
 healthy live `pid_and_health` proof remains usable. Use
 `python devctl.py test phase102`, `smoke102`, or `newman102` to verify the
 stale-ready-PID Runtime Status and Operator Assurance contracts.
+
+Phase 103 adds a direct remediation for that stale proof. Use
+`python devctl.py server task-refresh-ready` to rewrite
+`data/local/backend/backend-task-ready.json` from the healthy live PID and
+`/health` proof without restarting the backend. Runtime Status Center and
+Operator Assurance now point `refresh-ready-pid-proof` actions at that command.
+Use `python devctl.py test phase103`, `smoke103`, or `newman103` to verify the
+refresh command and metadata-only API actions.

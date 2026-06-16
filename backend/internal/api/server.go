@@ -296,12 +296,13 @@ func missingRuntimeStatusCenter(summaryPath string) model.RuntimeStatusCenter {
 		},
 		Actions: []model.RuntimeStatusAction{
 			{
-				ID:       constants.RuntimeStatusActionSummaryID,
-				Title:    "Generate runtime summary",
-				Detail:   "Create the local JSON and text operator proof files under data/local/output.",
-				Command:  constants.RuntimeSummaryCommand,
-				Severity: constants.SeverityHigh,
-				Status:   constants.StatusPending,
+				ID:            constants.RuntimeStatusActionSummaryID,
+				Title:         "Generate runtime summary",
+				Detail:        "Create the local JSON and text operator proof files under data/local/output.",
+				Command:       constants.RuntimeSummaryCommand,
+				Severity:      constants.SeverityHigh,
+				Status:        constants.StatusPending,
+				EvidenceScope: constants.EvidenceScopeMetadataOnly,
 			},
 		},
 		PrivacyBoundary: constants.RuntimeStatusPrivacyNote,
@@ -480,12 +481,13 @@ func runtimeStatusActions(artifact model.RuntimeSummaryArtifact) []model.Runtime
 		}
 		seen[key] = true
 		actions = append(actions, model.RuntimeStatusAction{
-			ID:       id,
-			Title:    title,
-			Detail:   detail,
-			Command:  command,
-			Severity: severity,
-			Status:   status,
+			ID:            id,
+			Title:         title,
+			Detail:        detail,
+			Command:       command,
+			Severity:      severity,
+			Status:        status,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
 		})
 	}
 
@@ -493,7 +495,7 @@ func runtimeStatusActions(artifact model.RuntimeSummaryArtifact) []model.Runtime
 		addAction(constants.RuntimeStatusActionRestartID, "Restart backend task", "Restart the hidden local backend task and rerun the summary.", constants.RuntimeTaskRestartCommand, constants.SeverityHigh, constants.StatusPending)
 	}
 	if runtimeReadyPIDStatus(artifact) == constants.ReadyPIDStatusStale {
-		addAction(constants.RuntimeStatusActionReadyPIDID, "Refresh ready PID proof", "Ready-file PID differs from the live backend PID. Live runtime proof is usable; refresh scheduled boot proof when reboot persistence evidence is required.", constants.RuntimeSummaryCommand, constants.SeverityInfo, constants.StatusWatch)
+		addAction(constants.RuntimeStatusActionReadyPIDID, "Refresh ready PID proof", "Ready-file PID differs from the live backend PID. Live runtime proof is usable; refresh scheduled boot proof when reboot persistence evidence is required.", constants.RuntimeReadyPIDRefreshCommand, constants.SeverityInfo, constants.StatusWatch)
 	}
 	for index, action := range artifact.Verdict.NextActions {
 		trimmed := strings.TrimSpace(action)
@@ -963,72 +965,79 @@ func operatorAssuranceCards(runtimeCenter model.RuntimeStatusCenter, evidenceCen
 func operatorAssuranceActions(runtimeCenter model.RuntimeStatusCenter, evidenceCenter model.VerificationEvidenceCenter, runtimeReady bool, evidenceReady bool, canContinue bool) []model.OperatorAssuranceAction {
 	actions := []model.OperatorAssuranceAction{
 		{
-			ID:       constants.OperatorAssuranceActionRefreshID,
-			Title:    "Refresh assurance pack",
-			Detail:   "Regenerate the local operator assurance JSON and text handoff files.",
-			Command:  constants.OperatorAssuranceCommand,
-			Severity: constants.SeverityInfo,
-			Status:   constants.StatusOK,
+			ID:            constants.OperatorAssuranceActionRefreshID,
+			Title:         "Refresh assurance pack",
+			Detail:        "Regenerate the local operator assurance JSON and text handoff files.",
+			Command:       constants.OperatorAssuranceCommand,
+			Severity:      constants.SeverityInfo,
+			Status:        constants.StatusOK,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
 		},
 	}
 	if !runtimeReady {
 		actions = append(actions, model.OperatorAssuranceAction{
-			ID:       constants.OperatorAssuranceActionRestartID,
-			Title:    "Restart backend runtime",
-			Detail:   "Restart the local backend task, then refresh runtime summary and assurance.",
-			Command:  constants.RuntimeTaskRestartCommand,
-			Severity: constants.SeverityHigh,
-			Status:   constants.StatusPending,
+			ID:            constants.OperatorAssuranceActionRestartID,
+			Title:         "Restart backend runtime",
+			Detail:        "Restart the local backend task, then refresh runtime summary and assurance.",
+			Command:       constants.RuntimeTaskRestartCommand,
+			Severity:      constants.SeverityHigh,
+			Status:        constants.StatusPending,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
 		})
 	}
 	if runtimeCenter.Summary.SchedulerReadback == "denied" && runtimeReady {
 		actions = append(actions, model.OperatorAssuranceAction{
-			ID:       constants.OperatorAssuranceActionAdminReadID,
-			Title:    "Run elevated Scheduler readback",
-			Detail:   "Use an elevated PowerShell session only if you need service-manager readback proof; runtime proof is already healthy.",
-			Command:  constants.RuntimeTaskStatusCommand,
-			Severity: constants.SeverityInfo,
-			Status:   constants.StatusWatch,
+			ID:            constants.OperatorAssuranceActionAdminReadID,
+			Title:         "Run elevated Scheduler readback",
+			Detail:        "Use an elevated PowerShell session only if you need service-manager readback proof; runtime proof is already healthy.",
+			Command:       constants.RuntimeTaskStatusCommand,
+			Severity:      constants.SeverityInfo,
+			Status:        constants.StatusWatch,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
 		})
 	}
 	if runtimeCenter.Summary.ReadyPIDStatus == constants.ReadyPIDStatusStale && runtimeReady {
 		actions = append(actions, model.OperatorAssuranceAction{
-			ID:       constants.RuntimeStatusActionReadyPIDID,
-			Title:    "Refresh ready PID proof",
-			Detail:   "Ready-file PID differs from the live backend PID; live runtime proof is usable, but scheduled boot proof should be refreshed before reboot-persistence handoff.",
-			Command:  constants.RuntimeSummaryCommand,
-			Severity: constants.SeverityInfo,
-			Status:   constants.StatusWatch,
+			ID:            constants.RuntimeStatusActionReadyPIDID,
+			Title:         "Refresh ready PID proof",
+			Detail:        "Ready-file PID differs from the live backend PID; live runtime proof is usable, but scheduled boot proof should be refreshed before reboot-persistence handoff.",
+			Command:       constants.RuntimeReadyPIDRefreshCommand,
+			Severity:      constants.SeverityInfo,
+			Status:        constants.StatusWatch,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
 		})
 	}
 	if !evidenceReady {
 		actions = append(actions, model.OperatorAssuranceAction{
-			ID:       constants.OperatorAssuranceActionRunVerifierID,
-			Title:    "Run Phase 100 verifier",
-			Detail:   "Run the full Phase 100 verifier and regenerate verification evidence.",
-			Command:  constants.OperatorAssuranceVerifyCommand,
-			Severity: constants.SeverityHigh,
-			Status:   constants.StatusPending,
+			ID:            constants.OperatorAssuranceActionRunVerifierID,
+			Title:         "Run Phase 100 verifier",
+			Detail:        "Run the full Phase 100 verifier and regenerate verification evidence.",
+			Command:       constants.OperatorAssuranceVerifyCommand,
+			Severity:      constants.SeverityHigh,
+			Status:        constants.StatusPending,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
 		})
 	}
 	if !runtimeCenter.SummaryAvailable || runtimeCenter.Summary.Status != constants.StatusOK {
 		actions = append(actions, model.OperatorAssuranceAction{
-			ID:       constants.OperatorAssuranceActionRuntimeID,
-			Title:    "Refresh runtime summary",
-			Detail:   "Refresh local runtime proof before sharing the operator assurance pack.",
-			Command:  constants.RuntimeSummaryCommand,
-			Severity: constants.SeverityInfo,
-			Status:   constants.StatusWatch,
+			ID:            constants.OperatorAssuranceActionRuntimeID,
+			Title:         "Refresh runtime summary",
+			Detail:        "Refresh local runtime proof before sharing the operator assurance pack.",
+			Command:       constants.RuntimeSummaryCommand,
+			Severity:      constants.SeverityInfo,
+			Status:        constants.StatusWatch,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
 		})
 	}
 	if !evidenceCenter.EvidenceAvailable || evidenceCenter.Summary.Status != constants.StatusOK {
 		actions = append(actions, model.OperatorAssuranceAction{
-			ID:       constants.OperatorAssuranceActionEvidenceID,
-			Title:    "Refresh verification evidence",
-			Detail:   "Refresh local gate evidence after any verification run.",
-			Command:  constants.VerificationEvidenceCommand,
-			Severity: constants.SeverityInfo,
-			Status:   constants.StatusWatch,
+			ID:            constants.OperatorAssuranceActionEvidenceID,
+			Title:         "Refresh verification evidence",
+			Detail:        "Refresh local gate evidence after any verification run.",
+			Command:       constants.VerificationEvidenceCommand,
+			Severity:      constants.SeverityInfo,
+			Status:        constants.StatusWatch,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
 		})
 	}
 	if canContinue && len(actions) == 1 {

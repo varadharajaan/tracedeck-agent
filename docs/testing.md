@@ -1370,6 +1370,25 @@ proof healthy while reporting `ready_pid_status=stale` as `watch`. The
 operator assurance contract must include the `refresh-ready-pid-proof` action
 and remains metadata-only.
 
+Phase 103 packages ready PID proof refresh remediation:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/refresh-backend-ready-proof.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-refresh-backend-ready-proof.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase103.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase103.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase103.ps1
+python ./devctl.py server task-refresh-ready
+python ./devctl.py test phase103
+```
+
+The refresh script verifies the live PID file, confirms the process is running,
+checks `/health`, and rewrites the ready proof with the current PID. The smoke
+proves the API first exposes `python ./devctl.py server task-refresh-ready` for
+stale ready proof, then refreshes the proof and confirms
+`ready_pid_status=match`. The Newman collection also asserts the runtime action
+contract includes `evidence_scope=metadata_only`.
+
 Phase 13 adds:
 
 ```powershell
