@@ -780,6 +780,10 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/verify/verify-phase96.ps1"))
     elif target == "postmerge":
         run(powershell("./scripts/verify/verify-postmerge.ps1", "-PhaseTarget", "phase95", "-SkipGitHub"), stream=True)
+    elif target == "phase97":
+        run(powershell("./scripts/verify/verify-phase97.ps1"), stream=True)
+    elif target == "verify97":
+        run(powershell("./scripts/verify/verify-phase97.ps1"))
     elif target == "activity-feed":
         run(powershell("./scripts/local/test-activity-feed-provenance.ps1"))
     elif target == "quality":
@@ -869,6 +873,14 @@ def cmd_status(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def cmd_summary(args: argparse.Namespace) -> int:
+    command = powershell("./scripts/local/get-runtime-summary.ps1", "-Addr", args.addr)
+    if args.skip_doctor:
+        command.append("-SkipDoctor")
+    run(command, stream=True)
+    return 0
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     report = runtime_doctor_report(args)
     save_doctor_report(report)
@@ -885,6 +897,10 @@ def main() -> int:
 
     status = sub.add_parser("status", help="Check local server, output paths, and SAM config")
     status.set_defaults(func=cmd_status)
+
+    summary = sub.add_parser("summary", help="Write backend, Scheduler, doctor, git, and frontend status summary")
+    summary.add_argument("--skip-doctor", action="store_true", help="Skip runtime doctor and summarize task/git/frontend status only")
+    summary.set_defaults(func=cmd_summary)
 
     doctor = sub.add_parser("doctor", help="Write local/cloud runtime assurance reports under data/local/output")
     doctor.add_argument("--tenant-id", default=DEFAULT_TENANT_ID, help="Tenant used for browser activity readback")
@@ -934,6 +950,7 @@ def main() -> int:
             "phase94",
             "phase95",
             "phase96",
+            "phase97",
             "smoke",
             "newman",
             "verify",
@@ -1000,6 +1017,7 @@ def main() -> int:
             "verify95",
             "verify96",
             "postmerge",
+            "verify97",
             "activity-feed",
             "quality",
             "theme",

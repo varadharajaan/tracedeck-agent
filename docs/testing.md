@@ -1269,6 +1269,19 @@ runtime doctor, live server provenance, root artifact check, `git diff --check`,
 and a tracked content-diff check. GitHub issue/PR state checks are available by
 passing `-IssueNumber` and `-PrNumber` without `-SkipGitHub`.
 
+Phase 97 packages runtime status into a local operator summary:
+
+```powershell
+python ./devctl.py summary
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-runtime-summary.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase97.ps1
+python ./devctl.py test phase97
+```
+
+The summary writes `data/local/output/runtime-summary.json` and
+`data/local/output/runtime-summary.txt`. It uses existing backend task-status
+and runtime doctor evidence only; it does not add a new API or collector.
+
 Phase 13 adds:
 
 ```powershell
