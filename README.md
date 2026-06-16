@@ -576,3 +576,8 @@ cards, including a clear Scheduler-denied-but-runtime-healthy explanation. The
 Phase 100 verifier refreshes the persistent local backend through
 `scripts/local/wait-backend-health.ps1`, keeping the `18080` proof bounded and
 logged.
+
+Phase 101 hardens `scripts/verify/verify-postmerge.ps1` so the current phase
+verification runs outside the output-capturing logger. This keeps strict
+post-merge checks from hanging when a phase intentionally refreshes the
+persistent local backend.

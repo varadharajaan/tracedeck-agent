@@ -1338,6 +1338,19 @@ uses `scripts/local/wait-backend-health.ps1` when it refreshes the persistent
 local backend, so the `18080` server proof is bounded and logged under
 `logs/local/backend`.
 
+Phase 101 hardens the reusable post-merge verifier:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase101.ps1
+python ./devctl.py test phase101
+```
+
+The Phase 101 verifier reruns the Phase 100 post-merge checklist with
+`-AllowContentDiff` during pre-publish verification. This proves
+`verify-postmerge.ps1` can run phase verification outside the
+output-capturing logger, which avoids hangs when a phase refreshes a
+persistent local backend.
+
 Phase 13 adds:
 
 ```powershell
