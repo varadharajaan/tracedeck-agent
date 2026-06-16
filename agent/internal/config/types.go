@@ -8,6 +8,7 @@ type Policy struct {
 	Retention          RetentionPolicy     `json:"retention" yaml:"retention"`
 	Archive            ArchivePolicy       `json:"archive" yaml:"archive"`
 	BackendSync        BackendSyncPolicy   `json:"backend_sync" yaml:"backend_sync"`
+	Observability      ObservabilityPolicy `json:"observability" yaml:"observability"`
 	Alerts             AlertPolicy         `json:"alerts" yaml:"alerts"`
 	StudyApps          []string            `json:"study_apps" yaml:"study_apps"`
 	BlockedApps        []string            `json:"blocked_apps" yaml:"blocked_apps"`
@@ -79,6 +80,23 @@ type BackendSyncPolicy struct {
 	BaseURL        string `json:"base_url" yaml:"base_url" jsonschema:"format=uri"`
 	BatchLimit     int    `json:"batch_limit" yaml:"batch_limit" jsonschema:"minimum=1"`
 	RequestTimeout string `json:"request_timeout" yaml:"request_timeout"`
+}
+
+type ObservabilityPolicy struct {
+	OpenTelemetry OpenTelemetryPolicy `json:"opentelemetry" yaml:"opentelemetry"`
+}
+
+type OpenTelemetryPolicy struct {
+	Enabled        bool                     `json:"enabled" yaml:"enabled"`
+	Protocol       OpenTelemetryProtocol    `json:"protocol" yaml:"protocol"`
+	Endpoint       string                   `json:"endpoint" yaml:"endpoint" jsonschema:"format=uri"`
+	BatchLimit     int                      `json:"batch_limit" yaml:"batch_limit" jsonschema:"minimum=1"`
+	RequestTimeout string                   `json:"request_timeout" yaml:"request_timeout"`
+	Retry          OpenTelemetryRetryPolicy `json:"retry" yaml:"retry"`
+}
+
+type OpenTelemetryRetryPolicy struct {
+	MaxAttempts int `json:"max_attempts" yaml:"max_attempts" jsonschema:"minimum=1"`
 }
 
 type StorageClassDays struct {

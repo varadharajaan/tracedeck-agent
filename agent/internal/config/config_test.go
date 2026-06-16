@@ -103,6 +103,20 @@ func TestLoadRejectsBadBackendSyncURL(t *testing.T) {
 	}
 }
 
+func TestLoadRejectsBadOpenTelemetryEndpoint(t *testing.T) {
+	t.Parallel()
+
+	data := strings.Replace(validMinimalPolicy(), "enabled: false\n    protocol: otlp_http_json", "enabled: true\n    protocol: otlp_http_json", 1)
+	data = strings.Replace(data, "endpoint: http://127.0.0.1:4318/v1/logs", "endpoint: not-a-url", 1)
+	_, err := Load([]byte(data))
+	if err == nil {
+		t.Fatal("expected invalid OpenTelemetry endpoint to be rejected")
+	}
+	if !strings.Contains(err.Error(), constants.ConfigFieldOpenTelemetryEndpoint) {
+		t.Fatalf("expected OpenTelemetry endpoint in error, got: %v", err)
+	}
+}
+
 func validMinimalPolicy() string {
 	return `
 tenant_id: family-varadha
@@ -145,6 +159,15 @@ backend_sync:
   base_url: http://127.0.0.1:18080
   batch_limit: 100
   request_timeout: 10s
+observability:
+  opentelemetry:
+    enabled: false
+    protocol: otlp_http_json
+    endpoint: http://127.0.0.1:4318/v1/logs
+    batch_limit: 100
+    request_timeout: 5s
+    retry:
+      max_attempts: 2
 alerts:
   enabled: false
   email:

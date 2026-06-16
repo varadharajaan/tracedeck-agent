@@ -43,6 +43,16 @@ backend_sync:
   batch_limit: 100
   request_timeout: 10s
 
+observability:
+  opentelemetry:
+    enabled: false
+    protocol: otlp_http_json
+    endpoint: http://127.0.0.1:4318/v1/logs
+    batch_limit: 100
+    request_timeout: 5s
+    retry:
+      max_attempts: 2
+
 alerts:
   enabled: true
   email:

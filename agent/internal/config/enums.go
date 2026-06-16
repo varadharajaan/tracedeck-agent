@@ -15,6 +15,7 @@ type SensitiveCapabilityMode string
 type ArchiveProvider string
 type EmailProvider string
 type Severity string
+type OpenTelemetryProtocol string
 
 var transparencyModes = enumSet[TransparencyMode](
 	constants.TransparencyVisibleIndicatorRequired,
@@ -54,6 +55,10 @@ var emailProviders = enumSet[EmailProvider](
 	constants.EmailProviderNone,
 	constants.EmailProviderSES,
 	constants.EmailProviderSMTP,
+)
+
+var openTelemetryProtocols = enumSet[OpenTelemetryProtocol](
+	constants.OpenTelemetryProtocolOTLPHTTPJSON,
 )
 
 var severities = enumSet[Severity](

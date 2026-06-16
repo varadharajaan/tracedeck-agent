@@ -217,6 +217,68 @@
         "path_mode"
       ]
     },
+    "ObservabilityPolicy": {
+      "properties": {
+        "opentelemetry": {
+          "$ref": "#/$defs/OpenTelemetryPolicy"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "opentelemetry"
+      ]
+    },
+    "OpenTelemetryPolicy": {
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "protocol": {
+          "type": "string",
+          "enum": [
+            "otlp_http_json"
+          ]
+        },
+        "endpoint": {
+          "type": "string",
+          "format": "uri"
+        },
+        "batch_limit": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "request_timeout": {
+          "type": "string"
+        },
+        "retry": {
+          "$ref": "#/$defs/OpenTelemetryRetryPolicy"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "enabled",
+        "protocol",
+        "endpoint",
+        "batch_limit",
+        "request_timeout",
+        "retry"
+      ]
+    },
+    "OpenTelemetryRetryPolicy": {
+      "properties": {
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "max_attempts"
+      ]
+    },
     "Policy": {
       "properties": {
         "tenant_id": {
@@ -242,6 +304,9 @@
         },
         "backend_sync": {
           "$ref": "#/$defs/BackendSyncPolicy"
+        },
+        "observability": {
+          "$ref": "#/$defs/ObservabilityPolicy"
         },
         "alerts": {
           "$ref": "#/$defs/AlertPolicy"
@@ -320,6 +385,7 @@
         "retention",
         "archive",
         "backend_sync",
+        "observability",
         "alerts",
         "study_apps",
         "blocked_apps",

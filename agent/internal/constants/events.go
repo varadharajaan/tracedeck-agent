@@ -16,6 +16,48 @@ const (
 )
 
 const (
+	OpenTelemetryProtocolOTLPHTTPJSON = "otlp_http_json"
+	OpenTelemetryContentTypeJSON      = "application/json"
+	OpenTelemetryServiceNameKey       = "service.name"
+	OpenTelemetryServiceVersionKey    = "service.version"
+	OpenTelemetryScopeName            = "github.com/varadharajaan/tracedeck-agent/agent/internal/exporter"
+	OpenTelemetryLogBody              = "tracedeck metadata event"
+	OpenTelemetryPrivacyBoundary      = "metadata_only_otlp_logs"
+)
+
+const (
+	OpenTelemetryAttrTenantID        = "tracedeck.tenant_id"
+	OpenTelemetryAttrDeviceID        = "tracedeck.device_id"
+	OpenTelemetryAttrHostName        = "host.name"
+	OpenTelemetryAttrOSName          = "os.type"
+	OpenTelemetryAttrProfile         = "tracedeck.profile"
+	OpenTelemetryAttrPrivacyBoundary = "tracedeck.privacy_boundary"
+	OpenTelemetryAttrEventID         = "tracedeck.event.id"
+	OpenTelemetryAttrEventType       = "event.name"
+	OpenTelemetryAttrEventSource     = "event.source"
+	OpenTelemetryAttrAppName         = "process.executable.name"
+	OpenTelemetryAttrProcessID       = "process.pid"
+	OpenTelemetryAttrPathHash        = "tracedeck.path_hash"
+	OpenTelemetryAttrMetadataPrefix  = "tracedeck.metadata."
+)
+
+const (
+	OpenTelemetrySensitiveKeyPassword       = "password"
+	OpenTelemetrySensitiveKeyCredential     = "credential"
+	OpenTelemetrySensitiveKeyCookie         = "cookie"
+	OpenTelemetrySensitiveKeyToken          = "token"
+	OpenTelemetrySensitiveKeyScreenshot     = "screenshot"
+	OpenTelemetrySensitiveKeyKeystroke      = "keystroke"
+	OpenTelemetrySensitiveKeyPrivateMessage = "private_message"
+	OpenTelemetrySensitiveKeyPageTitle      = "page_title"
+	OpenTelemetrySensitiveKeyRawURL         = "raw_url"
+	OpenTelemetrySensitiveKeyFullURL        = "full_url"
+	OpenTelemetrySensitiveKeyProviderSecret = "provider_secret"
+	OpenTelemetrySensitiveKeyPayment        = "payment"
+	OpenTelemetrySensitiveKeyCard           = "card"
+)
+
+const (
 	EventMetadataProfile         = "profile"
 	EventMetadataOperatingSystem = "operating_system"
 	EventMetadataBrowserName     = "browser_name"

@@ -13,6 +13,12 @@ passwords, keystrokes, browser cookies, auth tokens, private messages, camera,
 microphone, or hidden screen content. Browser monitoring is domain/category
 based by default.
 
+Phase 109 adds optional OpenTelemetry export: the agent can send metadata-only
+OTLP/HTTP JSON logs to a local OpenTelemetry Collector at
+`http://127.0.0.1:4318/v1/logs`. The local stack lives under
+`deployments/otel/`, and verification is scripted through
+`python ./devctl.py test phase109`.
+
 ## Local Commands
 
 ```powershell
@@ -50,6 +56,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phas
 go run ./agent/cmd/tracedeck-agent validate-config --config ./examples/policies/ai-btech-student.yaml
 go run ./agent/cmd/tracedeck-agent schema --version v1alpha1 --out ./docs/schema/policy-v1alpha1.schema.json
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-policy-schema.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-otel-exporter.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase109.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-contract.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-layout.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-dashboard-theme.ps1

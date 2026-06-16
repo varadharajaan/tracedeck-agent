@@ -220,10 +220,10 @@ try {
         -ID "opentelemetry-exporter" `
         -Area "telemetry" `
         -Title "OpenTelemetry OTLP exporter implementation" `
-        -Status ($(if (Test-TraceDeckPath "agent/internal/exporter") { "ok" } else { "missing" })) `
-        -Evidence @("docs/telemetry-schema.md") `
-        -Gaps @("Telemetry schema docs exist, but no agent/internal/exporter package is present") `
-        -NextAction "Add OTLP exporter interface and implementation with bounded retry/drop metrics."
+        -Status ($(if ((Test-TraceDeckPath "agent/internal/exporter/otlp.go") -and (Test-TraceDeckPath "agent/internal/exporter/otlp_test.go")) { "ok" } else { "missing" })) `
+        -Evidence @("agent/internal/exporter/otlp.go", "agent/internal/exporter/otlp_test.go", "docs/opentelemetry-exporter.md", "docs/telemetry-schema.md") `
+        -Gaps ($(if ((Test-TraceDeckPath "agent/internal/exporter/otlp.go") -and (Test-TraceDeckPath "agent/internal/exporter/otlp_test.go")) { @() } else { @("Telemetry schema docs exist, but no agent/internal/exporter package is present") })) `
+        -NextAction "Keep OTLP export bounded, metadata-only, and covered by smoke tests before adding additional signal types."
 
     Add-TraceDeckAuditRequirement -Requirements $requirements `
         -ID "visible-local-indicator" `
@@ -238,10 +238,10 @@ try {
         -ID "docker-compose-otel-stack" `
         -Area "local-dev" `
         -Title "Docker Compose and OpenTelemetry Collector local stack" `
-        -Status ($(if ((Test-TraceDeckAnyPath -RelativePaths @("deployments/docker-compose.yml", "docker-compose.yml")) -and (Test-TraceDeckAnyPath -RelativePaths @("deployments/otel-collector-config.yaml", "otel-collector-config.yaml"))) { "ok" } else { "missing" })) `
-        -Evidence @() `
-        -Gaps @("No Docker Compose or OTel Collector config was found in deployments/") `
-        -NextAction "Add local Docker Compose and otel-collector config if local OTLP verification is in scope."
+        -Status ($(if ((Test-TraceDeckPath "deployments/otel/docker-compose.yaml") -and (Test-TraceDeckPath "deployments/otel/otel-collector.yaml")) { "ok" } else { "missing" })) `
+        -Evidence @("deployments/otel/docker-compose.yaml", "deployments/otel/otel-collector.yaml", "scripts/local/test-otel-exporter.ps1") `
+        -Gaps ($(if ((Test-TraceDeckPath "deployments/otel/docker-compose.yaml") -and (Test-TraceDeckPath "deployments/otel/otel-collector.yaml")) { @() } else { @("No Docker Compose or OTel Collector config was found in deployments/") })) `
+        -NextAction "Use scripts/local/test-otel-exporter.ps1 and docker compose config before local collector demos."
 
     Add-TraceDeckAuditRequirement -Requirements $requirements `
         -ID "quality-and-security-gates" `

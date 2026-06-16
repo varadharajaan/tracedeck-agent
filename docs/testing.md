@@ -1475,6 +1475,30 @@ ingest extension-shaped browser metadata, verify Browser Activity API
 visibility, and reject raw URLs, page titles, cookies, passwords, screenshots,
 provider secrets, and alert bodies.
 
+Phase 109 packages the OpenTelemetry exporter and local collector stack:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-otel-exporter.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase109.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase109.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase109.ps1
+python ./devctl.py test phase109
+python ./devctl.py test smoke109
+python ./devctl.py test newman109
+python ./devctl.py test verify109
+```
+
+The exporter sends stored TraceDeck metadata events as OTLP/HTTP JSON logs.
+The smoke starts `scripts/tools/fake-otlp`, runs the agent once with
+`observability.opentelemetry.enabled=true`, checks `otel_exported`,
+`otel_events`, `otel_dropped`, and `otel_attempts`, and verifies the captured
+OTLP payload has no password, screenshot, raw URL, page title, cookie, token,
+provider secret, alert body, private content, payment data, or raw provider
+payload markers. `scripts/local/test-otel-exporter.ps1` also checks
+`deployments/otel/docker-compose.yaml` and
+`deployments/otel/otel-collector.yaml`, using `docker compose config` when the
+Docker CLI is available.
+
 Phase 13 adds:
 
 ```powershell
