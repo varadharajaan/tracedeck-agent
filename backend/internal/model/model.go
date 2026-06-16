@@ -2406,6 +2406,21 @@ type TenantDeploymentAction struct {
 	Source   string `json:"source"`
 }
 
+type TenantDeploymentAdvisory struct {
+	ID                       string `json:"id"`
+	Severity                 string `json:"severity"`
+	Code                     string `json:"code"`
+	Headline                 string `json:"headline"`
+	Detail                   string `json:"detail"`
+	OperatorAction           string `json:"operator_action"`
+	ServiceManager           string `json:"service_manager"`
+	EvidenceScope            string `json:"evidence_scope"`
+	Status                   string `json:"status"`
+	CanContinue              bool   `json:"can_continue"`
+	AdminApprovalRecommended bool   `json:"admin_approval_recommended"`
+	PaidTier                 string `json:"paid_tier"`
+}
+
 type TenantDeploymentReadinessCenter struct {
 	TenantID        string                           `json:"tenant_id"`
 	TenantName      string                           `json:"tenant_name"`
@@ -2417,6 +2432,7 @@ type TenantDeploymentReadinessCenter struct {
 	Manifests       []TenantDeploymentManifest       `json:"manifests"`
 	Proof           []TenantDeploymentProof          `json:"proof"`
 	Actions         []TenantDeploymentAction         `json:"actions"`
+	Advisories      []TenantDeploymentAdvisory       `json:"advisories"`
 	PrivacyBoundary string                           `json:"privacy_boundary"`
 	GeneratedAt     time.Time                        `json:"generated_at"`
 }

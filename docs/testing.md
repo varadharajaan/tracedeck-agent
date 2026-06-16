@@ -1225,6 +1225,20 @@ The status JSON must include `advisory.severity`, `advisory.code`,
 `advisory.admin_readback_recommended`. A denied Scheduler readback with healthy
 runtime proof remains a `watch` advisory rather than a false failure.
 
+Phase 94 adds deployment service advisories to the readiness API and dashboard:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase94.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase94.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase94.ps1
+python ./devctl.py test phase94
+```
+
+The Deployment Readiness Center response must include `advisories[]` with typed
+`id`, `severity`, `code`, `headline`, `operator_action`, `evidence_scope`,
+`can_continue`, and `admin_approval_recommended` fields. These are rollout
+metadata only; they do not add new collectors or live payload capture.
+
 Phase 13 adds:
 
 ```powershell

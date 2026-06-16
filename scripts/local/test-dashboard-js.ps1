@@ -28,8 +28,9 @@ try {
     $scriptPath = Join-Path $outputDir "dashboard.js"
     Set-Content -Path $scriptPath -Value $matches[$matches.Count - 1].Groups["script"].Value -Encoding UTF8
 
+    $nodeParser = "const fs=require('fs'); const vm=require('vm'); const code=fs.readFileSync(process.argv[1], 'utf8'); new vm.Script(code, { filename: 'dashboard-inline.js' });"
     Invoke-TraceDeckLoggedCommand -Label "Dashboard JavaScript syntax check" -Command {
-        node --check $scriptPath
+        & $node.Source -e $nodeParser $scriptPath
     }
 
     Write-TraceDeckLog -Level "INFO" -Message "Dashboard JavaScript syntax check passed: $scriptPath"

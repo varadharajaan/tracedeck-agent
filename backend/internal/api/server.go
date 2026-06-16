@@ -765,6 +765,7 @@ func (s *Server) handleTenantDeploymentReadinessCenter(w http.ResponseWriter, r 
 			writeError(w, http.StatusNotFound, "tenant not found")
 			return
 		}
+		s.logger.Error("tenant deployment readiness center lookup failed", "tenant_id", tenantID, "error", err)
 		writeError(w, http.StatusInternalServerError, "tenant deployment readiness center lookup failed")
 		return
 	}

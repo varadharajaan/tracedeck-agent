@@ -556,6 +556,12 @@ and deployment owner actions. The command navigation adds a Deploy target so
 admins can answer "will the agent come back after restart?" without leaving the
 monetisation dashboard.
 
+Phase 94 adds a Service Advisory panel to this center. It renders typed
+metadata-only advisories for live boot proof, native service autostart,
+background start, offline replay, archive backlog, and ready states. Each row
+shows the service manager label, advisory code, whether work can continue,
+whether admin approval is recommended, and the next operator action.
+
 Phase 67 adds a Premium Operations Hub above the existing monetisation
 drilldowns. It renders the typed `premium-operations-hub` API as the
 buyer/admin first screen: premium readiness, anomaly inbox, mail delivery,
