@@ -52,10 +52,11 @@ Implemented or strongly evidenced:
   collections, and scripted local verification.
 - Phase ledger, runtime summary, verification evidence, operator assurance, and
   promotion readiness proof surfaces.
+- Chrome, Edge, and Brave browser extension skeleton that posts
+  domain/category-only events to localhost telemetry ingest.
 
 Remaining or partial:
 
-- Browser extension skeleton for Chrome, Edge, and Brave is not present.
 - OpenTelemetry OTLP exporter implementation is not present; telemetry schema
   docs exist.
 - Active foreground app collection is represented as a platform capability but

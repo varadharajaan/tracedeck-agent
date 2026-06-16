@@ -1,0 +1,163 @@
+{
+  "info": {
+    "name": "TraceDeck Browser Extension Phase 108",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is ok and no-store', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Extension Tenant",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/tenants",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenant_id\": \"family-varadha\",\n  \"name\": \"Family Varadha\",\n  \"plan_id\": \"family_pro\",\n  \"retention_tier_id\": \"family_cloud_90_365_archive\",\n  \"primary_profile\": \"ai-btech-student\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('extension tenant exists', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.tenant_id).to.eql('family-varadha');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Enroll Extension Device",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/devices/enroll",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenant_id\": \"family-varadha\",\n  \"device_id\": \"phase108-extension-device\",\n  \"host_name\": \"phase108-extension-host\",\n  \"profile\": \"ai_btech_student\",\n  \"os_name\": \"browser_extension\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('extension device enrolled', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.device_id).to.eql('phase108-extension-device');",
+              "  pm.expect(body.tenant_id).to.eql('family-varadha');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ingest Extension Domain Event",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/devices/phase108-extension-device/telemetry-events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenant_id\": \"family-varadha\",\n  \"device_id\": \"phase108-extension-device\",\n  \"host_name\": \"phase108-extension-host\",\n  \"profile\": \"ai_btech_student\",\n  \"os_name\": \"browser_extension\",\n  \"events\": [\n    {\n      \"id\": \"phase108-extension-domain-1\",\n      \"type\": \"browser.domain.observed\",\n      \"source\": \"collector.browser.extension\",\n      \"observed_at\": \"{{$isoTimestamp}}\",\n      \"tenant_id\": \"family-varadha\",\n      \"device_id\": \"phase108-extension-device\",\n      \"host_name\": \"phase108-extension-host\",\n      \"app_name\": \"chrome\",\n      \"process_id\": 0,\n      \"path_hash\": \"\",\n      \"metadata\": {\n        \"browser_name\": \"chrome\",\n        \"domain\": \"docs.python.org\",\n        \"category\": \"study\",\n        \"source_kind\": \"live_ingested\",\n        \"evidence_scope\": \"live\",\n        \"evidence_detail\": \"browser extension observed domain-only navigation metadata\",\n        \"url_mode\": \"domain_only\",\n        \"stored_url_mode\": \"domain_only\",\n        \"visit_count\": \"1\",\n        \"youtube_study_match\": \"true\"\n      }\n    }\n  ]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('extension telemetry accepted', function () {",
+              "  pm.response.to.have.status(202);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.accepted_events).to.eql(1);",
+              "  pm.expect(body.backend_visible_host).to.eql(true);",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Browser Activity Shows Extension Metadata",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/tenants/family-varadha/browser-activity?device_id=phase108-extension-device&browser=chrome&limit=10"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('browser activity includes extension domain row only', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  pm.expect(body.summary.total).to.be.at.least(1);",
+              "  const row = body.items.find((item) => item.domain === 'docs.python.org');",
+              "  pm.expect(row).to.be.an('object');",
+              "  pm.expect(row.browser).to.eql('chrome');",
+              "  pm.expect(row.category).to.eql('study');",
+              "  pm.expect(row.source_kind).to.eql('live_ingested');",
+              "  pm.expect(row.evidence_scope).to.eql('live');",
+              "  const serialized = JSON.stringify(row).toLowerCase();",
+              "  ['https://', 'raw_url', 'page_title', 'cookie', 'password', 'screenshot', 'provider_secret', 'alert_body'].forEach((marker) => {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

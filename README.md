@@ -627,3 +627,12 @@ contract lives at `docs/contract-completion-audit.md`. This audit intentionally
 does not claim TraceDeck is end-to-end complete: it lists implemented,
 partial, and missing deliverables so the phase ledger answer and the product
 completion state stay separate and inspectable.
+
+Phase 108 adds the Chrome, Edge, and Brave Browser Metadata Bridge skeleton.
+The extension lives under `browser-extension/`, posts domain/category-only
+`browser.domain.observed` telemetry to the existing localhost
+`/api/v1/devices/{device_id}/telemetry-events` route, and is covered by
+`python devctl.py test phase108`, `scripts/local/smoke-phase108.ps1`, and
+`scripts/local/newman-phase108.ps1`. It does not store or transmit raw URLs,
+page titles, cookies, tokens, passwords, screenshots, page content, provider
+secrets, alert bodies, payment data, or raw provider payloads.

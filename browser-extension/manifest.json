@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "TraceDeck Browser Metadata Bridge",
+  "description": "Sends TraceDeck domain/category browser metadata to the local backend only.",
+  "version": "0.1.0",
+  "minimum_chrome_version": "102",
+  "action": {
+    "default_title": "TraceDeck Browser Metadata Bridge"
+  },
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "options_ui": {
+    "page": "src/options.html",
+    "open_in_tab": true
+  },
+  "permissions": [
+    "storage",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "http://127.0.0.1/*",
+    "http://localhost/*"
+  ]
+}

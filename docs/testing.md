@@ -1450,9 +1450,30 @@ python ./devctl.py test verify107
 The audit reads repository metadata only and writes
 `data/local/output/contract-completion-audit.json` plus
 `data/local/output/contract-completion-audit.txt`. It intentionally reports
-`attention` while browser extension, OpenTelemetry exporter, foreground app
-collector, install-event collector, visible local indicator, Docker Compose
-OTel stack, and release SBOM packaging remain missing or partial.
+`attention` while the extension, exporter, collector, local indicator, OTel
+stack, and release packaging gaps are made explicit. Phase 108 moves the
+browser extension skeleton from missing to implemented.
+
+Phase 108 packages the browser extension skeleton:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-browser-extension-skeleton.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase108.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase108.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase108.ps1
+python ./devctl.py test phase108
+python ./devctl.py test smoke108
+python ./devctl.py test newman108
+python ./devctl.py test verify108
+```
+
+The extension skeleton lives under `browser-extension/` and targets Chrome,
+Edge, and Brave. It posts `browser.domain.observed` events to the existing
+localhost telemetry ingest route with domain/category metadata only. The smoke
+and Newman gates start isolated backends, enroll a dedicated extension device,
+ingest extension-shaped browser metadata, verify Browser Activity API
+visibility, and reject raw URLs, page titles, cookies, passwords, screenshots,
+provider secrets, and alert bodies.
 
 Phase 13 adds:
 

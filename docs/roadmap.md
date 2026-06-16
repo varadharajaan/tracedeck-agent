@@ -417,3 +417,7 @@
      `docs/contract-completion-audit.md`, `python devctl.py audit`, JSON/text
      audit exports, and a focused verifier that separates planned phase count
      from actual end-to-end completion gaps.
+105. Phase 108: browser extension skeleton. Add the Chrome, Edge, and Brave
+     Browser Metadata Bridge under `browser-extension/`, local-only
+     domain/category telemetry posting, privacy contract tests, live smoke,
+     Newman coverage, docs, and `devctl.py test phase108`.
