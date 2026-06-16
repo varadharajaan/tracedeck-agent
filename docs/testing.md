@@ -1282,6 +1282,21 @@ The summary writes `data/local/output/runtime-summary.json` and
 `data/local/output/runtime-summary.txt`. It uses existing backend task-status
 and runtime doctor evidence only; it does not add a new API or collector.
 
+Phase 98 exposes that operator summary in the backend and dashboard:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase98.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase98.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase98.ps1
+python ./devctl.py test phase98
+```
+
+The smoke live-boots an isolated backend, generates a runtime summary for that
+isolated PID, checks `/api/v1/runtime-status-center`, verifies the dashboard
+Runtime Status Center markers, and runs screenshot-free layout, theme, and
+visual-quality contracts. Newman runs
+`postman/tracedeck-backend-phase98.postman_collection.json`.
+
 Phase 13 adds:
 
 ```powershell

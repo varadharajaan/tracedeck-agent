@@ -148,6 +148,12 @@ theme, and layout contracts reject debug-looking brace labels, pseudo-letter
 shortcuts, terse internal abbreviations, tiny visible controls, and horizontal
 overflow.
 
+Phase 98 adds Runtime Status Center to the Rollout page. It renders the typed
+`runtime-status-center` API from the Phase 97 summary artifact: backend health,
+Scheduler readback, runtime doctor, frontend URL, git hygiene, proof rows,
+operator actions, and metadata-only privacy posture. The Workspace Navigator
+uses the full `Runtime Status` product label.
+
 To check the currently running local dashboard:
 
 ```powershell

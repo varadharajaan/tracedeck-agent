@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"embed"
 	"encoding/json"
@@ -10,6 +11,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -23,10 +25,11 @@ import (
 var dashboardFS embed.FS
 
 type Server struct {
-	store     store.Repository
-	logger    *slog.Logger
-	startedAt time.Time
-	auth      AuthConfig
+	store              store.Repository
+	logger             *slog.Logger
+	startedAt          time.Time
+	auth               AuthConfig
+	runtimeSummaryPath string
 }
 
 func NewServer(repo store.Repository, logger *slog.Logger) *Server {
@@ -37,9 +40,10 @@ func NewServer(repo store.Repository, logger *slog.Logger) *Server {
 		logger = slog.Default()
 	}
 	return &Server{
-		store:     repo,
-		logger:    logger,
-		startedAt: time.Now().UTC(),
+		store:              repo,
+		logger:             logger,
+		startedAt:          time.Now().UTC(),
+		runtimeSummaryPath: constants.DefaultRuntimeSummaryPath,
 	}
 }
 
@@ -67,6 +71,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc(constants.RoutePolicyTemplates, s.handlePolicyTemplates)
 	mux.HandleFunc(constants.RouteAlertRuleTemplates, s.handleAlertRuleTemplates)
 	mux.HandleFunc(constants.RouteAccountPortfolio, s.handleAccountPortfolioIndex)
+	mux.HandleFunc(constants.RouteRuntimeStatus, s.handleRuntimeStatusCenter)
 	mux.HandleFunc(constants.RouteArchiveStatus, s.handleArchiveStatus)
 	return requestLogger(s.logger, s.authMiddleware(mux))
 }
@@ -179,6 +184,292 @@ func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {
 		Service: constants.BackendName,
 		Version: constants.BackendVersion,
 	})
+}
+
+func (s *Server) handleRuntimeStatusCenter(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != constants.RouteRuntimeStatus {
+		http.NotFound(w, r)
+		return
+	}
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+	center, err := s.runtimeStatusCenter()
+	if err != nil {
+		s.logger.Error("runtime status center lookup failed", "error", err)
+		writeError(w, http.StatusInternalServerError, "runtime status center lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, center)
+}
+
+func (s *Server) runtimeStatusCenter() (model.RuntimeStatusCenter, error) {
+	summaryPath := strings.TrimSpace(s.runtimeSummaryPath)
+	if summaryPath == "" {
+		summaryPath = constants.DefaultRuntimeSummaryPath
+	}
+
+	data, err := os.ReadFile(summaryPath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return missingRuntimeStatusCenter(summaryPath), nil
+		}
+		return model.RuntimeStatusCenter{}, fmt.Errorf("read runtime summary: %w", err)
+	}
+
+	var artifact model.RuntimeSummaryArtifact
+	data = bytes.TrimPrefix(data, []byte{0xEF, 0xBB, 0xBF})
+	if err := json.Unmarshal(data, &artifact); err != nil {
+		return model.RuntimeStatusCenter{}, fmt.Errorf("decode runtime summary: %w", err)
+	}
+	return runtimeStatusCenterFromArtifact(summaryPath, artifact), nil
+}
+
+func missingRuntimeStatusCenter(summaryPath string) model.RuntimeStatusCenter {
+	now := time.Now().UTC()
+	return model.RuntimeStatusCenter{
+		SummaryAvailable: false,
+		SummaryPath:      summaryPath,
+		Source:           constants.RuntimeStatusSourcePhase97Summary,
+		Summary: model.RuntimeStatusSummary{
+			Status:             constants.StatusAttention,
+			Headline:           "Runtime summary has not been generated.",
+			Detail:             "Run the scripted summary command before using this page for operator proof.",
+			CanContinue:        false,
+			DoctorOverall:      constants.StatusPending,
+			DoctorLocal:        constants.StatusPending,
+			SchedulerReadback:  constants.StatusPending,
+			SummaryGeneratedAt: "",
+		},
+		Proof: []model.RuntimeStatusProof{
+			{
+				ID:            constants.RuntimeStatusProofBackendID,
+				Label:         "Backend Runtime",
+				Value:         "summary missing",
+				Detail:        "No runtime summary artifact was found at the configured local path.",
+				Status:        constants.StatusAttention,
+				EvidenceScope: constants.EvidenceScopeMetadataOnly,
+			},
+		},
+		Actions: []model.RuntimeStatusAction{
+			{
+				ID:       constants.RuntimeStatusActionSummaryID,
+				Title:    "Generate runtime summary",
+				Detail:   "Create the local JSON and text operator proof files under data/local/output.",
+				Command:  constants.RuntimeSummaryCommand,
+				Severity: constants.SeverityHigh,
+				Status:   constants.StatusPending,
+			},
+		},
+		PrivacyBoundary: constants.RuntimeStatusPrivacyNote,
+		GeneratedAt:     now,
+	}
+}
+
+func runtimeStatusCenterFromArtifact(summaryPath string, artifact model.RuntimeSummaryArtifact) model.RuntimeStatusCenter {
+	status := runtimeStatusValue(artifact)
+	headline := strings.TrimSpace(artifact.Verdict.Headline)
+	if headline == "" {
+		headline = "Runtime proof is available."
+	}
+	detail := runtimeStatusDetail(artifact)
+	actions := runtimeStatusActions(artifact)
+
+	return model.RuntimeStatusCenter{
+		SummaryAvailable: true,
+		SummaryPath:      summaryPath,
+		Source:           constants.RuntimeStatusSourcePhase97Summary,
+		BaseURL:          artifact.BaseURL,
+		Summary: model.RuntimeStatusSummary{
+			Status:             status,
+			Headline:           headline,
+			Detail:             detail,
+			CanContinue:        artifact.Verdict.CanContinue,
+			RuntimeOK:          artifact.Backend.RuntimeOK,
+			HealthOK:           artifact.Backend.HealthOK,
+			SchedulerReadback:  artifact.Backend.SchedulerReadback,
+			LaunchTaskVerified: artifact.Backend.LaunchTaskVerified,
+			DoctorOverall:      artifact.Doctor.Overall,
+			DoctorLocal:        artifact.Doctor.Local,
+			TrackedContentDiff: artifact.Git.TrackedContentDiff,
+			FrontendURLPresent: artifact.Frontend.URLPresent,
+			SummaryGeneratedAt: artifact.GeneratedAt,
+		},
+		Proof:           runtimeStatusProof(artifact),
+		Actions:         actions,
+		Artifact:        artifact,
+		PrivacyBoundary: constants.RuntimeStatusPrivacyNote,
+		GeneratedAt:     time.Now().UTC(),
+	}
+}
+
+func runtimeStatusValue(artifact model.RuntimeSummaryArtifact) string {
+	if !artifact.Verdict.CanContinue || !artifact.Backend.RuntimeOK || !artifact.Backend.HealthOK {
+		return constants.StatusAttention
+	}
+	if artifact.Doctor.Overall != "" && artifact.Doctor.Overall != constants.StatusOK && artifact.Doctor.Overall != "skipped" {
+		return constants.StatusAttention
+	}
+	if artifact.Git.TrackedContentDiff || artifact.Backend.Advisory.Severity == constants.StatusWatch || artifact.Backend.SchedulerReadback == "denied" {
+		return constants.StatusWatch
+	}
+	return constants.StatusOK
+}
+
+func runtimeStatusDetail(artifact model.RuntimeSummaryArtifact) string {
+	advisory := strings.TrimSpace(artifact.Backend.Advisory.Headline)
+	if advisory == "" {
+		advisory = "No task advisory was recorded."
+	}
+	return fmt.Sprintf("Backend runtime=%t health=%t, Scheduler=%s, doctor=%s, git tracked diff=%t. %s",
+		artifact.Backend.RuntimeOK,
+		artifact.Backend.HealthOK,
+		emptyFallback(artifact.Backend.SchedulerReadback, "unknown"),
+		emptyFallback(artifact.Doctor.Overall, "unknown"),
+		artifact.Git.TrackedContentDiff,
+		advisory,
+	)
+}
+
+func runtimeStatusProof(artifact model.RuntimeSummaryArtifact) []model.RuntimeStatusProof {
+	backendStatus := constants.StatusAttention
+	if artifact.Backend.RuntimeOK && artifact.Backend.HealthOK {
+		backendStatus = constants.StatusOK
+	}
+	schedulerStatus := constants.StatusWatch
+	if artifact.Backend.LaunchTaskVerified {
+		schedulerStatus = constants.StatusOK
+	} else if !artifact.Backend.TaskPresent {
+		schedulerStatus = constants.StatusAttention
+	}
+	doctorStatus := constants.StatusAttention
+	if artifact.Doctor.Overall == constants.StatusOK || artifact.Doctor.Overall == "skipped" {
+		doctorStatus = constants.StatusOK
+	}
+	frontendStatus := constants.StatusWatch
+	if artifact.Frontend.URLPresent {
+		frontendStatus = constants.StatusOK
+	}
+	gitStatus := constants.StatusOK
+	if artifact.Git.TrackedContentDiff {
+		gitStatus = constants.StatusAttention
+	}
+	privacyStatus := constants.StatusAttention
+	if artifact.Privacy.MetadataOnly && artifact.Privacy.SensitiveCollection == "denied" {
+		privacyStatus = constants.StatusOK
+	}
+
+	return []model.RuntimeStatusProof{
+		{
+			ID:            constants.RuntimeStatusProofBackendID,
+			Label:         "Backend Runtime",
+			Value:         boolRuntimeLabel(artifact.Backend.RuntimeOK && artifact.Backend.HealthOK),
+			Detail:        fmt.Sprintf("pid=%d running=%t evidence=%s ready_file=%t", artifact.Backend.PID, artifact.Backend.PIDRunning, emptyFallback(artifact.Backend.RuntimeEvidence, "unknown"), artifact.Backend.ReadyFilePresent),
+			Status:        backendStatus,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.RuntimeStatusProofSchedulerID,
+			Label:         "Scheduler Readback",
+			Value:         emptyFallback(artifact.Backend.SchedulerReadback, "unknown"),
+			Detail:        fmt.Sprintf("task=%s state=%s verified=%t", emptyFallback(artifact.Backend.TaskName, "unknown"), emptyFallback(artifact.Backend.TaskState, "unknown"), artifact.Backend.LaunchTaskVerified),
+			Status:        schedulerStatus,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.RuntimeStatusProofDoctorID,
+			Label:         "Runtime Doctor",
+			Value:         emptyFallback(artifact.Doctor.Overall, "unknown"),
+			Detail:        fmt.Sprintf("local=%s skipped=%t report=%s", emptyFallback(artifact.Doctor.Local, "unknown"), artifact.Doctor.Skipped, emptyFallback(artifact.Doctor.ReportJSON, "not recorded")),
+			Status:        doctorStatus,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.RuntimeStatusProofFrontendID,
+			Label:         "Frontend URL",
+			Value:         boolRuntimeLabel(artifact.Frontend.URLPresent),
+			Detail:        emptyFallback(artifact.Frontend.URL, "No Function URL recorded."),
+			Status:        frontendStatus,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.RuntimeStatusProofGitID,
+			Label:         "Git Hygiene",
+			Value:         boolCleanLabel(!artifact.Git.TrackedContentDiff),
+			Detail:        fmt.Sprintf("branch=%s head=%s tracked_diff_count=%d", emptyFallback(artifact.Git.Branch, "unknown"), emptyFallback(artifact.Git.Head, "unknown"), artifact.Git.TrackedContentDiffCount),
+			Status:        gitStatus,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.RuntimeStatusProofPrivacyID,
+			Label:         "Privacy Boundary",
+			Value:         boolRuntimeLabel(artifact.Privacy.MetadataOnly && artifact.Privacy.SensitiveCollection == "denied"),
+			Detail:        fmt.Sprintf("metadata_only=%t sensitive_collection=%s", artifact.Privacy.MetadataOnly, emptyFallback(artifact.Privacy.SensitiveCollection, "unknown")),
+			Status:        privacyStatus,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+	}
+}
+
+func runtimeStatusActions(artifact model.RuntimeSummaryArtifact) []model.RuntimeStatusAction {
+	seen := map[string]bool{}
+	actions := make([]model.RuntimeStatusAction, 0, len(artifact.Verdict.NextActions)+2)
+	addAction := func(id string, title string, detail string, command string, severity string, status string) {
+		key := strings.TrimSpace(title + "|" + detail + "|" + command)
+		if key == "" || seen[key] {
+			return
+		}
+		seen[key] = true
+		actions = append(actions, model.RuntimeStatusAction{
+			ID:       id,
+			Title:    title,
+			Detail:   detail,
+			Command:  command,
+			Severity: severity,
+			Status:   status,
+		})
+	}
+
+	if !artifact.Backend.RuntimeOK || !artifact.Backend.HealthOK {
+		addAction(constants.RuntimeStatusActionRestartID, "Restart backend task", "Restart the hidden local backend task and rerun the summary.", constants.RuntimeTaskRestartCommand, constants.SeverityHigh, constants.StatusPending)
+	}
+	for index, action := range artifact.Verdict.NextActions {
+		trimmed := strings.TrimSpace(action)
+		if trimmed == "" {
+			continue
+		}
+		addAction(fmt.Sprintf("%s-%d", constants.RuntimeStatusActionReviewID, index+1), "Runtime summary action", trimmed, constants.RuntimeSummaryCommand, constants.SeverityInfo, constants.StatusWatch)
+	}
+	if strings.TrimSpace(artifact.Backend.Advisory.OperatorAction) != "" {
+		addAction(constants.RuntimeStatusActionReviewID, "Task advisory action", artifact.Backend.Advisory.OperatorAction, constants.RuntimeSummaryCommand, artifact.Backend.Advisory.Severity, constants.StatusWatch)
+	}
+	if len(actions) == 0 {
+		addAction(constants.RuntimeStatusActionSummaryID, "Keep runtime proof fresh", "Refresh the local runtime summary before demos, deploys, or post-merge checks.", constants.RuntimeSummaryCommand, constants.SeverityInfo, constants.StatusOK)
+	}
+	return actions
+}
+
+func emptyFallback(value string, fallback string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return fallback
+	}
+	return value
+}
+
+func boolRuntimeLabel(value bool) string {
+	if value {
+		return "ready"
+	}
+	return "attention"
+}
+
+func boolCleanLabel(value bool) string {
+	if value {
+		return "clean"
+	}
+	return "dirty"
 }
 
 func (s *Server) handleDeviceEnroll(w http.ResponseWriter, r *http.Request) {

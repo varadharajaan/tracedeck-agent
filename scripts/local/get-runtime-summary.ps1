@@ -1,6 +1,10 @@
 param(
     [string]$Addr = "127.0.0.1:18080",
     [string]$OutputRoot = "data/local/output",
+    [string]$TaskName = "\TraceDeck\TraceDeck Backend Dev",
+    [string]$PidPath = "data/local/backend/tracedeck-backend.pid",
+    [string]$ReadyPath = "data/local/backend/backend-task-ready.json",
+    [string]$TaskStatusOutputPath = "data/local/backend/backend-task-status.json",
     [switch]$SkipDoctor
 )
 
@@ -42,14 +46,17 @@ try {
 
     $summaryJsonPath = Join-Path $outputDir "runtime-summary.json"
     $summaryTextPath = Join-Path $outputDir "runtime-summary.txt"
-    $taskStatusPath = Join-Path $script:TraceDeckRepoRoot "data/local/backend/backend-task-status.json"
+    $taskStatusPath = Join-Path $script:TraceDeckRepoRoot $TaskStatusOutputPath
     $doctorJsonPath = Join-Path $script:TraceDeckRepoRoot "data/local/output/runtime-doctor.json"
     $frontendUrlPath = Join-Path $script:TraceDeckRepoRoot "data/local/output/frontend-url.txt"
 
     Invoke-TraceDeckLoggedCommand -Label "Backend task status for runtime summary" -Command {
         powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-backend-dev-task-status.ps1 `
             -Addr $Addr `
-            -OutputPath "data/local/backend/backend-task-status.json"
+            -TaskName $TaskName `
+            -PidPath $PidPath `
+            -ReadyPath $ReadyPath `
+            -OutputPath $TaskStatusOutputPath
     }
     $taskStatus = Read-TraceDeckJsonFile -Path $taskStatusPath
     $advisory = Get-TraceDeckProp -Object $taskStatus -Name "advisory" -Default $null
