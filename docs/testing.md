@@ -1561,6 +1561,20 @@ generated root cleanup, and root-clean. The delivery UI contract boots an
 explicit `include_demo=true` dashboard view and confirms demo push evidence is
 labelled as no provider send and no screen notification.
 
+Browser Activity badge layout hotfix verification:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-browser-activity-badges.ps1 -BaseUrl http://127.0.0.1:18080
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-browser-activity-badges.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-browser-activity-badges.ps1
+python ./devctl.py test browser-labels
+```
+
+The focused Browser Activity badge contract uses screenshot-free Playwright DOM
+metrics across light/dark desktop and mobile viewports. It verifies that status
+badges such as `attention` stay single-line in the hero and table Signal cells
+while surrounding detail text is still allowed to wrap.
+
 Phase 13 adds:
 
 ```powershell

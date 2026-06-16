@@ -319,6 +319,8 @@ func TestBrowserActivityDOMContract(t *testing.T) {
 		"<th>Source</th>",
 		"sourceBadge",
 		"metadata-only guard",
+		"Browser Activity badge integrity",
+		"class=\"signal-cell\"",
 	} {
 		if !strings.Contains(html, marker) {
 			t.Fatalf("browser activity page is missing marker %q", marker)
