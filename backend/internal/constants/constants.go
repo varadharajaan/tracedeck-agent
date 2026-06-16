@@ -19,6 +19,7 @@ const (
 	RuntimeSummaryCommand             = "python ./devctl.py summary"
 	RuntimeTaskRestartCommand         = "python ./devctl.py server task-restart"
 	RuntimeTaskStatusCommand          = "python ./devctl.py server task-status"
+	RuntimeReadyPIDRefreshCommand     = "python ./devctl.py server task-refresh-ready"
 	VerificationEvidenceCommand       = "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-verification-evidence.ps1"
 	VerificationEvidenceVerifyCommand = "python ./devctl.py test verify99"
 	OperatorAssuranceCommand          = "python ./devctl.py assurance"

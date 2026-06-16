@@ -463,6 +463,12 @@ def server_task_status(args: argparse.Namespace) -> int:
     return 1
 
 
+def server_task_refresh_ready(args: argparse.Namespace) -> int:
+    run(powershell("./scripts/local/refresh-backend-ready-proof.ps1", "-Addr", args.addr), stream=True)
+    run(powershell("./scripts/local/get-backend-dev-task-status.ps1", "-Addr", args.addr), stream=True)
+    return 0
+
+
 def cmd_server(args: argparse.Namespace) -> int:
     if args.action == "start":
         return server_start(args)
@@ -482,6 +488,8 @@ def cmd_server(args: argparse.Namespace) -> int:
         return server_task_start(args)
     if args.action == "task-status":
         return server_task_status(args)
+    if args.action == "task-refresh-ready":
+        return server_task_refresh_ready(args)
     return server_status(args)
 
 
@@ -820,6 +828,14 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase102.ps1"))
     elif target == "verify102":
         run(powershell("./scripts/verify/verify-phase102.ps1"))
+    elif target == "phase103":
+        run(powershell("./scripts/verify/verify-phase103.ps1"), stream=True)
+    elif target == "smoke103":
+        run(powershell("./scripts/local/smoke-phase103.ps1"))
+    elif target == "newman103":
+        run(powershell("./scripts/local/newman-phase103.ps1"))
+    elif target == "verify103":
+        run(powershell("./scripts/verify/verify-phase103.ps1"))
     elif target == "activity-feed":
         run(powershell("./scripts/local/test-activity-feed-provenance.ps1"))
     elif target == "quality":
@@ -965,7 +981,7 @@ def main() -> int:
     server = sub.add_parser("server", help="Start, stop, restart, or check the local server")
     server.add_argument(
         "action",
-        choices=["start", "stop", "restart", "status", "task-start", "task-stop", "task-restart", "task-status"],
+        choices=["start", "stop", "restart", "status", "task-start", "task-stop", "task-restart", "task-status", "task-refresh-ready"],
         nargs="?",
         default="status",
     )
@@ -1009,6 +1025,7 @@ def main() -> int:
             "phase100",
             "phase101",
             "phase102",
+            "phase103",
             "smoke",
             "newman",
             "verify",
@@ -1089,6 +1106,9 @@ def main() -> int:
             "smoke102",
             "newman102",
             "verify102",
+            "smoke103",
+            "newman103",
+            "verify103",
             "activity-feed",
             "quality",
             "theme",
