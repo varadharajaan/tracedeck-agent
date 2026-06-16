@@ -1389,6 +1389,18 @@ stale ready proof, then refreshes the proof and confirms
 `ready_pid_status=match`. The Newman collection also asserts the runtime action
 contract includes `evidence_scope=metadata_only`.
 
+Phase 104 seals the typed action schema after Phase 103:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase104.ps1
+python ./devctl.py test phase104
+python ./devctl.py test verify104
+```
+
+The verifier reruns Python syntax, gofmt, backend API tests, the Phase 103
+Newman action-contract collection, evidence refresh, runtime summary,
+operator assurance, and root-clean checks.
+
 Phase 13 adds:
 
 ```powershell
