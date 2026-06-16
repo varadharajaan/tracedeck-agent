@@ -139,6 +139,7 @@ def main() -> int:
                                     "Customer Settings",
                                     "Revenue Operations",
                                     "Runtime Status",
+                                    "Verification Evidence",
                                     "Deployment Readiness",
                                     "Customer Control Room",
                                     "Customer Success Packet",

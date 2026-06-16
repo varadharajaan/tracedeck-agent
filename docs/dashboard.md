@@ -154,6 +154,13 @@ Scheduler readback, runtime doctor, frontend URL, git hygiene, proof rows,
 operator actions, and metadata-only privacy posture. The Workspace Navigator
 uses the full `Runtime Status` product label.
 
+Phase 99 adds Verification Evidence Center to the Rollout page. It renders the
+typed `verification-evidence-center` API from
+`data/local/output/verification-evidence.json`: scripted gate status, smoke and
+Newman proof, report/log paths, artifact references, git labels, privacy proof,
+and next commands. The Workspace Navigator uses the full `Verification
+Evidence` product label.
+
 To check the currently running local dashboard:
 
 ```powershell

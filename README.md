@@ -554,3 +554,12 @@ the dashboard Rollout page as Runtime Status Center. Use
 `python devctl.py test phase98` to live-boot an isolated backend, generate the
 runtime summary, verify the typed API, run Newman, and run screenshot-free
 layout/theme/visual checks.
+
+Phase 99 adds a Verification Evidence Center. Use
+`python devctl.py evidence` to write
+`data/local/output/verification-evidence.json`, then
+`python devctl.py test phase99` to live-boot an isolated backend, verify
+`GET /api/v1/verification-evidence-center`, run Newman, and run the
+screenshot-free layout/theme/visual contracts. The evidence center is
+metadata-only: scripted gate labels, statuses, commands, timestamps, log paths,
+report paths, git labels, and operator actions only.

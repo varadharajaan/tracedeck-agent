@@ -25,11 +25,12 @@ import (
 var dashboardFS embed.FS
 
 type Server struct {
-	store              store.Repository
-	logger             *slog.Logger
-	startedAt          time.Time
-	auth               AuthConfig
-	runtimeSummaryPath string
+	store                    store.Repository
+	logger                   *slog.Logger
+	startedAt                time.Time
+	auth                     AuthConfig
+	runtimeSummaryPath       string
+	verificationEvidencePath string
 }
 
 func NewServer(repo store.Repository, logger *slog.Logger) *Server {
@@ -40,10 +41,11 @@ func NewServer(repo store.Repository, logger *slog.Logger) *Server {
 		logger = slog.Default()
 	}
 	return &Server{
-		store:              repo,
-		logger:             logger,
-		startedAt:          time.Now().UTC(),
-		runtimeSummaryPath: constants.DefaultRuntimeSummaryPath,
+		store:                    repo,
+		logger:                   logger,
+		startedAt:                time.Now().UTC(),
+		runtimeSummaryPath:       constants.DefaultRuntimeSummaryPath,
+		verificationEvidencePath: constants.DefaultVerificationEvidencePath,
 	}
 }
 
@@ -72,6 +74,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc(constants.RouteAlertRuleTemplates, s.handleAlertRuleTemplates)
 	mux.HandleFunc(constants.RouteAccountPortfolio, s.handleAccountPortfolioIndex)
 	mux.HandleFunc(constants.RouteRuntimeStatus, s.handleRuntimeStatusCenter)
+	mux.HandleFunc(constants.RouteVerificationCenter, s.handleVerificationEvidenceCenter)
 	mux.HandleFunc(constants.RouteArchiveStatus, s.handleArchiveStatus)
 	return requestLogger(s.logger, s.authMiddleware(mux))
 }
@@ -199,6 +202,24 @@ func (s *Server) handleRuntimeStatusCenter(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		s.logger.Error("runtime status center lookup failed", "error", err)
 		writeError(w, http.StatusInternalServerError, "runtime status center lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, center)
+}
+
+func (s *Server) handleVerificationEvidenceCenter(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != constants.RouteVerificationCenter {
+		http.NotFound(w, r)
+		return
+	}
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+	center, err := s.verificationEvidenceCenter()
+	if err != nil {
+		s.logger.Error("verification evidence center lookup failed", "error", err)
+		writeError(w, http.StatusInternalServerError, "verification evidence center lookup failed")
 		return
 	}
 	writeJSON(w, http.StatusOK, center)
@@ -470,6 +491,217 @@ func boolCleanLabel(value bool) string {
 		return "clean"
 	}
 	return "dirty"
+}
+
+func (s *Server) verificationEvidenceCenter() (model.VerificationEvidenceCenter, error) {
+	evidencePath := strings.TrimSpace(s.verificationEvidencePath)
+	if evidencePath == "" {
+		evidencePath = constants.DefaultVerificationEvidencePath
+	}
+
+	data, err := os.ReadFile(evidencePath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return missingVerificationEvidenceCenter(evidencePath), nil
+		}
+		return model.VerificationEvidenceCenter{}, fmt.Errorf("read verification evidence: %w", err)
+	}
+
+	var artifact model.VerificationEvidenceArtifact
+	data = bytes.TrimPrefix(data, []byte{0xEF, 0xBB, 0xBF})
+	if err := json.Unmarshal(data, &artifact); err != nil {
+		return model.VerificationEvidenceCenter{}, fmt.Errorf("decode verification evidence: %w", err)
+	}
+	return verificationEvidenceCenterFromArtifact(evidencePath, artifact), nil
+}
+
+func missingVerificationEvidenceCenter(evidencePath string) model.VerificationEvidenceCenter {
+	now := time.Now().UTC()
+	return model.VerificationEvidenceCenter{
+		EvidenceAvailable: false,
+		EvidencePath:      evidencePath,
+		Source:            constants.VerificationEvidenceSourcePhase99,
+		Summary: model.VerificationEvidenceSummary{
+			Status:            constants.StatusAttention,
+			Headline:          "Verification evidence has not been generated.",
+			Detail:            "Run the scripted evidence command so the dashboard can show local gate proof.",
+			CanPromote:        false,
+			EvidenceGenerated: "",
+		},
+		Proof: []model.VerificationEvidenceProof{
+			{
+				ID:            constants.VerificationEvidenceProofScriptedID,
+				Label:         "Scripted Evidence",
+				Value:         "missing",
+				Detail:        "No verification evidence artifact was found at the configured local path.",
+				Status:        constants.StatusAttention,
+				EvidenceScope: constants.EvidenceScopeMetadataOnly,
+			},
+		},
+		Actions: []model.VerificationEvidenceAction{
+			{
+				ID:       constants.VerificationEvidenceActionGenerateID,
+				Title:    "Generate verification evidence",
+				Detail:   "Create the local JSON evidence file under data/local/output.",
+				Command:  constants.VerificationEvidenceCommand,
+				Severity: constants.SeverityHigh,
+				Status:   constants.StatusPending,
+			},
+		},
+		PrivacyBoundary: constants.VerificationEvidencePrivacyNote,
+		GeneratedAt:     now,
+	}
+}
+
+func verificationEvidenceCenterFromArtifact(evidencePath string, artifact model.VerificationEvidenceArtifact) model.VerificationEvidenceCenter {
+	status, okCount, watchCount, attentionCount := verificationEvidenceStatus(artifact)
+	phase := emptyFallback(artifact.Phase, "current")
+	headline := fmt.Sprintf("%s verification evidence is %s.", phase, status)
+	if artifact.CanPromote && status == constants.StatusOK {
+		headline = fmt.Sprintf("%s scripted gates are ready for publish or post-merge review.", phase)
+	}
+	detail := fmt.Sprintf("%d gates ok, %d watch, %d attention. Branch=%s head=%s.",
+		okCount,
+		watchCount,
+		attentionCount,
+		emptyFallback(artifact.Branch, "unknown"),
+		emptyFallback(artifact.Head, "unknown"),
+	)
+
+	return model.VerificationEvidenceCenter{
+		EvidenceAvailable: true,
+		EvidencePath:      evidencePath,
+		Source:            constants.VerificationEvidenceSourcePhase99,
+		BaseURL:           artifact.BaseURL,
+		Summary: model.VerificationEvidenceSummary{
+			Status:            status,
+			Headline:          headline,
+			Detail:            detail,
+			Phase:             phase,
+			CanPromote:        artifact.CanPromote,
+			GatesTotal:        len(artifact.Gates),
+			GatesOK:           okCount,
+			GatesWatch:        watchCount,
+			GatesAttention:    attentionCount,
+			ArtifactsTotal:    len(artifact.Artifacts),
+			EvidenceGenerated: artifact.GeneratedAt,
+		},
+		Gates:           artifact.Gates,
+		Proof:           verificationEvidenceProof(artifact, status, okCount, watchCount, attentionCount),
+		Artifacts:       artifact.Artifacts,
+		Actions:         verificationEvidenceActions(artifact, status),
+		Artifact:        artifact,
+		PrivacyBoundary: constants.VerificationEvidencePrivacyNote,
+		GeneratedAt:     time.Now().UTC(),
+	}
+}
+
+func verificationEvidenceStatus(artifact model.VerificationEvidenceArtifact) (string, int, int, int) {
+	okCount := 0
+	watchCount := 0
+	attentionCount := 0
+	for _, gate := range artifact.Gates {
+		switch strings.ToLower(strings.TrimSpace(gate.Status)) {
+		case constants.StatusOK, "passed", "pass", "success":
+			okCount++
+		case constants.StatusWatch, constants.StatusPending, "":
+			watchCount++
+		default:
+			attentionCount++
+		}
+	}
+	if attentionCount > 0 || !artifact.CanPromote || len(artifact.Gates) == 0 {
+		return constants.StatusAttention, okCount, watchCount, attentionCount
+	}
+	if watchCount > 0 || artifact.OverallStatus == constants.StatusWatch {
+		return constants.StatusWatch, okCount, watchCount, attentionCount
+	}
+	return constants.StatusOK, okCount, watchCount, attentionCount
+}
+
+func verificationEvidenceProof(artifact model.VerificationEvidenceArtifact, status string, okCount int, watchCount int, attentionCount int) []model.VerificationEvidenceProof {
+	artifactStatus := constants.StatusOK
+	if len(artifact.Artifacts) == 0 {
+		artifactStatus = constants.StatusWatch
+	}
+	privacyStatus := constants.StatusAttention
+	if artifact.Privacy.MetadataOnly && artifact.Privacy.SensitiveCollection == "denied" {
+		privacyStatus = constants.StatusOK
+	}
+	gitStatus := constants.StatusOK
+	if strings.TrimSpace(artifact.Branch) == "" || strings.TrimSpace(artifact.Head) == "" {
+		gitStatus = constants.StatusWatch
+	}
+
+	return []model.VerificationEvidenceProof{
+		{
+			ID:            constants.VerificationEvidenceProofScriptedID,
+			Label:         "Scripted Gates",
+			Value:         fmt.Sprintf("%d/%d ok", okCount, len(artifact.Gates)),
+			Detail:        fmt.Sprintf("watch=%d attention=%d can_promote=%t", watchCount, attentionCount, artifact.CanPromote),
+			Status:        status,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.VerificationEvidenceProofReportsID,
+			Label:         "Reports And Logs",
+			Value:         fmt.Sprintf("%d artifacts", len(artifact.Artifacts)),
+			Detail:        "Only local log/report paths are exposed; file contents are not embedded.",
+			Status:        artifactStatus,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.VerificationEvidenceProofGitID,
+			Label:         "Git Head",
+			Value:         emptyFallback(artifact.Head, "unknown"),
+			Detail:        fmt.Sprintf("branch=%s", emptyFallback(artifact.Branch, "unknown")),
+			Status:        gitStatus,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.VerificationEvidenceProofPrivacyID,
+			Label:         "Privacy Boundary",
+			Value:         boolRuntimeLabel(privacyStatus == constants.StatusOK),
+			Detail:        fmt.Sprintf("metadata_only=%t sensitive_collection=%s", artifact.Privacy.MetadataOnly, emptyFallback(artifact.Privacy.SensitiveCollection, "unknown")),
+			Status:        privacyStatus,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+	}
+}
+
+func verificationEvidenceActions(artifact model.VerificationEvidenceArtifact, status string) []model.VerificationEvidenceAction {
+	actions := make([]model.VerificationEvidenceAction, 0, len(artifact.Actions)+2)
+	for _, action := range artifact.Actions {
+		actions = append(actions, model.VerificationEvidenceAction{
+			ID:       action.ID,
+			Title:    action.Title,
+			Detail:   action.Detail,
+			Command:  action.Command,
+			Severity: action.Severity,
+			Status:   action.Status,
+		})
+	}
+	if status != constants.StatusOK {
+		actions = append(actions, model.VerificationEvidenceAction{
+			ID:       constants.VerificationEvidenceActionRunGatesID,
+			Title:    "Run phase verifier",
+			Detail:   "Rerun the active phase verifier, then regenerate verification evidence.",
+			Command:  constants.VerificationEvidenceVerifyCommand,
+			Severity: constants.SeverityHigh,
+			Status:   constants.StatusPending,
+		})
+	}
+	if len(actions) == 0 {
+		actions = append(actions, model.VerificationEvidenceAction{
+			ID:       constants.VerificationEvidenceActionGenerateID,
+			Title:    "Refresh verification evidence",
+			Detail:   "Refresh the evidence artifact before publishing or handing off.",
+			Command:  constants.VerificationEvidenceCommand,
+			Severity: constants.SeverityInfo,
+			Status:   constants.StatusOK,
+		})
+	}
+	return actions
 }
 
 func (s *Server) handleDeviceEnroll(w http.ResponseWriter, r *http.Request) {

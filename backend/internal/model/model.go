@@ -2561,6 +2561,104 @@ type RuntimeStatusCenter struct {
 	GeneratedAt      time.Time              `json:"generated_at"`
 }
 
+type VerificationEvidenceArtifactGate struct {
+	ID            string `json:"id"`
+	Label         string `json:"label"`
+	Command       string `json:"command"`
+	Status        string `json:"status"`
+	Severity      string `json:"severity"`
+	LogPath       string `json:"log_path"`
+	ReportPath    string `json:"report_path"`
+	Detail        string `json:"detail"`
+	CompletedAt   string `json:"completed_at"`
+	EvidenceScope string `json:"evidence_scope"`
+}
+
+type VerificationEvidenceArtifactRef struct {
+	ID            string `json:"id"`
+	Label         string `json:"label"`
+	Path          string `json:"path"`
+	Status        string `json:"status"`
+	EvidenceScope string `json:"evidence_scope"`
+}
+
+type VerificationEvidenceArtifactAction struct {
+	ID       string `json:"id"`
+	Title    string `json:"title"`
+	Detail   string `json:"detail"`
+	Command  string `json:"command"`
+	Severity string `json:"severity"`
+	Status   string `json:"status"`
+}
+
+type VerificationEvidenceArtifactPrivacy struct {
+	MetadataOnly        bool     `json:"metadata_only"`
+	SensitiveCollection string   `json:"sensitive_collection"`
+	ForbiddenCategories []string `json:"forbidden_categories"`
+}
+
+type VerificationEvidenceArtifact struct {
+	GeneratedAt     string                               `json:"generated_at"`
+	Phase           string                               `json:"phase"`
+	BaseURL         string                               `json:"base_url"`
+	Branch          string                               `json:"branch"`
+	Head            string                               `json:"head"`
+	OverallStatus   string                               `json:"overall_status"`
+	CanPromote      bool                                 `json:"can_promote"`
+	Gates           []VerificationEvidenceArtifactGate   `json:"gates"`
+	Artifacts       []VerificationEvidenceArtifactRef    `json:"artifacts"`
+	Actions         []VerificationEvidenceArtifactAction `json:"actions"`
+	Privacy         VerificationEvidenceArtifactPrivacy  `json:"privacy"`
+	PrivacyBoundary string                               `json:"privacy_boundary"`
+}
+
+type VerificationEvidenceSummary struct {
+	Status            string `json:"status"`
+	Headline          string `json:"headline"`
+	Detail            string `json:"detail"`
+	Phase             string `json:"phase"`
+	CanPromote        bool   `json:"can_promote"`
+	GatesTotal        int    `json:"gates_total"`
+	GatesOK           int    `json:"gates_ok"`
+	GatesWatch        int    `json:"gates_watch"`
+	GatesAttention    int    `json:"gates_attention"`
+	ArtifactsTotal    int    `json:"artifacts_total"`
+	EvidenceGenerated string `json:"evidence_generated_at"`
+}
+
+type VerificationEvidenceProof struct {
+	ID            string `json:"id"`
+	Label         string `json:"label"`
+	Value         string `json:"value"`
+	Detail        string `json:"detail"`
+	Status        string `json:"status"`
+	EvidenceScope string `json:"evidence_scope"`
+}
+
+type VerificationEvidenceAction struct {
+	ID       string `json:"id"`
+	Title    string `json:"title"`
+	Detail   string `json:"detail"`
+	Command  string `json:"command"`
+	Severity string `json:"severity"`
+	Status   string `json:"status"`
+}
+
+type VerificationEvidenceCenter struct {
+	EvidenceAvailable bool                               `json:"evidence_available"`
+	EvidencePath      string                             `json:"evidence_path"`
+	Source            string                             `json:"source"`
+	BaseURL           string                             `json:"base_url"`
+	Summary           VerificationEvidenceSummary        `json:"summary"`
+	Gates             []VerificationEvidenceArtifactGate `json:"gates"`
+	Proof             []VerificationEvidenceProof        `json:"proof"`
+	Artifacts         []VerificationEvidenceArtifactRef  `json:"artifacts"`
+	Actions           []VerificationEvidenceAction       `json:"actions"`
+	Artifact          VerificationEvidenceArtifact       `json:"artifact"`
+	PrivacyBoundary   string                             `json:"privacy_boundary"`
+	GeneratedAt       time.Time                          `json:"generated_at"`
+}
+
 type TenantPremiumOperationsSummary struct {
 	Status                 string `json:"status"`
 	Headline               string `json:"headline"`

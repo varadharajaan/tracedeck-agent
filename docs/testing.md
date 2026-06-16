@@ -1297,6 +1297,24 @@ Runtime Status Center markers, and runs screenshot-free layout, theme, and
 visual-quality contracts. Newman runs
 `postman/tracedeck-backend-phase98.postman_collection.json`.
 
+Phase 99 exposes scripted verification evidence:
+
+```powershell
+python ./devctl.py evidence
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-verification-evidence.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase99.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase99.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase99.ps1
+python ./devctl.py test phase99
+```
+
+The evidence command writes
+`data/local/output/verification-evidence.json`. The smoke live-boots an
+isolated backend, generates runtime and verification evidence, checks
+`/api/v1/verification-evidence-center`, verifies dashboard markers, and runs
+screenshot-free layout, theme, and visual-quality contracts. Newman runs
+`postman/tracedeck-backend-phase99.postman_collection.json`.
+
 Phase 13 adds:
 
 ```powershell

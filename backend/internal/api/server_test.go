@@ -195,6 +195,159 @@ func TestRuntimeStatusCenterMissingSummary(t *testing.T) {
 	}
 }
 
+func TestVerificationEvidenceCenterEndpoint(t *testing.T) {
+	t.Parallel()
+
+	evidencePath := filepath.Join(t.TempDir(), "verification-evidence.json")
+	evidenceJSON := []byte(`{
+		"generated_at": "2026-06-16T11:40:00+05:30",
+		"phase": "phase99",
+		"base_url": "http://127.0.0.1:18080",
+		"branch": "main",
+		"head": "3dcb31f",
+		"overall_status": "ok",
+		"can_promote": true,
+		"gates": [
+			{
+				"id": "gofmt",
+				"label": "Go format check",
+				"command": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/check-gofmt.ps1",
+				"status": "ok",
+				"severity": "info",
+				"log_path": "logs/local/verify/check-gofmt.log",
+				"report_path": "",
+				"detail": "gofmt check passed",
+				"completed_at": "2026-06-16T11:39:00+05:30",
+				"evidence_scope": "metadata_only"
+			},
+			{
+				"id": "newman",
+				"label": "Newman collection",
+				"command": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase99.ps1",
+				"status": "ok",
+				"severity": "info",
+				"log_path": "logs/local/newman/newman-phase99.log",
+				"report_path": "data/local/newman/phase99/newman-report.json",
+				"detail": "Newman assertions passed",
+				"completed_at": "2026-06-16T11:39:30+05:30",
+				"evidence_scope": "metadata_only"
+			}
+		],
+		"artifacts": [
+			{
+				"id": "runtime-summary",
+				"label": "Runtime summary JSON",
+				"path": "data/local/output/runtime-summary.json",
+				"status": "ok",
+				"evidence_scope": "metadata_only"
+			},
+			{
+				"id": "newman-report",
+				"label": "Newman JSON report",
+				"path": "data/local/newman/phase99/newman-report.json",
+				"status": "ok",
+				"evidence_scope": "metadata_only"
+			}
+		],
+		"actions": [
+			{
+				"id": "refresh-evidence",
+				"title": "Refresh verification evidence",
+				"detail": "Regenerate the local evidence file after any new gate run.",
+				"command": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-verification-evidence.ps1",
+				"severity": "info",
+				"status": "ok"
+			}
+		],
+		"privacy": {
+			"metadata_only": true,
+			"sensitive_collection": "denied",
+			"forbidden_categories": ["credentials", "provider secrets", "screenshots"]
+		},
+		"privacy_boundary": "metadata-only verification evidence; no passwords; no screenshots"
+	}`)
+	evidenceJSON = append([]byte{0xEF, 0xBB, 0xBF}, evidenceJSON...)
+	if err := os.WriteFile(evidencePath, evidenceJSON, 0o600); err != nil {
+		t.Fatalf("write verification evidence fixture: %v", err)
+	}
+
+	server := NewServer(store.NewMemory(), slog.Default())
+	server.verificationEvidencePath = evidencePath
+	handler := server.Handler()
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteVerificationCenter, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected verification evidence center 200, got %d: %s", response.Code, response.Body.String())
+	}
+	if response.Header().Get(constants.HeaderCache) != constants.CacheNoStore {
+		t.Fatalf("expected no-store verification evidence cache header, got %s", response.Header().Get(constants.HeaderCache))
+	}
+	var center model.VerificationEvidenceCenter
+	if err := json.Unmarshal(response.Body.Bytes(), &center); err != nil {
+		t.Fatalf("decode verification evidence center: %v", err)
+	}
+	if !center.EvidenceAvailable || center.Source != constants.VerificationEvidenceSourcePhase99 {
+		t.Fatalf("expected available Phase 99 verification evidence source: %+v", center)
+	}
+	if center.Summary.Status != constants.StatusOK || !center.Summary.CanPromote || center.Summary.GatesOK != 2 || center.Summary.GatesAttention != 0 {
+		t.Fatalf("expected healthy verification evidence summary: %+v", center.Summary)
+	}
+	if len(center.Gates) != 2 || len(center.Proof) < 4 || len(center.Actions) == 0 || len(center.Artifacts) != 2 {
+		t.Fatalf("expected gate, proof, action, and artifact rows: %+v", center)
+	}
+	for _, gate := range center.Gates {
+		if gate.EvidenceScope != constants.EvidenceScopeMetadataOnly {
+			t.Fatalf("expected metadata-only gate evidence: %+v", gate)
+		}
+	}
+	hasPrivacy := false
+	for _, proof := range center.Proof {
+		if proof.EvidenceScope != constants.EvidenceScopeMetadataOnly {
+			t.Fatalf("expected metadata-only verification proof: %+v", proof)
+		}
+		if proof.ID == constants.VerificationEvidenceProofPrivacyID && proof.Status == constants.StatusOK {
+			hasPrivacy = true
+		}
+	}
+	if !hasPrivacy {
+		t.Fatalf("expected verification privacy proof row: %+v", center.Proof)
+	}
+	serialized := strings.ToLower(response.Body.String())
+	for _, forbidden := range []string{"smtp_password_value", "provider_secret_value", "push_endpoint_value", "screenshot_bytes_value", "raw_url_value", "page_title_value", "alert_body_value", "card_number", "cvv", "payment_token", "keylogger"} {
+		if strings.Contains(serialized, forbidden) {
+			t.Fatalf("verification evidence center leaked forbidden marker %q: %s", forbidden, response.Body.String())
+		}
+	}
+}
+
+func TestVerificationEvidenceCenterMissingArtifact(t *testing.T) {
+	t.Parallel()
+
+	server := NewServer(store.NewMemory(), slog.Default())
+	server.verificationEvidencePath = filepath.Join(t.TempDir(), "missing-verification-evidence.json")
+	handler := server.Handler()
+
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, constants.RouteVerificationCenter, nil))
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected missing verification evidence to return operator action 200, got %d: %s", response.Code, response.Body.String())
+	}
+	var center model.VerificationEvidenceCenter
+	if err := json.Unmarshal(response.Body.Bytes(), &center); err != nil {
+		t.Fatalf("decode missing verification evidence center: %v", err)
+	}
+	if center.EvidenceAvailable || center.Summary.Status != constants.StatusAttention || center.Summary.CanPromote {
+		t.Fatalf("expected missing verification evidence action state: %+v", center.Summary)
+	}
+	if len(center.Actions) != 1 || center.Actions[0].Command != constants.VerificationEvidenceCommand {
+		t.Fatalf("expected verification evidence generation action: %+v", center.Actions)
+	}
+	if len(center.Proof) != 1 || center.Proof[0].EvidenceScope != constants.EvidenceScopeMetadataOnly {
+		t.Fatalf("expected one metadata-only missing-evidence proof: %+v", center.Proof)
+	}
+}
+
 func TestDashboardLocalAuthPanel(t *testing.T) {
 	t.Parallel()
 
