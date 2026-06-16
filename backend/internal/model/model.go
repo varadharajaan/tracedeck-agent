@@ -2659,6 +2659,58 @@ type VerificationEvidenceCenter struct {
 	GeneratedAt       time.Time                          `json:"generated_at"`
 }
 
+type OperatorAssuranceSummary struct {
+	Status               string `json:"status"`
+	Headline             string `json:"headline"`
+	Detail               string `json:"detail"`
+	CanContinue          bool   `json:"can_continue"`
+	CanPromote           bool   `json:"can_promote"`
+	RuntimeReady         bool   `json:"runtime_ready"`
+	SchedulerReadback    string `json:"scheduler_readback"`
+	SchedulerExplanation string `json:"scheduler_explanation"`
+	VerificationStatus   string `json:"verification_status"`
+	FrontendCacheStatus  string `json:"frontend_cache_status"`
+	FrontendCacheHitPct  int    `json:"frontend_cache_hit_pct"`
+	GitClean             bool   `json:"git_clean"`
+	ExportPath           string `json:"export_path"`
+	OperatorNextStep     string `json:"operator_next_step"`
+	UpdatedAt            string `json:"updated_at"`
+}
+
+type OperatorAssuranceCard struct {
+	ID            string `json:"id"`
+	Label         string `json:"label"`
+	Value         string `json:"value"`
+	Detail        string `json:"detail"`
+	Status        string `json:"status"`
+	Source        string `json:"source"`
+	EvidenceScope string `json:"evidence_scope"`
+}
+
+type OperatorAssuranceAction struct {
+	ID       string `json:"id"`
+	Title    string `json:"title"`
+	Detail   string `json:"detail"`
+	Command  string `json:"command"`
+	Severity string `json:"severity"`
+	Status   string `json:"status"`
+}
+
+type OperatorAssuranceCenter struct {
+	Source             string                    `json:"source"`
+	BaseURL            string                    `json:"base_url"`
+	RuntimeAvailable   bool                      `json:"runtime_available"`
+	EvidenceAvailable  bool                      `json:"evidence_available"`
+	RuntimeSummaryPath string                    `json:"runtime_summary_path"`
+	EvidencePath       string                    `json:"evidence_path"`
+	ExportPath         string                    `json:"export_path"`
+	Summary            OperatorAssuranceSummary  `json:"summary"`
+	Cards              []OperatorAssuranceCard   `json:"cards"`
+	Actions            []OperatorAssuranceAction `json:"actions"`
+	PrivacyBoundary    string                    `json:"privacy_boundary"`
+	GeneratedAt        time.Time                 `json:"generated_at"`
+}
+
 type TenantPremiumOperationsSummary struct {
 	Status                 string `json:"status"`
 	Headline               string `json:"headline"`

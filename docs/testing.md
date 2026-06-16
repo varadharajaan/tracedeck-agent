@@ -1315,6 +1315,29 @@ isolated backend, generates runtime and verification evidence, checks
 screenshot-free layout, theme, and visual-quality contracts. Newman runs
 `postman/tracedeck-backend-phase99.postman_collection.json`.
 
+Phase 100 packages operator assurance:
+
+```powershell
+python ./devctl.py assurance
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-operator-assurance.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/wait-backend-health.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/smoke-phase100.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/newman-phase100.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase100.ps1
+python ./devctl.py test phase100
+```
+
+The assurance command writes `data/local/output/operator-assurance.json` and
+`data/local/output/operator-assurance.txt`. The smoke live-boots an isolated
+backend, generates runtime summary, verification evidence, and operator
+assurance exports, checks `/api/v1/operator-assurance-center`, verifies
+dashboard markers, and runs screenshot-free layout, theme, and visual-quality
+contracts. Newman runs
+`postman/tracedeck-backend-phase100.postman_collection.json`. The verify script
+uses `scripts/local/wait-backend-health.ps1` when it refreshes the persistent
+local backend, so the `18080` server proof is bounded and logged under
+`logs/local/backend`.
+
 Phase 13 adds:
 
 ```powershell

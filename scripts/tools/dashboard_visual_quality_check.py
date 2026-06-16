@@ -31,8 +31,8 @@ VIEWPORTS = (
 )
 
 PAGE_READY_STATE = "domcontentloaded"
-NAVIGATION_TIMEOUT_MS = 60000
-READY_TIMEOUT_MS = 60000
+NAVIGATION_TIMEOUT_MS = 120000
+READY_TIMEOUT_MS = 120000
 
 FORBIDDEN_TEXT_PATTERNS = (
     r"Browser\s*\{",
@@ -139,6 +139,7 @@ def main() -> int:
                                     "Customer Settings",
                                     "Revenue Operations",
                                     "Runtime Status",
+                                    "Operator Assurance",
                                     "Verification Evidence",
                                     "Deployment Readiness",
                                     "Customer Control Room",

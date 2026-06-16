@@ -654,3 +654,10 @@ notification proof when provider-confirmed delivery is missing.
 Future frontend phases can move this surface to a richer application shell with
 no-code alert rule editing, weekly report drilldowns, durable event search, and
 paid customer onboarding workflows.
+
+Phase 100 adds Operator Assurance Center to the Deployment page. It gives the
+admin one compact handoff panel for runtime health, Scheduler readback, gate
+evidence, frontend cache state, git hygiene, export path, and next actions. A
+non-elevated Scheduler `denied` readback is shown as a watch item when backend
+PID and `/health` proof are healthy, so the UI no longer implies the local
+server is down just because service metadata needs elevated readback.

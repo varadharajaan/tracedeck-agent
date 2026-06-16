@@ -31,6 +31,7 @@ type Server struct {
 	auth                     AuthConfig
 	runtimeSummaryPath       string
 	verificationEvidencePath string
+	operatorAssurancePath    string
 }
 
 func NewServer(repo store.Repository, logger *slog.Logger) *Server {
@@ -46,6 +47,7 @@ func NewServer(repo store.Repository, logger *slog.Logger) *Server {
 		startedAt:                time.Now().UTC(),
 		runtimeSummaryPath:       constants.DefaultRuntimeSummaryPath,
 		verificationEvidencePath: constants.DefaultVerificationEvidencePath,
+		operatorAssurancePath:    constants.DefaultOperatorAssurancePath,
 	}
 }
 
@@ -75,6 +77,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc(constants.RouteAccountPortfolio, s.handleAccountPortfolioIndex)
 	mux.HandleFunc(constants.RouteRuntimeStatus, s.handleRuntimeStatusCenter)
 	mux.HandleFunc(constants.RouteVerificationCenter, s.handleVerificationEvidenceCenter)
+	mux.HandleFunc(constants.RouteOperatorAssurance, s.handleOperatorAssuranceCenter)
 	mux.HandleFunc(constants.RouteArchiveStatus, s.handleArchiveStatus)
 	return requestLogger(s.logger, s.authMiddleware(mux))
 }
@@ -220,6 +223,24 @@ func (s *Server) handleVerificationEvidenceCenter(w http.ResponseWriter, r *http
 	if err != nil {
 		s.logger.Error("verification evidence center lookup failed", "error", err)
 		writeError(w, http.StatusInternalServerError, "verification evidence center lookup failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, center)
+}
+
+func (s *Server) handleOperatorAssuranceCenter(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != constants.RouteOperatorAssurance {
+		http.NotFound(w, r)
+		return
+	}
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+	center, err := s.operatorAssuranceCenter()
+	if err != nil {
+		s.logger.Error("operator assurance center lookup failed", "error", err)
+		writeError(w, http.StatusInternalServerError, "operator assurance center lookup failed")
 		return
 	}
 	writeJSON(w, http.StatusOK, center)
@@ -700,6 +721,272 @@ func verificationEvidenceActions(artifact model.VerificationEvidenceArtifact, st
 			Severity: constants.SeverityInfo,
 			Status:   constants.StatusOK,
 		})
+	}
+	return actions
+}
+
+func (s *Server) operatorAssuranceCenter() (model.OperatorAssuranceCenter, error) {
+	runtimeCenter, err := s.runtimeStatusCenter()
+	if err != nil {
+		return model.OperatorAssuranceCenter{}, fmt.Errorf("runtime status for operator assurance: %w", err)
+	}
+	evidenceCenter, err := s.verificationEvidenceCenter()
+	if err != nil {
+		return model.OperatorAssuranceCenter{}, fmt.Errorf("verification evidence for operator assurance: %w", err)
+	}
+	exportPath := strings.TrimSpace(s.operatorAssurancePath)
+	if exportPath == "" {
+		exportPath = constants.DefaultOperatorAssurancePath
+	}
+	return operatorAssuranceCenterFromSources(exportPath, runtimeCenter, evidenceCenter), nil
+}
+
+func operatorAssuranceCenterFromSources(exportPath string, runtimeCenter model.RuntimeStatusCenter, evidenceCenter model.VerificationEvidenceCenter) model.OperatorAssuranceCenter {
+	runtimeReady := runtimeCenter.SummaryAvailable && runtimeCenter.Summary.CanContinue && runtimeCenter.Summary.RuntimeOK && runtimeCenter.Summary.HealthOK
+	evidenceReady := evidenceCenter.EvidenceAvailable && evidenceCenter.Summary.CanPromote && evidenceCenter.Summary.Status == constants.StatusOK
+	gitClean := runtimeCenter.SummaryAvailable && !runtimeCenter.Summary.TrackedContentDiff
+	frontendCacheStatus := "artifact_cache_miss"
+	frontendCacheHitPct := 0
+	if runtimeCenter.Summary.FrontendURLPresent {
+		frontendCacheStatus = "artifact_cache_hit"
+		frontendCacheHitPct = 100
+	}
+	status := operatorAssuranceStatus(runtimeCenter, evidenceCenter, runtimeReady, evidenceReady, gitClean)
+	canContinue := runtimeReady && evidenceReady && gitClean
+	schedulerExplanation := operatorAssuranceSchedulerExplanation(runtimeCenter.Summary.SchedulerReadback, runtimeReady, runtimeCenter.Summary.LaunchTaskVerified)
+	actions := operatorAssuranceActions(runtimeCenter, evidenceCenter, runtimeReady, evidenceReady, canContinue)
+	nextStep := "Keep runtime summary and verification evidence fresh before handoff."
+	if len(actions) > 0 {
+		nextStep = actions[0].Detail
+	}
+	headline := "Operator assurance is ready for handoff."
+	if status == constants.StatusWatch {
+		headline = "Operator assurance can continue with watch items."
+	} else if status == constants.StatusAttention {
+		headline = "Operator assurance needs attention before handoff."
+	}
+	detail := fmt.Sprintf("Runtime=%s, Scheduler=%s, verification=%s, frontend cache=%s, git clean=%t.",
+		boolRuntimeLabel(runtimeReady),
+		emptyFallback(runtimeCenter.Summary.SchedulerReadback, "unknown"),
+		emptyFallback(evidenceCenter.Summary.Status, "unknown"),
+		frontendCacheStatus,
+		gitClean,
+	)
+	updatedAt := runtimeCenter.Summary.SummaryGeneratedAt
+	if strings.TrimSpace(evidenceCenter.Summary.EvidenceGenerated) != "" {
+		updatedAt = evidenceCenter.Summary.EvidenceGenerated
+	}
+
+	return model.OperatorAssuranceCenter{
+		Source:             constants.OperatorAssuranceSourcePhase100,
+		BaseURL:            emptyFallback(runtimeCenter.BaseURL, evidenceCenter.BaseURL),
+		RuntimeAvailable:   runtimeCenter.SummaryAvailable,
+		EvidenceAvailable:  evidenceCenter.EvidenceAvailable,
+		RuntimeSummaryPath: runtimeCenter.SummaryPath,
+		EvidencePath:       evidenceCenter.EvidencePath,
+		ExportPath:         exportPath,
+		Summary: model.OperatorAssuranceSummary{
+			Status:               status,
+			Headline:             headline,
+			Detail:               detail,
+			CanContinue:          canContinue,
+			CanPromote:           evidenceReady,
+			RuntimeReady:         runtimeReady,
+			SchedulerReadback:    emptyFallback(runtimeCenter.Summary.SchedulerReadback, "unknown"),
+			SchedulerExplanation: schedulerExplanation,
+			VerificationStatus:   emptyFallback(evidenceCenter.Summary.Status, "unknown"),
+			FrontendCacheStatus:  frontendCacheStatus,
+			FrontendCacheHitPct:  frontendCacheHitPct,
+			GitClean:             gitClean,
+			ExportPath:           exportPath,
+			OperatorNextStep:     nextStep,
+			UpdatedAt:            updatedAt,
+		},
+		Cards:           operatorAssuranceCards(runtimeCenter, evidenceCenter, runtimeReady, evidenceReady, gitClean, frontendCacheStatus),
+		Actions:         actions,
+		PrivacyBoundary: constants.OperatorAssurancePrivacyNote,
+		GeneratedAt:     time.Now().UTC(),
+	}
+}
+
+func operatorAssuranceStatus(runtimeCenter model.RuntimeStatusCenter, evidenceCenter model.VerificationEvidenceCenter, runtimeReady bool, evidenceReady bool, gitClean bool) string {
+	if !runtimeCenter.SummaryAvailable || !evidenceCenter.EvidenceAvailable || !runtimeReady || !evidenceReady || !gitClean {
+		return constants.StatusAttention
+	}
+	if runtimeCenter.Summary.Status == constants.StatusAttention || evidenceCenter.Summary.Status == constants.StatusAttention {
+		return constants.StatusAttention
+	}
+	if runtimeCenter.Summary.Status == constants.StatusWatch || evidenceCenter.Summary.Status == constants.StatusWatch || !runtimeCenter.Summary.FrontendURLPresent {
+		return constants.StatusWatch
+	}
+	return constants.StatusOK
+}
+
+func operatorAssuranceSchedulerExplanation(readback string, runtimeReady bool, launchTaskVerified bool) string {
+	readback = strings.ToLower(strings.TrimSpace(readback))
+	if launchTaskVerified || readback == "verified" {
+		return "Scheduler readback is verified and the backend runtime proof is healthy."
+	}
+	if readback == "denied" && runtimeReady {
+		return "Backend runtime is healthy; this non-elevated shell cannot read Scheduler metadata. Use elevated PowerShell only when service readback proof is required."
+	}
+	if runtimeReady {
+		return "Backend runtime is healthy, but service-manager readback still needs a fresh local proof."
+	}
+	return "Backend runtime proof is not ready, so service-manager readback cannot be trusted yet."
+}
+
+func operatorAssuranceCards(runtimeCenter model.RuntimeStatusCenter, evidenceCenter model.VerificationEvidenceCenter, runtimeReady bool, evidenceReady bool, gitClean bool, frontendCacheStatus string) []model.OperatorAssuranceCard {
+	schedulerStatus := constants.StatusAttention
+	if runtimeCenter.Summary.LaunchTaskVerified || runtimeCenter.Summary.SchedulerReadback == "verified" {
+		schedulerStatus = constants.StatusOK
+	} else if runtimeReady && runtimeCenter.Summary.SchedulerReadback == "denied" {
+		schedulerStatus = constants.StatusWatch
+	}
+	frontendStatus := constants.StatusWatch
+	if runtimeCenter.Summary.FrontendURLPresent {
+		frontendStatus = constants.StatusOK
+	}
+	privacyStatus := constants.StatusAttention
+	if strings.Contains(strings.ToLower(runtimeCenter.PrivacyBoundary), "metadata-only") && strings.Contains(strings.ToLower(evidenceCenter.PrivacyBoundary), "metadata-only") {
+		privacyStatus = constants.StatusOK
+	}
+	gitStatus := constants.StatusOK
+	if !gitClean {
+		gitStatus = constants.StatusAttention
+	}
+	verificationStatus := constants.StatusAttention
+	if evidenceReady {
+		verificationStatus = constants.StatusOK
+	} else if evidenceCenter.EvidenceAvailable {
+		verificationStatus = constants.StatusWatch
+	}
+	runtimeStatus := constants.StatusAttention
+	if runtimeReady {
+		runtimeStatus = constants.StatusOK
+	}
+
+	return []model.OperatorAssuranceCard{
+		{
+			ID:            constants.OperatorAssuranceCardRuntimeID,
+			Label:         "Runtime Health",
+			Value:         boolRuntimeLabel(runtimeReady),
+			Detail:        fmt.Sprintf("backend=%t health=%t can_continue=%t", runtimeCenter.Summary.RuntimeOK, runtimeCenter.Summary.HealthOK, runtimeCenter.Summary.CanContinue),
+			Status:        runtimeStatus,
+			Source:        constants.RuntimeStatusSourcePhase97Summary,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.OperatorAssuranceCardSchedulerID,
+			Label:         "Scheduler Readback",
+			Value:         emptyFallback(runtimeCenter.Summary.SchedulerReadback, "unknown"),
+			Detail:        operatorAssuranceSchedulerExplanation(runtimeCenter.Summary.SchedulerReadback, runtimeReady, runtimeCenter.Summary.LaunchTaskVerified),
+			Status:        schedulerStatus,
+			Source:        constants.RuntimeStatusSourcePhase97Summary,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.OperatorAssuranceCardVerificationID,
+			Label:         "Verification Gates",
+			Value:         fmt.Sprintf("%d/%d ok", evidenceCenter.Summary.GatesOK, evidenceCenter.Summary.GatesTotal),
+			Detail:        fmt.Sprintf("watch=%d attention=%d can_promote=%t", evidenceCenter.Summary.GatesWatch, evidenceCenter.Summary.GatesAttention, evidenceCenter.Summary.CanPromote),
+			Status:        verificationStatus,
+			Source:        constants.VerificationEvidenceSourcePhase99,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.OperatorAssuranceCardFrontendCacheID,
+			Label:         "Frontend Cache",
+			Value:         frontendCacheStatus,
+			Detail:        "Frontend status is read from the local runtime summary artifact; this endpoint does not perform a live cloud request.",
+			Status:        frontendStatus,
+			Source:        constants.RuntimeStatusSourcePhase97Summary,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.OperatorAssuranceCardGitID,
+			Label:         "Git Hygiene",
+			Value:         boolCleanLabel(gitClean),
+			Detail:        fmt.Sprintf("tracked_content_diff=%t", runtimeCenter.Summary.TrackedContentDiff),
+			Status:        gitStatus,
+			Source:        constants.RuntimeStatusSourcePhase97Summary,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+		{
+			ID:            constants.OperatorAssuranceCardPrivacyID,
+			Label:         "Privacy Boundary",
+			Value:         boolRuntimeLabel(privacyStatus == constants.StatusOK),
+			Detail:        "Only local metadata proof is exposed; sensitive collection categories remain denied.",
+			Status:        privacyStatus,
+			Source:        constants.OperatorAssuranceSourcePhase100,
+			EvidenceScope: constants.EvidenceScopeMetadataOnly,
+		},
+	}
+}
+
+func operatorAssuranceActions(runtimeCenter model.RuntimeStatusCenter, evidenceCenter model.VerificationEvidenceCenter, runtimeReady bool, evidenceReady bool, canContinue bool) []model.OperatorAssuranceAction {
+	actions := []model.OperatorAssuranceAction{
+		{
+			ID:       constants.OperatorAssuranceActionRefreshID,
+			Title:    "Refresh assurance pack",
+			Detail:   "Regenerate the local operator assurance JSON and text handoff files.",
+			Command:  constants.OperatorAssuranceCommand,
+			Severity: constants.SeverityInfo,
+			Status:   constants.StatusOK,
+		},
+	}
+	if !runtimeReady {
+		actions = append(actions, model.OperatorAssuranceAction{
+			ID:       constants.OperatorAssuranceActionRestartID,
+			Title:    "Restart backend runtime",
+			Detail:   "Restart the local backend task, then refresh runtime summary and assurance.",
+			Command:  constants.RuntimeTaskRestartCommand,
+			Severity: constants.SeverityHigh,
+			Status:   constants.StatusPending,
+		})
+	}
+	if runtimeCenter.Summary.SchedulerReadback == "denied" && runtimeReady {
+		actions = append(actions, model.OperatorAssuranceAction{
+			ID:       constants.OperatorAssuranceActionAdminReadID,
+			Title:    "Run elevated Scheduler readback",
+			Detail:   "Use an elevated PowerShell session only if you need service-manager readback proof; runtime proof is already healthy.",
+			Command:  constants.RuntimeTaskStatusCommand,
+			Severity: constants.SeverityInfo,
+			Status:   constants.StatusWatch,
+		})
+	}
+	if !evidenceReady {
+		actions = append(actions, model.OperatorAssuranceAction{
+			ID:       constants.OperatorAssuranceActionRunVerifierID,
+			Title:    "Run Phase 100 verifier",
+			Detail:   "Run the full Phase 100 verifier and regenerate verification evidence.",
+			Command:  constants.OperatorAssuranceVerifyCommand,
+			Severity: constants.SeverityHigh,
+			Status:   constants.StatusPending,
+		})
+	}
+	if !runtimeCenter.SummaryAvailable || runtimeCenter.Summary.Status != constants.StatusOK {
+		actions = append(actions, model.OperatorAssuranceAction{
+			ID:       constants.OperatorAssuranceActionRuntimeID,
+			Title:    "Refresh runtime summary",
+			Detail:   "Refresh local runtime proof before sharing the operator assurance pack.",
+			Command:  constants.RuntimeSummaryCommand,
+			Severity: constants.SeverityInfo,
+			Status:   constants.StatusWatch,
+		})
+	}
+	if !evidenceCenter.EvidenceAvailable || evidenceCenter.Summary.Status != constants.StatusOK {
+		actions = append(actions, model.OperatorAssuranceAction{
+			ID:       constants.OperatorAssuranceActionEvidenceID,
+			Title:    "Refresh verification evidence",
+			Detail:   "Refresh local gate evidence after any verification run.",
+			Command:  constants.VerificationEvidenceCommand,
+			Severity: constants.SeverityInfo,
+			Status:   constants.StatusWatch,
+		})
+	}
+	if canContinue && len(actions) == 1 {
+		actions[0].Status = constants.StatusOK
 	}
 	return actions
 }

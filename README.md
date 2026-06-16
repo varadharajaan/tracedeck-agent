@@ -563,3 +563,16 @@ Phase 99 adds a Verification Evidence Center. Use
 screenshot-free layout/theme/visual contracts. The evidence center is
 metadata-only: scripted gate labels, statuses, commands, timestamps, log paths,
 report paths, git labels, and operator actions only.
+
+Phase 100 adds an Operator Assurance Center. Use
+`python devctl.py assurance` to write
+`data/local/output/operator-assurance.json` and
+`data/local/output/operator-assurance.txt`, then
+`python devctl.py test phase100` to verify
+`GET /api/v1/operator-assurance-center`, the dashboard assurance panel, Newman,
+and screenshot-free layout/theme/visual contracts. The assurance center
+combines runtime status and verification evidence into compact metadata-only
+cards, including a clear Scheduler-denied-but-runtime-healthy explanation. The
+Phase 100 verifier refreshes the persistent local backend through
+`scripts/local/wait-backend-health.ps1`, keeping the `18080` proof bounded and
+logged.

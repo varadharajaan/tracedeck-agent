@@ -640,3 +640,12 @@ uses it as backend-visible agent health/replay proof. It does not include
 passwords, screenshots, raw URLs, page titles, cookies, tokens, private
 content, endpoint payloads, provider secrets, alert bodies, keylogs, or hidden
 collection bypass data.
+
+Phase 100 adds `GET /api/v1/operator-assurance-center`. It composes the local
+runtime summary and verification evidence artifacts into typed assurance
+summary fields, cards, and actions. It reports runtime readiness, Scheduler
+readback explanation, verification gate counts, frontend artifact-cache state,
+git hygiene, output paths, and privacy proof only. It does not collect or
+return passwords, screenshots, raw browser URLs, page titles, cookies, tokens,
+private content, endpoint payloads, provider secrets, alert bodies, keylogs,
+payment data, or raw provider payloads.

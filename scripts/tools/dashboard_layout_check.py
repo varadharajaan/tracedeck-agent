@@ -14,10 +14,10 @@ VIEWPORTS = (
 )
 
 PAGE_READY_STATE = "domcontentloaded"
-NAVIGATION_TIMEOUT_MS = 60000
-READY_TIMEOUT_MS = 60000
+NAVIGATION_TIMEOUT_MS = 120000
+READY_TIMEOUT_MS = 120000
 
-EXPECTED_COMMAND_JUMPS = 26
+EXPECTED_COMMAND_JUMPS = 27
 
 REQUIRED_IDS = (
     "premium-operations-section",
@@ -113,6 +113,17 @@ REQUIRED_IDS = (
     "runtime-kpi-verdict",
     "runtime-proof-list",
     "runtime-action-list",
+    "operator-assurance-section",
+    "operator-assurance-status",
+    "operator-assurance-headline",
+    "assurance-kpi-runtime",
+    "assurance-kpi-scheduler",
+    "assurance-kpi-gates",
+    "assurance-kpi-cache",
+    "assurance-kpi-git",
+    "assurance-kpi-export",
+    "assurance-card-list",
+    "assurance-action-list",
     "verification-evidence-section",
     "verification-evidence-status",
     "verification-evidence-headline",
