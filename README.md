@@ -542,3 +542,9 @@ Phase 96 adds a reusable post-merge verifier. Use
 `python devctl.py test postmerge` or `python devctl.py test phase96` to run the
 current phase gate, backend task-status, runtime doctor, live provenance,
 root-clean, and git diff hygiene from one command.
+
+Phase 97 adds a runtime summary command. Use `python devctl.py summary` to
+write `data/local/output/runtime-summary.json` and
+`data/local/output/runtime-summary.txt` with backend health, Scheduler
+readback, task advisory, runtime doctor, frontend URL, git diff hygiene, and
+operator next actions.
