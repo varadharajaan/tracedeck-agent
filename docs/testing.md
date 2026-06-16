@@ -1255,6 +1255,20 @@ The shared PowerShell script bootstrap sets `GOCACHE` to
 verification. The Phase 95 verifier reruns Phase 94 and then confirms those
 repo-local generated artifact directories exist before root-clean.
 
+Phase 96 packages post-merge verification:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-postmerge.ps1 -PhaseTarget phase95 -SkipGitHub
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify/verify-phase96.ps1
+python ./devctl.py test postmerge
+python ./devctl.py test phase96
+```
+
+The post-merge verifier runs the selected phase gate, backend task-status,
+runtime doctor, live server provenance, root artifact check, `git diff --check`,
+and a tracked content-diff check. GitHub issue/PR state checks are available by
+passing `-IssueNumber` and `-PrNumber` without `-SkipGitHub`.
+
 Phase 13 adds:
 
 ```powershell

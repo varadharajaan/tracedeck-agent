@@ -537,3 +537,8 @@ Phase 95 hardens scripted Go verification on Windows by routing `GOCACHE` and
 `GOTMPDIR` to `data/local/go-build-cache/` and `data/local/go-tmp/` from the
 shared PowerShell script bootstrap. Use `python devctl.py test phase95` to
 rerun the Phase 94 gate and prove Go build/test artifacts stay repo-local.
+
+Phase 96 adds a reusable post-merge verifier. Use
+`python devctl.py test postmerge` or `python devctl.py test phase96` to run the
+current phase gate, backend task-status, runtime doctor, live provenance,
+root-clean, and git diff hygiene from one command.
