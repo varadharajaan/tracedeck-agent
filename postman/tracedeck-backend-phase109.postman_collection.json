@@ -1,0 +1,153 @@
+{
+  "info": {
+    "name": "TraceDeck Phase 109 OpenTelemetry Exporter",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is ok and no-store', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create OTel Tenant",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/tenants",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenant_id\": \"family-varadha\",\n  \"name\": \"Family Varadha\",\n  \"plan_id\": \"family_pro\",\n  \"retention_tier_id\": \"family_cloud_90_365_archive\",\n  \"primary_profile\": \"ai-btech-student\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('tenant exists', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().tenant_id).to.eql('family-varadha');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Enroll OTel Device",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/devices/enroll",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenant_id\": \"family-varadha\",\n  \"device_id\": \"phase109-otel-device\",\n  \"host_name\": \"phase109-otel-host\",\n  \"profile\": \"ai_btech_student\",\n  \"os_name\": \"opentelemetry_smoke\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('device enrolled', function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.expect(pm.response.json().device_id).to.eql('phase109-otel-device');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ingest Metadata Event",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/v1/devices/phase109-otel-device/telemetry-events",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tenant_id\": \"family-varadha\",\n  \"device_id\": \"phase109-otel-device\",\n  \"host_name\": \"phase109-otel-host\",\n  \"profile\": \"ai_btech_student\",\n  \"os_name\": \"opentelemetry_smoke\",\n  \"events\": [\n    {\n      \"id\": \"phase109-otel-event-1\",\n      \"type\": \"agent.health.heartbeat\",\n      \"source\": \"collector.agent.heartbeat\",\n      \"observed_at\": \"{{$isoTimestamp}}\",\n      \"tenant_id\": \"family-varadha\",\n      \"device_id\": \"phase109-otel-device\",\n      \"host_name\": \"phase109-otel-host\",\n      \"app_name\": \"tracedeck-agent\",\n      \"process_id\": 0,\n      \"path_hash\": \"\",\n      \"metadata\": {\n        \"agent_healthy\": \"true\",\n        \"collection_mode\": \"once\",\n        \"backend_sync_enabled\": \"false\",\n        \"alerts_enabled\": \"false\"\n      }\n    }\n  ]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('metadata event accepted', function () {",
+              "  pm.response.to.have.status(202);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.accepted_events).to.eql(1);",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Telemetry Status Privacy Boundary",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/devices/phase109-otel-device/telemetry-status"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('telemetry status remains metadata-only', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store, no-cache, must-revalidate, max-age=0');",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.stored_events).to.be.at.least(1);",
+              "  pm.expect(body.privacy_boundary).to.include('metadata-only');",
+              "  const serialized = JSON.stringify(body.recent_events || []).toLowerCase();",
+              "  ['password', 'screenshot', 'raw_url', 'page_title', 'cookie', 'token', 'provider_secret', 'alert_body'].forEach((marker) => {",
+              "    pm.expect(serialized).to.not.include(marker);",
+              "  });",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

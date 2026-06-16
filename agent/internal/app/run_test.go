@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -60,6 +61,11 @@ func TestRunResultMerge(t *testing.T) {
 		TelemetrySynced:  true,
 		TelemetryEvents:  4,
 		TelemetryBacklog: 3,
+		OTelExported:     true,
+		OTelEvents:       4,
+		OTelDropped:      1,
+		OTelAttempts:     2,
+		OTelBacklog:      0,
 	})
 
 	if result.Cycles != 2 {
@@ -88,5 +94,14 @@ func TestRunResultMerge(t *testing.T) {
 	}
 	if result.TelemetryBacklog != 3 {
 		t.Fatalf("expected telemetry backlog to reflect latest cycle, got %+v", result)
+	}
+	if !result.OTelExported || result.OTelEvents != 4 || result.OTelDropped != 1 || result.OTelAttempts != 2 || result.OTelBacklog != 0 {
+		t.Fatalf("expected opentelemetry export merge, got %+v", result)
+	}
+	formatted := FormatRunResult(result)
+	for _, expected := range []string{"otel_exported=true", "otel_events=4", "otel_dropped=1", "otel_attempts=2", "otel_backlog=0"} {
+		if !strings.Contains(formatted, expected) {
+			t.Fatalf("expected %q in formatted result: %s", expected, formatted)
+		}
 	}
 }

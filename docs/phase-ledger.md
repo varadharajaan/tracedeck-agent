@@ -15,10 +15,10 @@ data/local/output/phase-ledger.txt
 
 ## Current Count
 
-- Current ledger package: Phase 108
-- Latest completed published baseline before this ledger package: Phase 107
-- Latest completed issue/PR before this ledger package: issue #221 / PR #222
-- Highest tracked phase verifier after this ledger package: Phase 108
+- Current ledger package: Phase 109
+- Latest completed published baseline before this ledger package: Phase 108
+- Latest completed issue/PR before this ledger package: issue #223 / PR #224
+- Highest tracked phase verifier after this ledger package: Phase 109
 - Remaining planned numbered phases: 0
 - Next planned numbered phase: none
 
@@ -49,12 +49,13 @@ backlog before it becomes counted remaining phase work.
 
 | Phase | Status | Issue | PR | Verification | Summary |
 | --- | --- | --- | --- | --- | --- |
-| 108 | In this package | TBD | TBD | `scripts/verify/verify-phase108.ps1` | Adds Chrome, Edge, and Brave browser extension skeleton plus smoke/Newman coverage. |
+| 109 | In this package | TBD | TBD | `scripts/verify/verify-phase109.ps1` | Adds metadata-only OpenTelemetry OTLP exporter plus local Collector stack. |
 
 ## Latest Completed Phases
 
 | Phase | Status | Issue | PR | Verification | Summary |
 | --- | --- | --- | --- | --- | --- |
+| 108 | Merged | #223 | #224 | `scripts/verify/verify-phase108.ps1` | Chrome, Edge, and Brave browser extension skeleton plus smoke/Newman coverage. |
 | 107 | Merged | #221 | #222 | `scripts/verify/verify-phase107.ps1` | Contract completion audit and `python ./devctl.py audit`. |
 | 106 | Merged | #219 | #220 | `scripts/verify/verify-phase106.ps1` | Phase ledger and `python ./devctl.py ledger`. |
 | 105 | Merged | #217 | #218 | `scripts/verify/verify-phase105.ps1` | Promotion Readiness Center and `python ./devctl.py promote`. |

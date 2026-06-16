@@ -421,3 +421,8 @@
      Browser Metadata Bridge under `browser-extension/`, local-only
      domain/category telemetry posting, privacy contract tests, live smoke,
      Newman coverage, docs, and `devctl.py test phase108`.
+106. Phase 109: OpenTelemetry exporter and local collector stack. Add typed
+     `observability.opentelemetry` policy config, metadata-only OTLP/HTTP JSON
+     export with bounded attempt/drop metrics, fake receiver smoke coverage,
+     Docker Compose/OpenTelemetry Collector config, Newman coverage, docs, and
+     `devctl.py test phase109`.

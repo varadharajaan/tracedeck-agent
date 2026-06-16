@@ -16,6 +16,7 @@ import (
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/config"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/constants"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/domain/event"
+	"github.com/varadharajaan/tracedeck-agent/agent/internal/exporter"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/logging"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/platform"
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/storage/sqlite"
@@ -57,6 +58,11 @@ type RunResult struct {
 	TelemetrySynced  bool
 	TelemetryEvents  int
 	TelemetryBacklog int
+	OTelExported     bool
+	OTelEvents       int
+	OTelDropped      int
+	OTelAttempts     int
+	OTelBacklog      int
 }
 
 func Run(ctx context.Context, opts RunOptions) (RunResult, error) {
@@ -252,6 +258,26 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 		}
 	}
 
+	if r.policy.Observability.OpenTelemetry.Enabled {
+		otelOutcome, err := r.exportOpenTelemetry(ctx, platformAdapter)
+		result.OTelExported = otelOutcome.ExportedEvents > 0
+		result.OTelEvents = otelOutcome.ExportedEvents
+		result.OTelDropped = otelOutcome.DroppedEvents
+		result.OTelAttempts = otelOutcome.Attempts
+		result.OTelBacklog = otelOutcome.PendingAfter
+		if err != nil {
+			r.logger.Warn("opentelemetry export completed with drops",
+				"error", err,
+				"pending_before", otelOutcome.PendingBefore,
+				"pending_after", otelOutcome.PendingAfter,
+				"exported_events", otelOutcome.ExportedEvents,
+				"dropped_events", otelOutcome.DroppedEvents,
+				"attempts", otelOutcome.Attempts,
+				"last_cursor", otelOutcome.LastCursor,
+			)
+		}
+	}
+
 	if archiveEnabled {
 		batch, err := archive.NewWriter(r.opts.OutboxDir).WriteBatch(ctx, r.policy, events)
 		if err != nil {
@@ -319,6 +345,15 @@ type backendSyncOutcome struct {
 	Synced         bool
 	AcceptedEvents int
 	StoredEvents   int
+	PendingBefore  int
+	PendingAfter   int
+	LastCursor     int64
+}
+
+type openTelemetryOutcome struct {
+	ExportedEvents int
+	DroppedEvents  int
+	Attempts       int
 	PendingBefore  int
 	PendingAfter   int
 	LastCursor     int64
@@ -400,6 +435,75 @@ func (r *cycleRunner) syncBackendTelemetry(ctx context.Context, platformAdapter 
 	return outcome, nil
 }
 
+func (r *cycleRunner) exportOpenTelemetry(ctx context.Context, platformAdapter platform.Adapter) (openTelemetryOutcome, error) {
+	batchLimit := r.policy.Observability.OpenTelemetry.BatchLimit
+	if batchLimit <= 0 {
+		batchLimit = constants.DefaultOpenTelemetryBatchLimit
+	}
+	cursor, err := r.store.BackendSyncCursor(ctx, constants.OpenTelemetryCursorName)
+	if err != nil {
+		return openTelemetryOutcome{}, err
+	}
+	pending, err := r.store.PendingBackendSyncEvents(ctx, cursor, batchLimit)
+	if err != nil {
+		return openTelemetryOutcome{LastCursor: cursor}, err
+	}
+	outcome := openTelemetryOutcome{
+		PendingBefore: len(pending),
+		PendingAfter:  len(pending),
+		LastCursor:    cursor,
+	}
+	if len(pending) == 0 {
+		r.logger.Info("opentelemetry export idle", "last_cursor", cursor)
+		return outcome, nil
+	}
+	hostName, err := platformAdapter.Hostname(ctx)
+	if err != nil || hostName == "" {
+		hostName = constants.UnknownHost
+	}
+	events := make([]event.Event, 0, len(pending))
+	for _, stored := range pending {
+		events = append(events, stored.Event)
+	}
+	otelExporter, err := exporter.NewOTLPHTTPLogExporter(r.policy.Observability.OpenTelemetry)
+	if err != nil {
+		return outcome, err
+	}
+	result, err := otelExporter.Export(ctx, exporter.Request{
+		Policy:   r.policy,
+		HostName: hostName,
+		OSName:   platformAdapter.Name(),
+		Events:   events,
+	})
+	outcome.ExportedEvents = result.ExportedEvents
+	outcome.DroppedEvents = result.DroppedEvents
+	outcome.Attempts = result.Attempts
+	if result.ExportedEvents > 0 || result.DroppedEvents > 0 {
+		outcome.LastCursor = pending[len(pending)-1].LocalID
+		if markErr := r.store.MarkBackendSyncCursor(ctx, constants.OpenTelemetryCursorName, outcome.LastCursor); markErr != nil {
+			return outcome, markErr
+		}
+	}
+	outcome.PendingAfter = len(pending) - result.ExportedEvents - result.DroppedEvents
+	if outcome.PendingAfter < 0 {
+		outcome.PendingAfter = 0
+	}
+	r.logger.Info("opentelemetry metadata batch processed",
+		"exported_events", result.ExportedEvents,
+		"dropped_events", result.DroppedEvents,
+		"attempts", result.Attempts,
+		"pending_before", outcome.PendingBefore,
+		"pending_after", outcome.PendingAfter,
+		"last_cursor", outcome.LastCursor,
+		"last_status", result.LastStatus,
+		"privacy_boundary", constants.OpenTelemetryPrivacyBoundary,
+	)
+	if err != nil {
+		return outcome, err
+	}
+	return outcome, nil
+}
+
 func (r *cycleRunner) alertNotifier() (alert.Notifier, string, error) {
 	if r.opts.AlertDryRun {
 		return alert.NewLocalNotifier(r.opts.OutboxDir), "local_outbox", nil
@@ -430,6 +534,11 @@ func (r *RunResult) merge(next RunResult) {
 	r.TelemetrySynced = r.TelemetrySynced || next.TelemetrySynced
 	r.TelemetryEvents += next.TelemetryEvents
 	r.TelemetryBacklog = next.TelemetryBacklog
+	r.OTelExported = r.OTelExported || next.OTelExported
+	r.OTelEvents += next.OTelEvents
+	r.OTelDropped += next.OTelDropped
+	r.OTelAttempts += next.OTelAttempts
+	r.OTelBacklog = next.OTelBacklog
 }
 
 func parseDurationOrDefault(value string, fallback string) (time.Duration, error) {
@@ -445,7 +554,7 @@ func parseDurationOrDefault(value string, fallback string) (time.Duration, error
 
 func FormatRunResult(result RunResult) string {
 	return fmt.Sprintf(
-		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d browser_events=%d health_events=%d heartbeat_events=%d telemetry_synced=%t telemetry_events=%d telemetry_backlog=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_delivery=%s alert_delivered=%t",
+		"TraceDeck run complete: cycles=%d collected_events=%d stored_events=%d browser_events=%d health_events=%d heartbeat_events=%d telemetry_synced=%t telemetry_events=%d telemetry_backlog=%d otel_exported=%t otel_events=%d otel_dropped=%d otel_attempts=%d otel_backlog=%d archive_batch=%s archive_uploaded=%t alerts_raised=%d alert_delivery=%s alert_delivered=%t",
 		result.Cycles,
 		result.CollectedEvents,
 		result.StoredEvents,
@@ -455,6 +564,11 @@ func FormatRunResult(result RunResult) string {
 		result.TelemetrySynced,
 		result.TelemetryEvents,
 		result.TelemetryBacklog,
+		result.OTelExported,
+		result.OTelEvents,
+		result.OTelDropped,
+		result.OTelAttempts,
+		result.OTelBacklog,
 		result.ArchiveBatch,
 		result.ArchiveUploaded,
 		result.AlertsRaised,

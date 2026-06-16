@@ -35,6 +35,15 @@ const (
 )
 
 const (
+	DefaultOpenTelemetryEndpoint    = "http://127.0.0.1:4318/v1/logs"
+	DefaultOpenTelemetryBatchLimit  = 100
+	DefaultOpenTelemetryTimeout     = "5s"
+	DefaultOpenTelemetryMaxAttempts = 2
+	OpenTelemetryCursorName         = "opentelemetry_export"
+	OpenTelemetryEventIDPrefix      = "otel-event-"
+)
+
+const (
 	LogLevelTrace = "trace"
 	LogLevelDebug = "debug"
 	LogLevelInfo  = "info"

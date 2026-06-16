@@ -54,17 +54,17 @@ Implemented or strongly evidenced:
   promotion readiness proof surfaces.
 - Chrome, Edge, and Brave browser extension skeleton that posts
   domain/category-only events to localhost telemetry ingest.
+- OpenTelemetry OTLP/HTTP JSON exporter with bounded attempts/drop metrics.
+- Docker Compose and OpenTelemetry Collector local stack under
+  `deployments/otel/`.
 
 Remaining or partial:
 
-- OpenTelemetry OTLP exporter implementation is not present; telemetry schema
-  docs exist.
 - Active foreground app collection is represented as a platform capability but
   not as a full collector implementation.
 - Software install/uninstall detection has classifier and product surfaces, but
   not a complete OS install-event collector.
 - Visible local monitoring indicator remains planned, not implemented.
-- Docker Compose / OpenTelemetry Collector local stack is not present.
 - GoReleaser/Syft release packaging and SBOM flow are not present.
 
 ## Privacy

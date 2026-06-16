@@ -66,6 +66,21 @@ func (p Policy) Validate() error {
 		validateDuration(&errs, constants.ConfigFieldBackendSyncTimeout, p.BackendSync.RequestTimeout)
 	}
 
+	if p.Observability.OpenTelemetry.Protocol != "" || p.Observability.OpenTelemetry.Enabled {
+		requireEnum(&errs, constants.ConfigFieldOpenTelemetryProtocol, p.Observability.OpenTelemetry.Protocol, openTelemetryProtocols)
+	}
+	if p.Observability.OpenTelemetry.Enabled {
+		validateHTTPURL(&errs, constants.ConfigFieldOpenTelemetryEndpoint, p.Observability.OpenTelemetry.Endpoint)
+		if p.Observability.OpenTelemetry.BatchLimit <= 0 {
+			errs = append(errs, fieldError(constants.ConfigFieldOpenTelemetryBatch, constants.ConfigErrorMustBeGreaterThanZero))
+		}
+		requiredString(&errs, constants.ConfigFieldOpenTelemetryTimeout, p.Observability.OpenTelemetry.RequestTimeout)
+		validateDuration(&errs, constants.ConfigFieldOpenTelemetryTimeout, p.Observability.OpenTelemetry.RequestTimeout)
+		if p.Observability.OpenTelemetry.Retry.MaxAttempts <= 0 {
+			errs = append(errs, fieldError(constants.ConfigFieldOpenTelemetryAttempts, constants.ConfigErrorMustBeGreaterThanZero))
+		}
+	}
+
 	requireEnum(&errs, constants.ConfigFieldEmailProvider, p.Alerts.Email.Provider, emailProviders)
 	requireEnum(&errs, constants.ConfigFieldEmailMinSeverity, p.Alerts.Email.MinSeverity, severities)
 	if p.Alerts.Enabled {

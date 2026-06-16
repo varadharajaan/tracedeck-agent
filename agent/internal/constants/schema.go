@@ -6,6 +6,7 @@ const (
 	SchemaDefCollectionPolicy      = "CollectionPolicy"
 	SchemaDefEmailPolicy           = "EmailPolicy"
 	SchemaDefMediaCollection       = "MediaCollection"
+	SchemaDefOpenTelemetryPolicy   = "OpenTelemetryPolicy"
 	SchemaDefRuleSpec              = "RuleSpec"
 	SchemaDefSensitiveCapabilities = "SensitiveCapabilities"
 )
@@ -25,4 +26,5 @@ const (
 	SchemaPropMinSeverity           = "min_severity"
 	SchemaPropSeverity              = "severity"
 	SchemaPropTransparencyMode      = "transparency_mode"
+	SchemaPropProtocol              = "protocol"
 )
