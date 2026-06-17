@@ -38,8 +38,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-runtime
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/repair-live-agent-autostart.ps1 -SkipBuild
 ```
 
-This registers the agent through a hidden `wscript.exe` launcher so normal
-logon startup does not show a PowerShell console.
+This registers the Windows GUI-subsystem agent executable directly with Task
+Scheduler so normal logon startup does not show a PowerShell console.
 
 ## Verify Live Collection
 

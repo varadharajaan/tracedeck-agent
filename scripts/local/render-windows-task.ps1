@@ -6,9 +6,9 @@ param(
     [string]$OutboxDir = "data/local/outbox",
     [string]$CollectionInterval = "10m",
     [string]$PidPath = "",
-    [string]$ExtraArgs = "",
     [string]$RunnerScriptPath = "scripts/local/run-agent-task.ps1",
     [string]$HiddenLauncherPath = "scripts/local/run-agent-task-hidden.vbs",
+    [string]$ExtraArgs = "",
     [ValidateSet("HighestAvailable", "LeastPrivilege")]
     [string]$RunLevel = "HighestAvailable",
     [string]$UserId = "$env:USERDOMAIN\$env:USERNAME",
@@ -44,33 +44,18 @@ try {
     $resolvedLogDir = Resolve-TraceDeckPath -PathValue $LogDir
     $resolvedOutboxDir = Resolve-TraceDeckPath -PathValue $OutboxDir
     $resolvedWorkingDir = [System.IO.Path]::GetFullPath($script:TraceDeckRepoRoot)
-    $resolvedPidPath = if ([string]::IsNullOrWhiteSpace($PidPath)) {
-        Join-Path $resolvedDataDir "tracedeck-agent.pid"
-    }
-    else {
-        Resolve-TraceDeckPath -PathValue $PidPath
-    }
-    $resolvedRunnerScriptPath = Resolve-TraceDeckPath -PathValue $RunnerScriptPath
-    $resolvedHiddenLauncherPath = Resolve-TraceDeckPath -PathValue $HiddenLauncherPath
-    $wscriptPath = if ($env:WINDIR) {
-        Join-Path $env:WINDIR "System32\wscript.exe"
-    }
-    else {
-        "wscript.exe"
-    }
+    $null = $PidPath
+    $null = $RunnerScriptPath
+    $null = $HiddenLauncherPath
 
     $values = @{
         USER_ID = $UserId
-        WSCRIPT_PATH = $wscriptPath
-        RUNNER_VBS_PATH = $resolvedHiddenLauncherPath
-        RUNNER_PS1_PATH = $resolvedRunnerScriptPath
         AGENT_PATH = $resolvedAgentPath
         CONFIG_PATH = $resolvedConfigPath
         DATA_DIR = $resolvedDataDir
         LOG_DIR = $resolvedLogDir
         OUTBOX_DIR = $resolvedOutboxDir
         COLLECTION_INTERVAL = $CollectionInterval
-        PID_PATH = $resolvedPidPath
         EXTRA_ARGS = $ExtraArgs
         RUN_LEVEL = $RunLevel
         WORKING_DIR = $resolvedWorkingDir
@@ -86,15 +71,19 @@ try {
     Set-Content -Path $resolvedOutputPath -Value $content -Encoding Unicode
 
     [xml]$xml = Get-Content -Raw -Path $resolvedOutputPath
-    if ($xml.Task.Actions.Exec.Command -ne $wscriptPath) {
+    if ($xml.Task.Actions.Exec.Command -ne $resolvedAgentPath) {
         Write-TraceDeckLog -Level "ERROR" -Message "Rendered task XML command path mismatch."
         exit 1
     }
-    foreach ($requiredPath in @($resolvedHiddenLauncherPath, $resolvedRunnerScriptPath, $resolvedAgentPath, $resolvedConfigPath)) {
-        if ($xml.Task.Actions.Exec.Arguments -notmatch [regex]::Escape($requiredPath)) {
-            Write-TraceDeckLog -Level "ERROR" -Message "Rendered task XML missing required path: $requiredPath"
+    foreach ($requiredValue in @("run", "--config", $resolvedConfigPath, "--data-dir", $resolvedDataDir, "--log-dir", $resolvedLogDir, "--outbox-dir", $resolvedOutboxDir, "--collection-interval", $CollectionInterval, "--max-cycles", "0")) {
+        if ($xml.Task.Actions.Exec.Arguments -notmatch [regex]::Escape($requiredValue)) {
+            Write-TraceDeckLog -Level "ERROR" -Message "Rendered task XML missing required agent argument: $requiredValue"
             exit 1
         }
+    }
+    if ($xml.Task.Actions.Exec.Command -match "powershell|wscript|cscript|cmd\.exe" -or $xml.Task.Actions.Exec.Arguments -match "powershell|run-agent-task|wscript|cscript|cmd\.exe") {
+        Write-TraceDeckLog -Level "ERROR" -Message "Rendered task XML should launch the GUI agent directly without script hosts."
+        exit 1
     }
 
     if ((Get-Content -Raw -Path $resolvedOutputPath) -match "\{\{") {

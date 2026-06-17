@@ -27,11 +27,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-agent-l
 TraceDeck uses Task Scheduler. The current live startup path is:
 
 ```text
-Task Scheduler -> wscript.exe -> hidden PowerShell runner -> TraceDeck process
+Task Scheduler -> GUI-built tracedeck-agent.exe
 ```
 
-Both the agent and backend task use `wscript.exe` and the hidden launcher
-`scripts/local/run-agent-task-hidden.vbs`.
+The production agent task launches the Windows GUI-subsystem build directly so
+normal logon startup does not create a PowerShell console host. The local
+backend dev task is separate and should be started only when a local dashboard
+server is needed.
 
 ## S3 Archive
 

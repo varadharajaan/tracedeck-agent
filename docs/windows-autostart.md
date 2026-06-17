@@ -6,10 +6,7 @@ Current live startup chain:
 
 ```text
 Task Scheduler
-  -> C:\Windows\System32\wscript.exe
-  -> scripts/local/run-agent-task-hidden.vbs
-  -> powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden
-  -> TraceDeck process
+  -> tracedeck-agent.exe run ...
 ```
 
 Repair the live agent task:
@@ -24,8 +21,8 @@ Check the registered task:
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-windows-task-status.ps1
 ```
 
-The backend dev task is also registered through the same hidden launcher when
-started with:
+The backend dev task is separate from the production agent task. Start it only
+when a local dashboard server is needed:
 
 ```powershell
 python ./devctl.py server task-start

@@ -65,13 +65,16 @@ try {
 
     $command = Get-RequiredNode -Xml $xml -Namespace $namespace -XPath "//task:Actions/task:Exec/task:Command"
     $arguments = Get-RequiredNode -Xml $xml -Namespace $namespace -XPath "//task:Actions/task:Exec/task:Arguments"
-    if ($command.InnerText -notmatch "wscript\.exe$") {
-        throw "Expected scheduled-task command to target wscript.exe."
+    if ($command.InnerText -notmatch "tracedeck-agent\.exe$") {
+        throw "Expected scheduled-task command to target the GUI TraceDeck agent executable."
     }
-    foreach ($expected in @("run-agent-task-hidden.vbs", "run-agent-task.ps1", "-AgentPath", "-CollectionInterval", "10m", "-LogDir", "-OutboxDir", "-PidPath")) {
+    foreach ($expected in @("run", "--config", "--data-dir", "--log-dir", "--outbox-dir", "--collection-interval", "10m", "--max-cycles", "0")) {
         if ($arguments.InnerText -notmatch [regex]::Escape($expected)) {
             throw "Expected scheduled-task arguments to include '$expected'."
         }
+    }
+    if ($command.InnerText -match "powershell|wscript|cscript|cmd\.exe" -or $arguments.InnerText -match "powershell|run-agent-task|wscript|cscript|cmd\.exe") {
+        throw "Production autostart task must launch the GUI agent directly without a script-host console chain."
     }
 
     Invoke-TraceDeckLoggedCommand -Label "Query missing Windows task as typed status JSON" -Command {

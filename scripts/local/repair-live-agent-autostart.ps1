@@ -91,8 +91,11 @@ try {
     $task = Get-ScheduledTask -TaskName $taskLeaf -TaskPath $taskParent
     $command = ($task.Actions | Select-Object -First 1).Execute
     $arguments = ($task.Actions | Select-Object -First 1).Arguments
-    if ($command -notmatch "wscript\.exe$" -or $arguments -notmatch "run-agent-task-hidden\.vbs" -or $arguments -notmatch "run-agent-task\.ps1") {
-        throw "Live agent task is not using the silent hidden runner."
+    if ($command -notmatch "tracedeck-agent\.exe$" -or $arguments -notmatch "--config" -or $arguments -notmatch "--collection-interval") {
+        throw "Live agent task is not using the direct GUI agent action."
+    }
+    if ($command -match "powershell|wscript|cscript|cmd\.exe" -or $arguments -match "powershell|run-agent-task|wscript|cscript|cmd\.exe") {
+        throw "Live agent task still routes through a script-host console chain."
     }
 
     [pscustomobject]@{
@@ -104,7 +107,7 @@ try {
         task_xml = $resolvedTaskXmlPath
     } | ConvertTo-Json -Depth 4
 
-    Write-TraceDeckLog -Level "INFO" -Message "Live agent autostart repaired with silent runner task=$TaskName"
+    Write-TraceDeckLog -Level "INFO" -Message "Live agent autostart repaired with direct GUI agent task=$TaskName"
     Complete-TraceDeckScriptLog
 }
 catch {

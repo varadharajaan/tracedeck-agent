@@ -37,6 +37,47 @@ function Read-PolicyValue {
     return ""
 }
 
+function Get-TraceDeckAgentProcessProof {
+    param(
+        [string]$ResolvedPidPath,
+        [string]$ResolvedConfigPath
+    )
+
+    if (Test-Path -LiteralPath $ResolvedPidPath) {
+        $pidText = (Get-Content -LiteralPath $ResolvedPidPath -Raw).Trim()
+        if ($pidText -match "^\d+$") {
+            $process = Get-Process -Id ([int]$pidText) -ErrorAction SilentlyContinue
+            if ($process) {
+                return [pscustomobject]@{
+                    pid = $pidText
+                    process_alive = $true
+                    evidence = "pid_file"
+                }
+            }
+        }
+    }
+
+    $escapedConfig = [regex]::Escape($ResolvedConfigPath)
+    $candidate = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -ieq "tracedeck-agent.exe" -and $_.CommandLine -match $escapedConfig } |
+        Sort-Object ProcessId |
+        Select-Object -First 1
+
+    if ($candidate) {
+        return [pscustomobject]@{
+            pid = [string]$candidate.ProcessId
+            process_alive = $true
+            evidence = "command_line"
+        }
+    }
+
+    return [pscustomobject]@{
+        pid = ""
+        process_alive = $false
+        evidence = "none"
+    }
+}
+
 try {
     $resolvedConfigPath = Resolve-TraceDeckPath -PathValue $ConfigPath
     $resolvedPidPath = Resolve-TraceDeckPath -PathValue $PidPath
@@ -55,18 +96,15 @@ try {
     $status = $null
     $pidValue = ""
     $processAlive = $false
+    $processEvidence = "none"
     while ((Get-Date) -lt $deadline) {
         try {
-            if (-not (Test-Path -LiteralPath $resolvedPidPath)) {
-                throw "PID file missing: $resolvedPidPath"
-            }
-            $pidValue = (Get-Content -LiteralPath $resolvedPidPath -Raw).Trim()
-            if ($pidValue -notmatch "^\d+$") {
-                throw "PID file did not contain a process id: $pidValue"
-            }
-            $processAlive = [bool](Get-Process -Id ([int]$pidValue) -ErrorAction SilentlyContinue)
+            $processProof = Get-TraceDeckAgentProcessProof -ResolvedPidPath $resolvedPidPath -ResolvedConfigPath $resolvedConfigPath
+            $pidValue = $processProof.pid
+            $processAlive = [bool]$processProof.process_alive
+            $processEvidence = $processProof.evidence
             if (-not $processAlive) {
-                throw "Agent process is not alive pid=$pidValue"
+                throw "Agent process is not alive; pid_file=$resolvedPidPath config=$resolvedConfigPath"
             }
             $health = Invoke-RestMethod -Method "GET" -Uri "$BaseUrl/health" -TimeoutSec 10
             if ($health.status -ne "ok") {
@@ -97,6 +135,7 @@ try {
         device_id = $deviceId
         pid = $pidValue
         process_alive = $processAlive
+        process_evidence = $processEvidence
         backend_url = $BaseUrl
         stored_events = [int]$status.stored_events
         last_observed_at = $status.last_observed_at

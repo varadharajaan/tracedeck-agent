@@ -22,16 +22,22 @@ try {
     $hidden = $xml.SelectSingleNode("//task:Settings/task:Hidden", $namespace)
     $logon = $xml.SelectSingleNode("//task:Triggers/task:LogonTrigger", $namespace)
 
-    if (-not $command -or $command.InnerText -notmatch "wscript\.exe$") {
+    if (-not $command -or $command.InnerText -notmatch "tracedeck-agent\.exe$") {
         Write-TraceDeckLog -Level "ERROR" -Message "Task XML command is missing or invalid."
         exit 1
     }
-    if (-not $arguments -or $arguments.InnerText -notmatch "run-agent-task-hidden\.vbs" -or $arguments.InnerText -notmatch "run-agent-task\.ps1" -or $arguments.InnerText -notmatch "tracedeck-agent\.exe") {
-        Write-TraceDeckLog -Level "ERROR" -Message "Task XML arguments do not route through the hidden scheduled-task runner."
+    foreach ($expected in @("run", "--config", "--data-dir", "--log-dir", "--outbox-dir", "--collection-interval", "10m", "--max-cycles", "0")) {
+        if (-not $arguments -or $arguments.InnerText -notmatch [regex]::Escape($expected)) {
+            Write-TraceDeckLog -Level "ERROR" -Message "Task XML arguments do not launch the agent directly with '$expected'."
+            exit 1
+        }
+    }
+    if ($command.InnerText -match "powershell|wscript|cscript|cmd\.exe" -or $arguments.InnerText -match "powershell|run-agent-task|wscript|cscript|cmd\.exe") {
+        Write-TraceDeckLog -Level "ERROR" -Message "Task XML must not route production autostart through a script host."
         exit 1
     }
     if (-not $hidden -or $hidden.InnerText -ne "true") {
-        Write-TraceDeckLog -Level "ERROR" -Message "Task XML should be hidden by Task Scheduler to avoid a console flicker."
+        Write-TraceDeckLog -Level "ERROR" -Message "Task XML should be hidden by Task Scheduler."
         exit 1
     }
     if (-not $logon) {
