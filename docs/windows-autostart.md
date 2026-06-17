@@ -1,97 +1,32 @@
 # Windows Autostart
 
-Phase 8 adds Windows Task Scheduler support for reboot persistence.
+TraceDeck uses Task Scheduler for reboot persistence on Windows.
 
-## What It Does
-
-- Renders a Task Scheduler XML file from a committed template.
-- Registers `\TraceDeck\TraceDeck Agent` with a user-logon trigger.
-- Starts the compiled agent in continuous mode:
+Current live startup chain:
 
 ```text
-tracedeck-agent run --config <policy> --data-dir <data> --log-dir <logs> --outbox-dir <outbox> --collection-interval 10m --max-cycles 0
+Task Scheduler
+  -> C:\Windows\System32\wscript.exe
+  -> scripts/local/run-agent-task-hidden.vbs
+  -> powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden
+  -> TraceDeck process
 ```
 
-- Uses `StartWhenAvailable` and restart-on-failure settings so missed starts
-  can recover after reboot or temporary unavailability.
-- Provides a status script that reports task state, last run time, last result,
-  next run time, and missed run count.
-
-## Register
-
-Run from an interactive PowerShell session:
+Repair the live agent task:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/register-windows-task.ps1 -BuildAgent
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/repair-live-agent-autostart.ps1 -SkipBuild
 ```
 
-The script requests UAC elevation when needed because registering a reliable
-logon task can require administrator approval. The `-BuildAgent` option writes
-the scheduled-task executable under `data/local/install/windows/`. The elevated
-PowerShell relaunch requests a hidden window after the UAC prompt, and the
-agent build uses the Windows GUI subsystem so normal scheduled starts do not
-flash a console window.
-
-To register and start immediately:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/register-windows-task.ps1 -BuildAgent -StartAfterRegister
-```
-
-Phase 15 also exposes the same flow through the cross-platform service manager:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/manage-agent-service.ps1 -Platform windows -Action install -BuildAgent
-```
-
-## Query Status
+Check the registered task:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-windows-task-status.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/get-windows-task-status.ps1 -OutputPath data/local/service-status/windows-task.json
 ```
 
-Equivalent wrapper commands:
+The backend dev task is also registered through the same hidden launcher when
+started with:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/manage-agent-service.ps1 -Platform windows -Action status
-powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/manage-agent-service.ps1 -Platform windows -Action start
-powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/manage-agent-service.ps1 -Platform windows -Action stop
-powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/manage-agent-service.ps1 -Platform windows -Action uninstall
+python ./devctl.py server task-start
 ```
-
-The status script writes structured JSON to the console and logs under
-`logs/local/service/`. With `-OutputPath`, it also writes the same JSON under
-`data/local/`. With `-AllowMissing`, it returns a typed missing-task object
-instead of failing, including `present=false`, `state=missing`,
-`last_task_result`, `next_run_time`, and missed-run fields so future status
-checks can distinguish "not installed yet" from a broken query.
-
-## Assurance Test
-
-Phase 39 adds a stronger local assurance script:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-autostart-assurance.ps1
-```
-
-The script renders the Task Scheduler XML under `data/local/`, parses it, and
-verifies hidden startup, logon delay, continuous agent mode, restart-on-failure,
-start-when-available, battery behavior, structured missing-task status JSON,
-and Windows service-manager dry-run install/status plans.
-
-## Transparency Boundary
-
-The task runs the agent in the background to avoid a console-window flicker, but
-this is not a covert-monitoring feature. TraceDeck policy still requires
-transparent, consent-based monitoring and a visible indicator before expanding
-interactive collection behavior.
-
-## Deployment Readiness Center
-
-Phase 66 surfaces Windows reboot-persistence proof in the
-`deployment-readiness-center` API and dashboard panel. It shows the Task
-Scheduler service manager label, XML template path, rendered output path,
-registration script, status query script, UAC/admin-approved install mode,
-background startup proof, and owner action. It is a readiness view only; actual
-registration still requires running the explicit Windows scripts.

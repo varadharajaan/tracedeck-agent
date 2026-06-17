@@ -1,24 +1,19 @@
 # Cloud Archive
 
-TraceDeck archives hourly compressed JSONL batches to S3 when archive is
-enabled. The archive path uses one bucket with tenant, device, host, date, and
-hour prefixes.
+TraceDeck can upload compressed metadata batches to S3.
 
-The family profile bucket is:
+Current layout:
 
 ```text
-tracedeck-agent-family-varadha-996335889295-ap-south-1
+s3://<bucket>/tenants/<tenant_id>/devices/<device_id>/hosts/<host_name>/date=YYYY-MM-DD/hour=HH/*.jsonl.gz
 ```
 
-Lifecycle target: Standard for 90 days, Standard-IA until day 365, then archive.
+Useful checks:
 
-Phase 2 stages compressed JSONL batches under `data/local/outbox/archive/`.
-S3 upload is available through the AWS SDK adapter and is skipped when
-`--archive-dry-run` is enabled.
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/test-live-s3-archive.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/local/check-live-s3-metrics.ps1
+```
 
-Phase 2B enables continuous mode. The first continuous cycle stages an archive
-batch immediately, then subsequent staging follows `archive.upload_interval`.
-
-Phase 3 archive batches may include `browser.domain.observed` events. Those
-events contain domain/category metadata only, so S3 archives do not receive raw
-browser URLs or page titles.
+Archive batches are metadata-only and should not contain passwords, screenshots,
+raw URLs, page titles, cookies, tokens, or private content.

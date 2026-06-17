@@ -1,106 +1,31 @@
 # Cloud Frontend
 
-TraceDeck Phase 69 includes an optional admin frontend in `sam-app/`.
+The cloud admin frontend lives under `sam-app/` and deploys with AWS SAM.
 
-It is deployed with AWS SAM as a public Lambda Function URL:
+It uses:
 
-- `FunctionUrlConfig` is enabled with `AuthType: NONE`.
-- API Gateway resources are intentionally not defined.
-- S3 is the source of truth for cloud archive summaries.
-- Lambda module memory caches S3 summaries and reports cache hit/miss
-  percentages in the UI.
-- The UI includes a source selector for either Lambda/S3 or a browser-side
-  localhost backend such as `http://127.0.0.1:18080`.
-- Browser rows include provenance fields: `source_kind`, `evidence_scope`,
-  and `evidence_detail`. S3 sampled rows are labeled as `s3_sample` so cloud
-  archive evidence is not confused with live local telemetry.
-- Phase 80 refreshes the visual shell to match a sellable TraceDeck admin
-  console: symbolic brand mark, Workspace Source sidebar, full page labels,
-  product-grade light/dark colors, text-only theme control, cards, chips, and
-  tables, plus visual-quality checks that reject pseudo-letter controls and
-  stale debug copy.
+- Lambda Function URL
+- S3 archive as source of truth
+- In-memory cache to reduce S3 calls
+- Cache hit/miss metrics in the UI
 
-Run locally:
-
-```powershell
-python ./devctl.py status
-python ./devctl.py server restart
-python ./devctl.py test live
-python ./devctl.py test phase69
-```
-
-Deploy with SAM:
+## Commands
 
 ```powershell
 python ./devctl.py sam build
 python ./devctl.py sam deploy
 python ./devctl.py sam outputs
-python ./devctl.py sam tail
 python ./devctl.py doctor
 ```
 
-`devctl.py sam deploy` saves CloudFormation outputs to:
+Outputs are written under:
 
 ```text
-data/local/output/stack-outputs.txt
-data/local/output/frontend-url.txt
-data/local/output/runtime-doctor.json
-data/local/output/runtime-doctor.txt
+data/local/output/
 ```
 
-Seed and verify cloud archive data:
+Important files:
 
-```powershell
-python ./devctl.py cloud seed
-python ./devctl.py cloud visual
-python ./devctl.py cloud smoke
-python ./devctl.py cloud newman
-python ./devctl.py test phase72
-python ./devctl.py test phase73
-python ./devctl.py test phase80
-```
-
-Phase 72 adds `scripts/local/upload-cloud-sample-phase72.ps1`, which writes a
-small metadata-only JSONL gzip archive under `data/local/cloud-seed/`, uploads
-it to the configured S3 bucket, and records a manifest under `data/local`.
-`scripts/local/smoke-phase72.ps1` refreshes the deployed Lambda S3 summary,
-verifies sampled browser rows, Chrome/Edge/Brave grouping, study-safe
-inference, non-study YouTube, and then reads again to prove the Lambda memory
-cache reports a hit.
-
-Phase 74 adds `python ./devctl.py doctor` as an operator assurance command.
-With cloud checks enabled, it reads the saved Function URL, checks
-`/api/health`, refreshes `/api/s3-summary`, reads `/api/s3-summary` again to
-prove a cache hit, and saves a JSON/text report under `data/local/output/`.
-Use `python ./devctl.py doctor --skip-cloud` when only the local backend should
-be checked.
-
-Phase 80 adds `scripts/local/test-lambda-frontend-visual.ps1`, which renders
-the Lambda HTML through Playwright with a mocked metadata-only S3 summary. It
-checks both light and dark modes on desktop and mobile, verifies cache metrics
-render, confirms the status light is visible, requires the app shell, sidebar,
-hero panel, symbolic brand mark, clear page labels, and Workspace Source
-controls, rejects standalone pseudo-letter controls such as `T`, and records
-metrics under `data/local/lambda-frontend-visual/` without screenshots. The
-Phase 80 verifier deploys the SAM app, runs Newman against the saved Function
-URL, and runs `python ./devctl.py doctor` with cloud checks enabled.
-
-Phase 84 aligns the Lambda Cloud Admin with the local dashboard visual system.
-It keeps the public Lambda Function URL and S3 source-of-truth model, but the
-hosted UI now shares the same symbolic brand mark, app header, source rail,
-segmented navigation, larger chips, evidence cards, dark theme, and table
-treatment as the local TraceDeck Console and Browser Viewer. The hosted visual
-contract remains screenshot-free and checks rendered layout metrics only.
-
-Rerun the Phase 84 UI gate with:
-
-```powershell
-python ./devctl.py test phase84
-python ./devctl.py cloud visual
-```
-
-The Lambda frontend intentionally renders safe metadata only: S3 object keys,
-sizes, storage class, timestamps, host labels, browser names, domains,
-categories, study-safe status, and counts. It does not render passwords,
-cookies, tokens, page titles, private content, endpoint payloads, provider
-secrets, push endpoints, alert bodies, payment data, or raw provider payloads.
+- `data/local/output/stack-outputs.txt`
+- `data/local/output/frontend-url.txt`
+- `data/local/output/runtime-doctor.json`

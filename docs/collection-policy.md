@@ -1,56 +1,31 @@
 # Collection Policy
 
-Collection policy controls transparency mode, browser metadata, foreground app
-metadata, software inventory metadata, media metadata, and deny-only sensitive
-capabilities.
+TraceDeck uses typed YAML policy rather than free-form collection flags.
 
-The default TraceDeck profile requires a visible monitoring indicator and
-stores browser domain/category instead of full URLs.
-
-Phase 112 implements the visible local indicator as a local status API,
-dashboard panel, and generated JSON/text/HTML proof files. The indicator uses
-`visible_indicator_required` as the typed transparency mode and exposes only
-status labels, local paths, command labels, and denied capability labels.
-
-Phase 110 foreground app collection is controlled by:
+Example:
 
 ```yaml
 collection:
+  browser:
+    url_mode: domain_only
+    collect_page_title: false
   foreground_app:
     enabled: true
     window_title_mode: none
+  sensitive_capabilities:
+    credentials: deny
+    keystrokes: deny
+    cookies: deny
+    tokens: deny
+    screenshots: deny
 ```
 
-The foreground app collector stores app name, process id, hashed executable
-path, active state, and title mode only. Window titles are deny-only in the
-current schema and are not read by the Windows adapter.
+Policy code lives under:
 
-Phase 111 software inventory collection is controlled by:
-
-```yaml
-collection:
-  software:
-    enabled: true
-    inventory_mode: metadata_only
+```text
+agent/internal/config/
+agent/internal/constants/
+docs/schema/policy-v1alpha1.schema.json
 ```
 
-The software collector stores display metadata and hashed snapshot identities
-only. It emits `software.installed` and `software.uninstalled` after a local
-baseline snapshot exists. It does not store install paths, file contents,
-installer payloads, screenshots, passwords, cookies, tokens, raw URLs, page
-titles, private content, provider secrets, alert bodies, payment data, or raw
-provider payloads.
-
-Phase 3 browser collection reads Chrome, Edge, and Brave history databases when
-available. The collector stores `browser.domain.observed` events with browser
-name, domain, category, visit count, requested URL mode, and stored URL mode.
-The stored URL mode is always `domain_only`; raw URLs and page titles are not
-persisted.
-
-Use `--disable-browser-history` for controlled local smokes or diagnostics that
-should avoid reading live browser history.
-
-Phase 4 alert evaluation consumes the stored event metadata. Blocked-domain and
-non-study YouTube alerts use the persisted domain/category fields, not raw
-browser URLs or page titles. A YouTube video id may be hashed when configured,
-but the raw id is not stored.
+Schema changes should be generated from Go types, not pasted as string blobs.

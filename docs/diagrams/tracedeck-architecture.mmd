@@ -1,0 +1,40 @@
+flowchart LR
+    subgraph Endpoint["Endpoint laptop"]
+        Agent["TraceDeck Agent<br/>Go service"]
+        Policy["Typed YAML policy"]
+        Collectors["Collectors<br/>apps, browser domains,<br/>software, health"]
+        LocalStore[("Bounded local store<br/>data/local")]
+        Outbox["Archive and sync outbox"]
+        Agent --> Policy
+        Agent --> Collectors
+        Collectors --> LocalStore
+        LocalStore --> Outbox
+    end
+
+    subgraph LocalAdmin["Local admin runtime"]
+        Backend["TraceDeck Backend<br/>localhost:18080"]
+        Dashboard["TraceDeck Console"]
+        BrowserUI["Browser Intelligence"]
+        Backend --> Dashboard
+        Backend --> BrowserUI
+    end
+
+    subgraph Cloud["Optional cloud admin"]
+        S3[("S3 archive bucket")]
+        Lambda["AWS Lambda Function URL<br/>S3-backed admin console"]
+        Cache["In-memory summary cache"]
+        S3 --> Lambda
+        Lambda --> Cache
+    end
+
+    subgraph Notify["Notification routes"]
+        Email["Email provider"]
+        Push["Web Push"]
+        Delivery["Delivery Assurance"]
+    end
+
+    Outbox --> Backend
+    Outbox --> S3
+    Backend --> Delivery
+    Delivery --> Email
+    Delivery --> Push

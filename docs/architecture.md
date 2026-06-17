@@ -1,56 +1,85 @@
 # Architecture
 
-TraceDeck uses ports and adapters around a Go endpoint agent. Domain packages
-hold policy, event, scoring, alert, anomaly, and categorization rules. Platform,
-storage, archive, notifier, and telemetry packages implement interfaces outside
-the domain boundary.
+TraceDeck has four runtime pieces:
 
-Windows is the first implementation target. macOS and Linux support is added
-through platform adapters with build tags, keeping the domain and pipeline
-portable.
+1. Endpoint agent
+2. Local backend and console
+3. S3 archive
+4. Optional Lambda admin frontend
 
-The Phase 1 local slice runs one process snapshot, hashes executable paths,
-stores process metadata events in SQLite, and writes structured JSON logs with
-rotation under `logs/local/agent/`.
-SQLite schema changes are applied from ordered migration files under
-`agent/internal/storage/sqlite/migrations/`.
+```mermaid
+flowchart LR
+    subgraph Endpoint["Endpoint laptop"]
+        Agent["TraceDeck Agent<br/>Go service"]
+        Policy["Typed YAML policy"]
+        Collectors["Collectors<br/>process, app, browser domain,<br/>software, health"]
+        Store[("Bounded local store")]
+        Outbox["Sync/archive outbox"]
+        Agent --> Policy
+        Agent --> Collectors
+        Collectors --> Store
+        Store --> Outbox
+    end
 
-Phase 1B introduces platform adapters behind Go build tags for Windows, macOS,
-Linux, and fallback operating systems. The app and collectors depend on the
-adapter contract instead of calling host OS APIs directly.
+    subgraph Local["Local admin"]
+        Backend["Backend API<br/>127.0.0.1:18080"]
+        Console["TraceDeck Console"]
+        Browser["Browser Intelligence"]
+        Backend --> Console
+        Backend --> Browser
+    end
 
-Phase 2B turns the one-shot runner into a continuous loop. `run --once` remains
-the single-snapshot path, while `run` without `--once` repeats collection using
-`--collection-interval` until interrupted or `--max-cycles` is reached.
+    subgraph Cloud["Cloud admin"]
+        S3[("S3 archive")]
+        Lambda["Lambda Function URL"]
+        Cache["Summary cache"]
+        S3 --> Lambda
+        Lambda --> Cache
+    end
 
-Phase 3 adds a browser history collector for Chromium-style history databases.
-It copies browser history into a bounded local cache, reads recent rows through
-SQLite, and persists domain/category events only. Raw URLs, query strings, and
-page titles are used only transiently for classification and are not stored.
+    Outbox --> Backend
+    Outbox --> S3
+```
 
-Phase 4 adds the first policy/anomaly evaluator layer. The app pipeline collects
-events, stores them locally, optionally archives the batch, then evaluates alert
-rules against the in-memory event batch. Evaluators are split by rule family so
-new rules can be added without turning the runner into rule-specific code.
-Current rule families cover blocked process names, blocked browser domains, and
-non-study YouTube domain activity.
+## Endpoint Agent
 
-Phase 5 starts the backend/dashboard foundation with a separate Go command under
-`backend/cmd/tracedeck-backend`. It uses the standard library HTTP server,
-binds to localhost by default, exposes health/version/device/template/archive
-routes, and serves an embedded dashboard shell. Backend storage is in-memory for
-this foundation slice; later SaaS phases can replace the repository with durable
-multi-tenant storage without changing handler contracts.
+The agent is written in Go. It loads a typed YAML policy, runs collectors, writes
+bounded local data, syncs metadata to the local backend, and archives batches to
+S3 when live archive is enabled.
 
-Phase 6 adds a SaaS readiness slice to the same backend boundary. It introduces
-typed models and centralized identifiers for tenants, plans, roles, retention
-tiers, and audit events. The backend remains localhost-only and in-memory; this
-phase proves API shape, catalog packaging, dashboard visibility, and
-Postman/Newman coverage before durable multi-tenant storage, authentication,
-billing integration, and SSO are added.
+Main paths:
 
-Phase 7 hardens platform support metadata. Platform adapters report a typed
-service manager id, typed capability support rows, and branchable unsupported
-capability errors. macOS launchd and Linux systemd templates are stored under
-`deployments/service/` and rendered locally through script into `data/local/`
-for review.
+- `agent/cmd/tracedeck-agent`
+- `agent/internal/config`
+- `agent/internal/collector`
+- `agent/internal/archive`
+- `agent/internal/alert`
+
+## Local Backend
+
+The backend is also Go. It serves the local API and embedded admin pages.
+
+Main paths:
+
+- `backend/cmd/tracedeck-backend`
+- `backend/internal/api`
+- `backend/internal/store`
+- `backend/internal/api/web`
+
+## Cloud Frontend
+
+The SAM app under `sam-app/` deploys a Lambda Function URL. It reads S3 archive
+metadata, samples safe rows, and shows cache hit/miss metrics.
+
+## Data Flow
+
+```text
+collector -> local store -> local backend -> dashboard
+collector -> local store -> archive outbox -> S3 -> Lambda dashboard
+policy/risk rules -> delivery assurance -> email/web push routes
+```
+
+## Privacy Model
+
+TraceDeck is metadata-first. The architecture is built around typed allow/deny
+capabilities, bounded storage, source-kind labels, and demo/live separation.

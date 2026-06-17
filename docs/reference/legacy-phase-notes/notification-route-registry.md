@@ -121,6 +121,16 @@ Phase 90 makes the local runtime doctor enforce the same route proof language.
 separately from `include_demo=true` rows and fails if demo-only notification
 proof is treated as buyer-ready provider delivery.
 
+Live Web Push provider support is available in the agent policy through
+`alerts.push.provider: web_push`. Generate VAPID keys with
+`scripts/local/generate-webpush-vapid-keys.ps1`, click `Enable Push` in the
+local dashboard to save a browser Push API subscription under
+`data/local/webpush/subscriptions.json`, and start the live agent with
+`scripts/local/start-agent-live-local.ps1 -LiveAlerts -LivePush`. The backend
+stores the subscription locally for provider delivery but does not expose push
+endpoints in route registry, delivery assurance, archive telemetry, or dashboard
+payloads.
+
 ## Verification
 
 ```powershell

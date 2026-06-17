@@ -167,6 +167,23 @@ status page path, runtime proof, consent visibility, denied sensitive
 collection proof, and metadata-only actions. The Workspace Navigator uses the
 full `Local Indicator` product label.
 
+The current modern console shell replaces the older long-scroll command
+navigator with top-level pages for Command Center, Host Portfolio, Signal
+Queue, Browser Intelligence, Delivery Assurance, Revenue Packaging, and Trust
+Center. The `/browser-activity` drilldown is now Browser Intelligence with the
+same light/dark product system, a connected server light, host/browser filters,
+source labels, badge integrity checks, and a demo proof toggle. Both pages
+default to live evidence; demo-seed rows are hidden or explicitly labelled when
+the toggle is enabled. The previous long-scroll dashboard is preserved at
+`/v1-old` for operators who need the older dense view.
+
+The Command Center first screen includes a richer Evidence Pipeline and
+Executive Brief. The pipeline shows collection, classifier, delivery, archive,
+and trust proof from the selected host while keeping seeded demo rows out of
+live counts. The Executive Brief summarizes live evidence, risk review,
+notification proof, and archive/trust posture in paid-console language without
+claiming demo provider sends or demo activity as real host behavior.
+
 To check the currently running local dashboard:
 
 ```powershell
