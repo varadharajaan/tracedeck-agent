@@ -14,12 +14,24 @@ PAGES = (
         "path": "/",
         "expected_h1": "TraceDeck Console",
         "status_id": "backend-status",
+        "ready_id": "dashboard-page-nav",
+        "expected_nav": (
+            "Command Center",
+            "Host Portfolio",
+            "Signal Queue",
+            "Browser Intelligence",
+            "Delivery Assurance",
+            "Revenue Packaging",
+            "Trust Center",
+        ),
     },
     {
         "name": "browser_activity",
         "path": "/browser-activity",
-        "expected_h1": "Browser Viewer",
+        "expected_h1": "Browser Intelligence",
         "status_id": "page-status",
+        "ready_id": "activity-table",
+        "expected_nav": (),
     },
 )
 
@@ -33,6 +45,7 @@ VIEWPORTS = (
 PAGE_READY_STATE = "domcontentloaded"
 NAVIGATION_TIMEOUT_MS = 120000
 READY_TIMEOUT_MS = 120000
+ASYNC_LAYOUT_SETTLE_MS = 7000
 
 FORBIDDEN_TEXT_PATTERNS = (
     r"Browser\s*\{",
@@ -44,23 +57,20 @@ FORBIDDEN_TEXT_PATTERNS = (
     r"\bNotifs\b",
     r"\[[BCTR]\]",
     r"\{[BCTR]\}",
+    r"Workspace Navigator",
+    r"Premium Operations",
+    r"Phase 82 product polish",
 )
 
 
 def wait_for_contract_ready(page, page_def):
     page.wait_for_selector(f"#{page_def['status_id']}", state="visible", timeout=READY_TIMEOUT_MS)
-    if page_def["name"] != "dashboard":
-        return
-    page.wait_for_selector("#command-navigation", state="visible", timeout=READY_TIMEOUT_MS)
-    page.wait_for_function(
-        "() => document.getElementById('command-nav-title')"
-        " && !document.getElementById('command-nav-title').textContent.includes('No tenant loaded')",
-        timeout=READY_TIMEOUT_MS,
-    )
+    page.wait_for_selector(f"#{page_def['ready_id']}", timeout=READY_TIMEOUT_MS)
+    page.wait_for_timeout(ASYNC_LAYOUT_SETTLE_MS)
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="TraceDeck dashboard visual quality contract")
+    parser = argparse.ArgumentParser(description="TraceDeck modern UI visual quality contract")
     parser.add_argument("--base-url", required=True)
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
@@ -88,14 +98,15 @@ def main() -> int:
                             page.goto(url, wait_until=PAGE_READY_STATE, timeout=NAVIGATION_TIMEOUT_MS)
                             wait_for_contract_ready(page, page_def)
                             result = page.evaluate(
-                                """({ theme, expectedH1, statusID }) => {
+                                """({ theme, expectedH1, statusID, expectedNav }) => {
                                   const parseColor = (value) => {
                                     const probe = document.createElement("span");
                                     probe.style.color = value;
                                     document.body.appendChild(probe);
-                                    const rgb = window.getComputedStyle(probe).color.match(/\\d+(?:\\.\\d+)?/g).map(Number);
+                                    const match = window.getComputedStyle(probe).color.match(/\\d+(?:\\.\\d+)?/g);
+                                    const rgb = match ? match.map(Number).slice(0, 3) : [0, 0, 0];
                                     probe.remove();
-                                    return rgb.slice(0, 3);
+                                    return rgb;
                                   };
                                   const luminance = (rgb) => {
                                     const [r, g, b] = rgb.map((channel) => {
@@ -106,17 +117,22 @@ def main() -> int:
                                     });
                                     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
                                   };
+                                  const visible = (element) => {
+                                    if (!element) return false;
+                                    const rect = element.getBoundingClientRect();
+                                    const style = window.getComputedStyle(element);
+                                    return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden";
+                                  };
                                   const root = window.getComputedStyle(document.body);
                                   const h1 = document.querySelector("h1");
                                   const status = document.getElementById(statusID);
                                   const brandMark = document.querySelector(".brand-mark");
                                   const bodyText = document.body.innerText || "";
-                                  const toolbarLabels = Array.from(document.querySelectorAll(".toolbar button"))
+                                  const toolbarLabels = Array.from(document.querySelectorAll(".toolbar button, .toolbar a"))
+                                    .map((item) => item.textContent.trim());
+                                  const navLabels = Array.from(document.querySelectorAll("[data-page-target]"))
                                     .map((button) => button.textContent.trim());
-                                  const commandLabels = Array.from(document.querySelectorAll(".command-jump .command-label"))
-                                    .map((label) => label.textContent.trim());
-                                  const commandMetaCount = document.querySelectorAll(".command-jump .command-meta").length;
-                                  const tinyInteractive = Array.from(document.querySelectorAll(".toolbar button, .dashboard-page-tab, .command-jump, .badge, .pill"))
+                                  const tinyInteractive = Array.from(document.querySelectorAll(".toolbar button, .toolbar a, [data-page-target], .badge, .pill"))
                                     .filter((element) => {
                                       const rect = element.getBoundingClientRect();
                                       const style = window.getComputedStyle(element);
@@ -126,44 +142,6 @@ def main() -> int:
                                       text: element.textContent.trim().slice(0, 80),
                                       height: Number(element.getBoundingClientRect().height.toFixed(2)),
                                     }));
-                                  const commandStacked = Array.from(document.querySelectorAll(".command-jump")).every((button) => {
-                                    const span = button.querySelector(".command-meta");
-                                    if (!span) return true;
-                                    const buttonRect = button.getBoundingClientRect();
-                                    const spanRect = span.getBoundingClientRect();
-                                    return spanRect.top > buttonRect.top + 16;
-                                  });
-                                  const expectedCommandLabels = [
-                                    "Premium Operations",
-                                    "Onboarding Center",
-                                    "Customer Settings",
-                                    "Revenue Operations",
-                                    "Runtime Status",
-                                    "Operator Assurance",
-                                    "Promotion Readiness",
-                                    "Verification Evidence",
-                                    "Deployment Readiness",
-                                    "Customer Control Room",
-                                    "Customer Success Packet",
-                                    "Push Activation",
-                                    "Host Portfolio",
-                                    "Account Portfolio",
-                                    "Executive Console",
-                                    "Notification Revenue",
-                                    "Provider Simulation",
-                                    "Provider Setup",
-                                    "Package Billing",
-                                    "Paid Operations",
-                                    "Growth Dashboard",
-                                    "Notification Command",
-                                    "Delivery Assurance",
-                                    "Notification Proof",
-                                    "Weekly Reports",
-                                    "Archive Proof",
-                                    "Trust & Consent",
-                                    "Host Details"
-                                  ];
-                                  const staleCommandLabels = new Set(["Premium", "Onboard", "Settings", "Revenue Ops", "Deploy", "Control", "Success", "Push", "Portfolio", "Account", "Executive", "Provider", "Setup", "Packages", "Paid Ops", "Revenue", "Notification Pro", "Assurance", "Notifications", "Reports", "Archive", "Trust", "Hosts"]);
                                   const backgroundColor = root.getPropertyValue("--bg").trim();
                                   const surfaceColor = root.getPropertyValue("--surface").trim();
                                   const bgLuma = luminance(parseColor(backgroundColor));
@@ -178,7 +156,7 @@ def main() -> int:
                                     },
                                     {
                                       name: "status-visible",
-                                      ok: Boolean(status && status.getBoundingClientRect().height >= 26),
+                                      ok: Boolean(status && status.getBoundingClientRect().height >= 28),
                                       detail: status ? status.textContent.trim() : "missing"
                                     },
                                     {
@@ -187,34 +165,19 @@ def main() -> int:
                                       detail: brandMark ? `text=${brandMark.textContent.trim() || "empty"} marks=${brandMark.querySelectorAll("span").length}` : "missing"
                                     },
                                     {
-                                      name: "no-debug-toolbar-labels",
+                                      name: "toolbar-labels-clean",
                                       ok: toolbarLabels.every((label) => !/[\\[\\]{}]/.test(label) && !/^[BCTR]$/.test(label)),
                                       detail: toolbarLabels.join(", ")
                                     },
                                     {
                                       name: "no-tiny-interactive-labels",
                                       ok: tinyInteractive.length === 0,
-                                      detail: tinyInteractive.map((item) => `${item.text}:${item.height}`).join(", ") || "all visible chips and buttons are at least 26px tall"
+                                      detail: tinyInteractive.map((item) => `${item.text}:${item.height}`).join(", ") || "all visible chips and controls are at least 26px tall"
                                     },
                                     {
-                                      name: "command-metadata-not-sidecar",
-                                      ok: document.querySelectorAll(".command-jump").length === 0 || commandStacked,
-                                      detail: commandStacked ? "shortcut metadata stacks under labels" : "shortcut metadata still renders as side labels"
-                                    },
-                                    {
-                                      name: "command-labels-are-product-grade",
-                                      ok: document.querySelectorAll(".command-jump").length === 0 || expectedCommandLabels.every((label) => commandLabels.includes(label)),
-                                      detail: commandLabels.join(", ")
-                                    },
-                                    {
-                                      name: "no-terse-command-labels",
-                                      ok: commandLabels.every((label) => !staleCommandLabels.has(label)),
-                                      detail: commandLabels.join(", ")
-                                    },
-                                    {
-                                      name: "command-metadata-classed",
-                                      ok: document.querySelectorAll(".command-jump").length === 0 || commandMetaCount === document.querySelectorAll(".command-jump").length,
-                                      detail: `${commandMetaCount}/${document.querySelectorAll(".command-jump").length} command buttons have metadata rows`
+                                      name: "navigation-labels-product-grade",
+                                      ok: expectedNav.length === 0 || expectedNav.every((label) => navLabels.includes(label)),
+                                      detail: navLabels.join(", ") || "no page navigation on this page"
                                     },
                                     {
                                       name: "theme-luminance",
@@ -231,7 +194,7 @@ def main() -> int:
                                     h1: h1 ? h1.textContent.trim() : "",
                                     status_text: status ? status.textContent.trim() : "",
                                     toolbar_labels: toolbarLabels,
-                                    command_labels: commandLabels,
+                                    nav_labels: navLabels,
                                     body_text: bodyText,
                                     checks,
                                   };
@@ -240,6 +203,7 @@ def main() -> int:
                                     "theme": theme,
                                     "expectedH1": page_def["expected_h1"],
                                     "statusID": page_def["status_id"],
+                                    "expectedNav": list(page_def["expected_nav"]),
                                 },
                             )
                             body_text = result.pop("body_text")
@@ -252,7 +216,7 @@ def main() -> int:
                                 {
                                     "name": "no-stale-debug-copy",
                                     "ok": len(forbidden_hits) == 0,
-                                    "detail": ", ".join(forbidden_hits) or "no stale abbreviations or brace labels",
+                                    "detail": ", ".join(forbidden_hits) or "no stale abbreviations or legacy phase labels",
                                 }
                             )
                             entry = {

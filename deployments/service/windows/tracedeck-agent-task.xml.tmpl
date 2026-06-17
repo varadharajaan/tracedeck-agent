@@ -16,7 +16,7 @@
     <Principal id="Author">
       <UserId>{{USER_ID}}</UserId>
       <LogonType>InteractiveToken</LogonType>
-      <RunLevel>HighestAvailable</RunLevel>
+      <RunLevel>{{RUN_LEVEL}}</RunLevel>
     </Principal>
   </Principals>
   <Settings>
@@ -46,8 +46,8 @@
   </Settings>
   <Actions Context="Author">
     <Exec>
-      <Command>{{AGENT_PATH}}</Command>
-      <Arguments>run --config "{{CONFIG_PATH}}" --data-dir "{{DATA_DIR}}" --log-dir "{{LOG_DIR}}" --outbox-dir "{{OUTBOX_DIR}}" --collection-interval {{COLLECTION_INTERVAL}} --max-cycles 0</Arguments>
+      <Command>{{WSCRIPT_PATH}}</Command>
+      <Arguments>"{{RUNNER_VBS_PATH}}" "-File" "{{RUNNER_PS1_PATH}}" "-AgentPath" "{{AGENT_PATH}}" "-ConfigPath" "{{CONFIG_PATH}}" "-DataDir" "{{DATA_DIR}}" "-LogDir" "{{LOG_DIR}}" "-OutboxDir" "{{OUTBOX_DIR}}" "-CollectionInterval" "{{COLLECTION_INTERVAL}}" "-PidPath" "{{PID_PATH}}" "-ExtraArgs" "{{EXTRA_ARGS}}" "-WorkingDir" "{{WORKING_DIR}}"</Arguments>
       <WorkingDirectory>{{WORKING_DIR}}</WorkingDirectory>
     </Exec>
   </Actions>

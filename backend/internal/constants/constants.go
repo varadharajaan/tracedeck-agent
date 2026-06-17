@@ -17,6 +17,9 @@ const (
 	DefaultVerificationEvidencePath   = "data/local/output/verification-evidence.json"
 	DefaultOperatorAssurancePath      = "data/local/output/operator-assurance.json"
 	DefaultPromotionReadinessPath     = "data/local/output/promotion-readiness.json"
+	DefaultWebPushDir                 = "data/local/webpush"
+	DefaultWebPushPublicKeyPath       = "data/local/webpush/vapid-public.key"
+	DefaultWebPushSubscriptionsPath   = "data/local/webpush/subscriptions.json"
 	DefaultLocalIndicatorPath         = "data/local/output/local-monitoring-indicator.json"
 	DefaultLocalIndicatorTextPath     = "data/local/output/local-monitoring-indicator.txt"
 	DefaultLocalIndicatorHTMLPath     = "data/local/output/local-monitoring-indicator.html"
@@ -38,7 +41,9 @@ const (
 const (
 	APIPrefix               = "/api/v1"
 	RouteDashboard          = "/"
+	RouteDashboardV1Old     = "/v1-old"
 	RouteBrowserActivity    = "/browser-activity"
+	RouteWebPushServiceWork = "/webpush-sw.js"
 	RouteHealth             = "/health"
 	RouteVersion            = APIPrefix + "/version"
 	RouteDevices            = APIPrefix + "/devices"
@@ -57,6 +62,8 @@ const (
 	RoutePromotionReadiness = APIPrefix + "/promotion-readiness-center"
 	RouteLocalIndicator     = APIPrefix + "/local-monitoring-indicator"
 	RouteArchiveStatus      = APIPrefix + "/archive/status"
+	RouteWebPushPublicKey   = APIPrefix + "/webpush/vapid-public-key"
+	RouteWebPushSubscribe   = APIPrefix + "/webpush/subscriptions"
 )
 
 const (
@@ -115,6 +122,7 @@ const (
 const (
 	ContentTypeJSON = "application/json"
 	ContentTypeHTML = "text/html; charset=utf-8"
+	ContentTypeJS   = "application/javascript; charset=utf-8"
 	ContentTypePDF  = "application/pdf"
 )
 

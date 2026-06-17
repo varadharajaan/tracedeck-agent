@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/varadharajaan/tracedeck-agent/agent/internal/alert"
@@ -340,16 +341,24 @@ func (r *cycleRunner) runCycle(ctx context.Context, archiveEnabled bool, alertEn
 			}
 			deliveryRef, err := notifier.Notify(ctx, r.policy, alerts)
 			if err != nil {
-				return RunResult{}, err
+				result.AlertOutboxPath = deliveryRef
+				r.logger.Error("alert notification provider failed",
+					"alert_count", len(alerts),
+					"delivery_ref", deliveryRef,
+					"delivery_mode", deliveryMode,
+					"dry_run", r.opts.AlertDryRun,
+					"error", err,
+				)
+			} else {
+				result.AlertOutboxPath = deliveryRef
+				result.AlertDelivered = !r.opts.AlertDryRun
+				r.logger.Warn("alert notification staged",
+					"alert_count", len(alerts),
+					"delivery_ref", deliveryRef,
+					"delivery_mode", deliveryMode,
+					"dry_run", r.opts.AlertDryRun,
+				)
 			}
-			result.AlertOutboxPath = deliveryRef
-			result.AlertDelivered = !r.opts.AlertDryRun
-			r.logger.Warn("alert notification staged",
-				"alert_count", len(alerts),
-				"delivery_ref", deliveryRef,
-				"delivery_mode", deliveryMode,
-				"dry_run", r.opts.AlertDryRun,
-			)
 		}
 	}
 
@@ -541,7 +550,24 @@ func (r *cycleRunner) alertNotifier() (alert.Notifier, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	return notifier, string(r.policy.Alerts.Email.Provider), nil
+	return notifier, alertDeliveryMode(r.policy), nil
+}
+
+func alertDeliveryMode(policy *config.Policy) string {
+	if policy == nil {
+		return ""
+	}
+	modes := []string{}
+	if policy.Alerts.Email.Provider != "" && policy.Alerts.Email.Provider != config.EmailProvider(constants.EmailProviderNone) {
+		modes = append(modes, string(policy.Alerts.Email.Provider))
+	}
+	if policy.Alerts.Push.Provider != "" && policy.Alerts.Push.Provider != config.PushProvider(constants.PushProviderNone) {
+		modes = append(modes, string(policy.Alerts.Push.Provider))
+	}
+	if len(modes) == 0 {
+		return constants.EmailProviderNone
+	}
+	return strings.Join(modes, "+")
 }
 
 func (r *RunResult) merge(next RunResult) {

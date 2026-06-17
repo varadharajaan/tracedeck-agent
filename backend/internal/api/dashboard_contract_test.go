@@ -17,262 +17,71 @@ func TestDashboardDOMContract(t *testing.T) {
 	}
 	html := string(data)
 
-	ids, duplicates := dashboardElementIDs(html)
-	if len(duplicates) > 0 {
-		t.Fatalf("dashboard contains duplicate DOM ids: %s", strings.Join(duplicates, ", "))
-	}
-
-	referenced := dashboardReferencedIDs(html)
-	var missing []string
-	for _, id := range referenced {
-		if _, ok := ids[id]; !ok {
-			missing = append(missing, id)
-		}
-	}
-	if len(missing) > 0 {
-		t.Fatalf("dashboard JavaScript references missing DOM ids: %s", strings.Join(missing, ", "))
-	}
-
-	for _, id := range dashboardJumpTargets(html) {
-		if _, ok := ids[id]; !ok {
-			missing = append(missing, id)
-		}
-	}
-	if len(missing) > 0 {
-		t.Fatalf("dashboard command navigation references missing DOM ids: %s", strings.Join(missing, ", "))
-	}
+	assertNoDuplicateIDs(t, "dashboard", html)
+	assertReferencedIDsExist(t, "dashboard", html)
+	assertPageTargetsExist(t, html)
 
 	for _, marker := range []string{
+		"TraceDeck Console",
+		"dashboard-page-nav",
+		"command-navigation",
+		"Command Center",
+		"Host Portfolio",
+		"Signal Queue",
+		"Browser Intelligence",
+		"Delivery Assurance",
+		"Revenue Packaging",
+		"Trust Center",
 		"browser-activity-button",
+		"legacy-dashboard-button",
 		"/browser-activity",
+		"/v1-old",
 		"theme-toggle-button",
 		"server-status-light",
-		"sourceBadge",
-		"dashboard-page-nav",
-		"Phase 82 product polish",
-		"<span class=\"brand-mark\" aria-hidden=\"true\"><span></span><span></span><span></span></span>",
-		"data-page-target=\"notifications\"",
-		"Premium Operations Hub",
-		"Premium Value Tiles",
-		"Anomaly Notification Wall",
-		"Mail And Push Delivery Ops",
-		"Premium Owner Actions",
-		"data-jump-target=\"premium-operations-section\"",
-		"Monetisation Overview",
-		"Anomaly Notification Proof",
-		"Package And Revenue Fit",
-		"Owner Action Queue",
-		"Trust And Delivery Guard",
-		"Tenant Onboarding Center",
-		"Setup Checklist",
-		"Role Handoff",
-		"Onboarding Proof",
-		"Onboarding Owner Actions",
-		"data-jump-target=\"onboarding-center-section\"",
-		"Customer Settings Center",
-		"Settings Matrix",
-		"Plan And Retention Options",
-		"Notification Channel Settings",
-		"Settings Owner Actions",
-		"data-jump-target=\"customer-settings-section\"",
-		"Revenue Operations Center",
-		"Revenue Signals",
-		"Anomaly And Delivery Wall",
-		"Mail, Push, Dashboard Proof",
-		"Commercial Levers",
-		"Revenue Owner Actions",
-		"data-jump-target=\"revenue-operations-section\"",
-		"Runtime Status Center",
-		"Runtime Proof",
-		"Operator Actions",
-		"runtime-status-badge",
-		"runtime-proof-list",
-		"runtime-action-list",
-		"data-jump-target=\"runtime-status-section\"",
-		"Local Monitoring Indicator",
-		"Indicator Proof",
-		"Indicator Actions",
-		"local-indicator-status",
-		"indicator-proof-list",
-		"indicator-action-list",
-		"data-jump-target=\"local-indicator-section\"",
-		"Operator Assurance Center",
-		"Assurance Cards",
-		"Assurance Actions",
-		"operator-assurance-status",
-		"assurance-card-list",
-		"assurance-action-list",
-		"data-jump-target=\"operator-assurance-section\"",
-		"Promotion Readiness Center",
-		"Promotion Proof",
-		"Promotion Actions",
-		"promotion-readiness-status",
-		"promotion-proof-list",
-		"promotion-action-list",
-		"data-jump-target=\"promotion-readiness-section\"",
-		"Verification Evidence Center",
-		"Scripted Gate Evidence",
-		"Artifact Evidence",
-		"Verification Proof",
-		"Verification Actions",
-		"verification-evidence-status",
-		"verification-gate-list",
-		"verification-artifact-list",
-		"verification-proof-list",
-		"verification-action-list",
-		"data-jump-target=\"verification-evidence-section\"",
-		"Deployment Readiness Center",
-		"Platform Service Proof",
-		"Service Manifest Proof",
-		"Boot And Replay Proof",
-		"Deployment Owner Actions",
-		"data-jump-target=\"deployment-readiness-section\"",
-		"Workspace Navigator",
-		"class=\"command-label\">Premium Operations</span>",
-		"class=\"command-label\">Onboarding Center</span>",
-		"class=\"command-label\">Customer Settings</span>",
-		"class=\"command-label\">Revenue Operations</span>",
-		"class=\"command-label\">Runtime Status</span>",
-		"class=\"command-label\">Local Indicator</span>",
-		"class=\"command-label\">Operator Assurance</span>",
-		"class=\"command-label\">Promotion Readiness</span>",
-		"class=\"command-label\">Verification Evidence</span>",
-		"class=\"command-label\">Deployment Readiness</span>",
-		"class=\"command-label\">Customer Control Room</span>",
-		"class=\"command-label\">Customer Success Packet</span>",
-		"class=\"command-label\">Provider Setup</span>",
-		"class=\"command-label\">Paid Operations</span>",
-		"class=\"command-label\">Delivery Assurance</span>",
-		"class=\"command-label\">Trust &amp; Consent</span>",
-		"Customer Control Room",
-		"Customer Value Tiles",
-		"Anomaly Command Wall",
-		"Mail And Push Delivery",
-		"Owner Monetisation Actions",
-		"data-jump-target=\"customer-control-section\"",
-		"Customer Success Packet",
-		"Success Proof Stack",
-		"Buyer Objection Answers",
-		"Success Packet Actions",
-		"Delivery And Trust Promise",
-		"data-jump-target=\"customer-success-section\"",
-		"Push Activation Center",
-		"Push Route Proof",
-		"Anomaly Push And Mail Scenarios",
-		"Push Owner Actions",
-		"Push Privacy Guard",
-		"data-jump-target=\"push-activation-section\"",
-		"Portfolio Center",
-		"Portfolio Alert Notifications",
-		"Portfolio Delivery Proof",
-		"Host Portfolio Rows",
-		"Portfolio Segments",
-		"Portfolio Owner Actions",
-		"Portfolio Privacy Guard",
-		"data-jump-target=\"portfolio-center-section\"",
-		"Account Portfolio Index",
-		"Account Tenant Rows",
-		"Account Proof Cards",
-		"Account Owner Actions",
-		"data-jump-target=\"account-portfolio-section\"",
-		"Executive Notification Console",
-		"Value Tiles",
-		"Anomaly Alert Stream",
-		"Mail And Push Proof",
-		"Owner Action Board",
-		"data-jump-target=\"executive-console-section\"",
-		"Notification Revenue Cockpit",
-		"Revenue KPI Proof",
-		"Anomaly Delivery Scenarios",
-		"Channel Proof Matrix",
-		"Upgrade Action Levers",
-		"data-jump-target=\"notification-revenue-section\"",
-		"Provider Simulation Lab",
-		"Simulation Route Proof",
-		"Simulation Scenarios",
-		"Simulation Action Queue",
-		"Provider Privacy Proof",
-		"data-jump-target=\"provider-simulation-section\"",
-		"Notification Provider Setup Center",
-		"Provider Channel Setup",
-		"Provider Setup Checklist",
-		"Provider Setup Actions",
-		"data-jump-target=\"notification-provider-setup-section\"",
-		"Package Billing Readiness",
-		"Plan Fit Matrix",
-		"Feature Gate Proof",
-		"Billing Milestones",
-		"Upgrade Actions",
-		"data-jump-target=\"package-billing-section\"",
-		"Business Dashboard",
-		"Anomaly Notification Inbox",
-		"Push And Mail Proof",
-		"Paid Package Value",
-		"Customer Owner Actions",
-		"Growth Cockpit",
-		"Anomaly Notification Ops",
-		"Notification Delivery Proof",
-		"Monetisation Owner Actions",
-		"Notification Preference Center",
-		"Preference Rule Matrix",
-		"Study-Safe Suppression",
-		"Role Experience Center",
-		"Paid Onboarding Checklist",
-		"Monetisation Command Center",
-		"Anomaly And Notification Inbox",
-		"Delivery And Mail Proof",
-		"Owner Action Queue",
-		"data-jump-target=\"premium-notification-section\"",
-		"data-jump-target=\"paid-ops-section\"",
-		"data-jump-target=\"revenue-section\"",
-		"data-jump-target=\"notification-proof-section\"",
-		"data-jump-target=\"mail-report-section\"",
-		"data-jump-target=\"archive-proof-section\"",
-		"data-jump-target=\"trust-proof-section\"",
-		"data-jump-target=\"host-detail-section\"",
-		"Paid Ops Console",
-		"Commercial Control Room",
-		"Revenue Command Center",
-		"Premium Notification Command Center",
-		"Notification Assurance Funnel",
-		"Mail And Push Delivery Proof",
-		"Customer Action SLAs",
-		"Notification Proof Rail",
-		"Notification Evidence Timeline",
-		"Delivery Audit Trail",
-		"Delivery Assurance Center",
-		"Route Truth Matrix",
-		"Delivery Truth Events",
-		"Provider Proof Readiness",
-		"delivery-list",
-		"delivery-card",
-		"data-jump-target=\"delivery-assurance-section\"",
-		"Buyer Demo Checklist",
-		"Mail Delivery Center",
-		"Push Notification Center",
-		"Provider-Safe Delivery Drilldown",
-		"Delivery Rehearsal Actions",
-		"Delivery Remediation Center",
-		"Remediation Action Ledger",
-		"Remediation SLA",
+		"include-demo-toggle",
+		"Demo proof",
+		"live evidence",
+		"mode-badge",
+		"Risk Posture",
+		"Browser Mix",
+		"Evidence Pipeline",
+		"Executive Brief",
+		"pipeline-status",
+		"operator-brief-list",
+		"Domain Rows",
+		"Route Proof",
+		"Commercial Proof",
 		"Archive Retention",
-		"Tamper Trust",
-		"Backend Alert Inbox",
+		"Runtime Proof",
+		"Metadata-only privacy boundary",
+		"<span class=\"brand-mark\" aria-hidden=\"true\"><span></span><span></span><span></span></span>",
 	} {
 		if !strings.Contains(html, marker) {
-			t.Fatalf("dashboard is missing monetisation marker %q", marker)
+			t.Fatalf("dashboard is missing modern console marker %q", marker)
 		}
 	}
 
-	for _, forbidden := range []string{
-		"<span class=\"brand-mark\" aria-hidden=\"true\">TD</span>",
-		"Browser{",
-		"Center{",
-		"[B]",
-		"{C}",
+	assertNoLegacyVisualMarkers(t, "dashboard", html)
+}
+
+func TestDashboardV1OldAssetContract(t *testing.T) {
+	t.Parallel()
+
+	data, err := fs.ReadFile(dashboardFS, "web/dashboard_v1_old.html")
+	if err != nil {
+		t.Fatalf("read legacy dashboard asset: %v", err)
+	}
+	html := string(data)
+
+	assertNoDuplicateIDs(t, "legacy dashboard", html)
+	for _, marker := range []string{
+		"TraceDeck Dashboard",
+		"v1-old legacy containment",
+		"dashboard-page-nav",
+		"Workspace Navigator",
 	} {
-		if strings.Contains(html, forbidden) {
-			t.Fatalf("dashboard contains stale visual marker %q", forbidden)
+		if !strings.Contains(html, marker) {
+			t.Fatalf("legacy dashboard is missing marker %q", marker)
 		}
 	}
 }
@@ -286,47 +95,38 @@ func TestBrowserActivityDOMContract(t *testing.T) {
 	}
 	html := string(data)
 
-	ids, duplicates := dashboardElementIDs(html)
-	if len(duplicates) > 0 {
-		t.Fatalf("browser activity page contains duplicate DOM ids: %s", strings.Join(duplicates, ", "))
-	}
-
-	referenced := dashboardReferencedIDs(html)
-	var missing []string
-	for _, id := range referenced {
-		if _, ok := ids[id]; !ok {
-			missing = append(missing, id)
-		}
-	}
-	if len(missing) > 0 {
-		t.Fatalf("browser activity JavaScript references missing DOM ids: %s", strings.Join(missing, ", "))
-	}
+	assertNoDuplicateIDs(t, "browser activity page", html)
+	assertReferencedIDsExist(t, "browser activity page", html)
 
 	for _, marker := range []string{
-		"TraceDeck Browser Activity",
-		"Browser Activity Viewer",
-		"Phase 82 product polish",
-		"<span class=\"brand-mark\" aria-hidden=\"true\"><span></span><span></span><span></span></span>",
+		"TraceDeck Browser Intelligence",
+		"Browser Intelligence",
 		"theme-toggle-button",
 		"server-status-light",
+		"include-demo-toggle",
+		"Demo proof",
+		"source-mode-pill",
+		"live evidence",
+		"metadata-only guard",
 		"Chrome",
 		"Edge",
 		"Brave",
-		"Non-Study YouTube",
-		"Notification Proof",
-		"Host Breakdown",
-		"Browser Domain Activity",
+		"YouTube Review",
+		"Route Proof",
+		"Host Coverage",
+		"Browser Mix",
+		"Domain Activity",
 		"<th>Source</th>",
 		"sourceBadge",
-		"metadata-only guard",
-		"Browser Activity badge integrity",
 		"class=\"signal-cell\"",
+		"<span class=\"brand-mark\" aria-hidden=\"true\"><span></span><span></span><span></span></span>",
 	} {
 		if !strings.Contains(html, marker) {
 			t.Fatalf("browser activity page is missing marker %q", marker)
 		}
 	}
 
+	assertNoLegacyVisualMarkers(t, "browser activity page", html)
 	for _, forbidden := range []string{
 		"raw_url",
 		"page_title",
@@ -334,11 +134,6 @@ func TestBrowserActivityDOMContract(t *testing.T) {
 		"password_value",
 		"cookie_value",
 		"token_value",
-		"<span class=\"brand-mark\" aria-hidden=\"true\">TD</span>",
-		"Browser{",
-		"Center{",
-		"[B]",
-		"{C}",
 	} {
 		if strings.Contains(strings.ToLower(html), strings.ToLower(forbidden)) {
 			t.Fatalf("browser activity page contains forbidden marker %q", forbidden)
@@ -346,8 +141,64 @@ func TestBrowserActivityDOMContract(t *testing.T) {
 	}
 }
 
-func dashboardJumpTargets(html string) []string {
-	pattern := regexp.MustCompile(`data-jump-target="([^"]+)"`)
+func assertNoDuplicateIDs(t *testing.T, label string, html string) {
+	t.Helper()
+	_, duplicates := dashboardElementIDs(html)
+	if len(duplicates) > 0 {
+		t.Fatalf("%s contains duplicate DOM ids: %s", label, strings.Join(duplicates, ", "))
+	}
+}
+
+func assertReferencedIDsExist(t *testing.T, label string, html string) {
+	t.Helper()
+	ids, _ := dashboardElementIDs(html)
+	var missing []string
+	for _, id := range dashboardReferencedIDs(html) {
+		if _, ok := ids[id]; !ok {
+			missing = append(missing, id)
+		}
+	}
+	if len(missing) > 0 {
+		t.Fatalf("%s JavaScript references missing DOM ids: %s", label, strings.Join(missing, ", "))
+	}
+}
+
+func assertPageTargetsExist(t *testing.T, html string) {
+	t.Helper()
+	ids, _ := dashboardElementIDs(html)
+	var missing []string
+	for _, target := range dashboardPageTargets(html) {
+		pageID := target + "-page"
+		if _, ok := ids[pageID]; !ok {
+			missing = append(missing, pageID)
+		}
+	}
+	if len(missing) > 0 {
+		t.Fatalf("dashboard page navigation references missing page ids: %s", strings.Join(missing, ", "))
+	}
+}
+
+func assertNoLegacyVisualMarkers(t *testing.T, label string, html string) {
+	t.Helper()
+	for _, forbidden := range []string{
+		"<span class=\"brand-mark\" aria-hidden=\"true\">TD</span>",
+		"Browser{",
+		"Center{",
+		"[B]",
+		"{C}",
+		"Phase 82 product polish",
+		"Workspace Navigator",
+		"Premium Operations",
+		"data-jump-target",
+	} {
+		if strings.Contains(html, forbidden) {
+			t.Fatalf("%s contains stale visual marker %q", label, forbidden)
+		}
+	}
+}
+
+func dashboardPageTargets(html string) []string {
+	pattern := regexp.MustCompile(`data-page-target="([^"]+)"`)
 	seen := map[string]struct{}{}
 	for _, match := range pattern.FindAllStringSubmatch(html, -1) {
 		seen[match[1]] = struct{}{}

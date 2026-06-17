@@ -10,13 +10,17 @@
         },
         "email": {
           "$ref": "#/$defs/EmailPolicy"
+        },
+        "push": {
+          "$ref": "#/$defs/PushPolicy"
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
         "enabled",
-        "email"
+        "email",
+        "push"
       ]
     },
     "ArchivePolicy": {
@@ -425,6 +429,58 @@
         "thresholds",
         "youtube_study_keywords",
         "alert_rules"
+      ]
+    },
+    "PushPolicy": {
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": [
+            "none",
+            "web_push"
+          ]
+        },
+        "subscription_file": {
+          "type": "string"
+        },
+        "vapid_public_key": {
+          "type": "string"
+        },
+        "vapid_private_key_file": {
+          "type": "string"
+        },
+        "vapid_subject": {
+          "type": "string"
+        },
+        "ttl_seconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "min_severity": {
+          "type": "string",
+          "enum": [
+            "critical",
+            "high",
+            "low",
+            "medium"
+          ]
+        },
+        "cooldown_minutes": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "provider",
+        "subscription_file",
+        "vapid_public_key",
+        "vapid_private_key_file",
+        "vapid_subject",
+        "ttl_seconds",
+        "min_severity",
+        "cooldown_minutes"
       ]
     },
     "RetentionPolicy": {

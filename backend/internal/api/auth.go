@@ -78,7 +78,10 @@ func authExempt(r *http.Request) bool {
 	if r.URL.Path == constants.RouteHealth {
 		return true
 	}
-	if r.URL.Path == constants.RouteDashboard && r.Method == http.MethodGet {
+	if r.Method == http.MethodGet && (r.URL.Path == constants.RouteDashboard ||
+		r.URL.Path == constants.RouteDashboardV1Old ||
+		r.URL.Path == constants.RouteBrowserActivity ||
+		r.URL.Path == constants.RouteWebPushServiceWork) {
 		return true
 	}
 	return false

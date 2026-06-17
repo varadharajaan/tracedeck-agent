@@ -53,6 +53,14 @@ try {
         Write-TraceDeckLog -Level "WARN" -Message "Scheduler readback was denied, but runtime proof is healthy. status=$($status | ConvertTo-Json -Depth 8)"
     }
 
+    $taskLeaf = Split-Path -Leaf $TaskName
+    $taskParent = (Split-Path -Parent $TaskName) + "\"
+    $task = Get-ScheduledTask -TaskName $taskLeaf -TaskPath $taskParent -ErrorAction Stop
+    $action = $task.Actions | Select-Object -First 1
+    if ($action.Execute -notmatch "wscript\.exe$" -or $action.Arguments -notmatch "run-agent-task-hidden\.vbs" -or $action.Arguments -notmatch "run-backend-dev-task\.ps1") {
+        throw "Scheduled backend task should use the hidden wscript launcher, got execute=$($action.Execute) arguments=$($action.Arguments)"
+    }
+
     if ($StabilitySeconds -gt 0) {
         Start-Sleep -Seconds $StabilitySeconds
         Invoke-TraceDeckLoggedCommand -Label "Query scheduled backend dev task after stability window" -Command {

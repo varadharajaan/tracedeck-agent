@@ -72,6 +72,13 @@ try {
     $baseUrl = "http://$Addr"
     $exeFullPath = Resolve-TraceDeckPath -PathValue $ExePath
     $runnerPath = Resolve-TraceDeckPath -PathValue "scripts/local/run-backend-dev-task.ps1"
+    $hiddenLauncherPath = Resolve-TraceDeckPath -PathValue "scripts/local/run-agent-task-hidden.vbs"
+    $wscriptPath = if ($env:WINDIR) {
+        Join-Path $env:WINDIR "System32\wscript.exe"
+    }
+    else {
+        "wscript.exe"
+    }
     $pidFullPath = Resolve-TraceDeckPath -PathValue $PidPath
     $dataFullPath = Resolve-TraceDeckPath -PathValue $DataPath
     $readyFullPath = Resolve-TraceDeckPath -PathValue $ReadyPath
@@ -91,8 +98,8 @@ try {
     $taskParts = Split-TraceDeckTaskName -Name $TaskName
     $existing = Get-TraceDeckScheduledTask -Name $TaskName
     if (-not $existing -or $ForceRegister) {
-        $argument = "-NoProfile -ExecutionPolicy Bypass -File `"$runnerPath`" -Addr `"$Addr`" -PidPath `"$PidPath`" -DataPath `"$DataPath`" -ExePath `"$ExePath`" -ReadyPath `"$ReadyPath`""
-        $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $argument -WorkingDirectory $script:TraceDeckRepoRoot
+        $argument = "`"$hiddenLauncherPath`" `"-File`" `"$runnerPath`" `"-Addr`" `"$Addr`" `"-PidPath`" `"$PidPath`" `"-DataPath`" `"$DataPath`" `"-ExePath`" `"$ExePath`" `"-ReadyPath`" `"$ReadyPath`""
+        $action = New-ScheduledTaskAction -Execute $wscriptPath -Argument $argument -WorkingDirectory $script:TraceDeckRepoRoot
         $trigger = New-ScheduledTaskTrigger -AtLogOn -User $UserId
         $principal = New-ScheduledTaskPrincipal -UserId $UserId -LogonType Interactive -RunLevel Limited
         $settings = New-ScheduledTaskSettingsSet `
@@ -107,6 +114,12 @@ try {
         Invoke-TraceDeckLoggedCommand -Label "Register backend dev scheduled task" -Command {
             Register-ScheduledTask -TaskPath $taskParts.Path -TaskName $taskParts.Name -InputObject $task -Force | Out-Null
         }
+    }
+
+    $registered = Get-ScheduledTask -TaskPath $taskParts.Path -TaskName $taskParts.Name -ErrorAction Stop
+    $registeredAction = $registered.Actions | Select-Object -First 1
+    if ($registeredAction.Execute -notmatch "wscript\.exe$" -or $registeredAction.Arguments -notmatch "run-agent-task-hidden\.vbs" -or $registeredAction.Arguments -notmatch "run-backend-dev-task\.ps1") {
+        throw "Backend scheduled task is not using the silent hidden launcher."
     }
 
     Invoke-TraceDeckLoggedCommand -Label "Start backend dev scheduled task" -Command {

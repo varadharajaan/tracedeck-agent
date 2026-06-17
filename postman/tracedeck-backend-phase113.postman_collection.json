@@ -1,0 +1,113 @@
+{
+  "info": {
+    "name": "TraceDeck Phase 113 Web Push Provider",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('health is ok', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Web Push Service Worker",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/webpush-sw.js"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('service worker is served as javascript', function () {",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(pm.response.headers.get('Content-Type')).to.include('application/javascript');",
+              "  pm.expect(pm.response.text()).to.include('showNotification');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Web Push Public Key",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/webpush/vapid-public-key"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('public key setup is metadata-only', function () {",
+              "  pm.response.to.have.status(200);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.public_key).to.be.a('string').and.not.empty;",
+              "  pm.expect(body.subscription_url).to.eql('/api/v1/webpush/subscriptions');",
+              "  pm.expect(body.service_worker).to.eql('/webpush-sw.js');",
+              "  pm.expect(body.privacy_boundary).to.include('does not expose');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Web Push Subscribe",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"endpoint\": \"https://push.example.test/phase113\",\n  \"keys\": {\n    \"p256dh\": \"phase113-client-public-key\",\n    \"auth\": \"phase113-client-auth-secret\"\n  }\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/webpush/subscriptions"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('subscription is accepted without echoing endpoint', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.status).to.eql('subscribed');",
+              "  pm.expect(body.provider_configured).to.eql(true);",
+              "  pm.expect(body.subscription_file).to.include('subscriptions.json');",
+              "  const serialized = JSON.stringify(body).toLowerCase();",
+              "  pm.expect(serialized).to.not.include('https://push.example.test/phase113');",
+              "  pm.expect(serialized).to.not.include('phase113-client-auth-secret');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

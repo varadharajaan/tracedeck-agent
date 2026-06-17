@@ -6,6 +6,10 @@ param(
     [string]$LogDir = "logs/local/agent",
     [string]$OutboxDir = "data/local/outbox",
     [string]$CollectionInterval = "10m",
+    [string]$PidPath = "",
+    [string]$ExtraArgs = "",
+    [ValidateSet("HighestAvailable", "LeastPrivilege")]
+    [string]$RunLevel = "HighestAvailable",
     [string]$UserId = "$env:USERDOMAIN\$env:USERNAME",
     [string]$TaskXmlPath = "data/local/service-manifests/phase8/windows/tracedeck-agent-task.xml",
     [switch]$BuildAgent,
@@ -53,6 +57,9 @@ try {
             "-LogDir", (Quote-TraceDeckArg -Value $LogDir),
             "-OutboxDir", (Quote-TraceDeckArg -Value $OutboxDir),
             "-CollectionInterval", (Quote-TraceDeckArg -Value $CollectionInterval),
+            "-PidPath", (Quote-TraceDeckArg -Value $PidPath),
+            "-ExtraArgs", (Quote-TraceDeckArg -Value $ExtraArgs),
+            "-RunLevel", (Quote-TraceDeckArg -Value $RunLevel),
             "-UserId", (Quote-TraceDeckArg -Value $UserId),
             "-TaskXmlPath", (Quote-TraceDeckArg -Value $TaskXmlPath),
             "-NoElevate"
@@ -93,6 +100,9 @@ try {
             -LogDir $LogDir `
             -OutboxDir $OutboxDir `
             -CollectionInterval $CollectionInterval `
+            -PidPath $PidPath `
+            -ExtraArgs $ExtraArgs `
+            -RunLevel $RunLevel `
             -UserId $UserId `
             -OutputPath $resolvedTaskXmlPath
     }

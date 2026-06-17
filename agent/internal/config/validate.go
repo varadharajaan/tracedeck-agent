@@ -88,19 +88,45 @@ func (p Policy) Validate() error {
 	}
 
 	requireEnum(&errs, constants.ConfigFieldEmailProvider, p.Alerts.Email.Provider, emailProviders)
-	requireEnum(&errs, constants.ConfigFieldEmailMinSeverity, p.Alerts.Email.MinSeverity, severities)
+	requireOptionalEnum(&errs, constants.ConfigFieldEmailMinSeverity, p.Alerts.Email.MinSeverity, severities)
+	pushProvider := p.Alerts.Push.Provider
+	if pushProvider != "" {
+		requireEnum(&errs, constants.ConfigFieldPushProvider, pushProvider, pushProviders)
+	}
+	requireOptionalEnum(&errs, constants.ConfigFieldPushMinSeverity, p.Alerts.Push.MinSeverity, severities)
 	if p.Alerts.Enabled {
-		if p.Alerts.Email.Provider == EmailProvider(constants.EmailProviderNone) {
-			errs = append(errs, fieldError(constants.ConfigFieldEmailProvider, constants.ConfigErrorEmailProviderRequired))
+		emailProvider := p.Alerts.Email.Provider
+		if emailProvider == "" {
+			emailProvider = EmailProvider(constants.EmailProviderNone)
 		}
-		if strings.TrimSpace(p.Alerts.Email.From) == "" {
-			errs = append(errs, fieldError(constants.ConfigFieldEmailFrom, constants.ConfigErrorEmailSenderRequired))
+		if pushProvider == "" {
+			pushProvider = PushProvider(constants.PushProviderNone)
 		}
-		if len(p.Alerts.Email.To) == 0 {
-			errs = append(errs, fieldError(constants.ConfigFieldEmailTo, constants.ConfigErrorEmailRecipientRequired))
+		if emailProvider == EmailProvider(constants.EmailProviderNone) && pushProvider == PushProvider(constants.PushProviderNone) {
+			errs = append(errs, fieldError(constants.ConfigFieldEmailProvider, constants.ConfigErrorAlertProviderRequired))
 		}
-		if p.Alerts.Email.CooldownMinutes <= 0 {
-			errs = append(errs, fieldError(constants.ConfigFieldEmailCooldownMinutes, constants.ConfigErrorMustBeGreaterThanZero))
+		if emailProvider != EmailProvider(constants.EmailProviderNone) {
+			if strings.TrimSpace(p.Alerts.Email.From) == "" {
+				errs = append(errs, fieldError(constants.ConfigFieldEmailFrom, constants.ConfigErrorEmailSenderRequired))
+			}
+			if len(p.Alerts.Email.To) == 0 {
+				errs = append(errs, fieldError(constants.ConfigFieldEmailTo, constants.ConfigErrorEmailRecipientRequired))
+			}
+			if p.Alerts.Email.CooldownMinutes <= 0 {
+				errs = append(errs, fieldError(constants.ConfigFieldEmailCooldownMinutes, constants.ConfigErrorMustBeGreaterThanZero))
+			}
+		}
+		if pushProvider == PushProvider(constants.PushProviderWebPush) {
+			requiredString(&errs, constants.ConfigFieldPushSubscriptionFile, p.Alerts.Push.SubscriptionFile)
+			requiredString(&errs, constants.ConfigFieldPushVAPIDPublicKey, p.Alerts.Push.VAPIDPublicKey)
+			requiredString(&errs, constants.ConfigFieldPushVAPIDPrivateKey, p.Alerts.Push.VAPIDPrivateKeyFile)
+			requiredString(&errs, constants.ConfigFieldPushVAPIDSubject, p.Alerts.Push.VAPIDSubject)
+			if p.Alerts.Push.TTLSeconds <= 0 {
+				errs = append(errs, fieldError(constants.ConfigFieldPushTTLSeconds, constants.ConfigErrorMustBeGreaterThanZero))
+			}
+			if p.Alerts.Push.CooldownMinutes <= 0 {
+				errs = append(errs, fieldError(constants.ConfigFieldPushCooldownMinutes, constants.ConfigErrorMustBeGreaterThanZero))
+			}
 		}
 	}
 
@@ -129,6 +155,13 @@ func requireEnum[T ~string](errs *[]error, fieldName string, value T, allowed ma
 	if !isAllowed(value, allowed) {
 		*errs = append(*errs, fieldError(fieldName, fmt.Sprintf(constants.ConfigErrorUnsupportedValueFormat, value)))
 	}
+}
+
+func requireOptionalEnum[T ~string](errs *[]error, fieldName string, value T, allowed map[T]struct{}) {
+	if value == "" {
+		return
+	}
+	requireEnum(errs, fieldName, value, allowed)
 }
 
 func requireDenyOnly(errs *[]error, fieldName string, value SensitiveCapabilityMode) {

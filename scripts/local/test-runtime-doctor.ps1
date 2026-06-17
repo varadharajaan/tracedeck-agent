@@ -41,8 +41,14 @@ try {
     if ($report.local.dashboard.ok -ne $true -or $report.local.browser_page.ok -ne $true) {
         throw "Expected dashboard and browser page runtime checks to pass."
     }
-    if ($report.local.deliveries.count -lt 1 -or [string]::IsNullOrWhiteSpace($report.local.deliveries.first_source_kind)) {
+    if ($report.local.deliveries.ok -ne $true) {
         throw "Expected runtime doctor delivery provenance."
+    }
+    if ($report.local.deliveries.default_demo_hidden -ne $true -or $report.local.deliveries.opt_in_demo_available -ne $true) {
+        throw "Expected runtime doctor to hide demo delivery rows by default and expose opt-in demo proof."
+    }
+    if ($report.local.delivery_assurance.ok -ne $true) {
+        throw "Expected runtime doctor delivery assurance."
     }
     if ($IncludeCloud -and $report.cloud.overall -ne "ok") {
         throw "Expected runtime doctor cloud overall ok."

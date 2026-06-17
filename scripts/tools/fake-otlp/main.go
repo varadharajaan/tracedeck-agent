@@ -33,7 +33,7 @@ func main() {
 	flag.Parse()
 
 	mux := http.NewServeMux()
-	server := &http.Server{Addr: *addr, Handler: mux}
+	server := &http.Server{Addr: *addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -131,12 +131,24 @@ func forbiddenMatches(body string) []string {
 }
 
 func writeJSON(path string, value any) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
+	cleanPath, err := cleanLocalOutputPath(path)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(cleanPath), 0o750); err != nil {
 		return fmt.Errorf("create output dir: %w", err)
 	}
 	data, err := json.MarshalIndent(value, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshal json: %w", err)
 	}
-	return os.WriteFile(path, append(data, '\n'), 0o600)
+	return os.WriteFile(cleanPath, append(data, '\n'), 0o600) // #nosec G304,G703 -- cleanLocalOutputPath rejects absolute and parent-traversal paths.
+}
+
+func cleanLocalOutputPath(path string) (string, error) {
+	cleanPath := filepath.Clean(path)
+	if filepath.IsAbs(cleanPath) || cleanPath == ".." || strings.HasPrefix(cleanPath, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("output path must be relative to the repo workspace: %s", path)
+	}
+	return cleanPath, nil
 }

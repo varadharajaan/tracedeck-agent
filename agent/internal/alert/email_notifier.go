@@ -24,6 +24,38 @@ type Notifier interface {
 	Notify(context.Context, *config.Policy, []Alert) (string, error)
 }
 
+type channelNotifier struct {
+	name        string
+	minSeverity config.Severity
+	notifier    Notifier
+}
+
+type MultiNotifier struct {
+	channels []channelNotifier
+}
+
+func NewMultiNotifier(channels []channelNotifier) *MultiNotifier {
+	return &MultiNotifier{channels: channels}
+}
+
+func (n *MultiNotifier) Notify(ctx context.Context, policy *config.Policy, alerts []Alert) (string, error) {
+	refs := make([]string, 0, len(n.channels))
+	for _, channel := range n.channels {
+		channelAlerts := filterBySeverity(append([]Alert(nil), alerts...), channel.minSeverity)
+		if len(channelAlerts) == 0 {
+			continue
+		}
+		ref, err := channel.notifier.Notify(ctx, policy, channelAlerts)
+		if ref != "" {
+			refs = append(refs, channel.name+"="+ref)
+		}
+		if err != nil {
+			return strings.Join(refs, ";"), fmt.Errorf("%s provider delivery failed: %w", channel.name, err)
+		}
+	}
+	return strings.Join(refs, ";"), nil
+}
+
 type SMTPNotifier struct {
 	host      string
 	port      string
@@ -130,14 +162,39 @@ func (n *SESNotifier) Notify(ctx context.Context, policy *config.Policy, alerts 
 }
 
 func NewProviderNotifier(policy *config.Policy) (Notifier, error) {
+	channels := make([]channelNotifier, 0, 2)
 	switch policy.Alerts.Email.Provider {
 	case config.EmailProvider(constants.EmailProviderSMTP):
-		return NewSMTPNotifierFromEnv()
+		notifier, err := NewSMTPNotifierFromEnv()
+		if err != nil {
+			return nil, err
+		}
+		channels = append(channels, channelNotifier{name: constants.EmailProviderSMTP, minSeverity: policy.Alerts.Email.MinSeverity, notifier: notifier})
 	case config.EmailProvider(constants.EmailProviderSES):
-		return NewSESNotifier(), nil
+		channels = append(channels, channelNotifier{name: constants.EmailProviderSES, minSeverity: policy.Alerts.Email.MinSeverity, notifier: NewSESNotifier()})
+	case "", config.EmailProvider(constants.EmailProviderNone):
 	default:
 		return nil, fmt.Errorf("unsupported email provider %q", policy.Alerts.Email.Provider)
 	}
+
+	switch policy.Alerts.Push.Provider {
+	case config.PushProvider(constants.PushProviderWebPush):
+		notifier, err := NewWebPushNotifierFromPolicy(policy)
+		if err != nil {
+			return nil, err
+		}
+		channels = append(channels, channelNotifier{name: constants.PushProviderWebPush, minSeverity: policy.Alerts.Push.MinSeverity, notifier: notifier})
+	case "", config.PushProvider(constants.PushProviderNone):
+	default:
+		return nil, fmt.Errorf("unsupported push provider %q", policy.Alerts.Push.Provider)
+	}
+	if len(channels) == 0 {
+		return nil, errors.New("no alert provider is configured")
+	}
+	if len(channels) == 1 {
+		return channels[0].notifier, nil
+	}
+	return NewMultiNotifier(channels), nil
 }
 
 func BuildEmailMessage(policy *config.Policy, alerts []Alert, createdAt time.Time) ([]byte, error) {

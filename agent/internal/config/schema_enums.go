@@ -20,6 +20,8 @@ func ApplySchemaEnums(schema *jsonschema.Schema) {
 	applyPropertyEnum(schema, constants.SchemaDefForegroundCollection, constants.SchemaPropWindowTitleMode, enumValues(windowTitleModes))
 	applyPropertyEnum(schema, constants.SchemaDefMediaCollection, constants.SchemaPropPathMode, enumValues(pathModes))
 	applyPropertyEnum(schema, constants.SchemaDefOpenTelemetryPolicy, constants.SchemaPropProtocol, enumValues(openTelemetryProtocols))
+	applyPropertyEnum(schema, constants.SchemaDefPushPolicy, constants.SchemaPropProvider, enumValues(pushProviders))
+	applyPropertyEnum(schema, constants.SchemaDefPushPolicy, constants.SchemaPropMinSeverity, enumValues(severities))
 	applyPropertyEnum(schema, constants.SchemaDefRuleSpec, constants.SchemaPropSeverity, enumValues(severities))
 	applyPropertyEnum(schema, constants.SchemaDefSoftwareCollection, constants.SchemaPropInventoryMode, enumValues(softwareInventoryModes))
 	applySensitiveCapabilityEnums(schema)

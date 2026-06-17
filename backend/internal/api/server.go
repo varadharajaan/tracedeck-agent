@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -21,7 +22,7 @@ import (
 	"github.com/varadharajaan/tracedeck-agent/backend/internal/store"
 )
 
-//go:embed web/*.html
+//go:embed web/*.html web/*.js
 var dashboardFS embed.FS
 
 type Server struct {
@@ -62,7 +63,9 @@ func NewServerWithAuth(repo store.Repository, logger *slog.Logger, auth AuthConf
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc(constants.RouteDashboard, s.handleDashboard)
+	mux.HandleFunc(constants.RouteDashboardV1Old, s.handleDashboardV1Old)
 	mux.HandleFunc(constants.RouteBrowserActivity, s.handleBrowserActivityPage)
+	mux.HandleFunc(constants.RouteWebPushServiceWork, s.handleWebPushServiceWorker)
 	mux.HandleFunc(constants.RouteHealth, s.handleHealth)
 	mux.HandleFunc(constants.RouteVersion, s.handleVersion)
 	mux.HandleFunc(constants.RouteDeviceEnroll, s.handleDeviceEnroll)
@@ -83,6 +86,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc(constants.RoutePromotionReadiness, s.handlePromotionReadinessCenter)
 	mux.HandleFunc(constants.RouteLocalIndicator, s.handleLocalMonitoringIndicator)
 	mux.HandleFunc(constants.RouteArchiveStatus, s.handleArchiveStatus)
+	mux.HandleFunc(constants.RouteWebPushPublicKey, s.handleWebPushPublicKey)
+	mux.HandleFunc(constants.RouteWebPushSubscribe, s.handleWebPushSubscriptions)
 	return requestLogger(s.logger, s.authMiddleware(mux))
 }
 
@@ -151,6 +156,27 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(data)
 }
 
+func (s *Server) handleDashboardV1Old(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != constants.RouteDashboardV1Old {
+		http.NotFound(w, r)
+		return
+	}
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+
+	data, err := fs.ReadFile(dashboardFS, "web/dashboard_v1_old.html")
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "legacy dashboard asset unavailable")
+		return
+	}
+	setNoStoreHeaders(w)
+	w.Header().Set("Content-Type", constants.ContentTypeHTML)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(data)
+}
+
 func (s *Server) handleBrowserActivityPage(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != constants.RouteBrowserActivity {
 		http.NotFound(w, r)
@@ -168,6 +194,28 @@ func (s *Server) handleBrowserActivityPage(w http.ResponseWriter, r *http.Reques
 	}
 	setNoStoreHeaders(w)
 	w.Header().Set("Content-Type", constants.ContentTypeHTML)
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(data)
+}
+
+func (s *Server) handleWebPushServiceWorker(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != constants.RouteWebPushServiceWork {
+		http.NotFound(w, r)
+		return
+	}
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+
+	data, err := fs.ReadFile(dashboardFS, "web/webpush-sw.js")
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "web push service worker unavailable")
+		return
+	}
+	setNoStoreHeaders(w)
+	w.Header().Set("Content-Type", constants.ContentTypeJS)
+	w.Header().Set("Service-Worker-Allowed", "/")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(data)
 }
@@ -292,7 +340,7 @@ func (s *Server) runtimeStatusCenter() (model.RuntimeStatusCenter, error) {
 		summaryPath = constants.DefaultRuntimeSummaryPath
 	}
 
-	data, err := os.ReadFile(summaryPath)
+	data, err := os.ReadFile(filepath.Clean(summaryPath)) // #nosec G304 -- path is controlled by server config/defaults, not request input.
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return missingRuntimeStatusCenter(summaryPath), nil
@@ -598,7 +646,7 @@ func (s *Server) verificationEvidenceCenter() (model.VerificationEvidenceCenter,
 		evidencePath = constants.DefaultVerificationEvidencePath
 	}
 
-	data, err := os.ReadFile(evidencePath)
+	data, err := os.ReadFile(filepath.Clean(evidencePath)) // #nosec G304 -- path is controlled by server config/defaults, not request input.
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return missingVerificationEvidenceCenter(evidencePath), nil
@@ -771,14 +819,7 @@ func verificationEvidenceProof(artifact model.VerificationEvidenceArtifact, stat
 func verificationEvidenceActions(artifact model.VerificationEvidenceArtifact, status string) []model.VerificationEvidenceAction {
 	actions := make([]model.VerificationEvidenceAction, 0, len(artifact.Actions)+2)
 	for _, action := range artifact.Actions {
-		actions = append(actions, model.VerificationEvidenceAction{
-			ID:       action.ID,
-			Title:    action.Title,
-			Detail:   action.Detail,
-			Command:  action.Command,
-			Severity: action.Severity,
-			Status:   action.Status,
-		})
+		actions = append(actions, model.VerificationEvidenceAction(action))
 	}
 	if status != constants.StatusOK {
 		actions = append(actions, model.VerificationEvidenceAction{
@@ -838,9 +879,10 @@ func operatorAssuranceCenterFromSources(exportPath string, runtimeCenter model.R
 		nextStep = actions[0].Detail
 	}
 	headline := "Operator assurance is ready for handoff."
-	if status == constants.StatusWatch {
+	switch status {
+	case constants.StatusWatch:
 		headline = "Operator assurance can continue with watch items."
-	} else if status == constants.StatusAttention {
+	case constants.StatusAttention:
 		headline = "Operator assurance needs attention before handoff."
 	}
 	detail := fmt.Sprintf("Runtime=%s, Scheduler=%s, verification=%s, frontend cache=%s, git clean=%t.",
@@ -1118,9 +1160,10 @@ func promotionReadinessCenterFromSources(exportPath string, runtimeCenter model.
 	attentionCount := promotionAttentionCount(runtimeReady, verificationReady, assuranceReady, gitClean, runtimeCenter, evidenceCenter, assuranceCenter)
 	nextStep := promotionReadinessNextStep(canPromote, runtimeReady, verificationReady, assuranceReady, gitClean, assuranceCenter)
 	headline := "Promotion readiness is sealed for local handoff."
-	if status == constants.StatusWatch {
+	switch status {
+	case constants.StatusWatch:
 		headline = "Promotion readiness can continue with watch items."
-	} else if status == constants.StatusAttention {
+	case constants.StatusAttention:
 		headline = "Promotion readiness needs attention before handoff."
 	}
 	detail := fmt.Sprintf("Runtime=%s, verification=%s, assurance=%s, git=%s, ready_pid=%s, Scheduler=%s.",
@@ -1430,9 +1473,10 @@ func localMonitoringIndicatorCenterFromSources(runtimeCenter model.RuntimeStatus
 	visibleReady := localPageReady && consentVisible && sensitiveDenied
 	status := localIndicatorStatus(visibleReady, runtimeReady, consentVisible, sensitiveDenied)
 	headline := "Local monitoring indicator is visible."
-	if status == constants.StatusWatch {
+	switch status {
+	case constants.StatusWatch:
 		headline = "Local monitoring indicator is visible with watch items."
-	} else if status == constants.StatusAttention {
+	case constants.StatusAttention:
 		headline = "Local monitoring indicator needs attention."
 	}
 	detail := fmt.Sprintf("Indicator=%s, local page=%t, runtime=%s, consent visible=%t, sensitive collection denied=%t.",
@@ -3203,6 +3247,75 @@ func safeAttachmentFilenamePart(value string) string {
 	return clean
 }
 
+type webPushSubscription struct {
+	Endpoint string            `json:"endpoint"`
+	Keys     webPushClientKeys `json:"keys"`
+}
+
+type webPushClientKeys struct {
+	P256DH string `json:"p256dh"`
+	Auth   string `json:"auth"`
+}
+
+type webPushSubscriptionSet struct {
+	Subscriptions []webPushSubscription `json:"subscriptions"`
+}
+
+func validWebPushSubscription(subscription webPushSubscription) bool {
+	return strings.TrimSpace(subscription.Endpoint) != "" &&
+		strings.TrimSpace(subscription.Keys.P256DH) != "" &&
+		strings.TrimSpace(subscription.Keys.Auth) != ""
+}
+
+func loadWebPushSubscriptionSet(path string) (webPushSubscriptionSet, error) {
+	data, err := os.ReadFile(filepath.Clean(path))
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return webPushSubscriptionSet{}, nil
+		}
+		return webPushSubscriptionSet{}, err
+	}
+	data = bytes.TrimPrefix(data, []byte{0xEF, 0xBB, 0xBF})
+	var set webPushSubscriptionSet
+	if err := json.Unmarshal(data, &set); err == nil {
+		return set, nil
+	}
+	var one webPushSubscription
+	if err := json.Unmarshal(data, &one); err != nil {
+		return webPushSubscriptionSet{}, err
+	}
+	if !validWebPushSubscription(one) {
+		return webPushSubscriptionSet{}, nil
+	}
+	return webPushSubscriptionSet{Subscriptions: []webPushSubscription{one}}, nil
+}
+
+func saveWebPushSubscriptionSet(path string, set webPushSubscriptionSet) error {
+	cleanPath := filepath.Clean(path)
+	if err := os.MkdirAll(filepath.Dir(cleanPath), 0o750); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(set, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(cleanPath, append(data, '\n'), 0o600)
+}
+
+func upsertWebPushSubscription(set webPushSubscriptionSet, subscription webPushSubscription) webPushSubscriptionSet {
+	subscription.Endpoint = strings.TrimSpace(subscription.Endpoint)
+	subscription.Keys.P256DH = strings.TrimSpace(subscription.Keys.P256DH)
+	subscription.Keys.Auth = strings.TrimSpace(subscription.Keys.Auth)
+	for index := range set.Subscriptions {
+		if set.Subscriptions[index].Endpoint == subscription.Endpoint {
+			set.Subscriptions[index] = subscription
+			return set
+		}
+	}
+	set.Subscriptions = append(set.Subscriptions, subscription)
+	return set
+}
+
 func requestIncludesDemoEvidence(r *http.Request) bool {
 	value := strings.ToLower(strings.TrimSpace(r.URL.Query().Get(constants.QueryIncludeDemo)))
 	switch value {
@@ -3410,6 +3523,63 @@ func (s *Server) handleArchiveStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, store.ArchiveStatus())
+}
+
+func (s *Server) handleWebPushPublicKey(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+	data, err := os.ReadFile(filepath.Clean(constants.DefaultWebPushPublicKeyPath))
+	if err != nil {
+		writeError(w, http.StatusNotFound, "web push public key not generated")
+		return
+	}
+	publicKey := strings.TrimSpace(string(data))
+	if publicKey == "" {
+		writeError(w, http.StatusNotFound, "web push public key is empty")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{
+		"public_key":       publicKey,
+		"subscription_url": constants.RouteWebPushSubscribe,
+		"service_worker":   constants.RouteWebPushServiceWork,
+		"storage":          "local_file",
+		"privacy_boundary": "stores browser push subscription endpoint locally for provider delivery; does not expose it in dashboard telemetry or archive payloads",
+	})
+}
+
+func (s *Server) handleWebPushSubscriptions(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeMethodNotAllowed(w)
+		return
+	}
+	var subscription webPushSubscription
+	if err := json.NewDecoder(r.Body).Decode(&subscription); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid web push subscription json")
+		return
+	}
+	if !validWebPushSubscription(subscription) {
+		writeError(w, http.StatusBadRequest, "web push subscription requires endpoint, p256dh, and auth")
+		return
+	}
+	set, err := loadWebPushSubscriptionSet(constants.DefaultWebPushSubscriptionsPath)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "web push subscription store unavailable")
+		return
+	}
+	set = upsertWebPushSubscription(set, subscription)
+	if err := saveWebPushSubscriptionSet(constants.DefaultWebPushSubscriptionsPath, set); err != nil {
+		writeError(w, http.StatusInternalServerError, "web push subscription store failed")
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"status":              "subscribed",
+		"subscriptions":       len(set.Subscriptions),
+		"subscription_file":   constants.DefaultWebPushSubscriptionsPath,
+		"privacy_boundary":    "stored locally for web-push provider delivery; endpoint is not returned by this response",
+		"provider_configured": true,
+	})
 }
 
 func (s *Server) deviceAllowed(w http.ResponseWriter, r *http.Request, deviceID string) bool {

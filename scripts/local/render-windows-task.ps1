@@ -5,6 +5,12 @@ param(
     [string]$LogDir = "logs/local/agent",
     [string]$OutboxDir = "data/local/outbox",
     [string]$CollectionInterval = "10m",
+    [string]$PidPath = "",
+    [string]$ExtraArgs = "",
+    [string]$RunnerScriptPath = "scripts/local/run-agent-task.ps1",
+    [string]$HiddenLauncherPath = "scripts/local/run-agent-task-hidden.vbs",
+    [ValidateSet("HighestAvailable", "LeastPrivilege")]
+    [string]$RunLevel = "HighestAvailable",
     [string]$UserId = "$env:USERDOMAIN\$env:USERNAME",
     [string]$OutputPath = "data/local/service-manifests/phase8/windows/tracedeck-agent-task.xml"
 )
@@ -38,15 +44,35 @@ try {
     $resolvedLogDir = Resolve-TraceDeckPath -PathValue $LogDir
     $resolvedOutboxDir = Resolve-TraceDeckPath -PathValue $OutboxDir
     $resolvedWorkingDir = [System.IO.Path]::GetFullPath($script:TraceDeckRepoRoot)
+    $resolvedPidPath = if ([string]::IsNullOrWhiteSpace($PidPath)) {
+        Join-Path $resolvedDataDir "tracedeck-agent.pid"
+    }
+    else {
+        Resolve-TraceDeckPath -PathValue $PidPath
+    }
+    $resolvedRunnerScriptPath = Resolve-TraceDeckPath -PathValue $RunnerScriptPath
+    $resolvedHiddenLauncherPath = Resolve-TraceDeckPath -PathValue $HiddenLauncherPath
+    $wscriptPath = if ($env:WINDIR) {
+        Join-Path $env:WINDIR "System32\wscript.exe"
+    }
+    else {
+        "wscript.exe"
+    }
 
     $values = @{
         USER_ID = $UserId
+        WSCRIPT_PATH = $wscriptPath
+        RUNNER_VBS_PATH = $resolvedHiddenLauncherPath
+        RUNNER_PS1_PATH = $resolvedRunnerScriptPath
         AGENT_PATH = $resolvedAgentPath
         CONFIG_PATH = $resolvedConfigPath
         DATA_DIR = $resolvedDataDir
         LOG_DIR = $resolvedLogDir
         OUTBOX_DIR = $resolvedOutboxDir
         COLLECTION_INTERVAL = $CollectionInterval
+        PID_PATH = $resolvedPidPath
+        EXTRA_ARGS = $ExtraArgs
+        RUN_LEVEL = $RunLevel
         WORKING_DIR = $resolvedWorkingDir
     }
 
@@ -60,9 +86,15 @@ try {
     Set-Content -Path $resolvedOutputPath -Value $content -Encoding Unicode
 
     [xml]$xml = Get-Content -Raw -Path $resolvedOutputPath
-    if ($xml.Task.Actions.Exec.Command -ne $resolvedAgentPath) {
+    if ($xml.Task.Actions.Exec.Command -ne $wscriptPath) {
         Write-TraceDeckLog -Level "ERROR" -Message "Rendered task XML command path mismatch."
         exit 1
+    }
+    foreach ($requiredPath in @($resolvedHiddenLauncherPath, $resolvedRunnerScriptPath, $resolvedAgentPath, $resolvedConfigPath)) {
+        if ($xml.Task.Actions.Exec.Arguments -notmatch [regex]::Escape($requiredPath)) {
+            Write-TraceDeckLog -Level "ERROR" -Message "Rendered task XML missing required path: $requiredPath"
+            exit 1
+        }
     }
 
     if ((Get-Content -Raw -Path $resolvedOutputPath) -match "\{\{") {

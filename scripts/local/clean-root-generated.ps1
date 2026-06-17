@@ -36,6 +36,18 @@ try {
         }
     }
 
+    $generatedRootFiles = @(
+        "debug.log"
+    )
+
+    foreach ($fileName in $generatedRootFiles) {
+        $path = Resolve-TraceDeckRootChild -Name $fileName
+        if (Test-Path -LiteralPath $path) {
+            Remove-Item -LiteralPath $path -Force
+            Write-TraceDeckLog -Level "INFO" -Message "Removed generated root file: $fileName"
+        }
+    }
+
     Write-TraceDeckLog -Level "INFO" -Message "Root generated artifact cleanup completed."
     Complete-TraceDeckScriptLog
 }

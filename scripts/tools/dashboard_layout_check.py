@@ -2,7 +2,7 @@ import argparse
 import json
 import sys
 from datetime import datetime, timezone
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.parse import urljoin
 
 from playwright.sync_api import sync_playwright
 
@@ -16,292 +16,52 @@ VIEWPORTS = (
 PAGE_READY_STATE = "domcontentloaded"
 NAVIGATION_TIMEOUT_MS = 120000
 READY_TIMEOUT_MS = 120000
+ASYNC_LAYOUT_SETTLE_MS = 7000
 
-EXPECTED_COMMAND_JUMPS = 29
+EXPECTED_PAGES = (
+    "overview",
+    "hosts",
+    "activity",
+    "browser",
+    "delivery",
+    "revenue",
+    "trust",
+)
 
 REQUIRED_IDS = (
-    "premium-operations-section",
-    "premium-operations-status",
-    "premium-operations-headline",
-    "premium-operations-score",
-    "premium-operations-score-bar",
-    "premium-operations-package",
-    "premium-operations-audience",
-    "premium-operations-next",
-    "premium-operations-privacy",
-    "premium-kpi-alerts",
-    "premium-kpi-mail",
-    "premium-kpi-push",
-    "premium-kpi-dashboard",
-    "premium-kpi-report",
-    "premium-kpi-deployment",
-    "premium-tile-list",
-    "premium-alert-list",
-    "premium-delivery-list",
-    "premium-action-list",
-    "monetisation-overview-section",
-    "monetisation-overview-status",
-    "monetisation-overview-headline",
-    "monetisation-notification-list",
-    "monetisation-package-list",
-    "monetisation-action-list",
-    "monetisation-trust-list",
-    "onboarding-center-section",
-    "onboarding-center-status",
-    "onboarding-center-headline",
-    "onboarding-center-score",
-    "onboarding-center-score-bar",
-    "onboarding-center-package",
-    "onboarding-center-next",
-    "onboarding-center-privacy",
-    "onboarding-kpi-steps",
-    "onboarding-kpi-hosts",
-    "onboarding-kpi-autostart",
-    "onboarding-kpi-notifications",
-    "onboarding-kpi-archive",
-    "onboarding-kpi-roles",
-    "onboarding-step-list",
-    "onboarding-role-list",
-    "onboarding-proof-list",
-    "onboarding-action-list",
-    "customer-settings-section",
-    "customer-settings-status",
-    "customer-settings-headline",
-    "customer-settings-score",
-    "customer-settings-score-bar",
-    "customer-settings-plan",
-    "customer-settings-retention",
-    "customer-settings-next",
-    "customer-settings-privacy",
-    "settings-kpi-configured",
-    "settings-kpi-notifications",
-    "settings-kpi-archive",
-    "settings-kpi-autostart",
-    "settings-kpi-roles",
-    "settings-kpi-data-rights",
-    "customer-settings-list",
-    "customer-settings-option-list",
-    "customer-settings-channel-list",
-    "customer-settings-action-list",
-    "revenue-operations-section",
-    "revenue-operations-status",
-    "revenue-operations-headline",
-    "revenue-operations-score",
-    "revenue-operations-score-bar",
-    "revenue-operations-package",
-    "revenue-operations-next",
-    "revenue-operations-privacy",
-    "revenue-kpi-alerts",
-    "revenue-kpi-mail",
-    "revenue-kpi-push",
-    "revenue-kpi-report",
-    "revenue-kpi-package",
-    "revenue-kpi-trust",
-    "revenue-signal-list",
-    "revenue-alert-list",
-    "revenue-delivery-list",
-    "revenue-lever-list",
-    "revenue-action-list",
-    "runtime-status-section",
-    "runtime-status-badge",
-    "runtime-status-headline",
-    "runtime-kpi-backend",
-    "runtime-kpi-scheduler",
-    "runtime-kpi-doctor",
-    "runtime-kpi-git",
-    "runtime-kpi-frontend",
-    "runtime-kpi-verdict",
-    "runtime-proof-list",
-    "runtime-action-list",
-    "operator-assurance-section",
-    "operator-assurance-status",
-    "operator-assurance-headline",
-    "assurance-kpi-runtime",
-    "assurance-kpi-scheduler",
-    "assurance-kpi-gates",
-    "assurance-kpi-cache",
-    "assurance-kpi-git",
-    "assurance-kpi-export",
-    "assurance-card-list",
-    "assurance-action-list",
-    "promotion-readiness-section",
-    "promotion-readiness-status",
-    "promotion-readiness-headline",
-    "promotion-kpi-runtime",
-    "promotion-kpi-gates",
-    "promotion-kpi-assurance",
-    "promotion-kpi-git",
-    "promotion-kpi-pid",
-    "promotion-kpi-promote",
-    "promotion-proof-list",
-    "promotion-action-list",
-    "verification-evidence-section",
-    "verification-evidence-status",
-    "verification-evidence-headline",
-    "verification-kpi-gates",
-    "verification-kpi-ok",
-    "verification-kpi-watch",
-    "verification-kpi-attention",
-    "verification-kpi-artifacts",
-    "verification-kpi-promote",
-    "verification-gate-list",
-    "verification-artifact-list",
-    "verification-proof-list",
-    "verification-action-list",
-    "deployment-readiness-section",
-    "deployment-readiness-status",
-    "deployment-readiness-headline",
-    "deployment-readiness-score",
-    "deployment-readiness-score-bar",
-    "deployment-readiness-package",
-    "deployment-readiness-next",
-    "deployment-readiness-privacy",
-    "deployment-kpi-platforms",
-    "deployment-kpi-manifests",
-    "deployment-kpi-liveboot",
-    "deployment-kpi-autostart",
-    "deployment-kpi-replay",
-    "deployment-kpi-archive",
-    "deployment-platform-list",
-    "deployment-manifest-list",
-    "deployment-proof-list",
-    "deployment-action-list",
-    "executive-console-section",
-    "executive-console-status",
-    "executive-console-headline",
-    "executive-tile-list",
-    "executive-alert-list",
-    "executive-delivery-list",
-    "executive-action-list",
-    "notification-revenue-section",
-    "notification-revenue-status",
-    "notification-revenue-headline",
-    "notification-revenue-kpi-list",
-    "notification-revenue-scenario-list",
-    "notification-revenue-channel-list",
-    "notification-revenue-action-list",
-    "provider-simulation-section",
-    "provider-simulation-status",
-    "provider-simulation-headline",
-    "provider-simulation-route-list",
-    "provider-simulation-scenario-list",
-    "provider-simulation-action-list",
-    "notification-provider-setup-section",
-    "notification-provider-setup-status",
-    "notification-provider-setup-headline",
-    "notification-provider-setup-score",
-    "notification-provider-email",
-    "notification-provider-push",
-    "notification-provider-dashboard",
-    "notification-provider-demo",
-    "notification-provider-retrying",
-    "notification-provider-buyer",
-    "notification-provider-next",
-    "notification-provider-boundary",
-    "notification-provider-channel-list",
-    "notification-provider-checklist-list",
-    "notification-provider-action-list",
-    "package-billing-section",
-    "package-billing-status",
-    "package-billing-headline",
-    "package-billing-plan-list",
-    "package-billing-feature-list",
-    "package-billing-milestone-list",
-    "package-billing-action-list",
-    "business-dashboard-section",
-    "business-dashboard-status",
-    "business-dashboard-headline",
-    "business-alert-list",
-    "business-channel-list",
-    "business-package-list",
-    "business-action-list",
-    "command-navigation",
-    "command-nav-status",
-    "command-nav-title",
-    "growth-cockpit-section",
-    "growth-cockpit-status",
-    "growth-alert-ops-list",
-    "growth-delivery-proof-list",
-    "growth-owner-action-list",
-    "notification-preference-section",
-    "notification-preference-status",
-    "notification-preference-rule-list",
-    "notification-preference-suppression-list",
-    "notification-preference-action-list",
-    "role-experience-section",
-    "role-experience-status",
-    "role-experience-card-list",
-    "role-onboarding-list",
-    "monetization-command-center-section",
-    "command-center-status",
-    "command-center-inbox-list",
-    "command-center-delivery-list",
-    "command-center-action-list",
-    "premium-notification-section",
-    "premium-alert-funnel-list",
-    "premium-delivery-proof-list",
-    "premium-action-sla-list",
-    "delivery-timeline-section",
-    "delivery-timeline-status",
-    "delivery-timeline-list",
-    "buyer-ops-section",
-    "buyer-ops-status",
-    "buyer-delivery-list",
-    "buyer-package-list",
-    "buyer-action-list",
-    "delivery-drilldown-section",
-    "delivery-drill-route-list",
-    "delivery-drill-action-list",
-    "paid-ops-section",
-    "revenue-section",
-    "notification-proof-section",
-    "push-activation-section",
-    "push-activation-status",
-    "push-activation-headline",
-    "push-route-list",
-    "push-scenario-list",
-    "push-action-list",
-    "push-guard-list",
-    "portfolio-center-section",
-    "portfolio-center-status",
-    "portfolio-center-headline",
-    "portfolio-alert-list",
-    "portfolio-delivery-proof-list",
-    "portfolio-host-list",
-    "portfolio-segment-list",
-    "portfolio-action-list",
-    "portfolio-guard-list",
-    "account-portfolio-section",
-    "account-portfolio-status",
-    "account-portfolio-headline",
-    "account-tenant-list",
-    "account-proof-list",
-    "account-action-list",
-    "mail-report-section",
-    "archive-proof-section",
-    "trust-proof-section",
-    "host-detail-section",
+    "dashboard-page-nav",
+    "tenant-input",
+    "device-select",
+    "include-demo-toggle",
+    "theme-toggle-button",
+    "theme-toggle-label",
+    "refresh-button",
+    "push-setup-status",
+    "legacy-dashboard-button",
+    "backend-status",
+    "server-status-light",
+    "mode-badge",
+    "pipeline-status",
+    "operator-brief-list",
+    "browser-activity-button",
+    "browser-domain-table",
+    "delivery-list",
+    "package-list",
+    "privacy-boundary",
 )
 
 
-def dashboard_contract_url(base_url: str) -> str:
-    parts = urlsplit(base_url)
-    query = dict(parse_qsl(parts.query, keep_blank_values=True))
-    query["layout"] = "all"
-    return urlunsplit((parts.scheme, parts.netloc, parts.path or "/", urlencode(query), parts.fragment))
-
-
 def main() -> int:
-    parser = argparse.ArgumentParser(description="TraceDeck dashboard layout contract")
+    parser = argparse.ArgumentParser(description="TraceDeck modern dashboard layout contract")
     parser.add_argument("--base-url", required=True)
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
 
-    target_url = dashboard_contract_url(args.base_url)
+    base_url = args.base_url.rstrip("/") + "/"
     report = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "base_url": target_url,
-        "privacy_boundary": "layout metrics only; no screenshots, video, credentials, or page content capture",
+        "base_url": base_url,
+        "privacy_boundary": "layout metrics only; no screenshots, video, credentials, cookies, tokens, URLs, or private content capture",
         "viewports": [],
     }
     failures = []
@@ -312,15 +72,12 @@ def main() -> int:
             for viewport in VIEWPORTS:
                 page = browser.new_page(viewport={"width": viewport["width"], "height": viewport["height"]})
                 try:
-                    page.goto(target_url, wait_until=PAGE_READY_STATE, timeout=NAVIGATION_TIMEOUT_MS)
-                    page.wait_for_selector("#command-navigation", state="visible", timeout=READY_TIMEOUT_MS)
-                    page.wait_for_function(
-                        "() => document.getElementById('command-nav-title')"
-                        " && !document.getElementById('command-nav-title').textContent.includes('No tenant loaded')",
-                        timeout=READY_TIMEOUT_MS,
-                    )
+                    page.goto(urljoin(base_url, "/"), wait_until=PAGE_READY_STATE, timeout=NAVIGATION_TIMEOUT_MS)
+                    page.wait_for_selector("#dashboard-page-nav", state="visible", timeout=READY_TIMEOUT_MS)
+                    page.wait_for_selector("#backend-status", state="visible", timeout=READY_TIMEOUT_MS)
+                    page.wait_for_timeout(ASYNC_LAYOUT_SETTLE_MS)
                     result = page.evaluate(
-                        """(requiredIDs) => {
+                        """({ expectedPages, requiredIDs }) => {
                           const rounded = (rect) => ({
                             x: Math.round(rect.x),
                             y: Math.round(rect.y),
@@ -335,119 +92,110 @@ def main() -> int:
                             const style = window.getComputedStyle(element);
                             return rect.width > 0 && rect.height > 0 && style.visibility !== "hidden" && style.display !== "none";
                           };
-                          const boxesOverlap = (left, right) => {
-                            const horizontal = left.right > right.x + 1 && right.right > left.x + 1;
-                            const vertical = left.bottom > right.y + 1 && right.bottom > left.y + 1;
-                            return horizontal && vertical;
-                          };
-
                           const checks = [];
                           const documentWidth = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth);
                           const viewportWidth = window.innerWidth;
-                          const allElements = Array.from(document.body.querySelectorAll("*")).map((element) => {
-                            const rect = rounded(element.getBoundingClientRect());
-                            return {
-                              tag: element.tagName.toLowerCase(),
-                              id: element.id || "",
-                              className: typeof element.className === "string" ? element.className : "",
-                              rect
-                            };
-                          }).filter((item) => item.rect.width > 0 && item.rect.height > 0)
-                            .sort((left, right) => right.rect.right - left.rect.right)
-                            .slice(0, 8);
                           checks.push({
                             name: "document-horizontal-overflow",
                             ok: documentWidth <= viewportWidth + 2,
                             detail: `${documentWidth}px document width within ${viewportWidth}px viewport`
                           });
-
                           for (const id of requiredIDs) {
                             const element = document.getElementById(id);
                             const rect = element ? rounded(element.getBoundingClientRect()) : null;
                             checks.push({
-                              name: `required-visible-${id}`,
-                              ok: visible(element),
+                              name: `required-present-${id}`,
+                              ok: Boolean(element),
                               detail: rect ? `${rect.width}x${rect.height} at ${rect.x},${rect.y}` : "missing",
                               rect
                             });
-                            if (rect) {
-                              checks.push({
-                                name: `required-width-${id}`,
-                                ok: rect.width <= viewportWidth + 2,
-                                detail: `${rect.width}px within ${viewportWidth}px viewport`
-                              });
-                            }
                           }
-
-                          const jumps = Array.from(document.querySelectorAll("[data-jump-target]"));
-                          const jumpBoxes = jumps.map((element) => ({
-                            target: element.getAttribute("data-jump-target"),
-                            label: element.firstChild ? element.firstChild.textContent.trim() : element.textContent.trim(),
-                            rect: rounded(element.getBoundingClientRect()),
-                            scrollWidth: element.scrollWidth,
-                            clientWidth: element.clientWidth,
-                            scrollHeight: element.scrollHeight,
-                            clientHeight: element.clientHeight
-                          }));
+                          const nav = document.getElementById("dashboard-page-nav");
+                          const sidebarTools = document.getElementById("sidebar-tools");
+                          const legacyButton = document.getElementById("legacy-dashboard-button");
+                          const navButtons = Array.from(document.querySelectorAll("[data-page-target]"));
+                          const navLabels = navButtons.map((button) => button.textContent.trim());
                           checks.push({
-                            name: "command-navigation-has-expected-jumps",
-                            ok: jumpBoxes.length === %d,
-                            detail: `${jumpBoxes.length} command jump buttons`
+                            name: "page-navigation-visible",
+                            ok: visible(nav),
+                            detail: nav ? `${rounded(nav.getBoundingClientRect()).width}px wide` : "missing"
                           });
-                          for (const item of jumpBoxes) {
+                          checks.push({
+                            name: "legacy-v1-switch-visible",
+                            ok: Boolean(legacyButton && visible(legacyButton) && legacyButton.getAttribute("href") === "/v1-old"),
+                            detail: legacyButton ? `${legacyButton.textContent.trim()} -> ${legacyButton.getAttribute("href")}` : "missing"
+                          });
+                          if (nav && sidebarTools && visible(nav) && visible(sidebarTools)) {
+                            const navRect = nav.getBoundingClientRect();
+                            const toolRect = sidebarTools.getBoundingClientRect();
+                            const overlaps = navRect.right > toolRect.left && navRect.left < toolRect.right && navRect.bottom > toolRect.top && navRect.top < toolRect.bottom;
                             checks.push({
-                              name: `command-jump-text-fit-${item.target}`,
-                              ok: item.scrollWidth <= item.clientWidth + 2 && item.scrollHeight <= item.clientHeight + 2,
-                              detail: `${item.scrollWidth}x${item.scrollHeight} scroll within ${item.clientWidth}x${item.clientHeight} client`
-                            });
-                            checks.push({
-                              name: `command-jump-target-exists-${item.target}`,
-                              ok: Boolean(document.getElementById(item.target)),
-                              detail: item.target
+                              name: "nav-does-not-overlap-workspace-tools",
+                              ok: !overlaps,
+                              detail: `nav ${Math.round(navRect.left)}-${Math.round(navRect.right)} tools ${Math.round(toolRect.left)}-${Math.round(toolRect.right)}`
                             });
                           }
-                          for (let leftIndex = 0; leftIndex < jumpBoxes.length; leftIndex += 1) {
-                            for (let rightIndex = leftIndex + 1; rightIndex < jumpBoxes.length; rightIndex += 1) {
-                              if (boxesOverlap(jumpBoxes[leftIndex].rect, jumpBoxes[rightIndex].rect)) {
-                                checks.push({
-                                  name: `command-jump-overlap-${jumpBoxes[leftIndex].target}-${jumpBoxes[rightIndex].target}`,
-                                  ok: false,
-                                  detail: "command jump buttons overlap"
-                                });
-                              }
-                            }
+                          checks.push({
+                            name: "expected-page-targets",
+                            ok: expectedPages.every((name) => navButtons.some((button) => button.dataset.pageTarget === name)),
+                            detail: navButtons.map((button) => button.dataset.pageTarget).join(", ")
+                          });
+                          for (const button of navButtons) {
+                            const target = button.dataset.pageTarget;
+                            const pageElement = document.getElementById(`${target}-page`);
+                            checks.push({
+                              name: `page-target-exists-${target}`,
+                              ok: Boolean(pageElement),
+                              detail: `${target}-page`
+                            });
+                            checks.push({
+                              name: `page-tab-text-fit-${target}`,
+                              ok: button.scrollWidth <= button.clientWidth + 2 && button.scrollHeight <= button.clientHeight + 2,
+                              detail: `${button.scrollWidth}x${button.scrollHeight} scroll within ${button.clientWidth}x${button.clientHeight} client`
+                            });
                           }
-
-                          const navStyle = window.getComputedStyle(document.getElementById("command-navigation"));
-                          checks.push({
-                            name: "command-navigation-position-contract",
-                            ok: viewportWidth < 1180 ? navStyle.position === "static" : navStyle.position === "sticky",
-                            detail: `${navStyle.position} at ${viewportWidth}px`
-                          });
-
-                          const activeBefore = document.querySelector("[data-jump-target].is-active");
-                          const trustButton = document.querySelector('[data-jump-target="trust-proof-section"]');
-                          if (trustButton) trustButton.click();
-                          const activeAfter = document.querySelector("[data-jump-target].is-active");
-                          checks.push({
-                            name: "command-navigation-click-updates-active",
-                            ok: Boolean(activeBefore) && Boolean(activeAfter) && activeAfter.getAttribute("data-jump-target") === "trust-proof-section",
-                            detail: activeAfter ? activeAfter.getAttribute("data-jump-target") : "no active command target"
-                          });
-
                           return {
                             viewport: { width: viewportWidth, height: window.innerHeight },
-                            client_width: document.documentElement.clientWidth,
-                            body_client_width: document.body.clientWidth,
                             document_width: documentWidth,
-                            checks,
-                            jump_boxes: jumpBoxes,
-                            rightmost_elements: allElements
+                            nav_labels: navLabels,
+                            checks
                           };
-                        }""" % EXPECTED_COMMAND_JUMPS,
-                        list(REQUIRED_IDS),
+                        }""",
+                        {"expectedPages": list(EXPECTED_PAGES), "requiredIDs": list(REQUIRED_IDS)},
                     )
+                    page_results = []
+                    for page_name in EXPECTED_PAGES:
+                        page.click(f'[data-page-target="{page_name}"]')
+                        page.wait_for_timeout(350)
+                        page_result = page.evaluate(
+                            """(pageName) => {
+                              const activePage = document.getElementById(`${pageName}-page`);
+                              const activeTab = document.querySelector(`[data-page-target="${pageName}"]`);
+                              const rect = activePage ? activePage.getBoundingClientRect() : null;
+                              const documentWidth = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth);
+                              const viewportWidth = window.innerWidth;
+                              return {
+                                page: pageName,
+                                active_page_visible: Boolean(activePage && rect.width > 0 && rect.height > 0 && getComputedStyle(activePage).display !== "none"),
+                                active_tab_selected: Boolean(activeTab && activeTab.classList.contains("is-active")),
+                                document_width: documentWidth,
+                                viewport_width: viewportWidth,
+                                no_horizontal_overflow: documentWidth <= viewportWidth + 2
+                              };
+                            }""",
+                            page_name,
+                        )
+                        page_results.append(page_result)
+                        if not page_result["active_page_visible"]:
+                            failures.append(f"{viewport['name']}: {page_name} page did not become visible")
+                        if not page_result["active_tab_selected"]:
+                            failures.append(f"{viewport['name']}: {page_name} tab did not become active")
+                        if not page_result["no_horizontal_overflow"]:
+                            failures.append(
+                                f"{viewport['name']}: {page_name} overflow {page_result['document_width']}px > {page_result['viewport_width']}px"
+                            )
                     result["name"] = viewport["name"]
+                    result["page_results"] = page_results
                     report["viewports"].append(result)
                     for check in result["checks"]:
                         if not check["ok"]:

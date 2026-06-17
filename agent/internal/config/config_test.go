@@ -151,6 +151,36 @@ func TestLoadRejectsBadOpenTelemetryEndpoint(t *testing.T) {
 	}
 }
 
+func TestLoadAcceptsWebPushOnlyAlertProvider(t *testing.T) {
+	t.Parallel()
+
+	data := strings.Replace(validMinimalPolicy(), "enabled: false\n  email:", "enabled: true\n  email:", 1)
+	data = strings.Replace(data, "provider: none\n    to: []", "provider: none\n    to: []", 1)
+	data = strings.Replace(data, `provider: none
+    subscription_file: ""`, `provider: web_push
+    subscription_file: "data/local/webpush/subscriptions.json"`, 1)
+	data = strings.Replace(data, `vapid_public_key: ""`, `vapid_public_key: "public-key"`, 1)
+	data = strings.Replace(data, `vapid_private_key_file: ""`, `vapid_private_key_file: "data/local/webpush/vapid-private.key"`, 1)
+	data = strings.Replace(data, `vapid_subject: ""`, `vapid_subject: "mailto:alerts@example.com"`, 1)
+
+	if _, err := Load([]byte(data)); err != nil {
+		t.Fatalf("expected web push only policy to validate: %v", err)
+	}
+}
+
+func TestLoadRejectsAlertsWithoutProvider(t *testing.T) {
+	t.Parallel()
+
+	data := strings.Replace(validMinimalPolicy(), "enabled: false\n  email:", "enabled: true\n  email:", 1)
+	_, err := Load([]byte(data))
+	if err == nil {
+		t.Fatal("expected alerts without provider to fail validation")
+	}
+	if !strings.Contains(err.Error(), constants.ConfigErrorAlertProviderRequired) {
+		t.Fatalf("expected alert provider error, got: %v", err)
+	}
+}
+
 func validMinimalPolicy() string {
 	return `
 tenant_id: family-varadha
@@ -213,6 +243,15 @@ alerts:
   email:
     provider: none
     to: []
+    min_severity: high
+    cooldown_minutes: 30
+  push:
+    provider: none
+    subscription_file: ""
+    vapid_public_key: ""
+    vapid_private_key_file: ""
+    vapid_subject: ""
+    ttl_seconds: 3600
     min_severity: high
     cooldown_minutes: 30
 thresholds:

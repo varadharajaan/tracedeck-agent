@@ -14,7 +14,6 @@ import urllib.request
 from datetime import datetime
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).parent.resolve()
 LOG_ROOT = PROJECT_ROOT / "logs" / "local" / "devctl"
 OUTPUT_ROOT = PROJECT_ROOT / "data" / "local" / "output"
@@ -34,7 +33,6 @@ LOG_ROOT.mkdir(parents=True, exist_ok=True)
 OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
 LOG_FILE = LOG_ROOT / f"devctl-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{os.getpid()}.log"
 
-
 def console_write(message: str, *, end: str = "\n") -> None:
     try:
         print(message, end=end)
@@ -43,13 +41,11 @@ def console_write(message: str, *, end: str = "\n") -> None:
         safe = message.encode(encoding, errors="replace").decode(encoding, errors="replace")
         print(safe, end=end)
 
-
 def log(level: str, message: str) -> None:
     line = f"{datetime.now().isoformat()} [{level}] {message}"
     with LOG_FILE.open("a", encoding="utf-8") as handle:
         handle.write(line + "\n")
     console_write(line)
-
 
 def run(cmd: list[str], *, cwd: Path = PROJECT_ROOT, check: bool = True, stream: bool = False) -> subprocess.CompletedProcess[str]:
     log("INFO", "Running: " + " ".join(cmd))
@@ -178,13 +174,19 @@ def runtime_doctor_local(*, base_url: str, tenant_id: str) -> dict[str, object]:
     dashboard = read_url(f"{base_url}/", timeout=5)
     dashboard_markers = required_markers(
         str(dashboard.get("body") or ""),
-        ["TraceDeck Console", "theme-toggle-button", "server-status-light", "dashboard-page-nav", "browser-activity-button", "Delivery Assurance Center"],
+        ["TraceDeck Console", "theme-toggle-button", "server-status-light", "dashboard-page-nav", "browser-activity-button", "legacy-dashboard-button", "Delivery Assurance"],
+    )
+
+    legacy_dashboard = read_url(f"{base_url}/v1-old", timeout=5)
+    legacy_dashboard_markers = required_markers(
+        str(legacy_dashboard.get("body") or ""),
+        ["TraceDeck Dashboard", "v1-old legacy containment"],
     )
 
     browser_page = read_url(f"{base_url}/browser-activity", timeout=5)
     browser_markers = required_markers(
         str(browser_page.get("body") or ""),
-        ["TraceDeck Browser Activity", "theme-toggle-button", "server-status-light", "<th>Source</th>", "metadata-only guard"],
+        ["TraceDeck Browser Intelligence", "theme-toggle-button", "server-status-light", "<th>Source</th>", "metadata-only guard"],
     )
 
     browser_api = read_json(f"{base_url}/api/v1/tenants/{tenant_id}/browser-activity?limit=25", timeout=6)
@@ -267,6 +269,7 @@ def runtime_doctor_local(*, base_url: str, tenant_id: str) -> dict[str, object]:
     checks = {
         "health": health_ok,
         "dashboard": bool(dashboard["ok"]) and bool(dashboard_markers["ok"]),
+        "legacy_dashboard": bool(legacy_dashboard["ok"]) and bool(legacy_dashboard_markers["ok"]),
         "browser_page": bool(browser_page["ok"]) and bool(browser_markers["ok"]),
         "browser_api": bool(browser_api["ok"]) and provenance_ok,
         "devices": bool(devices["ok"]) and bool(device_id),
@@ -279,6 +282,7 @@ def runtime_doctor_local(*, base_url: str, tenant_id: str) -> dict[str, object]:
         "checks": checks,
         "health": {"ok": health_ok, "status": health_json.get("status", ""), "service": health_json.get("service", ""), "error": health.get("error", "")},
         "dashboard": {"ok": checks["dashboard"], "status_code": dashboard.get("status_code"), **dashboard_markers},
+        "legacy_dashboard": {"ok": checks["legacy_dashboard"], "status_code": legacy_dashboard.get("status_code"), **legacy_dashboard_markers},
         "browser_page": {"ok": checks["browser_page"], "status_code": browser_page.get("status_code"), **browser_markers},
         "browser_api": {
             "ok": checks["browser_api"],
@@ -896,6 +900,14 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/newman-phase112.ps1"))
     elif target == "verify112":
         run(powershell("./scripts/verify/verify-phase112.ps1"))
+    elif target == "phase113":
+        run(powershell("./scripts/verify/verify-phase113.ps1"), stream=True)
+    elif target == "smoke113":
+        run(powershell("./scripts/local/smoke-phase113.ps1"))
+    elif target == "newman113":
+        run(powershell("./scripts/local/newman-phase113.ps1"))
+    elif target == "verify113":
+        run(powershell("./scripts/verify/verify-phase113.ps1"))
     elif target == "activity-feed":
         run(powershell("./scripts/local/test-activity-feed-provenance.ps1"))
     elif target == "quality":
@@ -908,6 +920,8 @@ def cmd_test(args: argparse.Namespace) -> int:
         run(powershell("./scripts/local/test-browser-activity-badges.ps1", "-BaseUrl", local_url(args.addr)))
     elif target == "visual":
         run(powershell("./scripts/local/test-dashboard-visual-quality.ps1", "-BaseUrl", local_url(args.addr)))
+    elif target == "modern-ui":
+        run(powershell("./scripts/verify/verify-modern-console-ui.ps1", "-BaseUrl", local_url(args.addr)), stream=True)
     else:
         run(powershell("./scripts/local/smoke-phase69.ps1"))
         run(powershell("./scripts/local/newman-phase69.ps1"))
@@ -1123,6 +1137,7 @@ def main() -> int:
             "phase110",
             "phase111",
             "phase112",
+            "phase113",
             "smoke",
             "newman",
             "verify",
@@ -1227,12 +1242,16 @@ def main() -> int:
             "smoke112",
             "newman112",
             "verify112",
+            "smoke113",
+            "newman113",
+            "verify113",
             "activity-feed",
             "quality",
             "theme",
             "delivery-ui",
             "browser-labels",
             "visual",
+            "modern-ui",
             "live",
         ],
         nargs="?",

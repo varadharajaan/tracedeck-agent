@@ -45,7 +45,10 @@ func (windowsAdapter) ForegroundApp(ctx context.Context) (ForegroundApp, error) 
 	}
 
 	var pid uint32
-	procGetWindowThreadProcessID.Call(hwnd, uintptr(unsafe.Pointer(&pid)))
+	threadID, _, callErr := procGetWindowThreadProcessID.Call(hwnd, uintptr(unsafe.Pointer(&pid))) // #nosec G103 -- audited Windows API call writes the OS foreground process id into a stack uint32.
+	if threadID == 0 {
+		return ForegroundApp{}, fmt.Errorf("%w: read foreground thread id: %v", ErrNoForegroundApp, callErr)
+	}
 	if pid == 0 {
 		return ForegroundApp{}, fmt.Errorf("%w: no foreground process id", ErrNoForegroundApp)
 	}

@@ -65,10 +65,10 @@ try {
 
     $command = Get-RequiredNode -Xml $xml -Namespace $namespace -XPath "//task:Actions/task:Exec/task:Command"
     $arguments = Get-RequiredNode -Xml $xml -Namespace $namespace -XPath "//task:Actions/task:Exec/task:Arguments"
-    if ($command.InnerText -notmatch "tracedeck-agent\.exe$") {
-        throw "Expected scheduled-task command to target tracedeck-agent.exe."
+    if ($command.InnerText -notmatch "wscript\.exe$") {
+        throw "Expected scheduled-task command to target wscript.exe."
     }
-    foreach ($expected in @("run --config", "--collection-interval 10m", "--log-dir", "--outbox-dir", "--max-cycles 0")) {
+    foreach ($expected in @("run-agent-task-hidden.vbs", "run-agent-task.ps1", "-AgentPath", "-CollectionInterval", "10m", "-LogDir", "-OutboxDir", "-PidPath")) {
         if ($arguments.InnerText -notmatch [regex]::Escape($expected)) {
             throw "Expected scheduled-task arguments to include '$expected'."
         }

@@ -8,6 +8,7 @@ const (
 	SchemaDefForegroundCollection  = "ForegroundAppCollection"
 	SchemaDefMediaCollection       = "MediaCollection"
 	SchemaDefOpenTelemetryPolicy   = "OpenTelemetryPolicy"
+	SchemaDefPushPolicy            = "PushPolicy"
 	SchemaDefRuleSpec              = "RuleSpec"
 	SchemaDefSensitiveCapabilities = "SensitiveCapabilities"
 	SchemaDefSoftwareCollection    = "SoftwareCollection"
@@ -18,7 +19,7 @@ const (
 	SchemaPropURLMode               = "url_mode"
 	SchemaPropYouTubeClassification = "youtube_classification"
 	SchemaPropYouTubeVideoIDMode    = "youtube_video_id_mode"
-	SchemaPropWindowTitleMode       = "window_title_mode"
+	SchemaPropWindowTitleMode       = "window_title_mode" // #nosec G101 -- schema property name only, not a credential.
 	SchemaPropInventoryMode         = "inventory_mode"
 	SchemaPropPathMode              = "path_mode"
 	SchemaPropCredentials           = "credentials"

@@ -60,6 +60,11 @@ const (
 )
 
 const (
+	PushProviderNone    = "none"
+	PushProviderWebPush = "web_push"
+)
+
+const (
 	SeverityLow      = "low"
 	SeverityMedium   = "medium"
 	SeverityHigh     = "high"
@@ -87,6 +92,13 @@ const (
 )
 
 const (
+	WebPushEnvSubscriptionFile = "TRACEDECK_WEBPUSH_SUBSCRIPTION_FILE"
+	WebPushEnvVAPIDPublicKey   = "TRACEDECK_WEBPUSH_VAPID_PUBLIC_KEY"
+	WebPushEnvVAPIDPrivateKey  = "TRACEDECK_WEBPUSH_VAPID_PRIVATE_KEY" // #nosec G101 -- environment variable name only; VAPID private key value is supplied outside source.
+	WebPushEnvVAPIDSubject     = "TRACEDECK_WEBPUSH_VAPID_SUBJECT"
+)
+
+const (
 	DefaultSMTPPort = "25"
 	SMTPServerTLS   = "true"
 	SMTPNoTLS       = "false"
@@ -110,4 +122,5 @@ const (
 	DefaultMaxLocalStorageMB = 2048
 	DefaultUploadInterval    = "1h"
 	DefaultAlertCooldownMins = 30
+	DefaultWebPushTTLSeconds = 3600
 )

@@ -35,7 +35,7 @@ func (e *Evaluator) Evaluate(_ context.Context, policy *config.Policy, events []
 	alerts = append(alerts, e.evaluateUnknownSoftwareInstalled(policy, events)...)
 	alerts = append(alerts, e.evaluateBlockedDomains(policy, events)...)
 	alerts = append(alerts, e.evaluateNonStudyYouTube(policy, events)...)
-	return filterBySeverity(alerts, policy.Alerts.Email.MinSeverity)
+	return filterBySeverity(alerts, policyMinimumSeverity(policy))
 }
 
 func (e *Evaluator) evaluateBlockedApps(policy *config.Policy, events []event.Event) []Alert {
@@ -309,6 +309,27 @@ func filterBySeverity(alerts []Alert, minSeverity config.Severity) []Alert {
 		}
 	}
 	return out
+}
+
+func policyMinimumSeverity(policy *config.Policy) config.Severity {
+	if policy == nil {
+		return ""
+	}
+	min := ""
+	emailProvider := policy.Alerts.Email.Provider
+	if emailProvider != "" && emailProvider != config.EmailProvider(constants.EmailProviderNone) && policy.Alerts.Email.MinSeverity != "" {
+		min = string(policy.Alerts.Email.MinSeverity)
+	}
+	pushProvider := policy.Alerts.Push.Provider
+	if pushProvider != "" && pushProvider != config.PushProvider(constants.PushProviderNone) && policy.Alerts.Push.MinSeverity != "" {
+		if min == "" || severityRank(string(policy.Alerts.Push.MinSeverity)) < severityRank(min) {
+			min = string(policy.Alerts.Push.MinSeverity)
+		}
+	}
+	if min == "" {
+		min = string(policy.Alerts.Email.MinSeverity)
+	}
+	return config.Severity(min)
 }
 
 func severityRank(severity string) int {

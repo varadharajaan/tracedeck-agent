@@ -31,9 +31,20 @@ try {
     if ($dashboard.Headers[$TraceDeckHeaderCacheControl] -ne $TraceDeckCacheNoStore) {
         throw "Expected no-store cache header on live dashboard."
     }
-    foreach ($expected in @("theme-toggle-button", "server-status-light", "sourceBadge", "dashboard-page-nav", "browser-activity-button")) {
+    foreach ($expected in @("TraceDeck Console", "theme-toggle-button", "server-status-light", "dashboard-page-nav", "browser-activity-button", "legacy-dashboard-button", "Delivery Assurance")) {
         if ($dashboard.Content -notmatch [regex]::Escape($expected)) {
             throw "Expected live dashboard marker '$expected'."
+        }
+    }
+
+    Write-TraceDeckLog -Level "INFO" -Message "Checking live legacy dashboard route markers"
+    $legacyDashboard = Invoke-WebRequest -UseBasicParsing -Uri "$cleanBaseUrl/v1-old"
+    if ($legacyDashboard.Headers[$TraceDeckHeaderCacheControl] -ne $TraceDeckCacheNoStore) {
+        throw "Expected no-store cache header on live legacy dashboard."
+    }
+    foreach ($expected in @("TraceDeck Dashboard", "v1-old legacy containment")) {
+        if ($legacyDashboard.Content -notmatch [regex]::Escape($expected)) {
+            throw "Expected live legacy dashboard marker '$expected'."
         }
     }
 
@@ -42,7 +53,7 @@ try {
     if ($browserPage.Headers[$TraceDeckHeaderCacheControl] -ne $TraceDeckCacheNoStore) {
         throw "Expected no-store cache header on live browser activity page."
     }
-    foreach ($expected in @("TraceDeck Browser Activity", "<th>Source</th>", "sourceBadge", "server-status-light")) {
+    foreach ($expected in @("TraceDeck Browser Intelligence", "<th>Source</th>", "sourceBadge", "server-status-light", "source-mode-pill")) {
         if ($browserPage.Content -notmatch [regex]::Escape($expected)) {
             throw "Expected live browser activity marker '$expected'."
         }

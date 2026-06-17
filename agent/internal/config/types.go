@@ -120,6 +120,7 @@ type StorageClassDays struct {
 type AlertPolicy struct {
 	Enabled bool        `json:"enabled" yaml:"enabled"`
 	Email   EmailPolicy `json:"email" yaml:"email"`
+	Push    PushPolicy  `json:"push" yaml:"push"`
 }
 
 type EmailPolicy struct {
@@ -128,6 +129,17 @@ type EmailPolicy struct {
 	To              []string      `json:"to" yaml:"to"`
 	MinSeverity     Severity      `json:"min_severity" yaml:"min_severity"`
 	CooldownMinutes int           `json:"cooldown_minutes" yaml:"cooldown_minutes" jsonschema:"minimum=1"`
+}
+
+type PushPolicy struct {
+	Provider            PushProvider `json:"provider" yaml:"provider"`
+	SubscriptionFile    string       `json:"subscription_file" yaml:"subscription_file"`
+	VAPIDPublicKey      string       `json:"vapid_public_key" yaml:"vapid_public_key"`
+	VAPIDPrivateKeyFile string       `json:"vapid_private_key_file" yaml:"vapid_private_key_file"`
+	VAPIDSubject        string       `json:"vapid_subject" yaml:"vapid_subject"`
+	TTLSeconds          int          `json:"ttl_seconds" yaml:"ttl_seconds" jsonschema:"minimum=1"`
+	MinSeverity         Severity     `json:"min_severity" yaml:"min_severity"`
+	CooldownMinutes     int          `json:"cooldown_minutes" yaml:"cooldown_minutes" jsonschema:"minimum=1"`
 }
 
 type RuleSpec struct {

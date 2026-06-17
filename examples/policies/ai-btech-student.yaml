@@ -68,6 +68,15 @@ alerts:
       - varathu09@gmail.com
     min_severity: medium
     cooldown_minutes: 30
+  push:
+    provider: none
+    subscription_file: ""
+    vapid_public_key: ""
+    vapid_private_key_file: ""
+    vapid_subject: ""
+    ttl_seconds: 3600
+    min_severity: medium
+    cooldown_minutes: 30
 
 study_apps:
   - Code.exe

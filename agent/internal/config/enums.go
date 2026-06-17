@@ -16,6 +16,7 @@ type SoftwareInventoryMode string
 type SensitiveCapabilityMode string
 type ArchiveProvider string
 type EmailProvider string
+type PushProvider string
 type Severity string
 type OpenTelemetryProtocol string
 
@@ -65,6 +66,11 @@ var emailProviders = enumSet[EmailProvider](
 	constants.EmailProviderNone,
 	constants.EmailProviderSES,
 	constants.EmailProviderSMTP,
+)
+
+var pushProviders = enumSet[PushProvider](
+	constants.PushProviderNone,
+	constants.PushProviderWebPush,
 )
 
 var openTelemetryProtocols = enumSet[OpenTelemetryProtocol](

@@ -22,12 +22,12 @@ try {
     $hidden = $xml.SelectSingleNode("//task:Settings/task:Hidden", $namespace)
     $logon = $xml.SelectSingleNode("//task:Triggers/task:LogonTrigger", $namespace)
 
-    if (-not $command -or $command.InnerText -notmatch "tracedeck-agent\.exe$") {
+    if (-not $command -or $command.InnerText -notmatch "wscript\.exe$") {
         Write-TraceDeckLog -Level "ERROR" -Message "Task XML command is missing or invalid."
         exit 1
     }
-    if (-not $arguments -or $arguments.InnerText -notmatch "run --config" -or $arguments.InnerText -notmatch "--max-cycles 0") {
-        Write-TraceDeckLog -Level "ERROR" -Message "Task XML arguments do not start continuous agent mode."
+    if (-not $arguments -or $arguments.InnerText -notmatch "run-agent-task-hidden\.vbs" -or $arguments.InnerText -notmatch "run-agent-task\.ps1" -or $arguments.InnerText -notmatch "tracedeck-agent\.exe") {
+        Write-TraceDeckLog -Level "ERROR" -Message "Task XML arguments do not route through the hidden scheduled-task runner."
         exit 1
     }
     if (-not $hidden -or $hidden.InnerText -ne "true") {

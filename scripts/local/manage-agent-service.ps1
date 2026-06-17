@@ -9,6 +9,7 @@ param(
     [string]$LogDir = "logs/local/agent",
     [string]$OutboxDir = "data/local/outbox",
     [string]$CollectionInterval = "10m",
+    [string]$PidPath = "",
     [string]$TaskName = "\TraceDeck\TraceDeck Agent",
     [string]$LaunchdLabel = "io.tracedeck.agent",
     [string]$SystemdUnit = "tracedeck-agent.service",
@@ -108,6 +109,7 @@ function Invoke-WindowsServiceAction {
                     "-LogDir", $LogDir,
                     "-OutboxDir", $OutboxDir,
                     "-CollectionInterval", $CollectionInterval,
+                    "-PidPath", $PidPath,
                     "-StartAfterRegister"
                 )
                 if ($BuildAgent) {

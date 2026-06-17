@@ -976,6 +976,17 @@ func TestDashboardLocalAuthPanel(t *testing.T) {
 	if dashboard.Header().Get(constants.HeaderCache) != constants.CacheNoStore {
 		t.Fatalf("expected no-store dashboard cache header, got %s", dashboard.Header().Get(constants.HeaderCache))
 	}
+	legacy := httptest.NewRecorder()
+	handler.ServeHTTP(legacy, httptest.NewRequest(http.MethodGet, constants.RouteDashboardV1Old, nil))
+	if legacy.Code != http.StatusOK {
+		t.Fatalf("expected legacy dashboard 200 without API key, got %d", legacy.Code)
+	}
+	if legacy.Header().Get(constants.HeaderCache) != constants.CacheNoStore {
+		t.Fatalf("expected no-store legacy dashboard cache header, got %s", legacy.Header().Get(constants.HeaderCache))
+	}
+	if !strings.Contains(legacy.Body.String(), "TraceDeck Dashboard") {
+		t.Fatalf("expected legacy dashboard asset, got %s", legacy.Body.String())
+	}
 	body := dashboard.Body.String()
 	for _, marker := range []string{
 		"Local Dashboard Access",
